@@ -3746,3 +3746,13 @@ Object.assign(window.RAIL_I18N_MESSAGES.en, {
 Object.assign(window.RAIL_I18N_MESSAGES.ja, {
   '林鐵列車恢復依班表準時出發與到站，途中依路線長度調整速度，站內往返車次也會連續銜接': '阿里山森林鉄道の列車が時刻表どおりに発車・到着するようになりました。線路の長さに合わせて走行速度を調整し、駅での往復便も連続して表示します',
 });
+
+// 2026-10-11 台鐵預排待避跨輪重算、北捷松山新店線時刻表（v1011a）。
+Object.assign(window.RAIL_I18N_MESSAGES.en, {
+  '修正台鐵同向列車預排待避時，等待的車有時白等好幾分鐘、有時後車才剛通過就開出；現在都在後車通過 30 秒後才出發': 'Fixed planned overtakes on TRA: a waiting train sometimes waited several minutes for nothing, or left right after the passing train; it now departs 30 seconds after the passing train goes by',
+  '北捷松山新店線時刻表更新為官方最新版本': 'Updated the Taipei Metro Songshan–Xindian Line timetable to the latest official version',
+});
+Object.assign(window.RAIL_I18N_MESSAGES.ja, {
+  '修正台鐵同向列車預排待避時，等待的車有時白等好幾分鐘、有時後車才剛通過就開出；現在都在後車通過 30 秒後才出發': '台鉄の待避で、待っている列車が数分間むだに待ったり、後続列車の通過直後に発車したりする問題を修正しました。後続列車の通過から30秒後に発車します',
+  '北捷松山新店線時刻表更新為官方最新版本': '台北MRT松山新店線の時刻表を公式の最新版に更新しました',
+});

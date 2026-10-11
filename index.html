@@ -5622,7 +5622,7 @@
 
   <footer class="site-foot">
     <details class="foot-box">
-      <summary><span>更新紀錄</span><span class="foot-sub">最後更新：2026/10/9</span></summary>
+      <summary><span>更新紀錄</span><span class="foot-sub">最後更新：2026/10/11</span></summary>
       <!-- 第一層是「最近更新」的檢視,不是正本:每一條都用 data-cl-of 指向第二層某條的 data-cl。
            要把一條擠出第一層之前,它的正本必須已經在第二層存在——2026-08-03 就踩過一次:8/1 的
            衛星計費那條只活在第一層(第二層只有一句夾在 7/25 條目裡、日期對不上的附帶說明),
@@ -5630,14 +5630,14 @@
            內容 li 上限 8 條(li.grp 是標題不算)。 -->
       <ul class="foot-list foot-recent">
         <li class="grp">最近更新</li>
+        <li data-cl-of="overtakeretime1011"><span class="d">10/11</span><span>修正台鐵同向列車預排待避時，等待的車有時白等好幾分鐘、有時後車才剛通過就開出；現在都在後車通過 30 秒後才出發</span></li>
+        <li data-cl-of="trtcg1011"><span class="d">10/11</span><span>北捷松山新店線時刻表更新為官方最新版本</span></li>
         <li data-cl-of="afrtiming1009"><span class="d">10/9</span><span>林鐵列車恢復依班表準時出發與到站，途中依路線長度調整速度，站內往返車次也會連續銜接</span></li>
         <li data-cl-of="klrtloop1009"><span class="d">10/9</span><span>修正高雄輕軌籬仔內與輕軌機廠站之間的列車跳站、卡住問題，順逆行都會沿軌道連續通過</span></li>
         <li data-cl-of="krtcsat1011"><span class="d">10/9</span><span>高捷 10/11（週日）照官方公告改跑週六時刻表</span></li>
         <li data-cl-of="closezoom1008"><span class="d">10/8</span><span>修正立體地圖拉到很近時，地下路段的列車整列消失；鏡頭對準車頭或車尾時，整列車也不會再突然不見</span></li>
         <li data-cl-of="nationalday1007"><span class="d">10/7</span><span>更新台鐵國慶連假班表，補上南迴與西部追加班次；App 連網重新開啟也能取得新班表</span></li>
         <li data-cl-of="journeyapplinks1007"><span class="d">10/7</span><span>行程分享的網址換成新格式，之前的連結仍可使用</span></li>
-        <li data-cl-of="overtakemain1007"><span class="d">10/7</span><span>台鐵待避：一班車停站讓另一班先走時，股道換得過去的，改成先走的車走直的正線、等待的車停進旁邊的側線</span></li>
-        <li data-cl-of="ntmegress1005"><span class="d">10/5</span><span>淡海、安坑、環狀線即時資料改由全站集中向官方查詢、再分送給所有人，正常情況下官方收到的查詢約每分鐘一次，不隨觀看人數與地區增加</span></li>
       </ul>
       <!-- 第二層:完整歷史。刻意不掛 .foot-box 類名——placeFootBoxes() 用
            `.site-foot .foot-box` 搬移面板,巢狀同名會被當成另一個盒子一起搬走。 -->
@@ -5645,6 +5645,8 @@
         <summary>完整更新歷史（依主題分類）</summary>
         <ul class="foot-list">
         <li class="grp">路網與車站</li>
+        <li data-cl="overtakeretime1011"><span class="d">10/11</span><span>修正台鐵同向列車預排待避時，等待的車有時白等好幾分鐘、有時後車才剛通過就開出；現在都在後車通過 30 秒後才出發</span></li>
+        <li data-cl="trtcg1011"><span class="d">10/11</span><span>北捷松山新店線時刻表更新為官方最新版本</span></li>
         <li data-cl="afrtiming1009"><span class="d">10/9</span><span>林鐵列車恢復依班表準時出發與到站，途中依路線長度調整速度，站內往返車次也會連續銜接</span></li>
         <li data-cl="klrtloop1009"><span class="d">10/9</span><span>修正高雄輕軌籬仔內與輕軌機廠站之間的列車跳站、卡住問題，順逆行都會沿軌道連續通過</span></li>
         <li data-cl="krtcsat1011"><span class="d">10/9</span><span>高捷 10/11（週日）照官方公告改跑週六時刻表</span></li>
@@ -6993,7 +6995,7 @@ const RAIL_3D_BOOT_PARAMS = new URLSearchParams(location.search);
 // v1001c：整合雙平台車站收集、台南道路、平鎮 SEO 最終校稿與 3D 效能改善。
 // v1007a：台鐵待避（超越車通過或後到先開）改成超越車走較直的正線、待避車停較彎的側線（派車由 repair_tra_overtake_tracks 修，閘門 verify_tra_overtake_tracks）。
 // v1009a：高捷 10/11（週日）照官網公告改跑週六時刻表——special_ops 新增 use（例外日整天指向既有日型，不複製班表）。
-const BUILD = 'v1009c';
+const BUILD = 'v1011a';
 const LANDSCAPE_REQUESTED = new URLSearchParams(location.search).get('map') === 'landscape';
 const GARAGE_QUERY = new URLSearchParams(location.search).get('garage');
 // 輕量多語 runtime：繁中原文同時是安全 fallback，外語字典只存差異字串。
@@ -11599,7 +11601,7 @@ function clearPlannedOvertakes(trains) {
       if (st._trafficArr0 == null) { st._trafficArr0 = st.arrSec; st._trafficDep0 = st.depSec; }
       else { st.arrSec = st._trafficArr0; st.depSec = st._trafficDep0; }
     }
-    delete st._overtakeDep0; delete st._plannedDwell; delete st._overtakeBy; delete st._overtakePeers;
+    delete st._overtakeDep0; delete st._plannedDwell; delete st._overtakeBy; delete st._overtakePeers; delete st._overtakeRef;
   }
 }
 function reassignTrainProfile(tr) {
@@ -11652,8 +11654,8 @@ function overtakeTrackFree(tracks, at, tr, j, lo, hi) {
   }
   return !reach.includes((1 << cands.length) - 1);
 }
-function planSameDirectionOvertakes(trains, union, sections, tracks) {
-  const stats = { planned: 0, tooClose: 0, unbuildable: 0, deferred: 0, noTrack: 0, log: [] };
+function planSameDirectionOvertakes(trains, union, sections, tracks, banned = new Set()) {
+  const stats = { planned: 0, tooClose: 0, unbuildable: 0, deferred: 0, noTrack: 0, retimed: 0, retracted: 0, worse: 0, log: [] };
   if (!Array.isArray(trains) || trains.length < 2 || !tracks) return stats;
   const keyOf = tr => tr.train + ':' + tr.stops[0].depSec + ':' + tr.stops[tr.stops.length - 1].arrSec;
   const days = new Map();
@@ -11696,7 +11698,7 @@ function planSameDirectionOvertakes(trains, union, sections, tracks) {
           }
           if (lookKm > OVERTAKE_LOOKAHEAD_KM) break;
           const lead = fst.arrSec - st.arrSec;
-          if (st.stop !== false || lead < need) continue;
+          if (st.stop !== false || lead < need || banned.has(keyOf(L) + ':' + lc + ':' + F.train)) continue;
           if (tracked && !tracked.has(traSectionKey(st.name, st.name).split('|')[0])) continue;
           const dep = fst.depSec + OVERTAKE_CLEAR_SEC;
           if (dep - st.arrSec > OVERTAKE_MAX_WAIT_SEC) continue;
@@ -11719,6 +11721,66 @@ function planSameDirectionOvertakes(trains, union, sections, tracks) {
   // 所以同一輪裡：被重建過的車不能再當別人待避的依據；已經有人照著它的時刻待避的車，本輪不准再重建；
   // 同一班的下一筆要用重建後的到站時刻重驗。不合格的留到下一輪用新的時刻重算。
   const rebuilt = new Set(), reliedOn = new Set();
+  // 上面兩條只管同一輪；resolveTraTraffic 跑好幾輪，前一輪的後車在下一輪套了自己的待避也會重建。
+  // 待避站變成跑段邊界，整個跑段改成停靠收尾的曲線，連上游的通過時刻都會變。2026-10-11 實測：
+  // 5281 第二輪在竹北待避，富岡的通過時刻提早 78 秒，281 仍照第一輪的時刻在富岡多等 108 秒；
+  // 443 第二輪在二結待避，5299 在七堵放行只剩 27 秒。所以每一筆待避記下它依據的後車與站序，
+  // 任何一班重建後，依據它的待避用新的通過時刻重算：仍成立就改放行時刻，不成立（後車已先到、
+  // 等太久、跑段做不出來、股道被佔）就撤銷，讓下一輪用新的時刻重排。改到的車同樣沿依賴鏈往下傳。
+  // 重算照樣要求煞車提前量。撤銷的那一筆（待避車＋站＋後車）記進 banned，之後各輪不准原樣再排：
+  // 同一天 281 在富岡的提前量被 5281 的重建吃到 58 秒（要 76），撤銷後 5281 在竹北那筆跟著不成立，
+  // 兩車回到原時刻又排出富岡那筆，兩輪一循環，八輪結束兩筆都沒留下，兩車在富岡–竹北同軌互穿。
+  // 擋掉原樣重排，選站就會往回找提前量夠的站。
+  // 不採「被依據的車之後一律不准重建」：後一輪的待避會排不出來，兩車在下一段同軌互穿（10/7–10/20 十四天實測，
+  // 同樣加上下面的互穿檢查，站間互穿合計 347 段；本做法 340 段，改前 345 段）。
+  const retimeDependents = changed => {
+    const queue = [changed];
+    for (let hops = 0; queue.length && hops < 500; hops++) {
+      const F = queue.shift();
+      for (const L of trains) for (let j = 0; j < (L.stops || []).length; j++) {
+        const st = L.stops[j], ref = st._overtakeRef;
+        if (!ref || ref.tr !== F || !st._plannedDwell) continue;
+        const fst = F.stops[ref.j], dep = fst.depSec + OVERTAKE_CLEAR_SEC;
+        if (Math.abs(st.depSec - dep) < .01) continue;
+        const keep = fst.arrSec - st.arrSec >= ref.need && dep - st.arrSec <= OVERTAKE_MAX_WAIT_SEC
+          && overtakeTrackFree(tracks, at, L, j, st.arrSec - OVERTAKE_CLEAR_SEC, dep + OVERTAKE_CLEAR_SEC) && overtakeRunBuildable(L, j, dep);
+        if (keep) { st.depSec = dep; stats.retimed++; }
+        else {
+          banned.add(keyOf(L) + ':' + j + ':' + F.train);
+          st.depSec = st.arrSec; delete st._overtakeDep0; delete st._plannedDwell; delete st._overtakeBy; delete st._overtakeRef;
+          stats.retracted++;
+        }
+        rebuilt.add(L); rebuildOne(L); queue.push(L);
+      }
+    }
+  };
+  // 這班車與其他同日列車在相鄰共同站之間前後次序對調（站間互穿）的段數，判法同上面找追越的迴圈。
+  const crossingsOf = A => {
+    const ai = new Map(A.stops.map((s, i) => [s.name, i])); let count = 0;
+    for (const B of trains) {
+      if (B === A || B.loop || !B.stops || B.stops.length < 2 || !shareDay(A, B)) continue;
+      let prev = -1, ok = true; const common = [];
+      for (let j = 0; j < B.stops.length && ok; j++) { const i = ai.get(B.stops[j].name); if (i != null) { ok = i > prev; prev = i; common.push([i, j]); } }
+      if (!ok || common.length < 2) continue;
+      for (let n = 0; n < common.length - 1; n++) {
+        const [pa, pb] = common[n], [qa, qb] = common[n + 1];
+        if (qa !== pa + 1 || qb !== pb + 1) continue;
+        const ap = A.stops[pa], bp = B.stops[pb];
+        if (!ap.segLn || ap.segLn !== bp.segLn || Math.sign(ap.dB - ap.dA) !== Math.sign(bp.dB - bp.dA)) continue;
+        const d0 = ap.depSec - bp.depSec, d1 = A.stops[qa].arrSec - B.stops[qb].arrSec;
+        if (Math.abs(d0) >= .5 && Math.abs(d1) >= .5 && Math.sign(d0) !== Math.sign(d1)) count++;
+      }
+    }
+    return count;
+  };
+  const rebuildOne = tr => {
+    reassignTrainProfile(tr);
+    // 重建剖面會把 inferMeetPassTimes 已夾好的通過時刻整條洗掉(它是從實測／梯形重算,不是從夾過的
+    // 那條改)。只對這一班重推:約束只吃 Y 的官方停靠時刻與這班自己的跑段,不會反餵到別班。
+    // 2026-09-19 實測 6021 被排在崎頂待避 131 後,樹林的夾點(10:00:10)被洗回 09:59:03,
+    // 浮洲的通過時刻落在 2173 離站後 5 秒,兩車在浮洲–樹林同軌互穿 2.5 分鐘。
+    inferMeetPassTimes([tr], union, sections);
+  };
   for (const [tr, ps] of grouped) {
     ps.sort((a, b) => a.j - b.j);
     for (const p of ps) {
@@ -11730,17 +11792,27 @@ function planSameDirectionOvertakes(trains, union, sections, tracks) {
       // 本輪先套的待避改了別班的時刻或多了一班待避車：用現在的時刻重查一次空股。
       if (!overtakeTrackFree(tracks, at, tr, p.j, st.arrSec - OVERTAKE_CLEAR_SEC, p.dep + OVERTAKE_CLEAR_SEC)) { stats.noTrack++; continue; }
       if (!overtakeRunBuildable(tr, p.j, p.dep)) { stats.unbuildable++; continue; }
+      // 待避站成了跑段邊界，整段直達曲線跟著重塑，上游幾十公里的通過時刻都會動，可能和沿途區間車
+      // 在站間對調次序（2026-10-11 實測：5281 改在富岡待避後，和 653 在桃園–內壢、內壢–中壢互穿）。
+      // 套用後這班車牽涉的站間互穿沒有變少就還原、記進 banned——只動了這一班，這個數就是全域的增減。
+      const before = crossingsOf(tr), prev = { dep: st.depSec, pd: st._plannedDwell, by: st._overtakeBy, ref: st._overtakeRef, d0: st._overtakeDep0 };
       if (st._overtakeDep0 == null) st._overtakeDep0 = st.depSec;
       st.depSec = Math.max(st.depSec, p.dep); st._plannedDwell = true; st._overtakeBy = p.follower;
+      // 車次物件互相引用：不可列舉，序列化／structuredClone 才不會帶著走（同 _overtakePeers）。
+      Object.defineProperty(st, '_overtakeRef', { value: { tr: p.ftr, j: p.fj, need: p.need }, configurable: true, writable: true });
+      rebuildOne(tr);                         // 下一個候選要看這次停等重算後的通過時刻
+      if (crossingsOf(tr) >= before) {
+        st.depSec = prev.dep; st._overtakeDep0 = prev.d0; st._overtakeBy = prev.by;
+        if (prev.pd) st._plannedDwell = true; else delete st._plannedDwell;
+        if (prev.ref) st._overtakeRef = prev.ref; else delete st._overtakeRef;
+        if (prev.d0 == null) delete st._overtakeDep0;
+        if (!prev.by) delete st._overtakeBy;
+        rebuildOne(tr); banned.add(keyOf(tr) + ':' + p.j + ':' + p.ftr.train); stats.worse++; continue;
+      }
       stats.planned++; rebuilt.add(tr); reliedOn.add(p.ftr);
       if (stats.log.length < 200) stats.log.push({ no: String(tr.train), by: p.follower, station: p.station,
         arr: Math.round(st.arrSec), dep: Math.round(st.depSec), lead: Math.round(p.lead), need: Math.round(p.need), km: +p.lookKm.toFixed(1) });
-      reassignTrainProfile(tr);               // 下一個候選要看這次停等重算後的通過時刻
-      // 重建剖面會把 inferMeetPassTimes 已夾好的通過時刻整條洗掉(它是從實測／梯形重算,不是從夾過的
-      // 那條改)。只對這一班重推:約束只吃 Y 的官方停靠時刻與這班自己的跑段,不會反餵到別班。
-      // 2026-09-19 實測 6021 被排在崎頂待避 131 後,樹林的夾點(10:00:10)被洗回 09:59:03,
-      // 浮洲的通過時刻落在 2173 離站後 5 秒,兩車在浮洲–樹林同軌互穿 2.5 分鐘。
-      inferMeetPassTimes([tr], union, sections);
+      retimeDependents(tr);
     }
   }
   return stats;
@@ -11764,8 +11836,9 @@ function resolveTraTraffic(trains, union, sections, tracks) {
   // 先套既有的對向交會／官方停靠約束，再讓同向待避自行收斂。交會只推一次：待避屬於當日
   // 車群的暫態決策，再把它反餵進多日聯集交會會讓沒有參與待避的列車也依載入日產生不同曲線。
   out.meet.push(inferMeetPassTimes(trains, union, sections));
+  const banned = new Set();                   // 重算後撤銷過的待避，之後各輪不再原樣排（planSameDirectionOvertakes）
   for (let round = 0; round < 8; round++) {
-    const p = planSameDirectionOvertakes(trains, union, sections, tracks); out.overtake.push(p); out.planned += p.planned;
+    const p = planSameDirectionOvertakes(trains, union, sections, tracks, banned); out.overtake.push(p); out.planned += p.planned;
     if (!p.planned) break;
   }
   return out;
