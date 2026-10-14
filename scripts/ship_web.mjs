@@ -686,6 +686,16 @@ try {
   if (issue73.status !== 0) fail('Issue #73 跟車卡守門人未過——WebKit 的車次與時速基線錯位、真觸控點車失效，或手機浮層互相遮住'
     + '（單獨重跑：npm run check-issue73）');
 
+  // ── 2.17c 跟車卡時速與停靠狀態要跟地圖上的車同源(2026-10-14) ────────────────
+  // 時速曾取「現在→20 秒後」的位移，車還停在月台讀數就在爬；狀態列剩 3 秒就收掉，比表定發車早。
+  // 真值取班表的到發時刻，兩種位置來源（實體股道／示意線形）、兩個方向、真時鐘 1× 各驗一次，約 70 秒。
+  const followSpeed = spawnSync('node', [path.join(wt, 'scripts', 'verify_follow_speed_dwell.mjs')], {
+    cwd: wt, encoding: 'utf8', env: { ...process.env, MUTATE: '' },
+  });
+  process.stdout.write(followSpeed.stdout || ''); process.stderr.write(followSpeed.stderr || '');
+  if (followSpeed.status !== 0) fail('跟車卡時速／停靠狀態守門人未過——車停著卻有時速，或沒到表定發車就寫行進中'
+    + '（單獨重跑：npm run check-follow-speed-dwell）');
+
   // ── 2.18 字級雙倍率契約守門人(2026-09-08)——純靜態、0.16 秒、不需要 dev server ────
   // 設計檔 TURN 5/6 的對照表不是一顆倍率:主文 --ui 是 1／1.25／1.5,小標籤與次要說明
   // --uis 只有 1／1.14／1.29。兩者互相跑錯邊時畫面「看起來只是字大了一點」,沒有任何

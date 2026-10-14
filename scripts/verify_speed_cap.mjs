@@ -91,7 +91,8 @@ const domCheck = await page.evaluate(async ({ train, at }) => {
   followTrainNo(String(train), { sys: 'tra_sched' });
   const el = document.getElementById('fpSpd');
   let worst = 0, worstAt = 0;
-  for (let t = at - 40; t <= at + 40; t++) {
+  // 每 0.25 秒取一點：小卡時速只看最近 0.5 秒的位移（v1014a 起），逐秒取樣會有一半機率跨過跳躍點
+  for (let t = at - 40; t <= at + 40; t += 0.25) {
     state.simSec = t;
     await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
     const n = parseFloat((el.textContent || '').replace(/[^\d.]/g, ''));

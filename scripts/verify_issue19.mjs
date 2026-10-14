@@ -130,9 +130,10 @@ window.__snap = function () {
   const segMap = trainSeg(tr, simSec - dl - hold);   // 地圖側的段別（純幾何/時間，未經面板）
   const pPanel = P ? window.__posAtDone(tr, pr.done) : null;
   const geo = P ? window.__geoDone(tr, P) : null;
-  const pa = trainPos(tr, simSec), pb = trainPos(tr, simSec + 20);
-  const kmh = (pa && pb) ? Math.min(haversineKm(pa, pb) / 20 * 3600, speedCapOf(tr)) : 0;
   const txt = id => { const e = document.getElementById(id); return e ? (e.textContent || '') : null; };
+  // 時速讀面板印出來的數字，不在這裡另抄一份公式：抄本在面板改成往回看之後（v1014a）就過期了，
+  // B3 量到的會是抄本而不是使用者看到的讀數。
+  const kmh = parseFloat(txt('fpSpd')) || 0;
   return {
     train: String(tr.train), sys: tr.sys, simSec, dl, hold,
     P, kmh,
@@ -331,7 +332,7 @@ for (const eng of ENGINES) {
   const B = await pg.evaluate(async () => {
     const tr = state.followTrain, s = tr.stops;
     const mapNow = state.simSec - liveDelaySec(tr) - blockHoldSec(tr);
-    // 優先取 ≥60 秒的停靠窗：時速讀數用 ±20 秒位移差算，窗太短會探到開車後、讀出非 0 的合法值
+    // 優先取 ≥60 秒的停靠窗：撥鐘收斂到正中央的餘裕較大
     const ahead = s.map((st, i) => ({ i, st })).filter(x => x.st.stop !== false &&
       (x.st.depSec - x.st.arrSec) >= 30 && x.st.arrSec > mapNow + 60);
     const d = ahead.find(x => (x.st.depSec - x.st.arrSec) >= 60) || ahead[0];
@@ -359,8 +360,7 @@ for (const eng of ENGINES) {
       `B1 狀態列為「⏸ 停靠 ${B.targetName}」而非「▶ 行進中」`);
     ck(s.dom.next === B.nextStopName,
       `B2 下一站為 ${B.nextStopName}（該站的下一站），實得「${s.dom.next}」`);
-    if (B.total >= 60) ck(Math.round(s.kmh) === 0, `B3 時速讀數 0（與停靠一致），實得 ${s.kmh.toFixed(1)}`);
-    else console.log(`    B3 略過：停靠窗僅 ${B.total}s，±20 秒時速探針必然探到開車後（實得 ${s.kmh.toFixed(1)} km/h）`);
+    ck(Math.round(s.kmh) === 0, `B3 面板時速讀數 0（與停靠一致），實得「${s.dom.spd}」`);
     out.engines[eng] = { ...(out.engines[eng] || {}), B: s, Bplan: B };
   }
 

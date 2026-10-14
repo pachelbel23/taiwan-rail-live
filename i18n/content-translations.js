@@ -3756,3 +3756,11 @@ Object.assign(window.RAIL_I18N_MESSAGES.ja, {
   '修正台鐵同向列車預排待避時，等待的車有時白等好幾分鐘、有時後車才剛通過就開出；現在都在後車通過 30 秒後才出發': '台鉄の待避で、待っている列車が数分間むだに待ったり、後続列車の通過直後に発車したりする問題を修正しました。後続列車の通過から30秒後に発車します',
   '北捷松山新店線時刻表更新為官方最新版本': '台北MRT松山新店線の時刻表を公式の最新版に更新しました',
 });
+
+// 2026-10-14 跟車小卡停站時的時速與「行進中」切換時刻（v1014a）。
+Object.assign(window.RAIL_I18N_MESSAGES.en, {
+  '修正跟車小卡在列車還停在月台時，時速就往上跳、提早 3 秒寫「行進中」': 'Fixed the follow card showing a rising speed while the train was still at the platform, and switching to “In motion” 3 seconds before departure',
+});
+Object.assign(window.RAIL_I18N_MESSAGES.ja, {
+  '修正跟車小卡在列車還停在月台時，時速就往上跳、提早 3 秒寫「行進中」': '追跡カードで、列車がまだホームに停車しているのに速度が上がり始め、発車の3秒前に「走行中」と表示される問題を修正しました',
+});
