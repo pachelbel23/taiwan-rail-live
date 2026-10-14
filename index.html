@@ -26452,15 +26452,18 @@ function showFollowPanel(tr) {
 }
 // 跟車小卡時速的取樣窗(模擬秒)。往回看的代價是車剛停下的這段還有一點尾數,所以要短。
 const FP_SPEED_DT_SEC = 0.5;
-const FP_SPEED_KEEP_SEC = 2;                 // 前幾幀有效時刻留多久;快轉到一幀跨過這麼多就沒有前一幀可用
+// 前幾幀的有效時刻留多久:至少 2 模擬秒,也至少 0.25 真實秒的量。一幀推進的模擬秒＝真實幀長×倍率,
+// 手機省電(跟車約 30 fps)開 60× 一幀就 2 秒,只留固定 2 秒的話倍率一高就沒有前一幀可比。
+// 隔得比這更久就當撥鐘大跳,不拿來比。
+const FP_SPEED_KEEP_SEC = 2, FP_SPEED_KEEP_REAL_SEC = 0.25;
 const _fpEff = { tr: null, hist: [], kmh: 0 };
 // 地圖上的車畫在 trainPosAt(tr, 有效時刻),有效時刻＝模擬秒－誤點漸變－防追撞 hold,後兩者都是逐幀狀態。
 // 被前車擋住時 hold 每秒最多長 1 秒,車在地圖上放慢甚至停住;拿「現在的 hold」往回推,讀到的是沒被擋的
 // 原始速度(472 實測地圖 25 km/h、小卡 45→56)。所以記住最近幾幀實際用的有效時刻,取約 FP_SPEED_DT_SEC
 // 前那一幀(不到就取最舊的一幀),兩點都用現在的線形重算(實體股道載入前後不會讀到換線形的那一跳)。
-// 不是行駛的位移不算:倒轉、換車、誤點校正把車往回拉時從頭起算;暫停時 hold 直接對齊目標,車在地圖上
-// 會跳一下,那一幀也從頭起算,讀數沿用暫停前的(不然整段暫停都讀成極速)。
-// 只有現在這一幀可用(剛撥鐘、快轉一幀跨過 FP_SPEED_KEEP_SEC)時,退回同一個有效時刻往回推。
+// 不是行駛的位移不算:倒轉、換車、誤點校正把車往回拉時從頭起算;暫停時 hold 會直接對齊目標
+// (updateBlockHolds 把 dSim=0 當 snap),車在地圖上會來回跳,那幾幀也從頭起算,讀數沿用暫停前的
+// (不然整段暫停都讀成極速)。只有現在這一幀可用(剛撥鐘大跳)時,退回同一個有效時刻往回推。
 function followSpeedKmh(tr) {
   const s = state.simSec, e = s - liveDelaySec(tr) - blockHoldSec(tr);
   let hist = _fpEff.tr === tr ? _fpEff.hist : [];
@@ -26471,7 +26474,8 @@ function followSpeedKmh(tr) {
   }
   if (last && (s < last.s || e < last.e - 1e-3)) hist = [];
   hist.push({ s, e });
-  while (hist[0].s < s - FP_SPEED_KEEP_SEC) hist.shift();
+  const keep = Math.max(FP_SPEED_KEEP_SEC, (state.speedMult || 1) * FP_SPEED_KEEP_REAL_SEC);
+  while (hist[0].s < s - keep) hist.shift();
   let prev = hist.length > 1 ? hist[0] : null;
   for (let i = hist.length - 2; i >= 0; i--) if (s - hist[i].s >= FP_SPEED_DT_SEC) { prev = hist[i]; break; }
   const dt = prev ? s - prev.s : FP_SPEED_DT_SEC;

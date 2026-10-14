@@ -23,7 +23,8 @@
 // 優先用回報的 4172 福隆／石城，資料裡沒有就換一班有兩個相鄰 20 秒以上停靠的車。
 //
 // MUTATE=1 時速改回「現在→20 秒後」；MUTATE=2 停靠判準加回剩 3 秒就收掉；MUTATE=3 倒數改回四捨五入；
-// MUTATE=4 時速改回「同一個 hold 往回推 0.5 秒」（v1014a 第一版，照不到被擋的車）；MUTATE=5 暫停時不沿用讀數。
+// MUTATE=4 時速改回「同一個 hold 往回推 0.5 秒」（v1014a 第一版，照不到被擋的車）；MUTATE=5 暫停時不沿用讀數；
+// MUTATE=6 前幾幀固定只留 2 模擬秒（高倍率一幀跨過就退回同一個 hold 往回推）。
 // 突變各自應該紅；正常驗收勿帶。
 import http from 'node:http';
 import fs from 'node:fs';
@@ -83,6 +84,8 @@ const MUTATIONS = {
       + '  const kmh = (pa && pb) ? Math.min(haversineKm(pa, pb) / FP_SPEED_DT_SEC * 3600, speedCapOf(tr)) : 0;'],
   5: ['    if (Math.abs(last.e - e) > 1e-3) _fpEff.hist = [{ s, e }];\n    return _fpEff.kmh;\n',
       '    hist.pop();\n'],
+  6: ['const keep = Math.max(FP_SPEED_KEEP_SEC, (state.speedMult || 1) * FP_SPEED_KEEP_REAL_SEC);',
+      'const keep = FP_SPEED_KEEP_SEC;'],
 };
 if (MUTATE) {
   const [from, to] = MUTATIONS[MUTATE] || [];
@@ -281,48 +284,77 @@ async function realClock(page, tag, st) {
   console.log(`  ${tag} 真時鐘 ${samples.length} 樣本；第一次「行進中」在 ${runAt ? hms(runAt.sim) : '—'}（表定 ${hms(st.dep)}）`);
 }
 
-// 被前車擋住：真時鐘跑過一段 hold 正在變化的區間，逐幀比面板讀數與地圖上的車實際的位移
+// 被前車擋住：真時鐘跑過一段 hold 正在變化的區間，逐幀比面板讀數與地圖上的車實際畫出的位移。
+// 「實際畫出」取 draw() 推進 2D 命中框的點反投影回經緯度（攔在 draw 裡，相機還沒為下一幀移動），
+// 不呼叫 trainPos——面板用的也是 trainPos 那條路，拿它當真值會同源。跟車時多半是 MapLibre render 裡
+// 同步畫（syncDrawMaplibre），晚於這裡的 rAF 回呼，所以依模擬秒記下來，跑完再跟面板讀數對齊。
+// pause：跑完按暫停，讀數要停在暫停前那一幀；minFrames／minBit：這一輪要有幾幀、其中幾幀 hold 真的有作用。
 async function holdRun(page, tag, run) {
-  const rows = await page.evaluate(async ({ from, to, mult }) => {
+  const rows = await page.evaluate(async ({ from, to, mult, pause }) => {
     const raf = () => new Promise(resolve => requestAnimationFrame(() => resolve()));
-    state.playing = false; state.simSec = from; await raf(); await raf();
-    state.speedMult = mult; state.playing = true;
-    const tr = state.followTrain, out = [];
-    // 每一幀都讀（rAF 回呼排在 tick 之後）：面板往回找的那一幀，這裡也有同一幀可以比
-    while (state.simSec < to && state.simSec >= from) {
-      await raf();
-      const p = trainPos(tr, state.simSec), base = state.simSec - liveDelaySec(tr);
-      const r0 = trainPosAt(tr, base - 0.5), r1 = trainPosAt(tr, base);
-      out.push({ s: state.simSec, lat: p?.lat, lon: p?.lon, spd: document.getElementById('fpSpd').textContent,
-        raw: r0 && r1 ? haversineKm(r0, r1) / 0.5 * 3600 : null });
-    }
-    state.playing = false;
-    const hold0 = blockHoldSec(tr);
-    for (let k = 0; k < 6; k++) { await raf(); out.push({ paused: true, s: state.simSec, spd: document.getElementById('fpSpd').textContent }); }
-    return { out, holdJump: Math.abs(blockHoldSec(tr) - hold0) };
+    const realDraw = window.draw, drawnBy = new Map();
+    window.draw = function () {
+      const result = realDraw.apply(this, arguments);
+      const tr = state.followTrain, hit = (state._trainHits || []).find(h => h.tr === tr);
+      // 同一個模擬秒只記第一次畫的：暫停後同一秒會一直重畫（hold 直接對齊目標、車會跳），那不是行駛
+      if (hit && M.raw?.unproject && !drawnBy.has(state.simSec)) {
+        const ll = M.raw.unproject([hit.x, hit.y]), p = trainPos(tr, state.simSec);
+        drawnBy.set(state.simSec, { lat: ll.lat, lon: ll.lng, gap: p ? haversineKm(p, { lat: ll.lat, lon: ll.lng }) * 1000 : null });
+      }
+      return result;
+    };
+    const out = [];
+    let holdJump = 0;
+    try {
+      state.playing = false; state.simSec = from; await raf(); await raf();
+      state.speedMult = mult; state.playing = true;
+      const tr = state.followTrain;
+      // 每一幀都讀（rAF 回呼排在 tick 之後）：面板往回找的那一幀，這裡也有同一幀可以比
+      while (state.simSec < to && state.simSec >= from) {
+        await raf();
+        const base = state.simSec - liveDelaySec(tr), r0 = trainPosAt(tr, base - 0.5), r1 = trainPosAt(tr, base);
+        out.push({ s: state.simSec, spd: document.getElementById('fpSpd').textContent,
+          raw: r0 && r1 ? haversineKm(r0, r1) / 0.5 * 3600 : null });
+      }
+      state.playing = false;
+      if (pause) {
+        const hold0 = blockHoldSec(tr);
+        for (let k = 0; k < 6; k++) { await raf(); out.push({ paused: true, s: state.simSec, spd: document.getElementById('fpSpd').textContent }); }
+        holdJump = Math.abs(blockHoldSec(tr) - hold0);
+      }
+      await raf(); await raf(); // 最後一幀的 MapLibre render 也要畫完
+    } finally { window.draw = realDraw; }
+    for (const r of out) Object.assign(r, drawnBy.get(r.s) || {});
+    return { out, holdJump };
   }, run);
   const live = rows.out.filter(r => !r.paused), paused = rows.out.filter(r => r.paused);
+  const gaps = live.filter(r => r.gap != null).map(r => r.gap);
+  check(`${tag} G2 被擋期間地圖畫的車＝trainPos（${gaps.length} 幀，最大差 ${gaps.length ? Math.max(...gaps).toFixed(3) : '—'} m）`,
+    gaps.length >= run.minFrames && Math.max(...gaps) < 1);
   const cmp = [];
   for (let i = 0; i < live.length; i++) {
     const r = live[i];
     if (r.s < run.from + 1 || r.lat == null) continue; // 開跑第一秒是撥鐘後的第一幀，面板還沒有前幾幀可比
-    let j = i - 1;
+    let j = i - 1; // 跟面板同一條規則：最近一個往回 0.5 模擬秒以上的幀；那一幀沒畫（等 GL）就不比
     while (j >= 0 && r.s - live[j].s < 0.5) j--;
     if (j < 0 || live[j].lat == null) continue;
     const map = metres(live[j], r) / 1000 / (r.s - live[j].s) * 3600;
-    cmp.push({ s: r.s, map, raw: r.raw, panel: speedOf(r.spd) });
+    cmp.push({ s: r.s, step: r.s - live[i - 1].s, map, raw: r.raw, panel: speedOf(r.spd) });
   }
   const bit = cmp.filter(c => c.raw != null && Math.abs(c.raw - c.map) >= 10);
-  check(`${tag} H0 有逐幀樣本、而且 hold 真的讓地圖上的車跟時刻表軸分開（${cmp.length} 幀，差 10 km/h 以上 ${bit.length} 幀）`,
-    cmp.length >= 100 && bit.length >= 30);
+  const step = cmp.length ? Math.min(...cmp.map(c => c.step)) : 0;
+  check(`${tag} H0 有逐幀樣本、而且 hold 真的讓地圖上的車跟時刻表軸分開（${cmp.length} 幀、每幀至少 ${step.toFixed(2)} 模擬秒，差 10 km/h 以上 ${bit.length} 幀）`,
+    cmp.length >= run.minFrames && bit.length >= run.minBit && step >= (run.minStep || 0));
   const off = cmp.filter(c => Math.abs(c.panel - c.map) > 1.5);
-  check(`${tag} H1 每一幀面板時速＝地圖上的車最近 0.5 秒的位移換算（±1.5 km/h）`, off.length === 0,
+  check(`${tag} H1 每一幀面板時速＝地圖上的車最近一段的位移換算（±1.5 km/h）`, off.length === 0,
     `${off.length} 幀不符，前幾個：${off.slice(0, 4).map(c => `${hms(c.s)} 面板 ${c.panel}／地圖 ${c.map.toFixed(1)}`).join('；')}`);
-  const lastLive = live.at(-1), drift = paused.filter(r => r.spd !== lastLive.spd);
-  check(`${tag} H2 暫停後讀數停在暫停前那一幀（${lastLive.spd}；暫停時 hold 跳了 ${rows.holdJump.toFixed(2)} 秒）`, drift.length === 0,
-    drift.map(r => r.spd).join('；'));
+  if (run.pause) {
+    const lastLive = live.at(-1), drift = paused.filter(r => r.spd !== lastLive.spd);
+    check(`${tag} H2 暫停後讀數停在暫停前那一幀（${lastLive.spd}；暫停時 hold 跳了 ${rows.holdJump.toFixed(2)} 秒）`, drift.length === 0,
+      drift.map(r => r.spd).join('；'));
+  }
   const worst = cmp.reduce((a, c) => Math.max(a, Math.abs(c.raw - c.map)), 0);
-  console.log(`  ${tag} ${hms(run.from)}→${hms(run.to)}：${cmp.length} 幀、時刻表軸與地圖最多差 ${worst.toFixed(1)} km/h`);
+  console.log(`  ${tag} ${hms(run.from)}→${hms(run.to)} ${run.mult}×：${cmp.length} 幀、時刻表軸與地圖最多差 ${worst.toFixed(1)} km/h`);
 }
 
 // 用 updateBlockHolds 本身快轉掃一遍，找 hold 每秒長 0.3 秒以上（地圖上的車明顯慢於時刻表軸）、又不在停站的最長一段
@@ -416,7 +448,9 @@ try {
     const { context, page, errors, source } = await openFollow(clockQuery(holdPick.train, from - 60), { physical: true });
     const tag = `[${holdPick.train}/被前車擋住/實體股道]`;
     check(`${tag} G0 位置來源確實是實體股道`, source.covers);
-    await holdRun(page, tag, { from, to, mult: 5 });
+    await holdRun(page, tag, { from, to, mult: 5, pause: true, minFrames: 100, minBit: 30 });
+    // 高倍率一幀推進 2 模擬秒以上（手機省電跟車約 30 fps、開 60× 就是一幀 2 秒）：面板仍要找得到前一幀
+    await holdRun(page, `${tag}[高倍率]`, { from, to, mult: 150, pause: false, minFrames: 15, minBit: 5, minStep: 2 });
     check(`${tag} 頁面沒有例外`, errors.length === 0, errors.slice(0, 3).join(' | '));
     await context.close();
   }
