@@ -5856,7 +5856,7 @@
         <li><span class="d">7/16</span><span>捷運準確度升級：六家捷運依官方到站看板即時校正，國定假日自動改跑假日班表</span></li>
         <li><span class="d">7/9</span><span>台鐵即時誤點上線——介接交通部 TDX 平臺每分鐘更新；7/11 起開站即真實時刻、捷運改逐班推演</span></li>
         <li class="grp">跟車、搜尋與車站看板</li>
-        <li data-cl="followspeed1014"><span class="d">10/14</span><span>修正跟車小卡在列車還停在月台時，時速就開始往上跳，發車前 3 秒就提早寫「行進中」；現在車停著時速就是 0，倒數會數到「1 秒後開車」，表定發車那一刻才換成行進中</span></li>
+        <li data-cl="followspeed1014"><span class="d">10/14</span><span>修正跟車小卡在列車還停在月台時，時速就開始往上跳，發車前 3 秒就提早寫「行進中」；現在車停著時速就是 0，倒數會數到「1 秒後開車」，表定發車那一刻才換成行進中；跟在前車後面放慢或停住時，時速也跟著地圖上的車</span></li>
         <li data-cl="metrowidgetfree1005"><span class="d">10/5</span><span>捷運小工具的多站與「自動（最近的站）」改為所有人免費，不再需要通行證；iPhone 與 Android 更新到新版 App 後生效</span></li>
         <li data-cl="rideexpire0930"><span class="d">9/30</span><span>「我上車了」後沒按下車，搭的車又從班表消失（週五夜車過午夜、連假加班車）時，過了抵達時間會自動下車；跟著別班車時按「搭乘中」也能直接下車（謝謝網友回報）</span></li>
         <li data-cl="followalign0926"><span class="d">9/30</span><span>iPhone 點列車後左下跟車卡的車次與時速對齊：9/26 展開的卡片改成同一條基線；9/30 收合成膠囊時，車次與時速不再貼在上緣、比圓點和「結束」高一截，四樣排在同一條中線上，三種字級與深色外觀都一樣（謝謝網友回報）</span></li>
@@ -26452,6 +26452,33 @@ function showFollowPanel(tr) {
 }
 // 跟車小卡時速的取樣窗(模擬秒)。往回看的代價是車剛停下的這段還有一點尾數,所以要短。
 const FP_SPEED_DT_SEC = 0.5;
+const FP_SPEED_KEEP_SEC = 2;                 // 前幾幀有效時刻留多久;快轉到一幀跨過這麼多就沒有前一幀可用
+const _fpEff = { tr: null, hist: [], kmh: 0 };
+// 地圖上的車畫在 trainPosAt(tr, 有效時刻),有效時刻＝模擬秒－誤點漸變－防追撞 hold,後兩者都是逐幀狀態。
+// 被前車擋住時 hold 每秒最多長 1 秒,車在地圖上放慢甚至停住;拿「現在的 hold」往回推,讀到的是沒被擋的
+// 原始速度(472 實測地圖 25 km/h、小卡 45→56)。所以記住最近幾幀實際用的有效時刻,取約 FP_SPEED_DT_SEC
+// 前那一幀(不到就取最舊的一幀),兩點都用現在的線形重算(實體股道載入前後不會讀到換線形的那一跳)。
+// 不是行駛的位移不算:倒轉、換車、誤點校正把車往回拉時從頭起算;暫停時 hold 直接對齊目標,車在地圖上
+// 會跳一下,那一幀也從頭起算,讀數沿用暫停前的(不然整段暫停都讀成極速)。
+// 只有現在這一幀可用(剛撥鐘、快轉一幀跨過 FP_SPEED_KEEP_SEC)時,退回同一個有效時刻往回推。
+function followSpeedKmh(tr) {
+  const s = state.simSec, e = s - liveDelaySec(tr) - blockHoldSec(tr);
+  let hist = _fpEff.tr === tr ? _fpEff.hist : [];
+  const last = hist[hist.length - 1];
+  if (last && last.s === s) {
+    if (Math.abs(last.e - e) > 1e-3) _fpEff.hist = [{ s, e }];
+    return _fpEff.kmh;
+  }
+  if (last && (s < last.s || e < last.e - 1e-3)) hist = [];
+  hist.push({ s, e });
+  while (hist[0].s < s - FP_SPEED_KEEP_SEC) hist.shift();
+  let prev = hist.length > 1 ? hist[0] : null;
+  for (let i = hist.length - 2; i >= 0; i--) if (s - hist[i].s >= FP_SPEED_DT_SEC) { prev = hist[i]; break; }
+  const dt = prev ? s - prev.s : FP_SPEED_DT_SEC;
+  const pa = trainPosAt(tr, prev ? prev.e : e - FP_SPEED_DT_SEC), pb = trainPosAt(tr, e);
+  _fpEff.tr = tr; _fpEff.hist = hist;
+  return _fpEff.kmh = (pa && pb) ? Math.min(haversineKm(pa, pb) / dt * 3600, speedCapOf(tr)) : 0;
+}
 function updateFollowPanel(tr) {
   const fp = document.getElementById('followPanel');
   if (fp.hidden || !tr) return;
@@ -26573,13 +26600,12 @@ function updateFollowPanel(tr) {
     plate.classList.add('show');
     document.body.classList.add('dwell-show'); // 停靠站名牌顯示中:他 sheet 展開(sheet-open)時讓跟車小卡淡出讓位(見 CSS body.dwell-show.sheet-open)
   } else { plate.classList.remove('dp-next', 'show'); document.body.classList.remove('dwell-show'); state._plateStop = null; }
-  // 即時時速:地圖上這班車最近 FP_SPEED_DT_SEC 秒的位移換算(與 draw() 同一個 trainPos);大數字讀數,看著有速度感。
+  // 即時時速:地圖上這班車最近 FP_SPEED_DT_SEC 秒實際走了多遠(followSpeedKmh);大數字讀數,看著有速度感。
   // 只往回看:以前取「現在→20 秒後」,等於讀地圖還沒畫的未來,車還停在月台讀數就開始爬(發車前十幾秒已到 14 km/h)。
   // 車種極速是硬上限:位置曲線本身已被夾在極速內(buildObsProfile),但相鄰段換軌道形狀物件時
   // 端點未必完全重合,會有極稀少的位置跳躍(全網逐秒取樣 8.38M 次中 397 次,0.005%,最大 201.6),
   // 用位置差分算速度就會被那一跳污染。跳躍本身是貼軌資料問題(另列待辦),這裡先保證讀數不說謊。
-  const pa = trainPos(tr, state.simSec - FP_SPEED_DT_SEC), pb = trainPos(tr, state.simSec);
-  const kmh = (pa && pb) ? Math.min(haversineKm(pa, pb) / FP_SPEED_DT_SEC * 3600, speedCapOf(tr)) : 0;
+  const kmh = followSpeedKmh(tr);
   document.getElementById('fpSpd').innerHTML = '<b>' + Math.round(kmh) + '</b> km/h';
   // 旅程進度條:環島車永不到站,改顯示完乘成就累積(連續跟滿半圈=到折返點枋寮即蓋章)
   if (tr.loop) {

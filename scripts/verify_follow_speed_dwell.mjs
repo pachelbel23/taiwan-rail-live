@@ -15,7 +15,15 @@
 // 另驗反方向一班（AGENTS.md：有方向性的資料兩個方向各至少一例）、真時鐘 1× 跑過發車那一刻（使用者的實際動作），
 // 以及旅程日誌在真時鐘下會記到下一站的停靠（錄影只記到福隆，是錄影腳本把 dt 固定為 0、日誌掃描不會觸發）。
 //
-// MUTATE=1 時速改回「現在→20 秒後」；MUTATE=2 停靠判準加回剩 3 秒就收掉；MUTATE=3 倒數改回四捨五入。
+// 被前車擋住（防追撞 hold）：地圖上的車放慢或停住，時刻表軸照走。這段的真值是「地圖上的車每一幀實際畫在哪」，
+// 取真時鐘跑過一段 hold 正在變化的區間，逐幀比面板讀數與地圖位移換算的時速；另驗暫停時讀數不跳。
+// 暫停撥鐘量不到這段：暫停時 hold 會直接對齊目標，與時鐘在走時的漸變不同。
+//
+// 班表每週重抓（data/tra_schedule_dense.json 的 dates 只涵蓋兩週），所以日期與車次從資料裡挑：
+// 優先用回報的 4172 福隆／石城，資料裡沒有就換一班有兩個相鄰 20 秒以上停靠的車。
+//
+// MUTATE=1 時速改回「現在→20 秒後」；MUTATE=2 停靠判準加回剩 3 秒就收掉；MUTATE=3 倒數改回四捨五入；
+// MUTATE=4 時速改回「同一個 hold 往回推 0.5 秒」（v1014a 第一版，照不到被擋的車）；MUTATE=5 暫停時不沿用讀數。
 // 突變各自應該紅；正常驗收勿帶。
 import http from 'node:http';
 import fs from 'node:fs';
@@ -26,17 +34,55 @@ import { chromium } from 'playwright';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 let INDEX = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
 const MUTATE = process.env.MUTATE || '';
-const PIN_DATE = Date.parse('2026-10-14T11:00:00+08:00'); // 回報當天（週三）
+
+// 挑日期與車次：今天（台北）在資料範圍內就用今天，否則用資料的第一天；4172 福隆→石城優先
+const DENSE = JSON.parse(fs.readFileSync(path.join(ROOT, 'data/tra_schedule_dense.json'), 'utf8'));
+const TODAY = new Date(Date.now() + 8 * 3600e3).toISOString().slice(0, 10);
+const DAYS = Object.keys(DENSE.dates || {}).sort();
+const dwellPair = (tr, a, b) => {
+  const i = tr.stops.findIndex(x => x.name === a);
+  const ok = st => st && st.stop !== false && st.depSec - st.arrSec >= 20 && st.depSec - st.arrSec <= 120;
+  return i >= 0 && tr.stops[i + 1]?.name === b && ok(tr.stops[i]) && ok(tr.stops[i + 1]);
+};
+function pickCase() {
+  for (const day of [TODAY, ...DAYS].filter((d, i, a) => DAYS.includes(d) && a.indexOf(d) === i)) {
+    const trains = DENSE.dates[day].map(i => DENSE.trains[i]);
+    const tr = trains.find(t => String(t.train) === '4172');
+    if (tr && dwellPair(tr, '福隆', '石城')) return { day, train: '4172', a: '福隆', b: '石城', arr: tr.stops.find(x => x.name === '福隆').arrSec };
+  }
+  const day = DAYS.includes(TODAY) ? TODAY : DAYS[0];
+  for (const tr of DENSE.dates[day].map(i => DENSE.trains[i])) {
+    if (tr.stops[0].name === tr.stops.at(-1).name) continue; // 環島車
+    for (let i = 1; i + 2 < tr.stops.length; i++) {
+      const a = tr.stops[i], b = tr.stops[i + 1];
+      if (a.arrSec > 8 * 3600 && a.arrSec < 20 * 3600 && dwellPair(tr, a.name, b.name))
+        return { day, train: String(tr.train), a: a.name, b: b.name, arr: a.arrSec };
+    }
+  }
+  return null;
+}
+const CASE = pickCase();
+if (!CASE) throw new Error(`G0 班表 ${DAYS[0]}～${DAYS.at(-1)} 裡找不到有兩個相鄰 20 秒以上停靠的台鐵車`);
+const PIN_DATE = Date.parse(`${CASE.day}T11:00:00+08:00`);
+const clockQuery = (train, sec) => {
+  const hm = Math.floor(sec / 60);
+  return `train=${train}&t=${String(Math.floor(hm / 60)).padStart(2, '0')}:${String(hm % 60).padStart(2, '0')}`;
+};
+const CASE_QUERY = clockQuery(CASE.train, CASE.arr - 60); // 進第一站前一分鐘
 
 const MUTATIONS = {
-  1: ['const pa = trainPos(tr, state.simSec - FP_SPEED_DT_SEC), pb = trainPos(tr, state.simSec);\n'
-      + '  const kmh = (pa && pb) ? Math.min(haversineKm(pa, pb) / FP_SPEED_DT_SEC * 3600, speedCapOf(tr)) : 0;',
+  1: ['const kmh = followSpeedKmh(tr);',
       'const pa = trainPos(tr, state.simSec), pb = trainPos(tr, state.simSec + 20);\n'
       + '  const kmh = (pa && pb) ? Math.min(haversineKm(pa, pb) / 20 * 3600, speedCapOf(tr)) : 0;'],
   2: ['return dw && dw.st.stop !== false && dw.total >= 20 ? dw : null;',
       'return dw && dw.st.stop !== false && dw.remain > 3 && dw.total >= 20 ? dw : null;'],
   3: ['const left = Math.ceil(dw.remain), mm = Math.floor(left / 60), ss = left % 60;',
       'const mm = Math.floor(dw.remain / 60), ss = Math.round(dw.remain % 60);'],
+  4: ['const kmh = followSpeedKmh(tr);',
+      'const pa = trainPos(tr, state.simSec - FP_SPEED_DT_SEC), pb = trainPos(tr, state.simSec);\n'
+      + '  const kmh = (pa && pb) ? Math.min(haversineKm(pa, pb) / FP_SPEED_DT_SEC * 3600, speedCapOf(tr)) : 0;'],
+  5: ['    if (Math.abs(last.e - e) > 1e-3) _fpEff.hist = [{ s, e }];\n    return _fpEff.kmh;\n',
+      '    hist.pop();\n'],
 };
 if (MUTATE) {
   const [from, to] = MUTATIONS[MUTATE] || [];
@@ -73,6 +119,7 @@ const server = http.createServer((request, response) => {
 await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
 const BASE = `http://127.0.0.1:${server.address().port}/`;
 console.log(`目標目錄 ${ROOT}`);
+console.log(`班表日 ${CASE.day}（資料 ${DAYS[0]}～${DAYS.at(-1)}）；${CASE.train} 次 ${CASE.a}→${CASE.b}`);
 
 let assertions = 0;
 const failures = [];
@@ -136,6 +183,15 @@ const readPanel = page => page.evaluate(() => {
     lat: p ? p.lat : null, lon: p ? p.lon : null,
   };
 });
+// 前提：地圖這一幀畫的車＝trainPos(tr, state.simSec)。拿 2D 命中框（每幀重建）反投影回經緯度對一次，
+// 不然底下所有「地圖上的車」都只是腳本自己呼叫 trainPos，跟面板同一個函式。
+const drawnGap = page => page.evaluate(() => {
+  const tr = state.followTrain, p = trainPos(tr, state.simSec);
+  const hit = (state._trainHits || []).find(h => h.tr === tr);
+  if (!p || !hit || !M.raw?.unproject) return null;
+  const ll = M.raw.unproject([hit.x, hit.y]);
+  return haversineKm(p, { lat: ll.lat, lon: ll.lng }) * 1000;
+});
 const metres = (a, b) => {
   const k = Math.PI / 180, x = (b.lon - a.lon) * k * Math.cos((a.lat + b.lat) / 2 * k), y = (b.lat - a.lat) * k;
   return Math.hypot(x, y) * 6371008.8;
@@ -161,6 +217,8 @@ async function sweepStop(page, tag, st) {
   for (let t = dwellFrom; t < st.dep; t += 0.25) times.push(t);
   times.push(st.dep - 0.01);
   const anchor = await at(page, dwellFrom);
+  const gap = await drawnGap(page);
+  check(`${tag} G1 地圖這一幀畫的車＝trainPos（2D 命中框反投影差 ${gap == null ? '—' : gap.toFixed(2)} m）`, gap != null && gap < 1);
   let bad = { spd: [], st: [], moved: 0 };
   for (const t of times) {
     const r = await at(page, t);
@@ -223,6 +281,78 @@ async function realClock(page, tag, st) {
   console.log(`  ${tag} 真時鐘 ${samples.length} 樣本；第一次「行進中」在 ${runAt ? hms(runAt.sim) : '—'}（表定 ${hms(st.dep)}）`);
 }
 
+// 被前車擋住：真時鐘跑過一段 hold 正在變化的區間，逐幀比面板讀數與地圖上的車實際的位移
+async function holdRun(page, tag, run) {
+  const rows = await page.evaluate(async ({ from, to, mult }) => {
+    const raf = () => new Promise(resolve => requestAnimationFrame(() => resolve()));
+    state.playing = false; state.simSec = from; await raf(); await raf();
+    state.speedMult = mult; state.playing = true;
+    const tr = state.followTrain, out = [];
+    // 每一幀都讀（rAF 回呼排在 tick 之後）：面板往回找的那一幀，這裡也有同一幀可以比
+    while (state.simSec < to && state.simSec >= from) {
+      await raf();
+      const p = trainPos(tr, state.simSec), base = state.simSec - liveDelaySec(tr);
+      const r0 = trainPosAt(tr, base - 0.5), r1 = trainPosAt(tr, base);
+      out.push({ s: state.simSec, lat: p?.lat, lon: p?.lon, spd: document.getElementById('fpSpd').textContent,
+        raw: r0 && r1 ? haversineKm(r0, r1) / 0.5 * 3600 : null });
+    }
+    state.playing = false;
+    const hold0 = blockHoldSec(tr);
+    for (let k = 0; k < 6; k++) { await raf(); out.push({ paused: true, s: state.simSec, spd: document.getElementById('fpSpd').textContent }); }
+    return { out, holdJump: Math.abs(blockHoldSec(tr) - hold0) };
+  }, run);
+  const live = rows.out.filter(r => !r.paused), paused = rows.out.filter(r => r.paused);
+  const cmp = [];
+  for (let i = 0; i < live.length; i++) {
+    const r = live[i];
+    if (r.s < run.from + 1 || r.lat == null) continue; // 開跑第一秒是撥鐘後的第一幀，面板還沒有前幾幀可比
+    let j = i - 1;
+    while (j >= 0 && r.s - live[j].s < 0.5) j--;
+    if (j < 0 || live[j].lat == null) continue;
+    const map = metres(live[j], r) / 1000 / (r.s - live[j].s) * 3600;
+    cmp.push({ s: r.s, map, raw: r.raw, panel: speedOf(r.spd) });
+  }
+  const bit = cmp.filter(c => c.raw != null && Math.abs(c.raw - c.map) >= 10);
+  check(`${tag} H0 有逐幀樣本、而且 hold 真的讓地圖上的車跟時刻表軸分開（${cmp.length} 幀，差 10 km/h 以上 ${bit.length} 幀）`,
+    cmp.length >= 100 && bit.length >= 30);
+  const off = cmp.filter(c => Math.abs(c.panel - c.map) > 1.5);
+  check(`${tag} H1 每一幀面板時速＝地圖上的車最近 0.5 秒的位移換算（±1.5 km/h）`, off.length === 0,
+    `${off.length} 幀不符，前幾個：${off.slice(0, 4).map(c => `${hms(c.s)} 面板 ${c.panel}／地圖 ${c.map.toFixed(1)}`).join('；')}`);
+  const lastLive = live.at(-1), drift = paused.filter(r => r.spd !== lastLive.spd);
+  check(`${tag} H2 暫停後讀數停在暫停前那一幀（${lastLive.spd}；暫停時 hold 跳了 ${rows.holdJump.toFixed(2)} 秒）`, drift.length === 0,
+    drift.map(r => r.spd).join('；'));
+  const worst = cmp.reduce((a, c) => Math.max(a, Math.abs(c.raw - c.map)), 0);
+  console.log(`  ${tag} ${hms(run.from)}→${hms(run.to)}：${cmp.length} 幀、時刻表軸與地圖最多差 ${worst.toFixed(1)} km/h`);
+}
+
+// 用 updateBlockHolds 本身快轉掃一遍，找 hold 每秒長 0.3 秒以上（地圖上的車明顯慢於時刻表軸）、又不在停站的最長一段
+const findHoldRun = page => page.evaluate(() => {
+  state.playing = false;
+  const trs = new Map(state.trains.map(t => [blockKeyOf(t), t]));
+  for (const [from, to] of [[6.5 * 3600, 9.5 * 3600], [5 * 3600, 6.5 * 3600], [9.5 * 3600, 23.5 * 3600]]) {
+    const prev = new Map(), open = new Map();
+    let best = null;
+    for (let s = from; s <= to; s += 0.5) {
+      state.simSec = s; updateBlockHolds();
+      for (const [k, h] of _blockHold) {
+        const p = prev.get(k); prev.set(k, h);
+        const tr = trs.get(k);
+        const rising = p != null && (h - p) / 0.5 > 0.3 && !dwellInfoOf(tr, effTLive(tr));
+        const o = open.get(k);
+        if (rising) { if (o) o.to = s; else open.set(k, { train: String(tr.train), from: s, to: s }); }
+        else if (o && s - o.to > 2) {
+          open.delete(k);
+          if (!best || o.to - o.from > best.to - best.from) best = o;
+        }
+      }
+      for (const k of [...prev.keys()]) if (!_blockHold.has(k)) { prev.delete(k); }
+    }
+    for (const o of open.values()) if (!best || o.to - o.from > best.to - best.from) best = o;
+    if (best && best.to - best.from >= 20) return best;
+  }
+  return null;
+});
+
 async function journeyLog(page, tag, st) {
   await page.evaluate(sim => {
     state.followEvents = []; state._evSeen = {}; renderFollowEvents();
@@ -236,31 +366,31 @@ async function journeyLog(page, tag, st) {
 
 try {
   for (const mode of [{ name: '實體股道', q: '', physical: true }, { name: '示意線形', q: '&tracks=legacy', physical: false }]) {
-    const { context, page, errors, source } = await openFollow(`train=4172&t=12:09${mode.q}`, mode);
-    const tag = `[4172/${mode.name}]`;
+    const { context, page, errors, source } = await openFollow(`${CASE_QUERY}${mode.q}`, mode);
+    const tag = `[${CASE.train}/${mode.name}]`;
     check(`${tag} G0 位置來源確實是${mode.name}（物理模型 loaded=${source.loaded} covers=${source.covers}）`,
       mode.physical ? source.covers : !source.loaded);
-    const fulong = await stopOf(page, '福隆'), shicheng = await stopOf(page, '石城');
-    const ok = check(`${tag} G0 4172 有福隆、石城兩個 20 秒以上的停靠`,
-      [fulong, shicheng].every(s => s && s.stop !== false && s.dep - s.arr >= 20), JSON.stringify({ fulong, shicheng }));
+    const first = await stopOf(page, CASE.a), second = await stopOf(page, CASE.b);
+    const ok = check(`${tag} G0 頁面上的 ${CASE.train} 有${CASE.a}、${CASE.b}兩個 20 秒以上的停靠`,
+      [first, second].every(s => s && s.stop !== false && s.dep - s.arr >= 20), JSON.stringify({ first, second }));
     if (ok) {
-      await sweepStop(page, `${tag} 福隆`, fulong);
-      await sweepStop(page, `${tag} 石城`, shicheng);
+      await sweepStop(page, `${tag} ${CASE.a}`, first);
+      await sweepStop(page, `${tag} ${CASE.b}`, second);
       if (mode.physical) {
-        await realClock(page, `${tag} 福隆`, fulong);
-        await journeyLog(page, tag, shicheng);
+        await realClock(page, `${tag} ${CASE.a}`, first);
+        await journeyLog(page, tag, second);
       }
     }
     check(`${tag} 頁面沒有例外`, errors.length === 0, errors.slice(0, 3).join(' | '));
     await context.close();
   }
 
-  // 反方向（北上經石城→福隆）挑一班在這段有 20 秒以上停靠的車
-  const scout = await openFollow('train=4172&t=12:09', { physical: false });
-  const pick = await scout.page.evaluate(() => {
+  // 反方向（經 b→a）挑一班在這段有 20 秒以上停靠的車；同一頁順便找被前車擋住的一段
+  const scout = await openFollow(CASE_QUERY, { physical: false });
+  const pick = await scout.page.evaluate(([na, nb]) => {
     for (const tr of state.trains) {
       if (tr.sys !== 'tra_sched' || tr.loop) continue;
-      const a = tr.stops.findIndex(s => s.name === '石城'), b = tr.stops.findIndex(s => s.name === '福隆');
+      const a = tr.stops.findIndex(s => s.name === nb), b = tr.stops.findIndex(s => s.name === na);
       if (a < 1 || b <= a) continue;
       for (const i of [a, b]) {
         const s = tr.stops[i];
@@ -269,15 +399,24 @@ try {
       }
     }
     return null;
-  });
+  }, [CASE.a, CASE.b]);
+  const holdPick = await findHoldRun(scout.page);
   await scout.context.close();
-  if (check('[反方向] G0 找得到一班北上經石城→福隆、在其中一站停 20 秒以上的車', !!pick)) {
-    const hm = Math.floor((pick.arr - 60) / 60);
-    const query = `train=${pick.train}&t=${String(Math.floor(hm / 60)).padStart(2, '0')}:${String(hm % 60).padStart(2, '0')}`;
-    const { context, page, errors, source } = await openFollow(query, { physical: true });
-    const tag = `[${pick.train}/北上/實體股道]`;
+  if (check(`[反方向] G0 找得到一班反方向經${CASE.b}→${CASE.a}、在其中一站停 20 秒以上的車`, !!pick)) {
+    const { context, page, errors, source } = await openFollow(clockQuery(pick.train, pick.arr - 60), { physical: true });
+    const tag = `[${pick.train}/反方向/實體股道]`;
     check(`${tag} G0 位置來源確實是實體股道`, source.covers);
     await sweepStop(page, `${tag} ${pick.name}`, await stopOf(page, pick.name));
+    check(`${tag} 頁面沒有例外`, errors.length === 0, errors.slice(0, 3).join(' | '));
+    await context.close();
+  }
+
+  if (check('[被前車擋住] G0 班表裡找得到一段 hold 連續長 20 秒以上、又不在停站的車', !!holdPick, '')) {
+    const from = holdPick.from - 10, to = Math.min(holdPick.to, holdPick.from + 60) + 10;
+    const { context, page, errors, source } = await openFollow(clockQuery(holdPick.train, from - 60), { physical: true });
+    const tag = `[${holdPick.train}/被前車擋住/實體股道]`;
+    check(`${tag} G0 位置來源確實是實體股道`, source.covers);
+    await holdRun(page, tag, { from, to, mult: 5 });
     check(`${tag} 頁面沒有例外`, errors.length === 0, errors.slice(0, 3).join(' | '));
     await context.close();
   }
