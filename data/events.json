@@ -1,6 +1,56 @@
 {
-  "updated": "2026-10-03",
+  "updated": "2026-10-15",
   "events": [
+    {
+      "id": "tra-20261013-tainan-underground-switch",
+      "source": "official",
+      "title": "臺南地下化永久軌切換，部分列車停駛",
+      "note": "10/16 晚上 10 點到隔天清晨 6 點，永康到保安一帶 18 列次停駛或截短，改公路接駁",
+      "start": "2026-10-16",
+      "end": "2026-10-17",
+      "anchor": { "kind": "station", "sys": "tra_sched", "name": "臺南" },
+      "url": "https://www.railway.gov.tw/tra-tip-web/tip/tip009/tip911/newsDtl?newsNo=8ae4cac3a12c590d01a133ded9e8164c&page=0"
+    },
+    {
+      "id": "tra-20261013-tainan-last-night",
+      "source": "official",
+      "title": "最後一夜．永遠臺南",
+      "note": "臺南車站地上月台告別活動，晚上 9 點開始，145 次自強號 22:29 最後駛離",
+      "start": "2026-10-16",
+      "end": "2026-10-16",
+      "anchor": { "kind": "station", "sys": "tra_sched", "name": "臺南" },
+      "url": "https://www.railway.gov.tw/tra-tip-web/tip/tip009/tip911/newsDtl?newsNo=8ae4cac3a12c590d01a1349a61941815&page=0"
+    },
+    {
+      "id": "tra-20261012-exam-1109",
+      "source": "official",
+      "title": "11/9 升資考試，部分列車停駛",
+      "note": "對號列車 12 列次全區間停駛，另有 53 列區間車停駛、18 列調整區間，集集線改公路接駁",
+      "start": "2026-11-09",
+      "end": "2026-11-09",
+      "anchor": { "kind": "system", "sys": "tra_sched" },
+      "url": "https://www.railway.gov.tw/tra-tip-web/tip/tip009/tip911/newsDtl?newsNo=8ae4cac3a12c590d01a13011e18a09f4&page=0"
+    },
+    {
+      "id": "thsr-20261014-extra-1016",
+      "source": "official",
+      "title": "高鐵 10/16 晚間增開 2 班",
+      "note": "1555、1559 次南港開往台中，標準車廂全自由座",
+      "start": "2026-10-16",
+      "end": "2026-10-16",
+      "anchor": { "kind": "system", "sys": "thsr_sched" },
+      "url": "https://www.thsrc.com.tw/ArticleContent/2aabe3f3-4577-40ea-a9af-c59239ee37d9"
+    },
+    {
+      "id": "trtc-20261012-kidspark-halloween",
+      "source": "official",
+      "title": "兒童新樂園第十屆萬聖嘉年華",
+      "note": "變裝免費入園，兩天上午 9 點開始，下午 4 點半抽獎；從劍潭站轉公車前往",
+      "start": "2026-10-25",
+      "end": "2026-10-26",
+      "anchor": { "kind": "station", "sys": "mrt", "name": "劍潭" },
+      "url": "https://www.metro.taipei/News_Content.aspx?n=30CCEFD2A45592BF&sms=72544237BBE4C5F6&s=81B1D3CBBE80DC4E"
+    },
     {
       "id": "trtc-20261002-xinzhongshan-halloween",
       "source": "official",
@@ -52,26 +102,6 @@
       "url": "https://www.metro.taipei/News_Content.aspx?n=30CCEFD2A45592BF&sms=72544237BBE4C5F6&s=681B26EB737DAB11"
     },
     {
-      "id": "trtc-20260811-pokemon10",
-      "source": "official",
-      "title": "Pokémon GO 10 週年特展",
-      "note": "站內陽光大廳",
-      "start": "2026-08-15",
-      "end": "2026-09-13",
-      "anchor": { "kind": "station", "sys": "mrt", "name": "大安森林公園" },
-      "url": "https://pokemongo.com/zh-Hant/news/2026daanpark"
-    },
-    {
-      "id": "afr-20260819-starry-train",
-      "source": "official",
-      "title": "林鐵星空列車觀星趣",
-      "note": "夜間林鐵開上祝山，在小笠原平台看夏季星空，8/28 上午 10 點開放網路訂票",
-      "start": "2026-09-13",
-      "end": "2026-09-14",
-      "anchor": { "kind": "station", "sys": "afr_sched", "name": "嘉義" },
-      "url": "https://afrch.forest.gov.tw/AllNews/0079019"
-    },
-    {
       "id": "tymc-20260826-indigenous-passset",
       "source": "official",
       "title": "桃捷原民精裝套票冊",
@@ -83,46 +113,6 @@
       "url": "https://www.tymetro.com.tw/tymetro-new/tw/_pages/news/show-2411-1.html"
     },
     {
-      "id": "trtc-20260827-guangci-market-0905",
-      "source": "official",
-      "title": "廣慈/奉天宮站通車限定市集",
-      "note": "1 號出口 B1 連通道層的輕食與文創手作攤位，14 時到 20 時",
-      "start": "2026-09-05",
-      "end": "2026-09-05",
-      "anchor": { "kind": "station", "sys": "mrt", "name": "廣慈/奉天宮" },
-      "url": "https://www.metro.taipei/News_Content.aspx?n=30CCEFD2A45592BF&sms=72544237BBE4C5F6&s=CB42925269CE131D"
-    },
-    {
-      "id": "trtc-20260827-guangci-market-0906",
-      "source": "official",
-      "title": "廣慈/奉天宮站通車限定市集",
-      "note": "1 號出口 B1 連通道層的輕食與文創手作攤位，14 時到 20 時",
-      "start": "2026-09-06",
-      "end": "2026-09-06",
-      "anchor": { "kind": "station", "sys": "mrt", "name": "廣慈/奉天宮" },
-      "url": "https://www.metro.taipei/News_Content.aspx?n=30CCEFD2A45592BF&sms=72544237BBE4C5F6&s=CB42925269CE131D"
-    },
-    {
-      "id": "trtc-20260829-guangci-concert-0905",
-      "source": "official",
-      "title": "廣慈/奉天宮站通車音樂會",
-      "note": "站內大廳公共藝術區，14 時 15 分起，臺灣拉丁重擊樂團；特別嘉賓臺北市名聲樂團",
-      "start": "2026-09-05",
-      "end": "2026-09-05",
-      "anchor": { "kind": "station", "sys": "mrt", "name": "廣慈/奉天宮" },
-      "url": "https://www.metro.taipei/News_Content.aspx?n=30CCEFD2A45592BF&sms=72544237BBE4C5F6&s=196975BB815C087E"
-    },
-    {
-      "id": "trtc-20260829-guangci-concert-0912",
-      "source": "official",
-      "title": "廣慈/奉天宮站通車音樂會",
-      "note": "站內大廳公共藝術區，14 時 15 分起，凱爵 Kai Jazz 紐奧良爵士；特別嘉賓臺北市名聲樂團",
-      "start": "2026-09-12",
-      "end": "2026-09-12",
-      "anchor": { "kind": "station", "sys": "mrt", "name": "廣慈/奉天宮" },
-      "url": "https://www.metro.taipei/News_Content.aspx?n=30CCEFD2A45592BF&sms=72544237BBE4C5F6&s=196975BB815C087E"
-    },
-    {
       "id": "trtc-20260829-guangci-concert-0919",
       "source": "official",
       "title": "廣慈/奉天宮站通車音樂會",
@@ -131,26 +121,6 @@
       "end": "2026-09-19",
       "anchor": { "kind": "station", "sys": "mrt", "name": "廣慈/奉天宮" },
       "url": "https://www.metro.taipei/News_Content.aspx?n=30CCEFD2A45592BF&sms=72544237BBE4C5F6&s=196975BB815C087E"
-    },
-    {
-      "id": "trtc-20260828-nakasi-0905",
-      "source": "official",
-      "title": "捷運那卡西－潮．月琴",
-      "note": "「北投-新北投」列車上現場彈唱，14 時至 16 時；月琴民謠與跨界演出",
-      "start": "2026-09-05",
-      "end": "2026-09-05",
-      "anchor": { "kind": "station", "sys": "mrt", "name": "新北投" },
-      "url": "https://www.metro.taipei/News_Content.aspx?n=30CCEFD2A45592BF&sms=72544237BBE4C5F6&s=723174E51435D719"
-    },
-    {
-      "id": "trtc-20260828-nakasi-0906",
-      "source": "official",
-      "title": "捷運那卡西－潮．月琴",
-      "note": "「北投-新北投」列車上現場彈唱，14 時至 16 時；月琴民謠與跨界演出",
-      "start": "2026-09-06",
-      "end": "2026-09-06",
-      "anchor": { "kind": "station", "sys": "mrt", "name": "新北投" },
-      "url": "https://www.metro.taipei/News_Content.aspx?n=30CCEFD2A45592BF&sms=72544237BBE4C5F6&s=723174E51435D719"
     },
     {
       "id": "afr-20260901-guaiguai-beimen",
@@ -173,26 +143,6 @@
       "endGuess": true,
       "anchor": { "kind": "station", "sys": "afr_sched", "name": "阿里山" },
       "url": "https://afrch.forest.gov.tw/AllNews/0079128"
-    },
-    {
-      "id": "trtc-20260902-cpr-0905",
-      "source": "official",
-      "title": "閃電CPR挑戰",
-      "note": "12 時至 18 時在站內充電區體驗 CPR 與 AED，完成任務可玩線上小遊戲",
-      "start": "2026-09-05",
-      "end": "2026-09-05",
-      "anchor": { "kind": "station", "sys": "mrt", "name": "中山" },
-      "url": "https://www.metro.taipei/News_Content.aspx?n=30CCEFD2A45592BF&sms=72544237BBE4C5F6&s=C413B5C4CF0BBB21"
-    },
-    {
-      "id": "trtc-20260902-cpr-0912",
-      "source": "official",
-      "title": "閃電CPR挑戰",
-      "note": "12 時至 18 時在月臺體驗 CPR 與 AED，完成任務可玩線上小遊戲",
-      "start": "2026-09-12",
-      "end": "2026-09-12",
-      "anchor": { "kind": "station", "sys": "mrt", "name": "忠孝新生" },
-      "url": "https://www.metro.taipei/News_Content.aspx?n=30CCEFD2A45592BF&sms=72544237BBE4C5F6&s=C413B5C4CF0BBB21"
     },
     {
       "id": "trtc-20260902-cpr-0919",
@@ -273,16 +223,6 @@
       "end": "2026-12-31",
       "anchor": { "kind": "system", "sys": "mrt" },
       "url": "https://www.metro.taipei/News_Content.aspx?n=30CCEFD2A45592BF&sms=72544237BBE4C5F6&s=267CEA86CE2AB5C2"
-    },
-    {
-      "id": "trtc-20260910-kidsmovie-dahu",
-      "source": "official",
-      "title": "假日親子電影院：大湖公園場",
-      "note": "下午有特展與闖關，傍晚露天放《鞋貓劍客2》",
-      "start": "2026-09-12",
-      "end": "2026-09-12",
-      "anchor": { "kind": "station", "sys": "mrt", "name": "大湖公園" },
-      "url": "https://www.metro.taipei/News_Content.aspx?n=30CCEFD2A45592BF&sms=72544237BBE4C5F6&s=A2C11A764A640D3D"
     },
     {
       "id": "trtc-20260910-kidsmovie-daan",
