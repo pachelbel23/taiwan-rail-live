@@ -41,7 +41,10 @@ import hashlib
 import json
 import pathlib
 import re
+import socket
 import sys
+import time
+import urllib.error
 import urllib.request
 
 from fetch_tra import PENDING_STATIONS, _norm  # 待通車站名與站名正規化只准一份，在 fetch_tra.py
@@ -172,10 +175,22 @@ def classify_carclass(car_class, unknown_codes_seen):
     return OTHER_TYPENAME, OTHER_COLOR
 
 
-def http_get(url):
+def http_get(url, attempts=4):
+    # ODS 偶發 TLS 握手逾時（2026-10-16 一晚連兩次，分別死在第 1 天與第 10 天），
+    # 一次逾時就讓 14 天重抓整條作廢 ⇒ 只對連線類錯誤重試；HTTP 4xx/5xx 照舊直接拋。
     req = urllib.request.Request(url, headers={"User-Agent": UA})
-    with urllib.request.urlopen(req, timeout=60) as resp:
-        return resp.read()
+    for i in range(attempts):
+        try:
+            with urllib.request.urlopen(req, timeout=60) as resp:
+                return resp.read()
+        except urllib.error.HTTPError:
+            raise
+        except (urllib.error.URLError, socket.timeout, ConnectionError) as e:
+            if i == attempts - 1:
+                raise
+            wait = 10 * (i + 1)
+            print(f"  ⟳ {url} 連線失敗（{e}），{wait} 秒後重試（{i + 2}/{attempts}）", file=sys.stderr)
+            time.sleep(wait)
 
 
 def parse_list_page(list_html):
