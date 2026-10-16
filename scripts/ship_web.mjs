@@ -314,6 +314,9 @@ try {
   const guangci = spawnSync('node', [path.join(wt, 'scripts', 'verify_guangci_tracks.mjs')], { cwd:wt, encoding:'utf8' });
   process.stdout.write(guangci.stdout || ''); process.stderr.write(guangci.stderr || '');
   if (guangci.status !== 0) fail('廣慈延伸段雙軌連通性或來源座標未通過');
+  const tainanUnderground = spawnSync('node', [path.join(wt, 'scripts', 'verify_tainan_underground.mjs')], { cwd:wt, encoding:'utf8' });
+  process.stdout.write(tainanUnderground.stdout || ''); process.stderr.write(tainanUnderground.stderr || '');
+  if (tainanUnderground.status !== 0) fail('臺南地下化的層位、停車股道或 2D 畫線未通過（單獨重跑：node scripts/verify_tainan_underground.mjs）');
   const formations = spawnSync('node', [path.join(wt, 'scripts', 'verify_formations.mjs')], { cwd:wt, encoding:'utf8' });
   process.stdout.write(formations.stdout || ''); process.stderr.write(formations.stderr || '');
   if (formations.status !== 0) fail('列車編組節數未通過——有車種的實際編組退回 3 節示意（單獨重跑：npm run check-formations）');

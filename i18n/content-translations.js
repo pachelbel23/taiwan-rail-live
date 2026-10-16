@@ -3764,3 +3764,11 @@ Object.assign(window.RAIL_I18N_MESSAGES.en, {
 Object.assign(window.RAIL_I18N_MESSAGES.ja, {
   '修正跟車小卡在列車還停在月台時，時速就往上跳、提早 3 秒寫「行進中」': '追跡カードで、列車がまだホームに停車しているのに速度が上がり始め、発車の3秒前に「走行中」と表示される問題を修正しました',
 });
+
+// 2026-10-17 臺南鐵路地下化第一階段通車（v1017a）。
+Object.assign(window.RAIL_I18N_MESSAGES.en, {
+  '臺南鐵路地下化 10/17 通車：大橋到保安改走地下，臺南站改停地下 4 股，平面與立體地圖的軌道都跟著換': 'Tainan’s underground railway opened on 10/17: trains between Daqiao and Bao’an now run underground and stop on Tainan Station’s 4 underground tracks, on both the 2D and 3D maps',
+});
+Object.assign(window.RAIL_I18N_MESSAGES.ja, {
+  '臺南鐵路地下化 10/17 通車：大橋到保安改走地下，臺南站改停地下 4 股，平面與立體地圖的軌道都跟著換': '台南の鉄道地下化区間が10/17に開業しました。大橋〜保安間は地下を走り、台南駅では地下ホームの4線に停車します。平面地図と立体地図の線路も切り替えました',
+});

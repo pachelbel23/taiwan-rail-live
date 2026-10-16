@@ -5622,7 +5622,7 @@
 
   <footer class="site-foot">
     <details class="foot-box">
-      <summary><span>更新紀錄</span><span class="foot-sub">最後更新：2026/10/14</span></summary>
+      <summary><span>更新紀錄</span><span class="foot-sub">最後更新：2026/10/17</span></summary>
       <!-- 第一層是「最近更新」的檢視,不是正本:每一條都用 data-cl-of 指向第二層某條的 data-cl。
            要把一條擠出第一層之前,它的正本必須已經在第二層存在——2026-08-03 就踩過一次:8/1 的
            衛星計費那條只活在第一層(第二層只有一句夾在 7/25 條目裡、日期對不上的附帶說明),
@@ -5630,6 +5630,7 @@
            內容 li 上限 8 條(li.grp 是標題不算)。 -->
       <ul class="foot-list foot-recent">
         <li class="grp">最近更新</li>
+        <li data-cl-of="tainanug1017"><span class="d">10/17</span><span>臺南鐵路地下化 10/17 通車：大橋到保安改走地下，臺南站改停地下 4 股，平面與立體地圖的軌道都跟著換</span></li>
         <li data-cl-of="followspeed1014"><span class="d">10/14</span><span>修正跟車小卡在列車還停在月台時，時速就往上跳、提早 3 秒寫「行進中」</span></li>
         <li data-cl-of="overtakeretime1011"><span class="d">10/11</span><span>修正台鐵同向列車預排待避時，等待的車有時白等好幾分鐘、有時後車才剛通過就開出；現在都在後車通過 30 秒後才出發</span></li>
         <li data-cl-of="trtcg1011"><span class="d">10/11</span><span>北捷松山新店線時刻表更新為官方最新版本</span></li>
@@ -5637,7 +5638,6 @@
         <li data-cl-of="klrtloop1009"><span class="d">10/9</span><span>修正高雄輕軌籬仔內與輕軌機廠站之間的列車跳站、卡住問題，順逆行都會沿軌道連續通過</span></li>
         <li data-cl-of="krtcsat1011"><span class="d">10/9</span><span>高捷 10/11（週日）照官方公告改跑週六時刻表</span></li>
         <li data-cl-of="closezoom1008"><span class="d">10/8</span><span>修正立體地圖拉到很近時，地下路段的列車整列消失；鏡頭對準車頭或車尾時，整列車也不會再突然不見</span></li>
-        <li data-cl-of="nationalday1007"><span class="d">10/7</span><span>更新台鐵國慶連假班表，補上南迴與西部追加班次；App 連網重新開啟也能取得新班表</span></li>
       </ul>
       <!-- 第二層:完整歷史。刻意不掛 .foot-box 類名——placeFootBoxes() 用
            `.site-foot .foot-box` 搬移面板,巢狀同名會被當成另一個盒子一起搬走。 -->
@@ -5645,6 +5645,7 @@
         <summary>完整更新歷史（依主題分類）</summary>
         <ul class="foot-list">
         <li class="grp">路網與車站</li>
+        <li data-cl="tainanug1017"><span class="d">10/17</span><span>臺南鐵路地下化第一階段 10/17 通車：大橋到保安的列車改走地下，臺南站改停地下兩座島式月台的 4 股軌道；平面與立體地圖的路線、軌道和列車都換成地下，停用的地面線與沿線 8 處平交道一併拿掉。林森、南臺南兩站尚未啟用，列車不停</span></li>
         <li data-cl="overtakeretime1011"><span class="d">10/11</span><span>修正台鐵同向列車預排待避時，等待的車有時白等好幾分鐘、有時後車才剛通過就開出；現在都在後車通過 30 秒後才出發</span></li>
         <li data-cl="trtcg1011"><span class="d">10/11</span><span>北捷松山新店線時刻表更新為官方最新版本</span></li>
         <li data-cl="afrtiming1009"><span class="d">10/9</span><span>林鐵列車恢復依班表準時出發與到站，途中依路線長度調整速度，站內往返車次也會連續銜接</span></li>
@@ -6997,7 +6998,8 @@ const RAIL_3D_BOOT_PARAMS = new URLSearchParams(location.search);
 // v1007a：台鐵待避（超越車通過或後到先開）改成超越車走較直的正線、待避車停較彎的側線（派車由 repair_tra_overtake_tracks 修，閘門 verify_tra_overtake_tracks）。
 // v1009a：高捷 10/11（週日）照官網公告改跑週六時刻表——special_ops 新增 use（例外日整天指向既有日型，不複製班表）。
 // v1014a：跟車小卡時速改讀地圖已畫出的位移（往回看），停靠判準與 Live Activity 共用 followDwellOf、發車那一刻才離站（閘門 verify_follow_speed_dwell）。
-const BUILD = 'v1014a';
+// v1017a：臺南鐵路地下化第一階段（10/17 通車）——大橋–保安實體股道換成 OSM 地下 4 股＋坡道、層位 −1、縱貫線南段 2D 畫線改走地下（閘門 verify_tainan_underground）。
+const BUILD = 'v1017a';
 const LANDSCAPE_REQUESTED = new URLSearchParams(location.search).get('map') === 'landscape';
 const GARAGE_QUERY = new URLSearchParams(location.search).get('garage');
 // 輕量多語 runtime：繁中原文同時是安全 fallback，外語字典只存差異字串。
