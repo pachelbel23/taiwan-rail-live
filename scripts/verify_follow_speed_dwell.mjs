@@ -357,13 +357,19 @@ async function holdRun(page, tag, run) {
   console.log(`  ${tag} ${hms(run.from)}→${hms(run.to)} ${run.mult}×：${cmp.length} 幀、時刻表軸與地圖最多差 ${worst.toFixed(1)} km/h`);
 }
 
-// 用 updateBlockHolds 本身快轉掃一遍，找 hold 每秒長 0.3 秒以上（地圖上的車明顯慢於時刻表軸）、又不在停站的最長一段
-const findHoldRun = page => page.evaluate(() => {
+// 用 updateBlockHolds 本身快轉掃一遍，找 hold 每秒長 0.3 秒以上（地圖上的車明顯慢於時刻表軸）、又不在停站、連續 20 秒以上的段落。
+// 掃到的段落不一定在實跑頁重現：hold 會帶歷史（前車被擋過、棘輪、跨幀 latch），而且同一段時間換一頁跟別的車，結果也可能不同
+// （2026-10-16 換班表後挑到 6566 次 09:00：掃樣本那頁它被擋 6 分多鐘，跟 6566 的頁從同一起點以同一步長重播，hold 恆為 0，H0 因此恆紅）。
+// 所以每個掃描窗都從清空的狀態起掃、回傳起掃點與多個候選，再到實跑頁用 replayHolds 重播、holdRisesOn 確認真的會被擋才拿來考。
+const RESET_HOLDS = `for (const m of [_blockHold, _blockCapped, _blockGap, _blockPrevD, _blockSide, _blockSideSign,
+  _blockSideRole, _blockSideEase, _blockSideLatch]) m.clear(); _blockSim = null;`;
+const findHoldRuns = page => page.evaluate(reset => {
   state.playing = false;
   const trs = new Map(state.trains.map(t => [blockKeyOf(t), t]));
+  const out = [];
   for (const [from, to] of [[6.5 * 3600, 9.5 * 3600], [5 * 3600, 6.5 * 3600], [9.5 * 3600, 23.5 * 3600]]) {
-    const prev = new Map(), open = new Map();
-    let best = null;
+    (0, eval)(reset);
+    const prev = new Map(), open = new Map(), runs = [];
     for (let s = from; s <= to; s += 0.5) {
       state.simSec = s; updateBlockHolds();
       for (const [k, h] of _blockHold) {
@@ -372,18 +378,33 @@ const findHoldRun = page => page.evaluate(() => {
         const rising = p != null && (h - p) / 0.5 > 0.3 && !dwellInfoOf(tr, effTLive(tr));
         const o = open.get(k);
         if (rising) { if (o) o.to = s; else open.set(k, { train: String(tr.train), from: s, to: s }); }
-        else if (o && s - o.to > 2) {
-          open.delete(k);
-          if (!best || o.to - o.from > best.to - best.from) best = o;
-        }
+        else if (o && s - o.to > 2) { open.delete(k); runs.push(o); }
       }
       for (const k of [...prev.keys()]) if (!_blockHold.has(k)) { prev.delete(k); }
     }
-    for (const o of open.values()) if (!best || o.to - o.from > best.to - best.from) best = o;
-    if (best && best.to - best.from >= 20) return best;
+    runs.push(...open.values());
+    out.push(...runs.filter(o => o.to - o.from >= 20).sort((x, y) => (y.to - y.from) - (x.to - x.from)).map(o => ({ ...o, scanFrom: from })));
   }
-  return null;
-});
+  return out;
+}, RESET_HOLDS);
+// 從起掃點以同一步長重播到 until，讓實跑頁的 hold 狀態與掃描時同一條歷史
+const replayHolds = (page, scanFrom, until) => page.evaluate(([reset, from, to]) => {
+  state.playing = false;
+  (0, eval)(reset);
+  for (let s = from; s < to; s += 0.5) { state.simSec = s; updateBlockHolds(); }
+}, [RESET_HOLDS, scanFrom, until]);
+// 在這一頁（跟的就是這班車）從 from 推到 to，回傳跟的車 hold 每秒長 0.3 秒以上的累計秒數
+const holdRisesOn = (page, from, to) => page.evaluate(([from, to]) => {
+  const tr = state.followTrain;
+  let prev = blockHoldSec(tr), rising = 0;
+  for (let s = from + 0.5; s <= to; s += 0.5) {
+    state.simSec = s; updateBlockHolds();
+    const h = blockHoldSec(tr);
+    if ((h - prev) / 0.5 > 0.3 && !dwellInfoOf(tr, effTLive(tr))) rising += 0.5;
+    prev = h;
+  }
+  return rising;
+}, [from, to]);
 
 async function journeyLog(page, tag, st) {
   await page.evaluate(sim => {
@@ -432,8 +453,23 @@ try {
     }
     return null;
   }, [CASE.a, CASE.b]);
-  const holdPick = await findHoldRun(scout.page);
   await scout.context.close();
+  // 被前車擋住的樣本在實體股道頁上找（實跑走實體股道，兩種幾何的擋車判定不同），再逐一到實跑頁確認
+  const holdScout = await openFollow(CASE_QUERY, { physical: true });
+  const holdCands = holdScout.source.covers ? await findHoldRuns(holdScout.page) : [];
+  await holdScout.context.close();
+  let holdPick = null, holdOpen = null;
+  const tried = [];
+  for (const c of holdCands.filter((c, i, a) => a.findIndex(x => x.train === c.train) === i).slice(0, 4)) {
+    const from = c.from - 10, to = Math.min(c.to, c.from + 60) + 10;
+    const o = await openFollow(clockQuery(c.train, from - 60), { physical: true });
+    let rises = 0;
+    if (o.source.covers) { await replayHolds(o.page, c.scanFrom, from); rises = await holdRisesOn(o.page, from, to); }
+    tried.push(`${c.train}@${hms(c.from)} ${rises}s`);
+    if (rises >= 20) { holdPick = c; holdOpen = o; break; }
+    await o.context.close();
+  }
+  console.log(`  被前車擋住的樣本：候選 ${holdCands.length} 段，試過 ${tried.join('、') || '（無）'}`);
   if (check(`[反方向] G0 找得到一班反方向經${CASE.b}→${CASE.a}、在其中一站停 20 秒以上的車`, !!pick)) {
     const { context, page, errors, source } = await openFollow(clockQuery(pick.train, pick.arr - 60), { physical: true });
     const tag = `[${pick.train}/反方向/實體股道]`;
@@ -443,13 +479,16 @@ try {
     await context.close();
   }
 
-  if (check('[被前車擋住] G0 班表裡找得到一段 hold 連續長 20 秒以上、又不在停站的車', !!holdPick, '')) {
+  if (check('[被前車擋住] G0 班表裡找得到一段 hold 連續長 20 秒以上、又不在停站的車，而且在跟那班車的頁上重現', !!holdPick,
+    `候選 ${holdCands.length} 段；試過 ${tried.join('、') || '（無）'}`)) {
     const from = holdPick.from - 10, to = Math.min(holdPick.to, holdPick.from + 60) + 10;
-    const { context, page, errors, source } = await openFollow(clockQuery(holdPick.train, from - 60), { physical: true });
+    const { context, page, errors, source } = holdOpen;
     const tag = `[${holdPick.train}/被前車擋住/實體股道]`;
     check(`${tag} G0 位置來源確實是實體股道`, source.covers);
+    await replayHolds(page, holdPick.scanFrom, from);
     await holdRun(page, tag, { from, to, mult: 5, pause: true, minFrames: 100, minBit: 30 });
     // 高倍率一幀推進 2 模擬秒以上（手機省電跟車約 30 fps、開 60× 就是一幀 2 秒）：面板仍要找得到前一幀
+    await replayHolds(page, holdPick.scanFrom, from); // 上一輪跑完再撥回 from 是倒轉，hold 會直接對齊、歷史就沒了
     await holdRun(page, `${tag}[高倍率]`, { from, to, mult: 150, pause: false, minFrames: 15, minBit: 5, minStep: 2 });
     check(`${tag} 頁面沒有例外`, errors.length === 0, errors.slice(0, 3).join(' | '));
     await context.close();
