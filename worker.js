@@ -7876,8 +7876,18 @@ async function ingestThsrSchedule(env) {
   let token = null;
   for (let i = 0; i < wanted.length; i++) {
     const dateIso = wanted[i];
+    if (!token) {
+      // 取不到 token 就整窗停手:剩下幾天在同一秒重取,碰到的是同一個限流窗(2026-10-14~10-17 那發
+      // 同一秒 8 個 429),只會多吃共用出口 IP 的額度。剩下的日子照樣記成失敗,results 每天都有一格。
+      try { token = await getToken(env); }
+      catch (e) {
+        const error = String((e && e.message) || e);
+        for (const d of wanted.slice(i)) results[d] = { ok: false, error };
+        console.warn(`[cron thsr-sched] 取 token 失敗,${wanted.slice(i).join(',')} 都不抓了,保留既有值:`, error);
+        break;
+      }
+    }
     try {
-      if (!token) token = await getToken(env);
       // TDX 金鑰與即時代理共用,上限 5 req/s。逐日之間隔 250ms(同 ingestDelayHistory 的 sleep 慣例,
       // 只是這支端點輕得多所以不必到 2 秒);整窗 7 天約 1.5 秒,遠在 cron 預算內。
       if (i > 0) await sleep(250);
@@ -7928,9 +7938,10 @@ const THSR_HEAL_FROM_HOUR = 5;   // 台北 05:00 起才檢查(高鐵首班約 06
 // 2026-10-14~10-17 那發連四天在取 token 就吃 429(同 delaySelfHeal 上方記的 09-08~09-12 那型),
 // blob 停在 10-13 抓的那份,上面那條要等窗用完才會動,這段期間官方的加開、停駛、改點都進不來;
 // 同幾天 09:37 那發台鐵誤點自癒每天都取得到 token。所以在固定時刻多問一句「blob 台北今天更新過沒」,
-// 沒有就重抓整個窗。固定清單的理由同 DELAY_HEAL_SLOTS:上游持續失敗時一天最多重抓 5 發(每發最多
-// 7 次 DailyTimetable;取 token 失敗時每天各重取一次,最多 7 次 token 請求)。與 DELAY_HEAL_SLOTS
-// 錯開 10 分鐘:兩邊都要取 token、都要整包重建 blob,落在同一發 invocation 會把記憶體峰值疊在一起。
+// 沒有就重抓整個窗。固定清單的理由同 DELAY_HEAL_SLOTS:上游持續失敗時,這條路一天最多重抓 5 發
+// (每發最多 7 次 DailyTimetable;取 token 失敗就整窗停手,只花 1 次 token 請求)。這個上限只管
+// 「今天的日鍵還在」的期間,窗用完之後是上面那條每 5 分鐘補抓。與 DELAY_HEAL_SLOTS 錯開 10 分鐘,
+// 不讓兩邊在同一發 invocation 一起取 token、一起整包重建 blob。
 // 每日那發成功的日子,每個時刻只是同一句查詢多讀一欄,零 TDX。
 const THSR_REFRESH_SLOTS = [9 * 60 + 47, 10 * 60 + 47, 12 * 60 + 47, 15 * 60 + 47, 19 * 60 + 47];
 async function thsrSelfHeal(event, env) {

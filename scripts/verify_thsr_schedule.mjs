@@ -554,10 +554,14 @@ try {
 //   V8 自我檢查:有今天→零上游呼叫;缺今天→補抓且今天真的補上;不到週期/太早→連 D1 都不碰
 async function runWindowAndSelfHeal() {
   const hits = [];             // server 記帳:實際被要求了哪些日期(判準的獨立來源)
+  const authHits = [];         // 同上,記 token 端點被打了幾次
   let failAll = false;
+  let tokenFail = false;       // token 端點回 429:2026-10-14~10-17 每日那發真正的失敗型態
   const server = createServer((req, res) => {
     const url = new URL(req.url, 'http://x');
     if (url.pathname === '/auth/token') {
+      authHits.push(Date.now());
+      if (tokenFail) { res.statusCode = 429; return res.end('{"message":"API rate limit exceeded"}'); }
       res.setHeader('content-type', 'application/json');
       return res.end(JSON.stringify({ access_token: 'v7-token', expires_in: 86400 }));
     }
@@ -762,6 +766,17 @@ async function runWindowAndSelfHeal() {
           `trains=${blob.days[todayKey] && blob.days[todayKey].trains.length}`);
       }
 
+      // V10a2 日界線另一側:updated 是 UTC 昨天 15:59:59＝台北昨天 23:59:59 → 仍是昨天,要重抓。
+      // 和 V10b2 一起夾住台北午夜,時差寫錯(例如 +9 小時)時至少紅一格。scheduledTime 刻意帶 54 秒:
+      // 判斷只能看分鐘。
+      {
+        hits.length = 0; failAll = false;
+        const DELAY_DB = await seedDb(`${yIso} 15:59:59`);
+        const r = await thsrSelfHeal({ scheduledTime: atMinute(slot0) + 54e3 }, { ...envBase, DELAY_DB });
+        ok('V10a2 台北昨天 23:59:59 更新(UTC 15:59:59)→仍算昨天,重抓時刻重抓',
+          hits.length === KEEP_WINDOW, `hits=${hits.length} r=${JSON.stringify(r)}`);
+      }
+
       // V10b 每日 cron 成功的日子:今天已更新 → 重抓時刻零上游呼叫,D1 那列不變
       {
         hits.length = 0; failAll = false;
@@ -812,6 +827,42 @@ async function runWindowAndSelfHeal() {
           `fired=${JSON.stringify(fired.map(fmt))} slots=${JSON.stringify(slots.map(fmt))}`);
         ok(`V10d 整天上游請求數＝5×${KEEP_WINDOW}`, hits.length === 5 * KEEP_WINDOW, `hits=${hits.length}`);
         failAll = false;
+      }
+
+      // V10e 事故真正的失敗型態:token 端點回 429。取不到 token 就整窗停手——一發只打 1 次 token、
+      // 0 次 DailyTimetable,不拋例外、不寫;整天只在 5 個重抓時刻各打 1 次 token。
+      // token 快取在 worker.js 的模組層(tok),前面幾組已經存了一把;另 import 一份模組實例才會真的去要。
+      {
+        const { _thsr: freshThsr } = await import(new URL('../worker.js?v10e-empty-token-cache', import.meta.url).href);
+        tokenFail = true;
+        try {
+          hits.length = 0; authHits.length = 0;
+          const DELAY_DB = await seedDb(staleUpdated);
+          let threw = null, r = null;
+          try { r = await freshThsr.thsrSelfHeal({ scheduledTime: atMinute(slot0) }, { ...envBase, DELAY_DB }); } catch (e) { threw = e; }
+          ok('V10e token 429→不拋例外,只打 1 次 token、0 次 DailyTimetable',
+            !threw && authHits.length === 1 && hits.length === 0,
+            `threw=${threw && threw.message} token=${authHits.length} hits=${hits.length} r=${JSON.stringify(r)}`);
+          const row = await readRow(DELAY_DB);
+          ok('V10e token 429→blob 與 updated 都不變', row.v === seedBlob && row.updated === staleUpdated, `updated=${row.updated}`);
+          const rt = await freshThsr.ingestThsrSchedule({ ...envBase, DELAY_DB });
+          ok(`V10e token 429→ingest 回報 ${KEEP_WINDOW} 天都失敗(停手後剩下的日子也有一格)、未寫入`,
+            rt.written === false && Object.keys(rt.results).length === KEEP_WINDOW && Object.values(rt.results).every(x => !x.ok && /429/.test(x.error)),
+            JSON.stringify(rt.results));
+
+          hits.length = 0; authHits.length = 0;
+          const fired = [];
+          for (let m = 0; m < 24 * 60; m++) {
+            const before = authHits.length;
+            await freshThsr.thsrSelfHeal({ scheduledTime: atMinute(m) }, { ...envBase, DELAY_DB });
+            if (authHits.length > before) fired.push(m);
+          }
+          ok('V10e token 整天 429→只在 5 個重抓時刻各打 1 次 token',
+            authHits.length === 5 && JSON.stringify(fired) === JSON.stringify([...slots].sort((a, b) => a - b)) && hits.length === 0,
+            `token=${authHits.length} hits=${hits.length} fired=${JSON.stringify(fired.map(fmt))}`);
+        } finally {
+          tokenFail = false;
+        }
       }
     }
   } finally {
