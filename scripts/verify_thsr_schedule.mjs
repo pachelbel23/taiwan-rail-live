@@ -19,7 +19,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium, webkit } from 'playwright';
 import { createServer } from 'node:http';
-import worker, { _thsr } from '../worker.js';
+import worker, { _thsr, _ingest } from '../worker.js';
 import { openTestDb } from './d1_local.mjs';
 
 const {
@@ -709,6 +709,110 @@ async function runWindowAndSelfHeal() {
       ok('V9 布線:thsrSelfHeal 掛在每分鐘 cron 分支內', /thsrSelfHeal\(event, env\)/.test(minuteBranch), `branch=${minuteBranch.length} bytes`);
       ok('V9 布線:自帶 .catch(不會改變 scheduled 的成功/失敗契約)', /thsrSelfHeal\(event, env\)\.catch\(/.test(minuteBranch));
       ok('V9 布線:return 前有 await(帳本在營運窗外早退時 waitUntil 可能被截斷)', /await thsrHealTask;/.test(minuteBranch));
+    }
+
+    // ── V10:今天的日鍵在、但今天還沒更新過 → 在固定重抓時刻補抓 ──
+    // 事故形狀(2026-10-14~10-17):每日 cron 連四天在取 token 就吃 429、一筆都沒寫;blob 是 10-13
+    // 抓的 7 天窗,今天的日鍵一直都在,V8 那條「缺今天才補抓」照不到,要等窗用完才會動。
+    // 判準看 server 記帳(hits)與 D1 的 updated 欄,不看 thsrSelfHeal 回傳值的自述。
+    {
+      const slots = Array.isArray(_thsr.THSR_REFRESH_SLOTS) ? _thsr.THSR_REFRESH_SLOTS : [];
+      const fmt = m => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
+      const atMinute = m => schedAt(Math.floor(m / 60), m % 60);
+      // 契約條(寫死,理由同 V7/V8):時刻全在每日 cron(台北 09:15)之後;不與台鐵誤點自癒同一分鐘——
+      // 兩邊各自取 token、各自整包重建 blob,落在同一發 invocation 會把兩份記憶體峰值疊在一起。
+      ok('V10 契約:重抓時刻非空,且全部晚於每日 cron(台北 09:15)',
+        slots.length > 0 && slots.every(m => Number.isInteger(m) && m > 9 * 60 + 15 && m < 24 * 60), JSON.stringify(slots.map(fmt)));
+      ok('V10 契約:重抓時刻不與台鐵誤點自癒(DELAY_HEAL_SLOTS)同一分鐘',
+        slots.length > 0 && slots.every(m => !_ingest.DELAY_HEAL_SLOTS.includes(m)),
+        `thsr=${JSON.stringify(slots.map(fmt))} delay=${JSON.stringify(_ingest.DELAY_HEAL_SLOTS.map(fmt))}`);
+
+      const slot0 = slots.length ? slots[0] : 9 * 60 + 47;   // 修法前沒有這個常數,仍要讓下面幾組真的跑起來(才看得到紅)
+      const yIso = addDaysIso(todayIso, -1);
+      const staleUpdated = `${yIso} 01:15:51`;      // 台北昨天 09:15:51(與 datetime('now') 同為 UTC 字串)
+      const freshUpdated = `${todayIso} 01:15:51`;  // 台北今天 09:15:51
+      // 種子＝昨天那發抓的 7 天窗(昨天起 KEEP_WINDOW 天),今天一定在裡面
+      const seedKeys = Array.from({ length: KEEP_WINDOW }, (_, i) => addDaysIso(yIso, i).replace(/-/g, ''));
+      const seedBlob = JSON.stringify({
+        fetchedAt: `${yIso}T01:15:49.744Z`,
+        days: Object.fromEntries(seedKeys.map(k => [k, { system: '高鐵時刻表', date: k, trains: [{ train: 'STALE-' + k }] }])),
+        _meta: {},
+      });
+      const seedDb = async updated => {
+        const { DELAY_DB } = openTestDb();
+        await DELAY_DB.prepare('INSERT INTO kv_blobs (k,v,updated) VALUES (?,?,?)').bind('thsr_sched', seedBlob, updated).run();
+        return DELAY_DB;
+      };
+      const readRow = db => db.prepare("SELECT v, updated, date(updated, '+8 hours') AS d FROM kv_blobs WHERE k=?").bind('thsr_sched').first();
+      ok('V10 種子前提:今天的日鍵在 blob 裡(否則測到的是 V8 那條路徑)', seedKeys.includes(todayKey), JSON.stringify(seedKeys));
+
+      // V10a 事故形狀:今天在、最後更新是昨天 → 重抓時刻真的去抓,窗往後推,updated 變今天
+      {
+        hits.length = 0; failAll = false;
+        const DELAY_DB = await seedDb(staleUpdated);
+        const r = await thsrSelfHeal({ scheduledTime: atMinute(slot0) }, { ...envBase, DELAY_DB });
+        ok(`V10a 今天還沒更新→${fmt(slot0)} 重抓,上游被要求的日期＝今天起連續 ${KEEP_WINDOW} 天`,
+          JSON.stringify(hits) === JSON.stringify(windowIso), `hits=${JSON.stringify(hits)} r=${JSON.stringify(r)}`);
+        const row = await readRow(DELAY_DB);
+        const blob = JSON.parse(row.v);
+        ok('V10a 重抓後 updated 是台北今天', row.d === todayIso, `updated=${row.updated} d=${row.d}`);
+        ok(`V10a 窗往後推到今天＋${KEEP_WINDOW - 1}`, !!blob.days[windowIso[KEEP_WINDOW - 1].replace(/-/g, '')], JSON.stringify(Object.keys(blob.days).sort()));
+        ok('V10a 今天換成上游的新值(不是種子的 STALE)',
+          !!blob.days[todayKey] && blob.days[todayKey].trains.length === FA.daily.length && blob.days[todayKey].trains[0].train !== 'STALE-' + todayKey,
+          `trains=${blob.days[todayKey] && blob.days[todayKey].trains.length}`);
+      }
+
+      // V10b 每日 cron 成功的日子:今天已更新 → 重抓時刻零上游呼叫,D1 那列不變
+      {
+        hits.length = 0; failAll = false;
+        const DELAY_DB = await seedDb(freshUpdated);
+        const r = await thsrSelfHeal({ scheduledTime: atMinute(slot0) }, { ...envBase, DELAY_DB });
+        ok('V10b 今天已更新→重抓時刻零上游呼叫', hits.length === 0, `hits=${JSON.stringify(hits)} r=${JSON.stringify(r)}`);
+        const row = await readRow(DELAY_DB);
+        ok('V10b 今天已更新→D1 那列逐位元組不變', row.v === seedBlob && row.updated === freshUpdated, `updated=${row.updated}`);
+      }
+
+      // V10b2 日界線:updated 是 UTC 昨天 22:00＝台北今天 06:00(「缺今天」那條清晨補抓的時段)→
+      // 算今天已更新。用 UTC 日期判斷的寫法在這裡會多抓一輪,只有這一格分得出來。
+      {
+        hits.length = 0; failAll = false;
+        const dawnUpdated = `${yIso} 22:00:00`;
+        const DELAY_DB = await seedDb(dawnUpdated);
+        const r = await thsrSelfHeal({ scheduledTime: atMinute(slot0) }, { ...envBase, DELAY_DB });
+        ok('V10b2 台北今天清晨更新過(UTC 仍是昨天)→重抓時刻零上游呼叫', hits.length === 0, `hits=${JSON.stringify(hits)} r=${JSON.stringify(r)}`);
+      }
+
+      // V10c 上游全掛 → 不拋例外、不寫,等下一個時刻
+      {
+        hits.length = 0; failAll = true;
+        const DELAY_DB = await seedDb(staleUpdated);
+        let threw = null, r = null;
+        try { r = await thsrSelfHeal({ scheduledTime: atMinute(slot0) }, { ...envBase, DELAY_DB }); } catch (e) { threw = e; }
+        ok('V10c 上游全掛→不拋例外,且確實去打了上游(不是根本沒走到重抓)',
+          !threw && hits.length === KEEP_WINDOW, `threw=${threw && threw.message} hits=${hits.length} r=${JSON.stringify(r)}`);
+        const row = await readRow(DELAY_DB);
+        ok('V10c 上游全掛→blob 與 updated 都不變', row.v === seedBlob && row.updated === staleUpdated, `updated=${row.updated}`);
+        failAll = false;
+      }
+
+      // V10d 成本上限(結構保證):今天沒更新、上游整天都掛,一整天 1440 分鐘裡真的去打上游的
+      // 恰好 5 個分鐘,就是重抓時刻。期望值寫死(同 verify_delay_self_heal 的 H8a):有人把重抓
+      // 改成跟「缺今天」一樣每 5 分鐘一次,這條會紅。
+      {
+        hits.length = 0; failAll = true;
+        const DELAY_DB = await seedDb(staleUpdated);
+        const fired = [];
+        for (let m = 0; m < 24 * 60; m++) {
+          const before = hits.length;
+          await thsrSelfHeal({ scheduledTime: atMinute(m) }, { ...envBase, DELAY_DB });
+          if (hits.length > before) fired.push(m);
+        }
+        ok('V10d 一整天恰好 5 個分鐘去打上游', fired.length === 5, JSON.stringify(fired.map(fmt)));
+        ok('V10d 去打上游的分鐘＝THSR_REFRESH_SLOTS', JSON.stringify(fired) === JSON.stringify([...slots].sort((a, b) => a - b)),
+          `fired=${JSON.stringify(fired.map(fmt))} slots=${JSON.stringify(slots.map(fmt))}`);
+        ok(`V10d 整天上游請求數＝5×${KEEP_WINDOW}`, hits.length === 5 * KEEP_WINDOW, `hits=${hits.length}`);
+        failAll = false;
+      }
     }
   } finally {
     server.close();
