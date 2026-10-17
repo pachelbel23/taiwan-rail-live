@@ -1,4 +1,4 @@
-// 台南重播頁：自由方位與傾斜的驗收（無視窗 Chromium＋WebKit；使用者 2026-09-30「角度跟傾斜應該要能夠自由旋轉」）。
+// 台南重播頁：自由方位與傾斜的驗收（無視窗 Chromium＋WebKit）。
 // 用法：node scripts/verify_tainan_memory_camera.mjs；自己起 dev_server 子程序（PORT 預設 5587），結束時只停它。VURL 有給就不起 server。
 // 其他環境變數：ENGINES=chromium,webkit、PAGE_PATH（突變測試指到複本頁）、RESULTS（結果檔路徑）、CHROMIUM_CHANNEL（Chromium 的 channel，預設 chromium）。結果與截圖寫到 <out>/camera/。
 // 日期與資料夾參數化（不給參數＝9/12 封存版，行為與改版前相同）：--date=…、--dir=…、--out=…，或環境變數 MEMORY_DATE／MEMORY_DIR／MEMORY_OUT；

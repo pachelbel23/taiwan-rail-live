@@ -772,7 +772,7 @@ async function lastDayLayoutChecks(page,{engine,width,height,click,sweep}){
 }
 for(const [engine,type] of Object.entries({chromium,webkit})){
  if(process.env.ENGINES&&!process.env.ENGINES.split(',').includes(engine))continue;
- // 使用者 2026-09-23 裁示瀏覽器測試一律無視窗(有視窗會搶焦點、把畫面切走)。Chromium 帶 channel:'chromium' 走真 GPU 的無視窗模式;預設 headless shell 是 SwiftShader 軟體算繪。
+ // 瀏覽器測試一律無視窗(有視窗會搶焦點、把畫面切走)。Chromium 帶 channel:'chromium' 走真 GPU 的無視窗模式;預設 headless shell 是 SwiftShader 軟體算繪。
  const browser=await type.launch(engine==='chromium'?{channel:process.env.CHROMIUM_CHANNEL||'chromium',headless:true}:{headless:true});
  for(const [width,height] of (process.env.SIZES?process.env.SIZES.split(',').map(v=>v.split('x').map(Number)):[[360,780],[375,812],[390,844],[414,896],[768,1024],[844,390],[1280,900],...(lastDay?[[667,375],[640,360],[568,320],[844,340],[667,330],[740,340],[932,430]]:[])])){   // 10/16 另外掃寬不到 700 的橫向手機：最後一夜面板曾在這幾個尺寸壓到重播控制；844×340 是 iPhone 橫拿時 Safari 的可視高度，場景曾蓋住時鐘與時間拉桿；667×330、740×340、932×430 是量單線說明框與跟車鏡頭用的橫向尺寸，場景不疊標頭與重播控制的檢查也要跑到。9/12 已封存，沒有這個面板，不加
   console.log('開始',engine,width,height);
@@ -786,15 +786,15 @@ for(const [engine,type] of Object.entries({chromium,webkit})){
   if(process.env.ONLY==='singleline'){const only=await singleLineChecks(page,{engine,width,height,click,sweep:width===390});results.push({engine,width,height,singleLine:only});console.log('通過（只跑單線說明）',engine,width);fs.writeFileSync(out+'/browser-results.json',JSON.stringify(results,null,2));await context.close();continue;}
   await click('#play');const layout=await controls(page,'body',lastDay?'#events':'');assert.deepEqual(layout.errors,[],engine+' '+width+' '+JSON.stringify(layout.errors));
   await click('#next');if(lastDay)await click('#depart');await click('#zoomin');await click('#zoomout');await click('#rotate');await click('#overview');await click('#station');
-  // 施工外罩預設蓋上，按鈕可拿掉再蓋回（使用者 2026-09-29 選「完整站房＋外罩可切換」）。
+  // 施工外罩預設蓋上，按鈕可拿掉再蓋回。
   const wrapState=()=>page.evaluate(()=>[tainanMemory.wrap?.visible,document.getElementById('wrap').textContent]);
   assert.deepEqual(await wrapState(),[true,'拿掉外罩']);await click('#wrap');assert.deepEqual(await wrapState(),[false,'蓋回外罩']);await click('#wrap');assert.deepEqual(await wrapState(),[true,'拿掉外罩']);
-  // 周邊建物改成低細節網格（使用者 2026-09-30「附近的建築物應該也要同樣建模 不需要太精細 但是不要是灰色方塊」）：網格在場景裡，群組、材質、頂點數與 model.json 一致，
+  // 周邊建物改成低細節網格：網格在場景裡，群組、材質、頂點數與 model.json 一致，
   // 香格里拉飯店塔身（封存輪廓漏收、另依 OSM 部件補上的 255990928）也在。
   assert.deepEqual(await page.evaluate(()=>{const s=tainanMemory.surroundings,n=s?.meta?.lods?.near;return [!!s?.mesh?.parent,n?.drawGroups?.length>0&&s.mesh.geometry.groups.length===n.drawGroups.length,Array.isArray(s?.mesh?.material)&&s.mesh.material.length===n?.drawGroups?.length,s?.mesh?.geometry?.attributes?.position?.count===n?.vertexCount,!!s?.meta?.buildings?.some(b=>b.id===255990928&&b.minHeightM===24)];}),[true,true,true,true,true],'周邊建物網格沒有完整載入');
-  // 放大極限 34 公尺（使用者 2026-09-29「放大極限就用 34 公尺」）：從舊站近景連按放大，視野高度停在 34 m、不會更近。
+  // 放大極限 34 公尺：從舊站近景連按放大，視野高度停在 34 m、不會更近。
   for(let i=0;i<8;i++)await click('#zoomin');assert.equal(await page.evaluate(()=>Math.round((tainanMemory.camera.top-tainanMemory.camera.bottom)*1000)/1000),34);
-  // 馬路（使用者 2026-09-30「連馬路、人行道細節也做更多一點」）：柏油、人行道、路緣、白線、黃線五層網格都在場景裡、不是空的；
+  // 馬路：柏油、人行道、路緣、白線、黃線五層網格都在場景裡、不是空的；
   // 標線只有 12～15 cm 寬，放大到 34 m 時完全不透明，切到全線時淡出、不畫（每個像素幾公尺，畫了只會閃爍）。
   assert.deepEqual(await page.evaluate(()=>{const m=tainanMemory.roads?.meshes||{};return ['asphalt','sidewalk','curb','white','yellow'].map(k=>!!m[k]?.parent&&m[k].geometry.attributes.position.count>0).concat([m.white?.visible,m.white?.material.opacity,m.yellow?.material.opacity]);}),[true,true,true,true,true,true,1,1],'馬路網格或 34 m 的標線不對');
   await click('#overview');assert.deepEqual(await page.evaluate(()=>{const m=tainanMemory.roads.meshes;return [m.white.visible,m.white.material.opacity,m.yellow.visible];}),[false,0,false],'全線視角的標線沒有淡出');
