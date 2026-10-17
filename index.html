@@ -5631,7 +5631,7 @@
       <ul class="foot-list foot-recent">
         <li class="grp">最近更新</li>
         <li data-cl-of="tainanmemory1016"><span class="d">10/18</span><span>新增臺南地面鐵道最後一天（10/16）的重播：依當天實際到離站紀錄重現 226 班列車，可調時間、加速、跟車</span></li>
-        <li data-cl-of="thsrwindow"><span class="d">10/17</span><span>高鐵班表每天早上的更新若沒成功，當天稍後會自動再抓幾次</span></li>
+        <li data-cl-of="thsrwindow"><span class="d">10/18</span><span>高鐵班表每天早上的更新若沒成功，當天稍後會自動再抓；官方資料若是空的，先保留原本的班表</span></li>
         <li data-cl-of="tainanug1017"><span class="d">10/17</span><span>臺南鐵路地下化 10/17 通車：大橋到保安改走地下，臺南站改停地下 4 股，平面與立體地圖的軌道都跟著換</span></li>
         <li data-cl-of="followspeed1014"><span class="d">10/14</span><span>修正跟車小卡在列車還停在月台時，時速就往上跳、提早 3 秒寫「行進中」</span></li>
         <li data-cl-of="overtakeretime1011"><span class="d">10/11</span><span>修正台鐵同向列車預排待避時，等待的車有時白等好幾分鐘、有時後車才剛通過就開出；現在都在後車通過 30 秒後才出發</span></li>
@@ -5825,7 +5825,7 @@
         <li data-cl="tradaily"><span class="d">8/20</span><span>台鐵地圖開機時會對照官方今日班表，停駛車不再行駛；看板仍保留並標示「停駛」。當日臨時加開車目前只記錄、不繪製。</span></li>
         <li data-cl="livefresh"><span class="d">8/20</span><span>台鐵 LIVE 改看官方資料時間戳：超過五分鐘標為「推估」，超過三十分鐘停止套用；裝置時鐘偏差過大時也不顯示為即時。</span></li>
         <li data-cl="trtccountdown"><span class="d">8/18</span><span>北捷列車位置重新採用官方即時資料；文湖線以各站倒數推算，並補上終點前消失與單筆資料異常拖住全網的問題。後續穩定度改進另見 8/19–8/21 紀錄。</span></li>
-        <li data-cl="thsrwindow"><span class="d">10/17</span><span>高鐵班表曾經停在前一天（8/17 早上）：當天才有的班次整批看不到，前一天才有的則變成停不下來的幽靈車。現在班表一次抓七天，並每五分鐘檢查今天的班表在不在，不在就立刻補抓（謝謝網友回報）；10/17 起早上的更新若沒成功，當天稍後會再抓</span></li>
+        <li data-cl="thsrwindow"><span class="d">10/18</span><span>高鐵班表曾經停在前一天（8/17 早上）：當天才有的班次整批看不到，前一天才有的則變成停不下來的幽靈車。現在一次抓七天，每五分鐘檢查今天的班表，不在就補抓（謝謝網友回報）；10/17 起更新沒成功會當天再抓，官方資料是空的就保留原班表</span></li>
         <li data-cl="trtczombie"><span class="d">8/17</span><span>北捷列車曾因官方資料異常大量重複，位置暫改班表推估；同時讓尖峰短程車只在接近到站時列入看板，避免過早出現（謝謝網友回報）</span></li>
         <li data-cl="badgescope"><span class="d">8/16</span><span>時鐘旁的狀態標示修正：切到「台」「高」時不再顯示台北捷運的「官方即時」（那兩頁本來就沒有捷運）；捷運全部收班後，標示也從「離峰」改成「已收班」</span></li>
         <li data-cl="danhaifireworks"><span class="d">8/15</span><span>8/16、8/23、8/30 淡水煙火活動期間，淡海輕軌動畫會依官方公告調整綠山線班距、停駛區間與藍海線加密班次。</span></li>
@@ -7003,7 +7003,7 @@ const RAIL_3D_BOOT_PARAMS = new URLSearchParams(location.search);
 // v1017a：臺南鐵路地下化第一階段（10/17 通車）——大橋–保安實體股道換成 OSM 地下 4 股＋坡道、層位 −1、縱貫線南段 2D 畫線改走地下（閘門 verify_tainan_underground）。
 // v1018a：「更多」加 10/16 臺南地面鐵道最後一天的重播入口（memories/tainan-2026-10-16，#tainanMemory1016Link），9/12 那列不動
 //         （守門：scripts/verify_tainan_memory.mjs --date 2026-10-16 的主站入口檢查、verify_tainan_memory_entry.mjs --date=2026-10-16）。
-const BUILD = 'v1018a';
+const BUILD = 'v1018b';
 const LANDSCAPE_REQUESTED = new URLSearchParams(location.search).get('map') === 'landscape';
 const GARAGE_QUERY = new URLSearchParams(location.search).get('garage');
 // 輕量多語 runtime：繁中原文同時是安全 fallback，外語字典只存差異字串。
