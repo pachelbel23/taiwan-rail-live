@@ -661,7 +661,7 @@ async function lastDayLayoutChecks(page,{engine,width,height,click,sweep}){
     for(const dy of [...Array(ZOOM_IN).fill(-ZOOM_DY),...Array(ZOOM_OUT).fill(ZOOM_DY)]){await wheel(dy);const r=await read(),prev=rows.at(-1);
      assert.ok(Math.abs(Math.log(r.span/prev.span)-dy*.001)<1e-3,at+`：滾一下（deltaY ${dy}）span ${prev.span.toFixed(1)}→${r.span.toFixed(1)}，不是乘 e^(${dy*.001})，這一步沒縮放到`);rows.push(r);}
     const L=rows.map(r=>r.lift),d=L.slice(1).map((v,i)=>v-L[i]),worst=Math.max(...d.map(Math.abs)),k=d.findIndex(v=>Math.abs(v)===worst),lo=Math.min(...L),hi=Math.max(...L);
-    ZOOM_LOG.push({engine,at,how:engine==='chromium'?'page.mouse.wheel':'WheelEvent',spans:rows.map(r=>r2(r.span)),lifts:L.map(r2),worstStep:r2(worst),min:r2(lo),max:r2(hi)});fs.writeFileSync(out+'/zoom-results.json',JSON.stringify(ZOOM_LOG,null,1));
+    ZOOM_LOG.push({engine,at,how:engine==='chromium'?'page.mouse.wheel':'WheelEvent',spans:rows.map(r=>r2(r.span)),lifts:rows.map(r=>r2(r.lift)),worstStep:r2(worst),min:r2(lo),max:r2(hi)});fs.writeFileSync(out+'/zoom-results.json',JSON.stringify(ZOOM_LOG,null,1));
     summary.push(`${at} 讓位量 ${r2(lo)}–${r2(hi)} px、相鄰最大變化 ${r2(worst)} px`);
     if(worst>ZOOM_JUMP)bad.push(`${at}：第 ${k+1} 步（span ${r2(rows[k].span)}→${r2(rows[k+1].span)}）讓位量 ${r2(L[k])}→${r2(L[k+1])} px，變化 ${r2(worst)} px（超過 ${ZOOM_JUMP} px，縮放跨過讓位門檻時畫面跳動）`);
     if(!(lo<=.5&&hi>=6))uncovered.push(`${at}（讓位量 ${r2(lo)}–${r2(hi)} px）`);}}
