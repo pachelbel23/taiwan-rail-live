@@ -32,13 +32,14 @@ select{appearance:none;-webkit-appearance:none;height:44px;min-height:44px;paddi
 #followcard h4{margin:8px 0 2px;font-size:11px;color:#586e5d}#followcard .mine{list-style:none;margin:0;padding:0;font-size:11px;line-height:1.5}#followcard .mine li{display:flex;gap:6px;padding:2px 0;border-top:1px solid #e3e5da}#followcard .mine time{flex:none;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
 .src{display:inline-block;font-size:10px;line-height:1.5;border-radius:9px;padding:0 6px;white-space:nowrap}.src-obs{background:#dcebdf;color:#1f5a38}.src-interp{background:#f4ead2;color:#6b4c14}.src-sched{background:#e7e7e1;color:#444}.src-est{background:#f4ead2;color:#6b4c14;outline:1px dashed #a87a31;outline-offset:-1px}
 /* 單線雙向說明：疊在場景左下角（不佔版面，出現時不會把下方控件推走）；說明文字不接收指標事件。
-   寬版直接列出完整說明；窄版（寬 899 px 以下，面板接在場景下方的那一段）與矮螢幕（高 520 px 以下，橫向手機）預設只留一行摘要和「說明」鈕，
+   寬版直接列出完整說明；窄版（寬 899 px 以下，面板接在場景下方的那一段）與矮螢幕（高 600 px 以下）預設只留一行摘要和「說明」鈕，
    點開才看完整文字：完整說明在手機上會佔掉場景的三分之一以上，蓋住正在跟的列車。說明框疊在所有標籤之上（含正在跟的那班，z-index 3）。
+   矮螢幕這裡取高 600 px，不跟其他規則一樣用 520：寬 900 以上、高 600 以下的視窗，最後一夜照預設展開在側邊，場景只剩約 600 px 寬，完整說明會長到蓋住整排視角按鈕（高 540 左右實測就會）。
    窄版的左緣、寬度與高度上限由 replay.js 的 placeSingleLine 依視角按鈕實際的下緣算（按鈕折成兩排時也讓開，不用固定的 calc 假設只有一排）。
    橫向手機的場景只有一百多 px 高，放不下的文字在框內捲動，所以展開後的說明文字要接收指標。 */
 #singleline{position:absolute;left:12px;bottom:34px;max-width:calc(100% - 24px);margin:0;padding:5px 9px;border-left:3px solid #a87a31;border-radius:4px;background:#f6efdcf2;color:#5f4410;font-size:11px;line-height:1.45;pointer-events:none;z-index:4}
 #singleline p{margin:0}#slToggle{display:none}
-@media(max-width:899px),(max-height:520px){
+@media(max-width:899px),(max-height:600px){
  #singleline{display:flex;flex-direction:column-reverse;padding:0}
  #slToggle{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:32px;padding:4px 9px;border:0;border-radius:4px;background:transparent;color:inherit;font-size:11px;line-height:1.3;text-align:left;pointer-events:auto;flex:none}
  #slToggle:hover{background:#efe4c4}#slToggle .sl-act{flex:none;font-weight:700;color:#7a5410;white-space:nowrap}

@@ -171,9 +171,9 @@ try{
  // ── 單線雙向說明與文案裡跟資料有關的數字（說明文字的預設值與 spec 相同，資料不同時以資料為準）──
  const single=data.singleLine;
  function refreshSingleLine(){const e=$('singleline'),note=$('slNote'),on=!!single&&state.sec>=single.fromSec&&state.sec<=single.toSec;if(on&&!note.textContent){note.textContent=single.note||((single.section||[]).join('—')+'之間只剩一條線，對向列車輪流通過。');$('slSum').textContent=clock(single.fromSec).slice(0,5)+' 起單線雙向';}e.hidden=!on;placeSingleLine();}
-// 窄版只顯示一行摘要，按「說明」才展開完整文字；寬版的 CSS 不顯示這顆鈕、直接列出完整說明。展開狀態只存在 aria-expanded。
+// 窄版與矮螢幕（寬 899 以下或高 600 以下，見 replay.css）只顯示一行摘要，按「說明」才展開完整文字；其餘寬版的 CSS 不顯示這顆鈕、直接列出完整說明。展開狀態只存在 aria-expanded。
 $('slToggle').onclick=()=>{const b=$('slToggle');b.setAttribute('aria-expanded',String(b.getAttribute('aria-expanded')!=='true'));placeSingleLine();};
- // 單線說明框的位置（窄版與矮螢幕，有「說明」鈕的那一段；寬版照 CSS）：框貼在場景左下角，上緣離視角按鈕實際的下緣 SL_GAP，按鈕折成兩排也照實際的下緣算。
+ // 單線說明框的位置（窄版與矮螢幕＝寬 899 以下或高 600 以下，有「說明」鈕的那一段；寬版照 CSS）：框貼在場景左下角，上緣離視角按鈕實際的下緣 SL_GAP，按鈕折成兩排也照實際的下緣算。
  // 兩排之下連「說明」鈕都放不下時（例：568×320 打開最後一夜，場景只剩約 300 px 寬），框改放到最後一排最後一顆按鈕的右邊，上緣讓出上面那幾排。
  // 展開而且正在跟車時，框的上緣再往下讓出一條放標籤的帶子（標籤那一欄的按鈕下緣起 SL_LABEL_ROOM），liftFollow 把被跟那班放進這條帶子；框至少留一行說明（可捲）。
  // slBand：說明文字顯示中才有。bandTop＝標籤那一欄（場景中線兩側）最低的按鈕下緣，沒有按鈕就是場景頂端；boxTop／boxL／boxR＝說明框。座標都相對場景左上角。

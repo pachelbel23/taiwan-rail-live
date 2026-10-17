@@ -7,7 +7,7 @@ import assert from 'node:assert/strict';
 //   CHROMIUM_CHANNEL 換 Chromium 的 channel（預設 chromium）。--date=2026-10-16 時另跑 10/16 版專屬檢查（lastDayChecks）。
 //   資料有 singleLine（單線雙向說明）時另跑 singleLineChecks：說明框版面、「說明」鈕、標籤疊放、跟車卡留置站，不看日期。
 //   SIZES=360x780,1280x900 只跑指定的視窗大小；ONLY=singleline 只跑 singleLineChecks（突變測試用，不跑其餘步驟）；KEEP_GOING=1 讓 singleLineChecks 紅了也往下跑、最後一次列出全部。
-//   --date=2026-10-16 另跑 lastDayLayoutChecks（標頭、跟車卡右緣提示、跟車時展開單線說明的鏡頭與標籤、最後一夜跨旋轉）；ONLY=layout 只跑這一段（突變測試用），KEEP_GOING=1 對它也有效。
+//   --date=2026-10-16 另跑 lastDayLayoutChecks（標頭、跟車卡右緣提示、跟車時展開單線說明的鏡頭與標籤〔含改過方位與仰角之後〕、最後一夜跨旋轉與自動收合後原地重開）；ONLY=layout 只跑這一段（突變測試用），KEEP_GOING=1 對它也有效。
 const opt=name=>process.argv.find(a=>a.startsWith(`--${name}=`))?.slice(name.length+3)||process.env[`MEMORY_${name.toUpperCase()}`]||'';
 const DATE=opt('date')||'2026-09-12',DIR=(opt('dir')||`memories/tainan-${DATE}`).replace(/^\/+|\/+$/g,''),OUTDIR=opt('out')||(DATE==='2026-09-12'?'output/tainan-memory':`output/tainan-memory-${DATE.slice(5).replace('-','')}`);
 const lastDay=DATE==='2026-10-16';
@@ -277,10 +277,11 @@ async function lastDayChecks(page,{engine,width,height,click,out}){
  return {steps:done.length,marks};
 }
 // ── 單線說明框、標籤疊放、跟車卡留置站（只看資料有沒有 singleLine，不看日期）──────────────────────────────────
-// 窄版＝視窗寬 899 px 以下，或高 520 px 以下（replay.css 的 @media(max-width:899px),(max-height:520px)）：預設只有一行摘要與「說明」鈕，點開才看完整說明；寬版直接列出完整說明。
+// 窄版＝視窗寬 899 px 以下，或高 600 px 以下（replay.css 的 @media(max-width:899px),(max-height:600px)）：預設只有一行摘要與「說明」鈕，點開才看完整說明；寬版直接列出完整說明。
+// 高的門檻是 600 不是 520：寬 900 以上、高 600 以下的視窗，最後一夜照預設展開在側邊，場景只剩約 600 px 寬，完整說明會長到蓋住整排視角按鈕（SL_SWEEP 裡的寬版矮視窗守這一條）。
 // 預期值一律從 snapshot（singleLine、trains、events）與上面的 hhmm／hms／diff／dur 算，不呼叫頁面自己的格式化函式；失敗訊息開頭是「引擎 寬×高」與檢查名稱。
-const NARROW=(w,h)=>w<=899||h<=520;
-const SL_SWEEP=[[360,780],[375,812],[390,844],[414,896],[600,900],[601,900],[768,1024],[899,1000],[900,900],[932,430],[1024,768],[1280,800],[568,320],[640,360],[667,375],[844,340]];   // 含 899／900 與 600／601 兩側；932×430（橫向手機，寬已過 899，靠高 520 px 以下收合）；568×320、640×360、667×375（寬不到 700 的橫向手機，最後一夜面板收成右上角按鈕）；844×340（iPhone 橫拿時 Safari 的可視高度，重播控制縮排）
+const NARROW=(w,h)=>w<=899||h<=600;
+const SL_SWEEP=[[360,780],[375,812],[390,844],[414,896],[600,900],[601,900],[768,1024],[899,1000],[900,900],[932,430],[1024,768],[1280,800],[568,320],[640,360],[667,375],[844,340],[900,530],[920,540],[1100,540],[900,600],[900,601],[1366,600]];   // 含 899／900 與 600／601 兩側；932×430（橫向手機，寬已過 899，靠高 600 px 以下收合）；568×320、640×360、667×375（寬不到 700 的橫向手機，最後一夜面板收成右上角按鈕）；844×340（iPhone 橫拿時 Safari 的可視高度，重播控制縮排）；900×530、920×540、1100×540、900×600、1366×600（寬版但矮：最後一夜照預設展開在側邊，要收成摘要＋「說明」鈕，收合與展開都不碰視角按鈕）與 900×601（高度門檻的另一側：寬版完整說明，也不碰視角按鈕）
 const INTERACTIVE='a[href],button,input,select,textarea,summary,[role=button],[tabindex]:not([tabindex="-1"])';
 const ovl=(a,b)=>Math.min(a.r,b.r)-Math.max(a.l,b.l)>.5&&Math.min(a.b,b.b)-Math.max(a.t,b.t)>.5;
 const WHEEL={eligible:[],ran:[]};   // 滾輪捲說明框：eligible＝Chromium 跑過橫向窄版（高 520 以下）的「說明」鈕檢查；ran＝真的滾過（說明被截高才會滾）。整輪結束時檢查
@@ -437,8 +438,9 @@ async function singleLineChecks(page,{engine,width,height,click,sweep}){
  return {steps:done.length,ratios};
 }
 // ── 10/16 版面（--date=2026-10-16 才跑；ONLY=layout 只跑這一段）────────────────────────────────────────────
-// 每個視窗大小：標頭文字置中、標頭「關於」、跟車卡右緣的捲動提示。sweep（寬 390 那一組）另外切視窗大小量三件事：打開最後一夜、點時間軸單線那一列後，
-// 說明框（收合與展開）和視角按鈕不相交；跟車時展開說明，被跟那班的標籤不被說明框蓋住、仍畫在列車投影的位置，收合後列車回到場景中心；最後一夜跨旋轉。
+// 每個視窗大小：標頭文字置中、標頭「關於」、跟車卡右緣的捲動提示。sweep（寬 390 那一組）另外切視窗大小量這幾件事：打開最後一夜、點時間軸單線那一列後，
+// 說明框（收合與展開）和視角按鈕不相交；跟車時展開說明，被跟那班的標籤不被說明框蓋住、仍畫在列車投影的位置，收合後列車回到場景中心；同一組判準在按「旋轉」、雙指改仰角之後再量一次；
+// 最後一夜跨旋轉，以及直向自動收合之後在同一個版面直接按「最後一夜」重開。
 const NIGHT_SIZES=[[568,320],[640,360],[667,330],[667,375]];   // 寬不到 700 的橫向手機：最後一夜平常收成右上角的鈕，打開後場景變窄，視角按鈕可能折成兩排
 const LIFT_SIZES=[[360,780],[568,320],[640,360],[667,330],[667,375],[740,340],[844,340],[844,390],[932,430]];   // 說明框展開時會蓋到場景中心（跟車的置中點）的尺寸
 const HINT_LOG=[];
@@ -517,16 +519,17 @@ async function lastDayLayoutChecks(page,{engine,width,height,click,sweep}){
   assert.ok(twoRows>0,'四個尺寸打開最後一夜後視角按鈕都只有一排，「按鈕折成兩排」的情況沒驗到');
  });
 
+ // 投影自己算：snapshot 經緯度 → 場景公尺（與頁面同一個原點），乘上相機的 view／projection 矩陣，再換成 #labels 的像素。車在地面（z 0），標籤錨在車上方 7 m、translate(-50%,-100%)（錨＝標籤框底邊中點）。
+ const probe=id=>page.evaluate(id=>{const m=tainanMemory,c=m.camera,d=m.data,host=document.getElementById('scene'),L=document.getElementById('labels').getBoundingClientRect(),W=host.clientWidth,H=host.clientHeight,tr=d.trains.find(t=>t.id===id),p=m.sample(tr,m.state.sec);
+   if(!p)return {drawn:false};
+   const sx=111320*Math.cos(d.origin[1]*Math.PI/180),proj=(co,z)=>{const x=(co[0]-d.origin[0])*sx,y=(co[1]-d.origin[1])*111320,e=c.matrixWorldInverse.elements,q=c.projectionMatrix.elements,vx=e[0]*x+e[4]*y+e[8]*z+e[12],vy=e[1]*x+e[5]*y+e[9]*z+e[13],vz=e[2]*x+e[6]*y+e[10]*z+e[14];
+    return [L.left+((q[0]*vx+q[4]*vy+q[8]*vz+q[12])*.5+.5)*W,L.top+(-(q[1]*vx+q[5]*vy+q[9]*vz+q[13])*.5+.5)*H];};
+   const R=r=>({l:r.left,t:r.top,r:r.right,b:r.bottom}),le=m.models.get(id).label.e,lr=le.getBoundingClientRect(),box=document.getElementById('singleline'),g=proj(p.coordinate,0),a=proj(p.coordinate,7);
+   const bx=box.hidden||!box.getClientRects().length?null:box.getBoundingClientRect();
+   return {drawn:true,W,H,underBox:!!bx&&g[0]>bx.left&&g[0]<bx.right&&g[1]>bx.top&&g[1]<bx.bottom,follow:m.state.follow===id,exp:document.getElementById('slToggle').getAttribute('aria-expanded'),noteShown:getComputedStyle(document.getElementById('slNote')).display!=='none',
+    center:[g[0]-(L.left+W/2),g[1]-(L.top+H/2)],label:le.hidden||!le.getClientRects().length?null:R(lr),anchor:[lr.left+lr.width/2-a[0],lr.bottom-a[1]],box:box.hidden||!box.getClientRects().length?null:R(box.getBoundingClientRect())};},id);
+ const near=v=>Math.abs(v[0])<=1&&Math.abs(v[1])<=1,fmt=v=>v.map(x=>Math.round(x*10)/10).join(',');
  if(sweep)await step('跟車時展開單線說明：被跟那班的標籤不被說明框蓋住、仍畫在列車投影的位置（≤1 px）；收合後列車回到場景中心；寬版說明框不蓋中心時照常置中',async()=>{
-  // 投影自己算：snapshot 經緯度 → 場景公尺（與頁面同一個原點），乘上相機的 view／projection 矩陣，再換成 #labels 的像素。車在地面（z 0），標籤錨在車上方 7 m、translate(-50%,-100%)（錨＝標籤框底邊中點）。
-  const probe=id=>page.evaluate(id=>{const m=tainanMemory,c=m.camera,d=m.data,host=document.getElementById('scene'),L=document.getElementById('labels').getBoundingClientRect(),W=host.clientWidth,H=host.clientHeight,tr=d.trains.find(t=>t.id===id),p=m.sample(tr,m.state.sec);
-    if(!p)return {drawn:false};
-    const sx=111320*Math.cos(d.origin[1]*Math.PI/180),proj=(co,z)=>{const x=(co[0]-d.origin[0])*sx,y=(co[1]-d.origin[1])*111320,e=c.matrixWorldInverse.elements,q=c.projectionMatrix.elements,vx=e[0]*x+e[4]*y+e[8]*z+e[12],vy=e[1]*x+e[5]*y+e[9]*z+e[13],vz=e[2]*x+e[6]*y+e[10]*z+e[14];
-     return [L.left+((q[0]*vx+q[4]*vy+q[8]*vz+q[12])*.5+.5)*W,L.top+(-(q[1]*vx+q[5]*vy+q[9]*vz+q[13])*.5+.5)*H];};
-    const R=r=>({l:r.left,t:r.top,r:r.right,b:r.bottom}),le=m.models.get(id).label.e,lr=le.getBoundingClientRect(),box=document.getElementById('singleline'),g=proj(p.coordinate,0),a=proj(p.coordinate,7);
-    return {drawn:true,follow:m.state.follow===id,exp:document.getElementById('slToggle').getAttribute('aria-expanded'),noteShown:getComputedStyle(document.getElementById('slNote')).display!=='none',
-     center:[g[0]-(L.left+W/2),g[1]-(L.top+H/2)],label:le.hidden||!le.getClientRects().length?null:R(lr),anchor:[lr.left+lr.width/2-a[0],lr.bottom-a[1]],box:box.hidden||!box.getClientRects().length?null:R(box.getBoundingClientRect())};},id);
-  const near=v=>Math.abs(v[0])<=1&&Math.abs(v[1])<=1,fmt=v=>v.map(x=>Math.round(x*10)/10).join(',');
   const lifted=[],jumped=new Set();
   try{for(const [w,h] of LIFT_SIZES){await resize(w,h);await reset();
     for(const [id,no,sec] of SAMPLES){
@@ -551,8 +554,44 @@ async function lastDayLayoutChecks(page,{engine,width,height,click,sweep}){
   assert.ok(lifted.length>0,'九個尺寸展開說明時鏡頭一次都沒有讓開（列車都還在中心），「被跟那班放到說明框上方」沒驗到');
   console.log(`[10/16 版面 ${where}] 展開說明時鏡頭讓開的取樣：${lifted.join('、')}；選車時那班不在畫面、跳到進畫面那一秒的取樣：${[...jumped].join('、')||'無'}`);
  });
+ // 改過方位與仰角之後再跟車展開說明：讓位要沿著當下鏡頭的方向推（不是開機時的預設方位與仰角），否則轉過或傾斜過的鏡頭會把被跟那班推到說明框底下或旁邊。
+ // 先按頁面上的「旋轉」（方位 +45°）；第二組再用雙指同向往上拖（PointerEvent，兩種引擎都送得到）把仰角壓低。每一步都量鏡頭真的轉了、仰角真的變了，沒變就紅（那一組沒驗到）。
+ // 360×780、667×375 展開時說明框蓋到場景中心（鏡頭要讓位）；390×844 不蓋中心，量的是不讓位時照常置中。
+ const TURN_SIZES=[[360,780],[390,844],[667,375]];
+ if(sweep)await step('改方位與仰角之後跟車展開說明：按「旋轉」、再加雙指改仰角，被跟那班的標籤不被說明框蓋住、仍畫在列車投影的位置（≤1 px）、列車在場景內而且車身不在說明框底下；收合後回到場景中心',async()=>{
+  const cam=()=>page.evaluate(()=>{const c=tainanMemory.camera,f=c.getWorldDirection(new c.position.constructor());return {elev:Math.asin(-f.z)*180/Math.PI,az:Math.atan2(f.y,f.x)*180/Math.PI};});
+  const tiltDown=()=>page.evaluate(async()=>{const c=tainanMemory.renderer.domElement,r=c.getBoundingClientRect(),x=r.left+r.width/2,y0=r.top+r.height/2;
+   const ev=(type,id,x,y)=>c.dispatchEvent(new PointerEvent(type,{pointerId:id,pointerType:'touch',isPrimary:id===11,clientX:x,clientY:y,bubbles:true,cancelable:true,buttons:type==='pointerup'?0:1}));
+   let y=y0;ev('pointerdown',11,x-40,y);ev('pointerdown',12,x+40,y);for(let i=1;i<=20;i++){y=y0-i*4;ev('pointermove',11,x-40,y);ev('pointermove',12,x+40,y);await new Promise(r=>requestAnimationFrame(r));}
+   ev('pointerup',11,x-40,y);ev('pointerup',12,x+40,y);});
+  const lifted=[],views=[];
+  try{for(const [w,h] of TURN_SIZES)for(const tiltToo of [false,true]){await resize(w,h);await reset();await page.evaluate(()=>tainanMemory.stationView());await frames();
+    const v0=await cam();await click('#rotate');await frames();const v1=await cam(),turn=Math.abs((v1.az-v0.az+540)%360-180);
+    assert.ok(Math.abs(turn-45)<1,`${w}×${h}：按「旋轉」後方位轉了 ${turn.toFixed(1)}°，不是 45°`);
+    let v2=v1;if(tiltToo){await tiltDown();await frames();v2=await cam();assert.ok(v1.elev-v2.elev>10,`${w}×${h}：雙指往上拖之後仰角 ${v1.elev.toFixed(1)}→${v2.elev.toFixed(1)}°，沒有壓低，改仰角這一組沒驗到`);}
+    const how=`旋轉${tiltToo?'＋雙指改仰角':''}（方位 ${Math.round(v0.az)}→${Math.round(v2.az)}°、仰角 ${Math.round(v0.elev)}→${Math.round(v2.elev)}°）`,tag=`${w}×${h}${tiltToo?' 改仰角':''}`;views.push(`${w}×${h} ${how}`);
+    for(const [id,no,sec] of SAMPLES){
+     await page.evaluate(([id,sec])=>{const m=tainanMemory;m.state.playing=false;m.jump(sec);m.followTrain(id);},[id,sec]);await frames();
+     const at=`${w}×${h} ${how} ${hms(sec)} 跟 ${no}`;
+     if((await page.locator('#slToggle').getAttribute('aria-expanded'))==='true'){await click('#slToggle');await frames();}
+     const c0=await probe(id);assert.ok(c0.drawn,at+'：選了車，畫面內卻沒有這班車');
+     assert.ok(c0.follow&&near(c0.center),at+' 收合：被跟那班不在場景中心 '+fmt(c0.center));assert.ok(c0.label&&near(c0.anchor),at+' 收合：標籤不在列車的投影位置 '+JSON.stringify(c0.anchor));
+     await click('#slToggle');await frames();const c1=await probe(id);
+     assert.equal(c1.exp,'true',at+'：「說明」點了沒有展開');assert.ok(c1.noteShown,at+'：展開後說明文字沒顯示');assert.ok(c1.follow,at+'：展開說明後不再跟車');
+     assert.ok(c1.label,at+' 展開：被跟那班的標籤不見了（被推出可見範圍或被藏起來）');assert.ok(c1.box&&!ovl(c1.box,c1.label),at+' 展開：說明框蓋到被跟那班的標籤 '+JSON.stringify({box:c1.box,label:c1.label}));
+     assert.ok(near(c1.anchor),at+' 展開：標籤離開了列車的投影位置（標籤要畫在真實位置，讓位只能動鏡頭）'+fmt(c1.anchor));
+     assert.ok(Math.abs(c1.center[0])<=c1.W/2&&Math.abs(c1.center[1])<=c1.H/2,at+' 展開：被跟那班被推出場景外 '+fmt(c1.center));
+     assert.ok(!c1.underBox,at+' 展開：被跟那班的車身落在說明框底下（只有標籤露在框外）'+fmt(c1.center));
+     if(!near(c1.center))lifted.push(`${tag} ${no}`);
+     await click('#slToggle');await frames();const c2=await probe(id);
+     assert.equal(c2.exp,'false',at+'：再點要收合');assert.ok(c2.follow&&near(c2.center),at+' 再收合：列車沒有回到場景中心 '+fmt(c2.center));assert.ok(c2.label&&near(c2.anchor),at+' 再收合：標籤不在列車的投影位置');
+    }}}
+  finally{await resize(width,height);await reset();await page.evaluate(()=>tainanMemory.stationView());await frames();}
+  assert.ok(lifted.length>0,'改方位與仰角之後展開說明，鏡頭一次都沒有讓開，「讓位沿著當下鏡頭的方向推」沒驗到');
+  console.log(`[10/16 版面 ${where}] 改方位與仰角：${views.join('；')}；展開說明時鏡頭讓開的取樣：${lifted.join('、')}`);
+ });
 
- if(sweep)await step('最後一夜跨旋轉：直向點了時間軸的列（自動收合）之後轉成橫向，面板照開；使用者自己按的開與關跨旋轉保留',async()=>{
+ if(sweep)await step('最後一夜跨旋轉：直向點了時間軸的列（自動收合）之後轉成橫向，面板照開；使用者自己按的開與關跨旋轉保留；自動收合之後在同一個版面直接按「最後一夜」要打開',async()=>{
   const sel=`#events > li.ev[data-id="${slRow.id}"] .evb`,want=async(v,msg)=>{await frames();assert.equal(await isOpen(),v,msg);};
   try{await resize(390,844);await reset();await want(false,'390×844：預設要收合');
    await click('#nightToggle');await want(true,'390×844：使用者打開');
@@ -562,7 +601,11 @@ async function lastDayLayoutChecks(page,{engine,width,height,click,sweep}){
    await resize(390,844);await want(false,'轉回 390×844：使用者收合的要保留');
    await resize(844,390);await want(false,'再轉成 844×390：使用者收合的要保留（這個版面預設是展開）');
    await click('#nightToggle');await want(true,'844×390：使用者打開');
-   await resize(390,844);await want(true,'轉回 390×844：使用者打開的要保留（這個版面預設是收合）');}
+   await resize(390,844);await want(true,'轉回 390×844：使用者打開的要保留（這個版面預設是收合）');
+   // 自動收合只算當下這一次：不轉螢幕、在同一個版面直接按「最後一夜」就要打開（按鈕沒清掉自動收合的話，要轉一次螢幕才重開得了）；重開之後再按要收合。
+   await page.locator(sel).scrollIntoViewIfNeeded();await click(sel);await want(false,'390×844：再點一次時間軸的列，要自動收合');
+   await click('#nightToggle');await want(true,'390×844：自動收合之後，在同一個版面直接按「最後一夜」要打開（不必先轉螢幕）');
+   await click('#nightToggle');await want(false,'390×844：重開之後再按要收合');}
   finally{await resize(width,height);await reset();}
  });
  await reset();
