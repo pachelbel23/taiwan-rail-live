@@ -150,7 +150,7 @@ try{
    const src=document.createElement('td'),chip=document.createElement('span');chip.className='src src-'+(s.src||'none');chip.textContent=SRC[s.src]||'—';src.append(chip);
    row.append(name,sched,act,diff,held,src);body.append(row);return {row,s};});
   table.append(thead,body);wrap.append(table);
-  const note=document.createElement('p');note.className='note';note.textContent=tr.timing==='scheduled'?'這班車沒有任何即時動態紀錄，整班照時刻表畫。':'時刻依即時動態紀錄推算（到站誤差約半分鐘）。內插＝該站不回報，由前後站推算；表定＝沒有紀錄、照時刻表；留置＝比表定多停 90 秒以上。';
+  const note=document.createElement('p');note.className='note';note.textContent=tr.timing==='scheduled'?'這班車沒有任何即時動態紀錄，整班照時刻表畫。':'時刻依即時動態紀錄推算（到站誤差約半分鐘，開車時刻可能差一分鐘左右）。內插＝該站不回報，由前後站推算；表定＝沒有紀錄、照時刻表；留置＝比表定多停 90 秒以上。';
   // 推定的等待原因寫在時間軸事件的文字裡（例如「等 3278」），逐站欄位沒有原因欄：把這班車自己的事件列在表下面。
   const mine=events.filter(e=>e.train!=null&&e.train!==''&&String(e.train)===String(tr.train)),extra=[];
   if(mine.length){const h4=document.createElement('h4'),ul=document.createElement('ul');h4.textContent='這班車在最後一夜';ul.className='mine';for(const e of mine){const li=document.createElement('li'),tm=document.createElement('time'),tx=document.createElement('span');tm.textContent=dayClock(e.t);tx.textContent=e.text;li.append(tm,tx);ul.append(li);}extra.push(h4,ul);}

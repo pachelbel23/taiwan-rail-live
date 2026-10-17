@@ -118,10 +118,13 @@ export function cacheRoot() {
   return (cached = path.join(ROOT, '.cache'));
 }
 
+// --date YYYY-MM-DD 與 --date=YYYY-MM-DD 都收。只認空格分隔時，寫成等號會被默默當成預設日期，
+// 對著已封存的那一天跑 seal 之類會寫檔的指令。
 export function dateFromArgv(argv = process.argv) {
-  const i = argv.indexOf('--date');
-  if (i < 0) return DEFAULT_DATE;
-  const d = argv[i + 1];
+  const i = argv.indexOf('--date'), eq = argv.filter(a => a.startsWith('--date='));
+  if (eq.length + (i < 0 ? 0 : 1) > 1) throw Error('--date 只能給一次');
+  if (i < 0 && !eq.length) return DEFAULT_DATE;
+  const d = eq.length ? eq[0].slice('--date='.length) : argv[i + 1];
   if (!/^\d{4}-\d{2}-\d{2}$/.test(d || '')) throw Error('--date 要接 YYYY-MM-DD');
   return d;
 }
