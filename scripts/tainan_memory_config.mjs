@@ -98,9 +98,9 @@ const CONFIGS = {
     ambiguity: {criterion: 'shared-way', closeWayM: 1.5, closeWaySec: 3, report: 'tainan-1016-work/ambiguity-report-2026-10-16.json'},
     verify: {
       trains: 226, overnight: 2, anchorToleranceSec: 60, markedTrains: ['145', '3782'],
-      // 主站入口要等使用者看過頁面才加（設計第 9 節）。null＝還沒加：完整模式印一行明講略過入口檢查，其餘照驗，
-      // ship_web 不會因此擋住別人出貨。加入口的那一顆 commit 要同時改成 {id: 'tainanMemoryLink', cl: 'tainanmemory1016'}。
-      entry: null,
+      // 主站 index.html 的入口（id="…"、data-cl="…"），在 9/12 那列（#tainanMemoryLink）的下一列，另取 id 以免重複。
+      // 設計第 9 節：入口等使用者看過頁面才加；還沒加時這裡設 null，完整模式會印一行略過入口檢查。
+      entry: {id: 'tainanMemory1016Link', cl: 'tainanmemory1016'},
     },
     note: '依 TDX 即時動態的逐站紀錄推算 2026-10-16 的到離站時刻（到站誤差約半分鐘；大橋、仁德站不回報，時間為內插），不是 GPS 軌跡；股道位置與單線雙向的進路是推演。編組依車種推估。道路與輪廓為封存時 OSM 資料，背景高度簡化；範圍為大橋至保安周邊，非工程計畫邊界。',
   },
