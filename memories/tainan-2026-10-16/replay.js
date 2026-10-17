@@ -10,13 +10,13 @@ const query=new URLSearchParams(location.search),timeQuery=query.get('t');
 // 沒帶 ?t= 時，開機後改用封存檔的 defaultSec（22:00）。
 const timeGiven=!!timeQuery&&/^\d{1,2}:\d{2}(:\d{2})?$/.test(timeQuery);
 if(timeGiven){const [h,m,s=0]=timeQuery.split(':').map(Number);state.sec=cleanSec(h*3600+m*60+s);}
-// 「最後一夜」面板的收合：寬版（場景右側）預設展開、窄版（場景下方）預設收合；使用者按過之後以按的為準，旋轉螢幕或改視窗大小不重設。
+// 「最後一夜」面板：寬版與橫向手機（高 520 以下）放在場景右側，直立的窄版接在場景下方。寬 900 以上與寬 700 以上的橫向手機預設展開，其餘預設收合；寬不到 700 的橫向手機收成場景右上角的按鈕（接在場景下方的話，場景底下放不下，面板會壓到重播控制）。使用者按過之後以按的為準，旋轉螢幕或改視窗大小不重設。
 // 窄版展開時場景被壓到只剩一條，#scene 加 squeezed：CSS 把單線說明與操作提示先收起來，免得疊在視角按鈕與車次標籤上。
-const sideLayout=matchMedia('(min-width:900px), (min-width:700px) and (max-height:520px)');let nightUser=null;
-const nightOpen=()=>nightUser??sideLayout.matches;
-function applyNight(){const n=$('night');n.classList.toggle('open',nightUser===true);n.classList.toggle('closed',nightUser===false);$('nightToggle').setAttribute('aria-expanded',String(nightOpen()));$('scene').classList.toggle('squeezed',!sideLayout.matches&&nightOpen());}
+const sideLayout=matchMedia('(min-width:900px), (max-height:520px)'),openByDefault=matchMedia('(min-width:900px), (min-width:700px) and (max-height:520px)');let nightUser=null;
+const nightOpen=()=>nightUser??openByDefault.matches;
+function applyNight(){const n=$('night'),open=nightOpen();n.classList.toggle('open',open);n.classList.toggle('closed',!open);$('nightToggle').setAttribute('aria-expanded',String(open));$('scene').classList.toggle('squeezed',!sideLayout.matches&&open);}
 const setNight=open=>{nightUser=open;applyNight();};
-$('nightToggle').onclick=()=>setNight(!nightOpen());sideLayout.addEventListener('change',applyNight);applyNight();
+$('nightToggle').onclick=()=>setNight(!nightOpen());sideLayout.addEventListener('change',applyNight);openByDefault.addEventListener('change',applyNight);applyNight();
 let integrity;
 // 網格以 .bin.gz 存放（Cloudflare 不壓 octet-stream，未壓縮要多下載約 9 MB）；解壓後仍比對原始 .bin 的封存雜湊。
 async function gunzip(b){try{if(typeof DecompressionStream==='function')return await new Response(new Blob([b]).stream().pipeThrough(new DecompressionStream('gzip'))).arrayBuffer();}catch{}const {gunzipSync}=await import('./vendor/fflate-gunzip.js'),a=gunzipSync(new Uint8Array(b));return a.buffer.slice(a.byteOffset,a.byteOffset+a.byteLength);}
@@ -87,7 +87,7 @@ try{
  data.stations.forEach(s=>label(s.name,[s.lon,s.lat]));label('臺南舊站房',stationMeta.anchor);
  // ── 10/16 新增 ──
  // 新欄位（timing、mark、stops[].src／schedArrSec／holdSec、events、singleLine）一律用 ?. 防呆：缺欄位時只是少了旗標、時間軸與逐站時刻，頁面照常開。
- const SRC={obs:'實測',interp:'內插',sched:'表定'},isTainan=s=>s.name.replace('台','臺')==='臺南',tainanStop=tr=>tr.stops.find(isTainan),anchorStop=tr=>tainanStop(tr)||tr.stops[0];
+ const SRC={obs:'實測',interp:'內插',sched:'表定',est:'推定'},isTainan=s=>s.name.replace('台','臺')==='臺南',tainanStop=tr=>tr.stops.find(isTainan),anchorStop=tr=>tainanStop(tr)||tr.stops[0];
  const MARK_LABEL={'last-ground':tr=>'地面最後一班 '+tr.train,'last-south':tr=>'最後南下・告別列車 '+tr.train},MARK_NAME={'last-ground':'地面最後一班','last-south':'最後南下・告別列車'};
  // 標籤上的來源旗標：整班沒有即時動態紀錄＝「無即時動態紀錄」；其餘看臺南站那一格的來源（實測／內插／表定）。
  function trainFlag(tr){if(tr.timing==='scheduled')return {key:'sched',text:'無即時動態紀錄'};if(!tr.timing)return null;const k=tainanStop(tr)?.src||'obs';return {key:k,text:SRC[k]||''};}
@@ -132,7 +132,7 @@ try{
  function refreshNight(sec){let cur=-1;events.forEach((ev,i)=>{if(ev.t<=sec)cur=i;});nightRows.forEach((li,i)=>{const st=i<cur?'past':i===cur?'current':'future';if(li.dataset.state===st)return;li.dataset.state=st;const b=li.firstElementChild;if(b.tagName==='BUTTON'){if(st==='current')b.setAttribute('aria-current','true');else b.removeAttribute('aria-current');}li.querySelector('.mk').textContent=st==='past'?'✓':st==='current'?'●':'○';});}
  // 窄版點了事件就收起面板，讓人看到跳過去之後的場景；寬版面板在側邊，不收。
  function goEvent(ev){const tr=ev.train!=null&&ev.train!==''?trainByKey(ev.train,ev.t):null;if(tr)followTrain(tr.id,ev.t);else jump(ev.t);if(!sideLayout.matches)setNight(false);}
- // ── 跟車逐站時刻卡：表定／實測／差多少／留置（holdSec≥90 秒才算）／來源（實測、內插、表定）。時間一律是當天的時鐘時間，跨午夜的前一營運日用「前日」「次日」標明。──
+ // ── 跟車逐站時刻卡：表定／重播／差多少／留置（holdSec≥90 秒才算）／來源。來源分到站與開車兩行：到站是實測、內插或表定；開車時刻 TDX 沒有紀錄，一律由表定加誤點分鐘推得（build 的 DEP_RULE），標推定，整班照表定的班次標表定。時間一律是當天的時鐘時間，跨午夜的前一營運日用「前日」「次日」標明。──
  const T=sec=>{if(!Number.isFinite(sec))return '—';const r=Math.round(sec),d=Math.floor(r/86400);return (d<0?'前日 ':d>0?'次日 ':'')+clock(r-d*86400);};
  const DUR=sec=>{const s=Math.round(Math.abs(sec)),m=Math.floor(s/60),r=s%60;return (m?m+'分':'')+(r||!m?r+'秒':'');},DIFF=d=>!Number.isFinite(d)?'—':Math.abs(d)<5?'準點':(d>0?'晚':'早')+DUR(d);
  const card=$('followcard'),NIGHT_HINT=$('nightToggle').querySelector('.s').textContent;let cardFor=null,cardRows=[],cardStatus=null;
@@ -141,16 +141,16 @@ try{
   if(MARK_NAME[tr.mark]){const g=document.createElement('span');g.className='tag'+(tr.mark==='last-south'?' south':'');g.textContent=MARK_NAME[tr.mark];h.append(g);}
   cardStatus=document.createElement('p');cardStatus.className='st';
   const wrap=document.createElement('div'),table=document.createElement('table'),head=document.createElement('tr'),body=document.createElement('tbody');wrap.className='tw';
-  for(const [t,sub] of [['站'],['表定','到／開'],['實測','到／開'],['差','實測−表定'],['留置'],['來源']]){const th=document.createElement('th');th.scope='col';th.append(t);if(sub){th.append(document.createElement('br'),sub);}head.append(th);}
+  for(const [t,sub] of [['站'],['表定','到／開'],['重播','到／開'],['差','重播−表定'],['留置'],['來源','到／開']]){const th=document.createElement('th');th.scope='col';th.append(t);if(sub){th.append(document.createElement('br'),sub);}head.append(th);}
   const thead=document.createElement('thead');thead.append(head);
   cardRows=tr.stops.map(s=>{const row=document.createElement('tr'),pass=s.stop===false,hold=Number(s.holdSec)>=90?Number(s.holdSec):0,passed=pass&&!hold,has=Number.isFinite(s.schedArrSec);row.dataset.name=s.name;row.dataset.src=s.src||'';row.dataset.hold=String(hold);
    const name=document.createElement('th');name.scope='row';name.textContent=s.name;
    const sched=has?(pass?lines('td','通過',T(s.schedArrSec)):lines('td',T(s.schedArrSec),T(s.schedDepSec))):lines('td','—'),act=passed?lines('td','通過',T(s.arrSec)):lines('td',T(s.arrSec),T(s.depSec));
    const diff=has?(passed?lines('td',DIFF(s.arrSec-s.schedArrSec)):lines('td',DIFF(s.arrSec-s.schedArrSec),DIFF(s.depSec-s.schedDepSec))):lines('td','—'),held=lines('td',hold?DUR(hold):'—');if(hold)held.className='hold';
-   const src=document.createElement('td'),chip=document.createElement('span');chip.className='src src-'+(s.src||'none');chip.textContent=SRC[s.src]||'—';src.append(chip);
+   const src=document.createElement('td');for(const k of passed?[s.src]:[s.src,tr.timing==='scheduled'?'sched':'est']){const ln=document.createElement('span'),chip=document.createElement('span');ln.className='ln';chip.className='src src-'+(k||'none');chip.textContent=SRC[k]||'—';ln.append(chip);src.append(ln);}
    row.append(name,sched,act,diff,held,src);body.append(row);return {row,s};});
   table.append(thead,body);wrap.append(table);
-  const note=document.createElement('p');note.className='note';note.textContent=tr.timing==='scheduled'?'這班車沒有任何即時動態紀錄，整班照時刻表畫。':'時刻依即時動態紀錄推算（到站誤差約半分鐘，開車時刻可能差一分鐘左右）。內插＝該站不回報，由前後站推算；表定＝沒有紀錄、照時刻表；留置＝比表定多停 90 秒以上。';
+  const note=document.createElement('p');note.className='note';note.textContent=tr.timing==='scheduled'?'這班車沒有任何即時動態紀錄，整班照時刻表畫。':'時刻依即時動態紀錄推算，到站誤差約半分鐘。實測＝取自紀錄的到站或通過時刻；內插＝這一站沒有可用的紀錄，由前後站推算；推定＝紀錄裡沒有開車時刻，用表定加上當時的誤點分鐘推算，可能差一分鐘左右；留置＝比表定多停 90 秒以上。';
   // 推定的等待原因寫在時間軸事件的文字裡（例如「等 3278」），逐站欄位沒有原因欄：把這班車自己的事件列在表下面。
   const mine=events.filter(e=>e.train!=null&&e.train!==''&&String(e.train)===String(tr.train)),extra=[];
   if(mine.length){const h4=document.createElement('h4'),ul=document.createElement('ul');h4.textContent='這班車在最後一夜';ul.className='mine';for(const e of mine){const li=document.createElement('li'),tm=document.createElement('time'),tx=document.createElement('span');tm.textContent=dayClock(e.t);tx.textContent=e.text;li.append(tm,tx);ul.append(li);}extra.push(h4,ul);}
