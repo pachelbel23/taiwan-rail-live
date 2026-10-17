@@ -303,8 +303,29 @@ function checkObserved(){
   for(const r of rows){ok((r.source==='tdx-historical'||r.source==='d1')&&SO.files.some(f=>f.file==='.cache/'+r.file),'觀測列沒標來源，或來源檔不在 files：'+tr.train);
    ok((r.source==='d1'?r.train_no:r.TrainNo)===tr.train,'觀測列的車次不對：'+tr.train);rowCount[r.source]=(rowCount[r.source]||0)+1;}
   for(const s of tr.stops)if(s.src==='obs')ok(rows.some(r=>rowStation(r)===norm(s.name)),'標成實測的站沒有原始觀測列：'+tr.train+' '+s.name);}
+ // 3b. 實測時刻的精度：標成實測（obs）的到站／通過時刻，與 source-observations 裡該班該站那次到訪的第一筆紀錄相差不得超過
+ //     anchorToleranceSec。換算與 tainan_actuals.py 的 A 錨點相同：秒級歷史取 SrcUpdateTime（依 SrcUpdateTime、UpdateTime 排序，連續同站的列
+ //     合成一次到訪）；沒有歷史列的站用 D1，取最早一列的 obs_at−32 秒。起站不比（起站的紀錄是看板佔位，重建只用它的延誤給離站）。
+ //     同一站的歷史列被別站的列隔成兩段以上（例：保安→中洲→保安），是同一次到訪的紀錄亂序，分不出哪一段才是真的到站：容許範圍改成
+ //     「最早一段的第一筆」到「最晚一段的第一筆」各再放寬門檻，每一筆都列在輸出的 b1.outOfOrder。這條規則只看資料本身，不認車次。
+ const day0=Date.parse(cfg.date+'T00:00:00+08:00')/1000,secOf=iso=>Date.parse(iso)/1000-day0,TOL=V.anchorToleranceSec;
+ const b1={tolSec:TOL,checked:0,maxAbsSec:0,worst:null,outOfOrder:[]},b1Bad=[];
+ for(const tr of data.trains){if(tr.timing!=='observed')continue;
+  const rows=obsOf.get(tr.id).rows,origin=norm(schedOf.get(tr.serviceDate+':'+tr.train).stops[0].name),runs=new Map(),d1=new Map();
+  const H=rows.filter(r=>r.source==='tdx-historical').map(r=>({n:norm(r.StationName),s:secOf(r.SrcUpdateTime),u:secOf(r.UpdateTime)})).sort((a,b)=>a.s-b.s||a.u-b.u);
+  for(let i=0,j;i<H.length;i=j+1){j=i;while(j+1<H.length&&H[j+1].n===H[i].n)j++;if(!runs.has(H[i].n))runs.set(H[i].n,[]);runs.get(H[i].n).push(H[i].s);}
+  for(const r of rows)if(r.source==='d1'){const n=rowStation(r),t=secOf(r.obs_at)-RP.A_off_d1;if(!d1.has(n)||t<d1.get(n))d1.set(n,t);}
+  for(const s of tr.stops){const n=norm(s.name);if(s.src!=='obs'||n===origin)continue;
+   const firsts=runs.get(n)||(d1.has(n)?[d1.get(n)]:null);ok(firsts,'標成實測的站找不到可比的原始紀錄：'+tr.train+' '+s.name);
+   const lo=Math.min(...firsts),hi=Math.max(...firsts),dev=s.arrSec<lo?s.arrSec-lo:s.arrSec>hi?s.arrSec-hi:0;b1.checked++;
+   const row={train:tr.train,station:s.name,stop:s.stop,arr:hms(s.arrSec),first:firsts.map(x=>hms(Math.round(x))).join('／'),devSec:Math.round(dev)};
+   if(firsts.length>1)b1.outOfOrder.push(row);
+   if(Math.abs(dev)>b1.maxAbsSec){b1.maxAbsSec=Math.round(Math.abs(dev));b1.worst=row;}
+   if(Math.abs(dev)>TOL)b1Bad.push(row);}}
+ ok(b1.checked>0,'實測時刻精度判準沒有比到任何一站（判準失明）');
+ ok(!b1Bad.length,'標成實測的到站／通過時刻與原始紀錄相差超過 '+TOL+' 秒（'+b1Bad.length+' 列）：'+b1Bad.map(r=>r.train+' '+r.station+' '+r.arr+'／紀錄 '+r.first+'（'+r.devSec+' 秒）').join('；'));
  // 4. 重點車：照 tainan_actuals.py 的錨點規則，從原始列重算範圍內每個實測錨點，與重建時刻相差不得超過門檻
- const day0=Date.parse(cfg.date+'T00:00:00+08:00')/1000,secOf=iso=>Date.parse(iso)/1000-day0,anchors={};
+ const anchors={};
  for(const no of V.markedTrains){const m=cfg.marks.find(x=>x.train===no),tr=byNo(no,m?.serviceDate);ok(tr,'找不到重點車 '+no);
   const rows=obsOf.get(tr.id).rows,first=norm(schedOf.get(tr.serviceDate+':'+tr.train).stops[0].name),obs=new Map(),list=[];
   // 分鐘級 D1：A＝obs_at−32 秒，首見延誤取最早一列，離站延誤取 delay_max 的最大值
@@ -352,6 +373,27 @@ function checkObserved(){
  const uses=data.trains.map(tr=>{const S=tr.stops,u=[];for(let i=0;i+1<S.length;i++){const x=ord(S[i].name),y=ord(S[i+1].name);if(x<0||y<0||Math.abs(x-y)!==1)continue;
   u.push({sub:Math.min(x,y),dir:y>x?'南下':'北上',start:S[i].depSec,end:S[i+1].arrSec,leave:S[i+1].depSec,to:S[i+1].name});}return {tr,u};}).filter(x=>x.u.length);
  for(const x of uses)ok(x.u.every(u=>u.dir===x.tr.direction),'子區間的行進方向與班次方向不符：'+x.tr.train);
+ // 單線期間（snapshot 記的 fromSec～toSec）：永康—保安每一段相鄰站間，同一秒不得有兩個方向的列車都在站間（離開前一站之後、到達下一站之前；
+ // 停在站內不算）。這是 singleLine.note「站與站之間同一時間只有一個方向的列車，對向列車在車站交會」的判準，放在起點斷言之前：
+ // 起點算錯、或逐站時刻改到對向列車在站間相遇時，由這一條先報。
+ // 正向對照：以整段永康—保安計（離開區間第一站到抵達最後一站），單線期間同時在區間內的對向列車要至少一組，而且每一組在重疊期間
+ // 一直隔著同一座車站（兩班的位置之間始終有那座站，或兩班同時停在那座站），列在輸出的 stationGaps.sectionPairs；一組都沒有＝判準看不到對向列車。
+ const entry=x=>Math.min(...x.u.map(u=>u.start)),exit=x=>Math.max(...x.u.map(u=>u.end));
+ const posOf=(x,t)=>{for(const u of x.u)if(u.start<t&&t<u.end)return u.sub+.5;for(const s of x.tr.stops){const k=ord(s.name);if(k>=0&&s.arrSec<=t&&t<=s.depSec)return k;}return null;};
+ const gapHits=[];let gapSec=0;
+ for(let t=single.fromSec;t<=single.toSec;t++){gapSec++;const by=new Map();
+  for(const x of uses)for(const u of x.u)if(u.start<t&&t<u.end){if(!by.has(u.sub))by.set(u.sub,[]);by.get(u.sub).push({x,dir:u.dir});}
+  for(const [k,list] of by)if(new Set(list.map(e=>e.dir)).size>1)gapHits.push(hms(t)+' '+subName(k)+' '+list.map(e=>e.x.tr.train+e.dir).join('／'));}
+ ok(gapSec>0&&!gapHits.length,'單線期間有對向列車同時在同一段站間（'+gapHits.length+' 秒）：'+gapHits.slice(0,5).join('；'));
+ const sectionPairs=[];
+ for(let i=0;i<uses.length;i++)for(let j=i+1;j<uses.length;j++){const A=uses[i],B=uses[j];if(A.u[0].dir===B.u[0].dir)continue;
+  const o0=Math.max(entry(A),entry(B),single.fromSec),o1=Math.min(exit(A),exit(B),single.toSec);if(o0>=o1)continue;
+  let at=null,unknownSec=0;
+  for(let t=o0;t<=o1;t++){const p=posOf(A,t),q=posOf(B,t);if(p==null||q==null){unknownSec++;continue;}
+   const here=new Set();for(let k=Math.ceil(Math.min(p,q));k<=Math.floor(Math.max(p,q));k++)here.add(k);at=at?new Set([...at].filter(k=>here.has(k))):here;}
+  sectionPairs.push({trains:A.tr.train+'/'+B.tr.train,span:hms(o0)+'–'+hms(o1),meetAt:at?[...at].map(k=>SL.stations[k]):[],unknownSec});}
+ ok(sectionPairs.length>0,'單線期間整段區間內沒有任何一組對向列車同時在段內，站間判準看不到對向列車（正向對照失明）');
+ ok(sectionPairs.every(p=>p.meetAt.length>0&&p.unknownSec===0),'對向列車同時在區間內，卻沒有一直隔著同一座車站：'+JSON.stringify(sectionPairs.filter(p=>!p.meetAt.length||p.unknownSec)));
  const overlaps=[];for(let i=0;i<uses.length;i++)for(let j=i+1;j<uses.length;j++)for(const a of uses[i].u)for(const b of uses[j].u){
   if(a.sub!==b.sub||a.dir===b.dir)continue;const o0=Math.max(a.start,b.start),o1=Math.min(a.end,b.end);
   if(o0<o1)overlaps.push({sub:a.sub,A:uses[i].tr,B:uses[j].tr,start:o0,end:o1,endBy:a.end<=b.end?{tr:uses[i].tr,station:a.to}:{tr:uses[j].tr,station:b.to}});}
@@ -363,7 +405,6 @@ function checkObserved(){
  // 官方封鎖之後的對向重疊，每一組都要標成單線不明（時段從官方封鎖或重疊開始起算，涵蓋到重疊結束）
  for(const o of late)ok(U.intervals.some(i=>i.reason==='single-line-unresolved'&&pairOf(i,o.A.id,o.B.id)&&i.start<=Math.max(o.start,SL.officialSec)&&o.end<=i.end),'官方封鎖後的對向重疊沒有標成單線不明：'+o.A.train+'/'+o.B.train+' '+subName(o.sub)+' '+hms(o.start)+'–'+hms(o.end));
  // 終點＝最後一班離開單線區間的時刻；反向＝起點時仍在區間內或之後才進入、而且不在封鎖後重疊名單裡的南下列車
- const entry=x=>Math.min(...x.u.map(u=>u.start)),exit=x=>Math.max(...x.u.map(u=>u.end));
  const lastExit=uses.reduce((b,x)=>!b||exit(x)>exit(b)?x:b,null),south=uses.filter(x=>x.u[0].dir==='南下'),lastSouth=south.reduce((b,x)=>!b||entry(x)>entry(b)?x:b,null);
  const toSec=Math.max(...lastExit.u.map(u=>u.leave)),pair=new Set(late.flatMap(o=>[o.A.id,o.B.id])),revIds=south.filter(x=>exit(x)>fromSec&&!pair.has(x.tr.id)).sort((a,b)=>entry(a)-entry(b)).map(x=>x.tr.id);
  ok(single.toSec===toSec,'單線終點應為 '+hms(toSec)+'，實為 '+hms(single.toSec));
@@ -401,8 +442,11 @@ function checkObserved(){
  ok(sl&&sl.t===fromSec&&sl.kind==='inferred'&&sl.text===SL.section.join('—')+'改單線雙向'&&sl.ref?.basis==='last-opposing-overlap'&&JSON.stringify(sl.ref.lastOverlap)===JSON.stringify(lo),'時間軸的單線雙向那一列要在起點、kind＝inferred、依據與 singleLine.basis 相同');
  const trace=[];
  for(const d of cfg.observedEvents){const e=E.find(x=>x.id===d.id),t=byNo(d.train,d.serviceDate),s=stopOf(t,d.station);ok(e&&t&&s,'時間軸缺「'+d.id+'」或找不到那一班那一站');
-  ok(e.train===t.train&&e.t===s[d.field]&&e.kind===(s.src==='obs'?'observed':'inferred')&&e.ref?.trainId===t.id&&norm(e.ref.station)===norm(s.name)&&e.ref.field===d.field&&e.ref.src===s.src,
-   '時間軸「'+d.id+'」的時刻不是 '+d.train+' 在'+d.station+'的 '+d.field+'，或 kind／來源不對');
+  // 只有到站／通過的實測時刻標實測（起站除外）；離站時刻是表定離站加上誤點分鐘推得，標推定並寫明依據。
+  const measured=d.field==='arrSec'&&s.src==='obs'&&norm(s.name)!==norm(schedOf.get(t.serviceDate+':'+t.train).stops[0].name);
+  ok(e.train===t.train&&e.t===s[d.field]&&e.kind===(measured?'observed':'inferred')&&e.ref?.trainId===t.id&&norm(e.ref.station)===norm(s.name)&&e.ref.field===d.field&&e.ref.src===s.src
+   &&(d.field!=='depSec'||e.ref.basis==='delay-minutes'),
+   '時間軸「'+d.id+'」的時刻不是 '+d.train+' 在'+d.station+'的 '+d.field+'，或 kind／來源不對（離站時刻要標推定、依據 delay-minutes）');
   let text=d.text.replace('{train}',t.train);
   if(d.wait){const c=data.trains.filter(u=>u!==t&&u.direction===d.wait.direction).map(u=>({u,x:stopOf(u,d.wait.at)})).filter(({x})=>x&&x.arrSec>=s.arrSec&&x.arrSec<=s.depSec);
    ok(c.length===1&&e.ref.wait?.trainId===c[0].u.id,'時間軸「'+d.id+'」等的車要是停站期間唯一到站的'+d.wait.direction+'車：'+c.map(x=>x.u.train));text=text.replace('{wait}',c[0].u.train);}
@@ -410,7 +454,7 @@ function checkObserved(){
   ok(e.text===text,'時間軸「'+d.id+'」的文字與範本不符：'+e.text);
   if(d.claim==='last-departure')ok(data.trains.every(u=>u===t||!(stopOf(u,d.station)?.depSec>e.t)),'時間軸「'+d.id+'」不是最後一班離開'+d.station);
   if(d.claim==='last-section-exit')ok(t===lastExit.tr&&e.t===toSec&&uses.every(x=>x.u.every(u=>u.leave<=e.t)),'時間軸「'+d.id+'」不是最後一班離開單線區間');
-  trace.push(d.id+'＝'+t.train+' '+s.name+' '+d.field+' '+hms(e.t)+'（'+s.src+'）');}
+  trace.push(d.id+'＝'+t.train+' '+s.name+' '+d.field+' '+hms(e.t)+'（'+s.src+'，'+e.kind+'）');}
  // 8. 不確定時段：判準欄位、每段有 reason；build 列出的單線解不掉時段都在裡面
  if(cfg.ambiguity)ok(U.criterion===cfg.ambiguity.criterion,'uncertainty.json 的 criterion 應為 '+cfg.ambiguity.criterion);
  for(const i of U.intervals)ok(['track-overlap','single-line-unresolved'].includes(i.reason),'不確定時段缺 reason 或 reason 不認得：'+(i.trainNos||i.trains));
@@ -444,8 +488,9 @@ function checkObserved(){
  const byReason={};for(const i of U.intervals)byReason[i.reason]=(byReason[i.reason]||0)+1;
  return {stops:srcCount,observationRows:rowCount,scheduledTrains:TS.scheduledTrains.map(id=>byId.get(id).train),anchors,
   speed:{epsKmh:EPS_KMH,worst:{train:worst.train,kmh:worst.kmh,capKmh:worst.capKmh},byFormation:speedByFormation},
-  singleLine:{from:hms(fromSec),to:hms(toSec),lastOverlap:LO.A.train+'/'+LO.B.train+' '+subName(LO.sub)+' 到 '+hms(lastEnd),lateOverlapsMarked:late.length,reversed},
-  events:trace,dwell:{checked:dwellChecked,notInView:dwellSkipped,maxMoveM:+dwellMove.toFixed(3),maxStationDistM:Math.round(dwellDist)},
+  singleLine:{from:hms(fromSec),to:hms(toSec),lastOverlap:LO.A.train+'/'+LO.B.train+' '+subName(LO.sub)+' 到 '+hms(lastEnd),lateOverlapsMarked:late.length,reversed,
+   stationGaps:{checkedSec:gapSec,opposingInGapSec:gapHits.length,sectionPairs}},
+  b1,events:trace,dwell:{checked:dwellChecked,notInView:dwellSkipped,maxMoveM:+dwellMove.toFixed(3),maxStationDistM:Math.round(dwellDist)},
   occupancy:{routeSegments:segTotal,bodyOverlapSec:bodySec,opposingSharedWaySec:oppSec,groups:all.map(g=>({trains:nameOf(g),span:hms(g.start)+'–'+hms(g.end),kinds:[...g.kinds],ways:[...g.ways],maxOverlapM:+g.maxOverlapM.toFixed(1),covered:g.covered}))},
   uncertainty:{criterion:U.criterion,intervals:U.intervals.length,byReason}};
 }

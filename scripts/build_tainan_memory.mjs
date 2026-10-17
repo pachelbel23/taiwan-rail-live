@@ -12,6 +12,7 @@
 // 10/16 的做法（docs/tainan-memory-2026-10-16-design.md 第 3、4、10 節）：
 //   1. 停靠站換成重建的實際到離站時刻；被留置的通過站（比表定多停 90 秒以上）當成待避停車點；
 //      有實測的通過站當成剖面折點（以扣掉留置的行駛時間算千分比，與 assignRunProfiles 讀 passObs 的換算一致）。
+//      剖面要真的通過折點：畫面範圍內每顆折點的回填時刻與重建時刻相差超過 1 秒就停；沒有通過折點的通過站不標實測。
 //   2. 剖面與通過站回填用網站同一段原始碼（build_run_profiles.mjs 的沙箱，呼叫順序同 computeProfiles）。
 //   3. 股道沿用每班車照表定綁到的那一份派車計畫，時刻換成實際值後以自訂計畫精確綁定（改點不改股道）。
 //   4. 單線雙向：從重建時刻找出對向列車開始輪流進入永康—保安的時刻；之後進入區間的南下列車改走北上股道反向，
@@ -130,7 +131,7 @@ for(const v of selected)v.act=actBy.get(v.key);
 // mode：'observed'（停靠站＋留置通過站＋實測通過折點）、'no-knots'（不放通過折點）、'scheduled'（整班表定）。
 const isEnd=(stops,i)=>i===0||i===stops.length-1;
 function retime(v,mode){
- const tr=structuredClone(v.src),off=v.offset,a=v.act,res={mode,held:[],knots:0,dropped:[],unmatched:[],passObs:null};
+ const tr=structuredClone(v.src),off=v.offset,a=v.act,res={mode,held:[],knots:0,knotAt:[],dropped:[],unmatched:[],passObs:null};
  if(mode==='scheduled'||a.timing==='scheduled')return {...res,tr,mode:'scheduled'};
  const S=tr.stops,real=S.flatMap((s,i)=>isEnd(S,i)||s.stop!==false?[i]:[]),chainStops=a.nodes.filter(n=>n.stop);
  const old=S.map(s=>({arr:s.arrSec,dep:s.depSec})),matched=new Map();let p=0;
@@ -160,7 +161,7 @@ function retime(v,mode){
   for(const j of inner){const isHeld=heldSet.has(S[j]),isKnot=knots.includes(j);if(!isHeld&&!isKnot)continue;
    const t=isHeld?S[j].arrSec:passNodes.get(norm(S[j].name)).arr-off,f=1000*mOf(t)/M;
    if(!(f>last&&f<1000)){if(isHeld)throw Error('留置通過站的千分比不在跑段內：'+tr.train+' '+S[j].name);res.dropped.push(S[j].name);continue;}
-   ov[S[j].name]=f;last=f;if(isKnot)res.knots++;}
+   ov[S[j].name]=f;last=f;if(isKnot){res.knots++;res.knotAt.push({j,t});}}
  }
  res.passObs=ov;return {...res,tr};
 }
@@ -320,6 +321,15 @@ for(let round=0;;round++){
  for(const i of bad){const k=selected[i].key;modes.set(k,A.items[i].mode==='observed'?'no-knots':'scheduled');}
 }
 const {trains,items,ctx,plans,single,chains,motion}=A;
+// 剖面有沒有真的通過實測折點：index.html 的 buildObsProfile 對折點之間的平均速度設上限，超過就丟折點，丟光就退回梯形，
+// 通過站改由梯形回填，不留任何紀錄。tainan_actuals.py 的折點閘門讓重建時刻本身過得了那道上限；這裡複驗畫面範圍內每顆折點的
+// 回填時刻與重建時刻相差 ≤1 秒（剖面把折點時刻取整到秒），不符就停，不讓偏掉的時刻帶著實測標籤出貨。
+const knotCheck={checked:0,maxDevSec:0};
+{const miss=[];
+ for(const [i,x] of items.entries()){if(x.mode!=='observed')continue;const tr=trains[i],{a,b}=windowOf(selected[i],tr);
+  for(const k of x.knotAt){if(k.j<a||k.j>b)continue;const dev=Math.abs(tr.stops[k.j].arrSec-k.t);knotCheck.checked++;knotCheck.maxDevSec=Math.max(knotCheck.maxDevSec,+dev.toFixed(2));
+   if(dev>1)miss.push({key:selected[i].key,station:tr.stops[k.j].name,knot:Math.round(k.t+selected[i].offset),drawn:Math.round(tr.stops[k.j].arrSec+selected[i].offset)});}}
+ if(miss.length)throw Error('剖面沒有通過實測折點（重建時刻過不了 buildObsProfile 的速度上限）：'+JSON.stringify(miss));}
 
 // ── 編組：與主站 carModelOf 相同的輸入（specialOf 的車型、支線、具名列車；具名列車依營運日） ──
 const ctxF=makeSandbox(indexPath,readSpecial(repoFile('data/tra_special_trains.json')));
@@ -352,10 +362,14 @@ for(const [i,v] of selected.entries()){
  formRows.push({key:v.key,train:String(tr.train),carName:tr.carName,typeName:tr.typeName,id:F.spec.id,cars:F.formation.parts.length,parts:F.formation.parts.map(p=>p.mesh),
   plainId:F.plain.id,plainCars:F.plain.lengths.length,special:F.special,lengthM:+F.formation.lengthM.toFixed(2)});
  const nodeOf=new Map(v.act.nodes.map(n=>[norm(n.name),n])),observed=mode!=='scheduled';
+ // 通過站只有兩種情形取自實測：被留置（到離時刻直接用重建值），或是剖面通過的折點（上面已複驗）。其餘通過站的時刻是剖面回填的，
+ // 例如 no-knots 模式整班不放折點，該站即使有紀錄也標內插。
+ const knotIdx=new Set(items[i].knotAt.map(k=>k.j)),srcAt=(s,j)=>{const n=nodeOf.get(norm(s.name)),x=srcOf(n)||'interp';
+  return x==='obs'&&s.stop===false&&!n.held&&!(mode==='observed'&&knotIdx.has(j))?'interp':x;};
  const stops=tr.stops.slice(a,b+1).map((s,k)=>{const o=v.src.stops[a+k];
   // 通過站的時刻是剖面回填的小數秒；頁面與時間軸只用到整秒（四捨五入不破壞先後順序）。
   return {name:s.name,arrSec:Math.round(s.arrSec+v.offset),depSec:Math.round(s.depSec+v.offset),stop:s.stop!==false,schedArrSec:Math.round(o.arrSec+v.offset),schedDepSec:Math.round(o.depSec+v.offset),
-   src:observed?(srcOf(nodeOf.get(norm(s.name)))||'interp'):'sched',holdSec:Math.max(0,Math.round((s.depSec-s.arrSec)-(o.depSec-o.arrSec)))};});
+   src:observed?srcAt(s,a+k):'sched',holdSec:Math.max(0,Math.round((s.depSec-s.arrSec)-(o.depSec-o.arrSec)))};});
  const row={id:v.key,train:String(tr.train),typeName:tr.typeName,carName:tr.carName,color:tr.color,serviceDate:v.day,direction:dirOf(tr,a,b),
   timing:mode==='scheduled'?'scheduled':'observed',formation:F.formation,spans,stops};
  const mark=cfg.marks.find(m=>m.train===String(tr.train)&&m.serviceDate===v.day);if(mark)row.mark=mark.mark;
@@ -376,6 +390,7 @@ const LO=single.lastOverlap,slBasis={rule:'官方封鎖之後，最後一組對�
   return {sub:LO.sub,trains:[outTrains[LO.a].train,outTrains[LO.b].train],trainIds:[outTrains[LO.a].id,outTrains[LO.b].id],start:Math.floor(LO.start),end:s.arrSec,
    endBy:{train:e.train,trainId:e.id,station:s.name,field:'arrSec',src:s.src}};})()};
 if(slBasis.lastOverlap&&Math.ceil(slBasis.lastOverlap.end/60)*60!==single.fromSec)throw Error('單線起點與最後一組重疊的結束時刻不一致');
+const DEP_RULE='離站時刻依誤點分鐘推得：表定離站＋max(0, 60×誤點分鐘−30) 秒，不早於到站＋20 秒；TDX 只記到站與誤點分鐘，誤點只到分鐘，誤差約一分鐘';
 const events=cfg.officialEvents.map(e=>({...e}));
 events.push({id:'single-line-start',t:single.fromSec,text:SL.section.join('—')+'改單線雙向',kind:'inferred',
  ref:{basis:'last-opposing-overlap',rule:slBasis.rule,lastOverlap:slBasis.lastOverlap}});
@@ -389,7 +404,11 @@ for(const d of cfg.observedEvents){
   other={trainId:u.id,train:u.train,arrSec:x.arrSec,depSec:x.depSec};text=text.replace('{other}',u.train);}
  if(d.claim==='last-departure'&&outTrains.some(u=>u!==t&&stopOf(u,d.station)?.stop&&stopOf(u,d.station).depSec>sec))throw Error('不是最後一班離開 '+d.station);
  if(d.claim==='last-section-exit'&&selected[single.lastExit].key!==t.id)throw Error('不是最後一班離開單線區間');
- events.push({id:d.id,t:sec,text,kind:s.src==='obs'?'observed':'inferred',train:t.train,ref:{trainId:t.id,station:s.name,field:d.field,src:s.src,...(wait&&{wait}),...(other&&{other})}});
+ // 只有到站／通過時刻取自實測紀錄（起站的紀錄是看板佔位，不算）。離站時刻是表定離站加上誤點分鐘推得（TDX 不記離站），
+ // 誤點只到分鐘，誤差約一分鐘，一律標推定。
+ const node=selected.find(x=>x.key===t.id).act.nodes.find(n=>norm(n.name)===norm(s.name)),measured=d.field==='arrSec'&&s.src==='obs'&&/^obs-/.test(node?.src||'');
+ events.push({id:d.id,t:sec,text,kind:measured?'observed':'inferred',train:t.train,ref:{trainId:t.id,station:s.name,field:d.field,src:s.src,
+  ...(d.field==='depSec'&&{basis:'delay-minutes',rule:DEP_RULE}),...(wait&&{wait}),...(other&&{other})}});
 }
 events.sort((a,b)=>a.t-b.t);
 
@@ -479,7 +498,7 @@ const subsLate=[...new Set(single.late.slice().sort((x,y)=>y.end-x.end).map(o=>o
 const meetDrawn=occRev.filter(h=>h.kind==='opposing'&&h.drawn.length),followDrawn=occRev.filter(h=>h.kind==='following'&&h.drawn.length);
 const noteParts=['官方公告 '+hm(SL.officialSec)+' 起封鎖東正線。'];
 if(subsLate.length)noteParts.push('實測顯示，'+hm(single.fromSec)+' 前'+subsLate.join('、')+'仍有對向列車同時在區間內，所以 '+hm(single.fromSec)+' 前照一般股道畫，對向重疊的時段標「封鎖初期股道安排不明」。');
-noteParts.push(hm(single.fromSec)+' 起'+SL.section.join('—')+'的對向列車嚴格輪流通過單線，南下列車畫在西正線（平常的北上股道）上反向行駛'
+noteParts.push(hm(single.fromSec)+' 起'+SL.section.join('—')+'只剩一條線：站與站之間同一時間只有一個方向的列車，對向列車在車站交會；南下列車畫在西正線（平常的北上股道）上反向行駛'
  +(straddleNos.length?'；'+straddleNos.join('、')+' 在 '+hm(single.fromSec)+' 前已進入區間、之後才離開，整段都畫在西正線上':'')+'。');
 if(meetDrawn.length)noteParts.push(meetDrawn.every(h=>!h.place.includes('→'))?'對向列車同時停在同一座車站、資料分不出各停哪一股的時段，同樣標示。':'對向列車在單線上位置重疊、資料解不開的時段，同樣標示。');
 if(followDrawn.length)noteParts.push('同向列車車身在畫面上重疊的時段，同樣標示。');
@@ -549,7 +568,7 @@ const report={date:cfg.date,trains:outTrains.length,overnight:outTrains.filter(t
  directions:Object.fromEntries(['北上','南下'].map(d=>[d,outTrains.filter(t=>t.direction===d).length])),routes:routes.length,
  samples:outTrains.reduce((n,t)=>n+t.spans.reduce((x,s)=>x+s.s.length,0),0),rounds,fallbacks,
  modes:Object.fromEntries(['observed','no-knots','scheduled'].map(m=>[m,items.filter(x=>x.mode===m).length])),
- knots:items.reduce((n,x)=>n+x.knots,0),droppedKnots:items.flatMap((x,i)=>x.dropped.map(d=>selected[i].key+' '+d)),unmatchedStops:items.flatMap((x,i)=>x.unmatched.map(d=>selected[i].key+' '+d)),
+ knots:items.reduce((n,x)=>n+x.knots,0),knotCheck,droppedKnots:items.flatMap((x,i)=>x.dropped.map(d=>selected[i].key+' '+d)),unmatchedStops:items.flatMap((x,i)=>x.unmatched.map(d=>selected[i].key+' '+d)),
  heldPass:items.flatMap((x,i)=>x.held.map(h=>({train:selected[i].key,station:h.stop.name,arr:h.arr+selected[i].offset,dep:h.dep+selected[i].offset}))),
  speedByType:[...byType].map(([k,xs])=>{xs.sort((x,y)=>x-y);return {type:k,n:xs.length,min:+xs[0].toFixed(1),p50:+xs[xs.length>>1].toFixed(1),max:+xs.at(-1).toFixed(1)};}),
  speedTop:selected.map((v,i)=>({key:v.key,max:+A.speed[i].max.toFixed(2),maxInView:+A.speed[i].maxIn.toFixed(2),cap:A.speed[i].cap})).sort((x,y)=>y.max/y.cap-x.max/x.cap).slice(0,10),
@@ -566,5 +585,5 @@ const report={date:cfg.date,trains:outTrains.length,overnight:outTrains.filter(t
  events,meet:ctx.__meet??null};
 fs.writeFileSync(resolveInput(cfg,cfg.actuals.report),JSON.stringify(report,null,1)+'\n');
 console.log(JSON.stringify({date:cfg.date,trains:report.trains,overnight:report.overnight,directions:report.directions,routes:routes.length,rails:rails.length,samples:report.samples,
- modes:report.modes,fallbacks:fallbacks.length,singleLine:{fromSec:single.fromSec,toSec:single.toSec,reversed:singleLine.reversed.map(r=>r.train),unresolved:unresolved.length},
+ modes:report.modes,knotCheck,fallbacks:fallbacks.length,singleLine:{fromSec:single.fromSec,toSec:single.toSec,reversed:singleLine.reversed.map(r=>r.train),unresolved:unresolved.length},
  bytes:fs.statSync(path.join(out,'snapshot.json')).size}));

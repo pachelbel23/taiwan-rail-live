@@ -17,6 +17,9 @@
 #   3. 錨點互相矛盾時，用帶最小間隔的加權保序回歸（PAV）修正。最小間隔：停站 20 秒、跑行 0.7×表定，
 #      另外不得短於該車種以極速梯形剖面跑完那一段的時間（物理下限；段長與性能參數由 build 的 --export-run-floor 匯出，
 #      與網站畫車用的同一組 schedSegKmOf／resolvePerf）。
+#      有實測的通過站會成為 build 剖面的折點；網站的 buildObsProfile 對折點之間的平均速度設上限（與跑段端點相鄰的區間
+#      knot_end_ratio×極速、中段＝極速），超過就丟掉該區間內側的折點，丟到一個不剩就整段退回梯形，通過站時刻改由梯形
+#      回填，與實測紀錄可差到兩分多鐘。所以折點區間的最小間隔再加一條：段長÷上限＋knot_margin_s（見 floor_gaps）。
 #   4. 錨點之間沒有實測的節點：停站照表定、只伸縮跑行（上限 1.3×表定），多出來的時間判為留置，
 #      放在區間內第一個沒有實測的停靠站；完全沒有停靠站才攤到跑行。
 #   5. 首尾錨點之外照延誤平移；整班沒有實測＝表定。
@@ -44,6 +47,8 @@ P = dict(
     max_incons=900.0,   # 非起點站的 A 與（表定到站＋60×首見延誤）差超過 15 分鐘＝佔位／重拍／路線結構假象，捨棄
     hold_flag_s=90.0,   # 比表定多停 90 秒以上才算留置
     floor_margin_s=1.0, # 物理下限多留 1 秒，剖面解出的巡航速度才會嚴格低於極速
+    knot_end_ratio=0.85,  # 折點區間與跑段端點相鄰時的平均速度上限／極速（index.html buildObsProfile 的 VS_END＝VS_MID×0.85）
+    knot_margin_s=2.0,  # 折點區間多留 2 秒：build 把跑段端點時刻取整到秒、剖面再把折點時刻取整，區間最多短 1 秒
 )
 
 
@@ -508,8 +513,11 @@ def tmin_run(L_km, perf):
     return 2 * math.sqrt(D * L) if L <= D * v * v else L / v + D * v
 
 
-def floor_gaps(nodes, rec, ST, held_pass):
+def floor_gaps(nodes, rec, ST, held_pass, knots=frozenset()):
     """依 build 匯出的逐段段長，把每個跑段（停靠站與被留置的通過站之間）的物理下限攤到鏈上的跑行區間。
+    knots：會成為 build 剖面折點的節點序（knot_nodes）。跑段內有折點時，再加折點閘門：相鄰兩個剖面點（跑段端點與折點）
+    之間至少要 段長÷上限＋knot_margin_s 秒（上限＝極速；與跑段端點相鄰的區間＝knot_end_ratio×極速，同 buildObsProfile），
+    依段長攤到其中的跑行區間，與物理下限取大。
     回傳 ({q: 秒}, [跑段診斷])。rec 為 None（沒有匯出）時不設下限。"""
     if not rec:
         return {}, []
@@ -538,8 +546,43 @@ def floor_gaps(nodes, rec, ST, held_pass):
         tot = sum(sl)
         for q, s in zip(qs, sl):
             out[q] = tmin * (s / tot if tot > 0 else 1.0 / len(qs))
-        diag.append({'from': nodes[i]['sta'], 'to': nodes[j]['sta'], 'km': L, 'tmin': tmin, 'sched': nodes[j]['sa'] - nodes[i]['sd']})
+        d = {'from': nodes[i]['sta'], 'to': nodes[j]['sta'], 'km': L, 'tmin': tmin, 'sched': nodes[j]['sa'] - nodes[i]['sd']}
+        pts = [i] + [k for k in range(i + 1, j) if k in knots] + [j]
+        if len(pts) > 2:                                 # 沒有折點的跑段畫梯形，閘門不適用
+            vmax, gates = rec['perf']['v'] / 3.6, []
+            for m, (p0, p1) in enumerate(zip(pts[:-1], pts[1:])):
+                lim = vmax * (P['knot_end_ratio'] if m == 0 or m == len(pts) - 2 else 1.0)
+                seg = {}
+                for k in range(p0 + 1, p1 + 1):
+                    a, b = dense_at[k - 1], dense_at[k]
+                    if a is None or b is None or b <= a:
+                        seg = None; break
+                    seg[2 * k] = sum(km[a:b]) * 1000.0
+                Lm = sum(seg.values()) if seg else 0.0
+                if not seg or Lm <= 0:
+                    gates.append({'to': nodes[p1]['sta'], 'skip': 'node-not-in-dense'})
+                    continue
+                need = Lm / lim + P['knot_margin_s']
+                for q, Lq in seg.items():
+                    out[q] = max(out.get(q, 0.0), need * Lq / Lm)
+                gates.append({'to': nodes[p1]['sta'], 'm': round(Lm, 1), 'need': round(need, 1), 'end': lim < vmax})
+            d['knotGates'] = gates
+        diag.append(d)
     return out, diag
+
+
+def knot_nodes(nodes, obs, held_pass):
+    """build 剖面會當折點的節點序：有到站錨點、沒被留置的通過站（與 reconstruct 給 A 錨點的規則相同：起點不給、
+    與首見延誤推的時刻差超過 max_incons 的捨棄）。build 端以 src 為 obs-*、held 為否選折點，兩邊一致。"""
+    out = set()
+    for i, nd in enumerate(nodes):
+        o = obs.get(nd['sta'])
+        if i == 0 or nd['stop'] or not o or nd['sta'] in held_pass:
+            continue
+        if abs(o['A'] - (nd['sa'] + 60.0 * o['d_first'])) > P['max_incons']:
+            continue
+        out.add(i)
+    return out
 
 
 def reconstruct_physical(inst, obs, ST, rec):
@@ -547,7 +590,7 @@ def reconstruct_physical(inst, obs, ST, rec):
     held = set()
     for _ in range(5):
         nodes0 = build_chain(inst, ST)
-        fq, diag = floor_gaps(nodes0, rec, ST, held)
+        fq, diag = floor_gaps(nodes0, rec, ST, held, knot_nodes(nodes0, obs, held))
         nodes, res, info = reconstruct(inst, obs, ST, floor_q=fq)
         now = {sta for sta, r in res.items() if not r['stop'] and r['held']}
         if now <= held:
