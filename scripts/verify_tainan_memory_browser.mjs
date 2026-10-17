@@ -221,7 +221,7 @@ async function lastDayChecks(page,{engine,width,height,click,out}){
 
  await step('不確定時段：每種 reason 各有字幕寫法（封鎖初期股道安排不明／股道安排待確認）；車身隱藏、標籤留原位、離開後恢復',async()=>{
   const reasons=[...new Set(D.intervals.map(i=>i.reason))];assert.ok(reasons.length>0&&reasons.every(r=>WORDS[r]),'intervals 的 reason 缺漏或未知：'+JSON.stringify(reasons));
-  assert.ok(reasons.includes('single-line-unresolved'),'封鎖初期（22:00–22:14）那幾班要有 single-line-unresolved 的不確定時段：'+JSON.stringify(reasons));   // track-overlap 有就驗、沒有就略過（兩種都有時各驗一次）
+  assert.ok(reasons.includes('single-line-unresolved'),'封鎖初期（22:00 到單線起點）那幾班要有 single-line-unresolved 的不確定時段：'+JSON.stringify(reasons));   // track-overlap 有就驗、沒有就略過（兩種都有時各驗一次）
   for(const r of reasons){const iv=D.intervals.find(i=>i.reason===r),sec=(iv.start+iv.end)/2;
    await page.evaluate(sec=>{tainanMemory.state.playing=false;tainanMemory.followTrain('');tainanMemory.jump(sec);tainanMemory.stationView();},sec);await frames();
    const g=await page.evaluate(([ids,sec])=>{const m=tainanMemory;const sampled=id=>!!m.sample(m.data.trains.find(t=>t.id===id),sec);return {caption:document.getElementById('caption').textContent,cls:document.getElementById('caption').classList.contains('uncertain'),
