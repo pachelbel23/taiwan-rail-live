@@ -221,13 +221,16 @@ $('slToggle').onclick=()=>{const b=$('slToggle');b.setAttribute('aria-expanded',
   const follow=data.trains.find(t=>t.id===state.follow);
   if(follow)return [follow.train+' 次',MARK_NAME[follow.mark],follow.formation.caption,follow.timing==='scheduled'?'無即時動態紀錄，照表定時刻':follow.timing?'時刻依即時動態紀錄重建':'依封存班表推演'].filter(Boolean).join(' · ');
   return '封存 '+data.trains.length+' 班 · 時刻依即時動態紀錄重建，非 GPS 軌跡；區間車與莒光號的編組為推估。';}
- function stationView(){state.follow='';$('train').value='';target.set(stationXY[0]+18,stationXY[1],0);span=140;azimuth=3.6;tilt=TILT0;view();}
+ // 「舊站近景」連方位、仰角、縮放一起回預設；「下一班到臺南」只跳時間、把畫面中心移回臺南站，方位、仰角、縮放照按之前的。兩顆都取消跟車。
+ // 「下一班到臺南」只算會停臺南的班次：最後一夜 23:06 起有只跑仁德—保安的班次，它們的 anchorStop 是第一站，不能拿來排。
+ function centerStation(){state.follow='';$('train').value='';target.set(stationXY[0]+18,stationXY[1],0);}
+ function stationView(){centerStation();span=140;azimuth=3.6;tilt=TILT0;view();}
  $('station').onclick=stationView;$('overview').onclick=()=>{state.follow='';$('train').value='';target.set(400,-3250,0);span=10500;view();};
  $('rotate').onclick=()=>{azimuth+=Math.PI/4;view();};$('zoomin').onclick=()=>{span=Math.max(34,span/1.5);view();};$('zoomout').onclick=()=>{span=Math.min(14000,span*1.5);view();};
  $('timeline').oninput=e=>jump(Number(e.target.value));$('time').onchange=e=>{const [h,m,s=0]=e.target.value.split(':').map(Number);jump(h*3600+m*60+s);};
  $('play').onclick=()=>{state.playing=!state.playing;$('play').textContent=state.playing?'暫停':'播放';$('play').setAttribute('aria-label',state.playing?'暫停重播':'播放重播');};
  $('speed').onchange=e=>state.speed=Number(e.target.value);
- $('next').onclick=()=>{const at=tr=>anchorStop(tr).arrSec,next=byArrival.find(tr=>at(tr)>state.sec+25)||byArrival[0];jump(at(next)-25);stationView();};
+ $('next').onclick=()=>{const toTainan=byArrival.filter(tainanStop),at=tr=>tainanStop(tr).arrSec,next=toTainan.find(tr=>at(tr)>state.sec+25)||toTainan[0];jump(at(next)-25);centerStation();view();};
  $('train').onchange=e=>followTrain(e.target.value);
  $('about').onclick=$('aboutNav').onclick=()=>{$('details').showModal();};
  // 手勢：單指或左鍵拖曳平移；雙指捏合縮放＋轉動改方位、雙指一起上下推改傾斜（兩指合計移動 16 px 後判定是哪一種，這次手勢就鎖定，判定前的位移在判定當下一次補上）。
