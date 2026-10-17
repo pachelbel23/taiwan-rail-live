@@ -262,6 +262,11 @@ try {
   const tainanMemory = spawnSync('node', [path.join(wt, 'scripts', 'verify_tainan_memory.mjs')], { encoding: 'utf8' });
   process.stdout.write(tainanMemory.stdout || ''); process.stderr.write(tainanMemory.stderr || '');
   if (tainanMemory.status !== 0) fail('台南地面鐵道封存雜湊、班次或沿軌接續未通過');
+  // 10/16 實測重播（與 9/12 並列）：這個目錄的封存雜湊、班次與沿軌接續、實測時刻、單線雙向、股道占用、頁面與主站入口。
+  const tainanMemory1016 = spawnSync('node', [path.join(wt, 'scripts', 'verify_tainan_memory.mjs'), '--date', '2026-10-16'], { encoding: 'utf8' });
+  process.stdout.write(tainanMemory1016.stdout || ''); process.stderr.write(tainanMemory1016.stderr || '');
+  if (tainanMemory1016.status !== 0) fail('台南地面鐵道 10/16 實測重播：封存雜湊、實測時刻、單線雙向或股道占用未通過'
+    + '（單獨重跑：node scripts/verify_tainan_memory.mjs --date 2026-10-16）');
   const railLevels = spawnSync('node', [path.join(wt, 'scripts', 'verify_rail_levels.mjs')], { cwd:wt, encoding:'utf8' });
   process.stdout.write(railLevels.stdout || ''); process.stderr.write(railLevels.stderr || '');
   if (railLevels.status !== 0) fail('軌道上下層、交叉淨距或來源剖面版本未通過');
