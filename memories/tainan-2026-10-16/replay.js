@@ -138,10 +138,15 @@ try{
    if(inDay){d.hidden=true;row.setAttribute('aria-expanded','false');row.setAttribute('aria-controls',d.id);}li.append(d);}
   $('events').append(li);nightRows.push(li);}
  $('night').hidden=!events.length;
+ // 面板下緣提示：展開的那一列還有一截在面板下緣以下（說明或報導連結要往下捲）時，#night 加 more，CSS 在底部畫一道淡出（同跟車卡的右緣提示）；
+ // 捲動、面板或列表變大小時重算。面板收合時本體高 0，自然拿掉。
+ const nbMore=document.createElement('span');nbMore.className='nb-more';nbMore.setAttribute('aria-hidden','true');$('night').append(nbMore);
+ const syncNightMore=()=>{const body=$('nightBody'),h=body.clientHeight,li=nightRows.find(x=>x.firstElementChild.getAttribute('aria-expanded')==='true');$('night').classList.toggle('more',!!li&&h>0&&li.getBoundingClientRect().bottom>body.getBoundingClientRect().top+body.clientTop+h+1);};
+ $('nightBody').addEventListener('scroll',syncNightMore,{passive:true});{const ro=new ResizeObserver(syncNightMore);ro.observe($('nightBody'));ro.observe($('events'));}
  // 展開 id 那一列的說明、收起其他列。面板開著的話，把那一列捲進面板的可見範圍：整列放得下就整列露出；放不下但說明（含報導連結）放得下，就讓說明整段露出、列標題可以捲出上緣（矮螢幕的面板本體只有一百 px 上下，展開的列常比它高）；說明也放不下就對齊列頂，其餘在面板內捲。
  function openEvent(id){let li=null;for(const x of nightRows){const d=x.querySelector('.evd'),b=x.firstElementChild;if(!d||b.tagName!=='BUTTON')continue;const on=x.dataset.id===id;d.hidden=!on;b.setAttribute('aria-expanded',String(on));if(on)li=x;}
   const body=$('nightBody');if(!li||!body.clientHeight)return;const r=li.getBoundingClientRect(),n=li.querySelector('.evd').getBoundingClientRect(),h=body.clientHeight,vt=body.getBoundingClientRect().top+body.clientTop,vb=vt+h,top=r.height<=h||r.bottom-n.top>h?r.top:n.top;
-  if(r.bottom>vb)body.scrollTop+=Math.min(r.bottom-vb,top-vt);else if(top<vt)body.scrollTop-=vt-top;}
+  if(r.bottom>vb)body.scrollTop+=Math.min(r.bottom-vb,top-vt);else if(top<vt)body.scrollTop-=vt-top;syncNightMore();}
  function refreshNight(sec){let cur=-1;events.forEach((ev,i)=>{if(ev.t<=sec)cur=i;});nightRows.forEach((li,i)=>{const st=i<cur?'past':i===cur?'current':'future';if(li.dataset.state===st)return;li.dataset.state=st;const b=li.firstElementChild;if(b.tagName==='BUTTON'){if(st==='current')b.setAttribute('aria-current','true');else b.removeAttribute('aria-current');}li.querySelector('.mk').textContent=st==='past'?'✓':st==='current'?'●':'○';});}
  // 點時間軸的列：畫面留在臺南站、不跟車，方位、仰角、縮放照按之前的（同「下一班到臺南」），那一列展開說明。臺南站的事件跳到事件前 LEAD 秒，看得到車進站或開出；
  // 其他站的事件（永康在畫面範圍外，保安在畫面南端）跳到事件那一刻，靠說明交代。窄版點了臺南站的事件就收起面板，讓人看到場景；其他站的事件不收，說明留在畫面上。

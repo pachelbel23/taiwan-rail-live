@@ -16,6 +16,8 @@ select{appearance:none;-webkit-appearance:none;height:44px;min-height:44px;paddi
 #nightToggle{flex:none;display:flex;align-items:center;gap:8px;width:100%;border:0;border-radius:0;background:transparent;padding:6px 14px;text-align:left}
 #nightToggle .t{font-weight:700;font-size:13px;white-space:nowrap}#nightToggle .s{flex:1;min-width:0;color:#667368;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#nightToggle .chev{color:#516b5a;font-size:13px;transition:transform .15s}#nightToggle[aria-expanded=true] .chev{transform:rotate(180deg)}
 #nightBody{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;border-top:1px solid #e3e5da}#night:not(.open) #nightBody{display:none}
+/* 面板下緣提示：展開的那一列還有一截在面板下緣以下時（#night.more，replay.js 的 syncNightMore），底部畫一道淡出；不接收指標，底下的連結照樣點得到。 */
+#night{position:relative}#night .nb-more{position:absolute;left:0;right:0;bottom:0;height:18px;pointer-events:none;background:linear-gradient(#faf9f300,#faf9f3);box-shadow:inset 0 -4px 4px -4px #40513d80;opacity:0}#night.open.more .nb-more{opacity:1}
 #events{list-style:none;margin:0;padding:6px 10px 10px;display:flex;flex-direction:column;gap:4px}
 .ev .evb,.ev .evs{width:100%;display:grid;grid-template-columns:minmax(5em,auto) minmax(0,1fr) auto;align-items:center;gap:8px;text-align:left;padding:6px 10px;min-height:44px;font-size:12px;line-height:1.4;border:1px solid #d5d8cd;border-radius:8px;background:#fff}
 .ev .evs{background:#f4f2ea;border-style:dashed;color:#566259}.ev .evb time,.ev .evs time{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
