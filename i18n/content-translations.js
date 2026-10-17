@@ -3772,3 +3772,11 @@ Object.assign(window.RAIL_I18N_MESSAGES.en, {
 Object.assign(window.RAIL_I18N_MESSAGES.ja, {
   '臺南鐵路地下化 10/17 通車：大橋到保安改走地下，臺南站改停地下 4 股，平面與立體地圖的軌道都跟著換': '台南の鉄道地下化区間が10/17に開業しました。大橋〜保安間は地下を走り、台南駅では地下ホームの4線に停車します。平面地図と立体地図の線路も切り替えました',
 });
+
+// 2026-10-17 高鐵班表每日更新沒成功時，當天稍後自動重抓（v1017b）。
+Object.assign(window.RAIL_I18N_MESSAGES.en, {
+  '高鐵班表每天早上的更新若沒成功，當天稍後會自動再抓幾次': 'If the morning HSR timetable update fails, it now retries automatically later the same day.',
+});
+Object.assign(window.RAIL_I18N_MESSAGES.ja, {
+  '高鐵班表每天早上的更新若沒成功，當天稍後會自動再抓幾次': '高鉄の時刻表は、朝の更新に失敗した日も当日中に自動で取り直すようにしました。',
+});
