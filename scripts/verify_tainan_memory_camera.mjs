@@ -1,6 +1,8 @@
 // 台南重播頁：自由方位與傾斜的驗收（無視窗 Chromium＋WebKit；使用者 2026-09-30「角度跟傾斜應該要能夠自由旋轉」）。
 // 用法：node scripts/verify_tainan_memory_camera.mjs；自己起 dev_server 子程序（PORT 預設 5587），結束時只停它。VURL 有給就不起 server。
-// 其他環境變數：ENGINES=chromium,webkit、PAGE_PATH（突變測試指到複本頁）、RESULTS（結果檔路徑）。結果與截圖寫到 output/tainan-memory/camera/。
+// 其他環境變數：ENGINES=chromium,webkit、PAGE_PATH（突變測試指到複本頁）、RESULTS（結果檔路徑）、CHROMIUM_CHANNEL（Chromium 的 channel，預設 chromium）。結果與截圖寫到 <out>/camera/。
+// 日期與資料夾參數化（不給參數＝9/12 封存版，行為與改版前相同）：--date=…、--dir=…、--out=…，或環境變數 MEMORY_DATE／MEMORY_DIR／MEMORY_OUT；
+//   dir 預設 memories/tainan-<date>；out 預設 9/12 → output/tainan-memory、其他日期 → output/tainan-memory-MMDD。PAGE_PATH 有給就蓋過 dir。
 // 桌機：右鍵／Shift＋左鍵拖曳改方位與仰角、左鍵平移時地面點跟著游標、仰角上下限、舊站近景重設、滾輪縮放。
 // 手機：Chromium 用 CDP 真的雙指觸控；WebKit 沒有 CDP，改對畫布送合成 PointerEvent（只驗手勢數學，不驗瀏覽器的觸控轉換）。
 import {chromium,webkit} from 'playwright';
@@ -8,10 +10,12 @@ import {spawn} from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
+const opt=name=>process.argv.find(a=>a.startsWith(`--${name}=`))?.slice(name.length+3)||process.env[`MEMORY_${name.toUpperCase()}`]||'';
+const DATE=opt('date')||'2026-09-12',DIR=(opt('dir')||`memories/tainan-${DATE}`).replace(/^\/+|\/+$/g,''),OUTDIR=opt('out')||(DATE==='2026-09-12'?'output/tainan-memory':`output/tainan-memory-${DATE.slice(5).replace('-','')}`);
 const WT=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
-const OUT=path.join(WT,'output/tainan-memory/camera');fs.mkdirSync(path.join(OUT,'shots'),{recursive:true});
+const OUT=path.resolve(WT,OUTDIR,'camera');fs.mkdirSync(path.join(OUT,'shots'),{recursive:true});
 const PORT=+(process.env.PORT||5587),base=process.env.VURL||`http://127.0.0.1:${PORT}`;
-const PAGE=base+(process.env.PAGE_PATH||'/memories/tainan-2026-09-12/index.html');
+const PAGE=base+(process.env.PAGE_PATH||'/'+DIR+'/index.html');
 const TILT0=Math.atan2(6800,8000),TMIN=10*Math.PI/180,TMAX=89*Math.PI/180;
 let server=null;
 if(!process.env.VURL){
@@ -37,7 +41,7 @@ async function hintCheck(engine,view,page){const h=await page.evaluate(()=>({fin
 
 for(const [engine,type] of [['chromium',chromium],['webkit',webkit]]){
  if(process.env.ENGINES&&!process.env.ENGINES.split(',').includes(engine))continue;
- const browser=await type.launch(engine==='chromium'?{channel:'chromium',headless:true}:{headless:true});
+ const browser=await type.launch(engine==='chromium'?{channel:process.env.CHROMIUM_CHANNEL||'chromium',headless:true}:{headless:true});
  // ── 桌機 ──
  {const view='1280x800';const {context,page,errors}=await open(browser,{viewport:{width:1280,height:800}});
   const r=await rectOf(page),cx=r.x+r.w/2,cy=r.y+r.h/2;

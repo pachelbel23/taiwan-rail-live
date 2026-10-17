@@ -1,12 +1,17 @@
 import {chromium,webkit} from 'playwright';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+// 日期與資料夾參數化（不給參數＝9/12 封存版，行為與改版前相同）：--date=…、--dir=…、--out=…，或環境變數 MEMORY_DATE／MEMORY_DIR／MEMORY_OUT。
+//   dir 預設 memories/tainan-<date>；out 預設 9/12 → output/tainan-memory、其他日期 → output/tainan-memory-MMDD。CHROMIUM_CHANNEL 換 Chromium 的 channel（預設 chromium）。
+//   入口仍是主站「更多」選單裡的 #tainanMemoryLink：要驗別天的入口，主站得先有一個指到該資料夾的同 id 連結。
+const opt=name=>process.argv.find(a=>a.startsWith(`--${name}=`))?.slice(name.length+3)||process.env[`MEMORY_${name.toUpperCase()}`]||'';
+const DATE=opt('date')||'2026-09-12',DIR=(opt('dir')||`memories/tainan-${DATE}`).replace(/^\/+|\/+$/g,''),OUTDIR=opt('out')||(DATE==='2026-09-12'?'output/tainan-memory':`output/tainan-memory-${DATE.slice(5).replace('-','')}`);
 const base=process.env.VURL||'http://127.0.0.1:5244',rows=[];
-fs.mkdirSync('output/tainan-memory',{recursive:true});
+fs.mkdirSync(OUTDIR,{recursive:true});
 for(const [engine,type] of Object.entries({chromium,webkit})){
  console.log('開始',engine);
  // 使用者 2026-09-23 裁示瀏覽器測試一律無視窗(有視窗會搶焦點、把畫面切走)。Chromium 帶 channel:'chromium' 走真 GPU 的無視窗模式;預設 headless shell 是 SwiftShader 軟體算繪。
- const browser=await type.launch(engine==='chromium'?{channel:'chromium',headless:true}:{headless:true});
+ const browser=await type.launch(engine==='chromium'?{channel:process.env.CHROMIUM_CHANNEL||'chromium',headless:true}:{headless:true});
  // 每個寬度開一個新的手機分頁，不在同一分頁上改尺寸：Playwright 在 isMobile 分頁 setViewportSize 之後，
  // (any-pointer: coarse) 有時會變成不成立且不恢復，頁面就把 mobile-shell 拿掉、1280 寬的列高變成桌面的 40 px
  // （2026-09-29 實測：origin/main 原版同樣時有時無，與產品無關）。
@@ -22,7 +27,7 @@ for(const [engine,type] of Object.entries({chromium,webkit})){
    const check=await page.evaluate(()=>{const e=document.getElementById('tainanMemoryLink'),r=e.getBoundingClientRect(),hit=document.elementFromPoint(r.x+r.width/2,r.y+r.height/2),collisions=[];
     for(const o of document.querySelectorAll('button,a,input,select,summary,[role="button"]')){if(o===e||o.contains(e)||e.contains(o))continue;const b=o.getBoundingClientRect();if(!b.width||!b.height)continue;const h=document.elementFromPoint(b.x+b.width/2,b.y+b.height/2);if(h!==o&&!o.contains(h))continue;if(Math.min(r.right,b.right)-Math.max(r.left,b.left)>1&&Math.min(r.bottom,b.bottom)-Math.max(r.top,b.top)>1)collisions.push(o.id||o.textContent.slice(0,20));}
     return {hit:e===hit||e.contains(hit),height:r.height,inView:r.left>=0&&r.right<=innerWidth&&r.top>=0&&r.bottom<=innerHeight,overflow:document.documentElement.scrollWidth>innerWidth+1,collisions};});
-   assert.ok(check.hit&&check.inView&&!check.overflow&&check.height>=44,JSON.stringify({engine,width,full,banner,check}));assert.deepEqual(check.collisions,[]);rows.push({engine,width,full,banner,...check});fs.writeFileSync('output/tainan-memory/entry-results.json',JSON.stringify(rows,null,2));
+   assert.ok(check.hit&&check.inView&&!check.overflow&&check.height>=44,JSON.stringify({engine,width,full,banner,check}));assert.deepEqual(check.collisions,[]);rows.push({engine,width,full,banner,...check});fs.writeFileSync(OUTDIR+'/entry-results.json',JSON.stringify(rows,null,2));
    await page.tap('#moreClose');
   }
   await page.close();
@@ -30,8 +35,8 @@ for(const [engine,type] of Object.entries({chromium,webkit})){
  const page=await open(390,844);
  // 真正從既有更多選單點入，不能只驗 href 存在。
  await page.evaluate(()=>{document.body.classList.remove('fs');document.getElementById('alertBanner').hidden=true;});
- await page.tap('#tabMore');await page.tap('#tainanMemoryLink');await page.waitForURL('**/memories/tainan-2026-09-12/index.html');try{await page.waitForFunction(()=>window.tainanMemory?.state.ready,null,{timeout:60000});}catch(e){console.log('歷史頁載入狀態',engine,page.url(),await page.locator('#loading').textContent());throw e;}
+ await page.tap('#tabMore');await page.tap('#tainanMemoryLink');await page.waitForURL('**/'+DIR+'/index.html');try{await page.waitForFunction(()=>window.tainanMemory?.state.ready,null,{timeout:60000});}catch(e){console.log('歷史頁載入狀態',engine,page.url(),await page.locator('#loading').textContent());throw e;}
  await page.tap('#live');await page.waitForURL(url=>url.pathname==='/'&&url.searchParams.get('at')==='22.99681,120.21295');
  await browser.close();
 }
-fs.writeFileSync('output/tainan-memory/entry-results.json',JSON.stringify(rows,null,2));console.log('正式介面入口通過：'+rows.length+' 組；含全畫面、營運橫幅、抽屜開啟與觸控往返。');
+fs.writeFileSync(OUTDIR+'/entry-results.json',JSON.stringify(rows,null,2));console.log('正式介面入口通過：'+rows.length+' 組；含全畫面、營運橫幅、抽屜開啟與觸控往返。');
