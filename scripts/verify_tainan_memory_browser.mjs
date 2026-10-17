@@ -7,7 +7,8 @@ import assert from 'node:assert/strict';
 //   CHROMIUM_CHANNEL 換 Chromium 的 channel（預設 chromium）。--date=2026-10-16 時另跑 10/16 版專屬檢查（lastDayChecks）。
 //   資料有 singleLine（單線雙向說明）時另跑 singleLineChecks：說明框版面、「說明」鈕、標籤疊放、跟車卡留置站，不看日期。
 //   SIZES=360x780,1280x900 只跑指定的視窗大小；ONLY=singleline 只跑 singleLineChecks（突變測試用，不跑其餘步驟）；KEEP_GOING=1 讓 singleLineChecks 紅了也往下跑、最後一次列出全部。
-//   --date=2026-10-16 另跑 lastDayLayoutChecks（標頭、跟車卡右緣提示、跟車時展開單線說明的鏡頭與標籤〔含改過方位與仰角之後〕、最後一夜跨旋轉與自動收合後原地重開）；ONLY=layout 只跑這一段（突變測試用），KEEP_GOING=1 對它也有效。
+//   --date=2026-10-16 另跑 lastDayLayoutChecks（標頭、跟車卡右緣提示、跟車時展開單線說明的鏡頭、標籤與整班車身〔含改過方位與仰角之後、展開之後再旋轉〕、寬版用滾輪縮放跨過讓位門檻時讓位量不跳、60 倍播放時說明框與跟車點不跳、最後一夜跨旋轉與自動收合後原地重開）；ONLY=layout 只跑這一段（突變測試用），KEEP_GOING=1 對它也有效。
+//   讓位的量測值（每個尺寸、樣本的可用空間、需要、車身下緣離框上緣、進框比例）寫到 <out>/lift-results.json；縮放連續每一步的 span 與讓位量寫到 <out>/zoom-results.json，60 倍播放的量測寫到 <out>/stab-results.json。
 const opt=name=>process.argv.find(a=>a.startsWith(`--${name}=`))?.slice(name.length+3)||process.env[`MEMORY_${name.toUpperCase()}`]||'';
 const DATE=opt('date')||'2026-09-12',DIR=(opt('dir')||`memories/tainan-${DATE}`).replace(/^\/+|\/+$/g,''),OUTDIR=opt('out')||(DATE==='2026-09-12'?'output/tainan-memory':`output/tainan-memory-${DATE.slice(5).replace('-','')}`);
 const lastDay=DATE==='2026-10-16';
@@ -350,12 +351,15 @@ async function singleLineChecks(page,{engine,width,height,click,sweep}){
    if(engine==='chromium'){
    const cam=()=>page.evaluate(()=>{const c=tainanMemory.camera;return {span:c.top-c.bottom,x:c.position.x,y:c.position.y,follow:tainanMemory.state.follow,top:document.getElementById('slNote').scrollTop};});
    const nb=await page.locator('#slNote').boundingBox(),c0=await cam();
-   const pt=await page.evaluate(()=>{const c=document.querySelector('#scene canvas'),r=c.getBoundingClientRect();for(const fy of [.5,.3,.7,.2,.8])for(const fx of [.5,.7,.3,.85,.15]){const x=r.left+r.width*fx,y=r.top+r.height*fy;if(document.elementFromPoint(x,y)===c)return [x,y];}return null;});   // 滾輪要真的落在畫布上，不能落在說明或按鈕上
+   const canvasPt=()=>page.evaluate(()=>{const c=document.querySelector('#scene canvas'),r=c.getBoundingClientRect();for(const fy of [.5,.3,.7,.2,.8])for(const fx of [.5,.7,.3,.85,.15]){const x=r.left+r.width*fx,y=r.top+r.height*fy;if(document.elementFromPoint(x,y)===c)return [x,y];}return null;});
+   const pt=await canvasPt();   // 滾輪要真的落在畫布上，不能落在說明或按鈕上
    assert.ok(pt,at+'：場景裡找不到滾輪落得到畫布的點');
    await page.mouse.move(nb.x+nb.width/2,nb.y+nb.height/2);await page.mouse.wheel(0,120);await frames();await frames();const c1=await cam();
    assert.ok(c1.top>c0.top,at+'：在說明上滾動，說明沒有捲動 '+JSON.stringify([c0,c1]));assert.deepEqual({...c1,top:0},{...c0,top:0},at+'：在說明上滾動，鏡頭或跟車跟著變了');
    await page.evaluate(()=>{document.getElementById('slNote').scrollTop=0;});await page.mouse.move(...pt);await page.mouse.wheel(0,120);await frames();await frames();const c2=await cam();
-   assert.ok(Math.abs(c2.span-c0.span)>1e-6,at+'：在畫布上滾動，鏡頭沒有縮放，上面那項「鏡頭不變」是空轉');await page.mouse.wheel(0,-120);await frames();await frames();
+   assert.ok(Math.abs(c2.span-c0.span)>1e-6,at+'：在畫布上滾動，鏡頭沒有縮放，上面那項「鏡頭不變」是空轉');
+   // 跟車展開時預留的帶子隨縮放改變，縮放之後說明框的高度可能跟著變、蓋到剛才那一點；滾回去之前重新找一個落在畫布上的點。
+   const pt2=await canvasPt();assert.ok(pt2,at+'：縮放之後場景裡找不到滾輪落得到畫布的點');await page.mouse.move(...pt2);await page.mouse.wheel(0,-120);await frames();await frames();
    assert.ok(Math.abs((await cam()).span-c0.span)<1e-6*Math.max(1,c0.span),at+'：滾回去之後鏡頭沒有回到原本的縮放');WHEEL.ran.push(at);}}
   assert.equal(g.toggle.pe,'auto');
   s=await scan();assert.deepEqual(s.errors,[],at+' 展開：'+JSON.stringify(s.errors)+' 細節：'+JSON.stringify(s.detail));assert.ok(s.toggleHit,at+` 展開：「說明」鈕座標的 elementFromPoint 不是它自己（是 ${s.hitName}）`);
@@ -439,10 +443,18 @@ async function singleLineChecks(page,{engine,width,height,click,sweep}){
 }
 // ── 10/16 版面（--date=2026-10-16 才跑；ONLY=layout 只跑這一段）────────────────────────────────────────────
 // 每個視窗大小：標頭文字置中、標頭「關於」、跟車卡右緣的捲動提示。sweep（寬 390 那一組）另外切視窗大小量這幾件事：打開最後一夜、點時間軸單線那一列後，
-// 說明框（收合與展開）和視角按鈕不相交；跟車時展開說明，被跟那班的標籤不被說明框蓋住、仍畫在列車投影的位置，收合後列車回到場景中心；同一組判準在按「旋轉」、雙指改仰角之後再量一次；
+// 說明框（收合與展開）和視角按鈕不相交；跟車時展開說明，被跟那班的標籤不被說明框蓋住、仍畫在列車投影的位置，空間夠時整班車在框上方，收合後列車回到場景中心；同一組判準在按「旋轉」、雙指改仰角之後、展開之後再按「旋轉」再量一次；寬版用滾輪小步縮放跨過讓位門檻時讓位量不跳；60 倍播放時說明框上緣與跟車點不跳；
 // 最後一夜跨旋轉，以及直向自動收合之後在同一個版面直接按「最後一夜」重開。
 const NIGHT_SIZES=[[568,320],[640,360],[667,330],[667,375]];   // 寬不到 700 的橫向手機：最後一夜平常收成右上角的鈕，打開後場景變窄，視角按鈕可能折成兩排
-const LIFT_SIZES=[[360,780],[568,320],[640,360],[667,330],[667,375],[740,340],[844,340],[844,390],[932,430]];   // 說明框展開時會蓋到場景中心（跟車的置中點）的尺寸
+// 跟車展開說明的讓位（讓的是整班車）：LIFT_PHONE 量預設視角四個樣本（SAMPLES），其中 23:05 跟 3782、22:50 跟 145（LIFT_SAMPLES）必須走到「空間夠」（覆蓋率斷言，走不到就紅）；
+// 22:45 跟 3782、22:30 跟 145 照同一組判準驗，空間不夠時只驗標籤、印出量到的值：22:30 那筆跳到 22:38:30 145 剛進畫面，車身在畫面上接近縱向，
+// 667×375、844×390、932×430 的框停在最小高度也放不下（I8 量：可用 59–99 px、需要 84–101 px）。LIFT_PRINT 兩個樣本（LIFT_SAMPLES）只印量到的值，空間夠才驗車身。
+const LIFT_PHONE=[[360,780],[390,844],[667,375],[844,390],[932,430]];
+// 高 340 的橫向手機（740×340、844×340）列在 LIFT_PRINT、走退路（I7 量的）：場景只剩約 151 px，按鈕下緣在場景頂下 48 px，框最小 56 px＋下緣 8 px，可用 39–40 px；
+// 放不下標籤＋標籤下方 9–17 px 的車身＋2＋M（需要 42–52 px）。退路只保標籤不被框蓋、車盡量往上。
+const LIFT_PRINT=[[740,340],[844,340],[1100,560],[1366,600],[900,530],[920,540],[568,320],[640,360],[667,330],[900,601],[920,620],[1000,650],[1280,700]];   // 摘要版、矮螢幕（568×320 打開最後一夜）、寬版完整說明（不限高）
+const LIFT_GAP=8;   // 頁面約定的車身外框與說明框的間距（M）：空間夠時車身外框下緣 ≤ 框上緣 − LIFT_GAP＋1
+const LIFT_LOG=[],ZOOM_LOG=[],STAB_LOG=[];
 const HINT_LOG=[];
 async function lastDayLayoutChecks(page,{engine,width,height,click,sweep}){
  const where=`${engine} ${width}×${height}`,done=[],fails=[];
@@ -529,59 +541,95 @@ async function lastDayLayoutChecks(page,{engine,width,height,click,sweep}){
    return {drawn:true,W,H,underBox:!!bx&&g[0]>bx.left&&g[0]<bx.right&&g[1]>bx.top&&g[1]<bx.bottom,follow:m.state.follow===id,exp:document.getElementById('slToggle').getAttribute('aria-expanded'),noteShown:getComputedStyle(document.getElementById('slNote')).display!=='none',
     center:[g[0]-(L.left+W/2),g[1]-(L.top+H/2)],label:le.hidden||!le.getClientRects().length?null:R(lr),anchor:[lr.left+lr.width/2-a[0],lr.bottom-a[1]],box:box.hidden||!box.getClientRects().length?null:R(box.getBoundingClientRect())};},id);
  const near=v=>Math.abs(v[0])<=1&&Math.abs(v[1])<=1,fmt=v=>v.map(x=>Math.round(x*10)/10).join(',');
- if(sweep)await step('跟車時展開單線說明：被跟那班的標籤不被說明框蓋住、仍畫在列車投影的位置（≤1 px）；收合後列車回到場景中心；寬版說明框不蓋中心時照常置中',async()=>{
-  const lifted=[],jumped=new Set();
-  try{for(const [w,h] of LIFT_SIZES){await resize(w,h);await reset();
-    for(const [id,no,sec] of SAMPLES){
+ // 車身由腳本自己量：被跟那班所有 BufferGeometry 頂點（排除 Box／Plane 的光暈殼與地面光）乘上相機矩陣投影到畫面，不呼叫頁面的讓位函式、不讀它算好的值。
+ // 可用空間＝框上緣 − 標籤與車身那一欄（兩者水平範圍的聯集，左右各放寬 4 px）最低的按鈕下緣，沒有按鈕就是場景頂；需要＝當下量到的「標籤與車身合起來的外框高」＋2＋LIFT_GAP。
+ // 空間夠：車身外框下緣 ≤ 框上緣 − LIFT_GAP＋1，而且頂點進框比例 ≤10%；空間不夠：只驗標籤不被框蓋住，印出量到的可用空間、需要與進框比例。
+ const body=id=>page.evaluate(id=>{const m=tainanMemory,c=m.camera,host=document.getElementById('scene'),L=document.getElementById('labels').getBoundingClientRect(),W=host.clientWidth,H=host.clientHeight,g=m.models.get(id).group,v=new c.position.constructor();g.updateMatrixWorld(true);
+   const e=document.getElementById('singleline'),b=e.hidden||!e.getClientRects().length?null:e.getBoundingClientRect();let n=0,inside=0,l=Infinity,r=-Infinity,t=Infinity,bt=-Infinity;
+   g.traverse(o=>{if(!o.isMesh||!o.visible||o.geometry?.type!=='BufferGeometry')return;const pos=o.geometry.attributes.position;
+    for(let k=0;k<pos.count;k++){v.fromBufferAttribute(pos,k).applyMatrix4(o.matrixWorld).project(c);const x=L.left+(v.x*.5+.5)*W,y=L.top+(-v.y*.5+.5)*H;n++;l=Math.min(l,x);r=Math.max(r,x);t=Math.min(t,y);bt=Math.max(bt,y);if(b&&x>b.left&&x<b.right&&y>b.top&&y<b.bottom)inside++;}});
+   const btns=[...host.querySelectorAll('.view-controls button'),document.getElementById('nightToggle')].filter(x=>x&&x.getClientRects().length).map(x=>x.getBoundingClientRect()).filter(q=>q.width&&q.height&&q.left<L.left+W&&q.right>L.left&&q.top<L.top+H&&q.bottom>L.top).map(q=>({l:q.left,r:q.right,b:q.bottom}));
+   return {n,inPct:n?inside/n*100:0,rect:{l,t,r,b:bt},sceneTop:L.top,btns};},id);
+ const judge=(at,c1,bd,group)=>{assert.ok(bd.n>0,at+'：量不到被跟那班的車身頂點');const lab=c1.label,u={t:Math.min(lab.t,bd.rect.t),b:Math.max(lab.b,bd.rect.b),l:Math.min(lab.l,bd.rect.l),r:Math.max(lab.r,bd.rect.r)};
+  const low=Math.max(bd.sceneTop,...bd.btns.filter(q=>q.r>u.l-4&&q.l<u.r+4).map(q=>q.b)),r1=x=>Math.round(x*10)/10;
+  const j={engine,group,at,enough:c1.box.t-low>=u.b-u.t+2+LIFT_GAP,avail:r1(c1.box.t-low),need:r1(u.b-u.t+2+LIFT_GAP),gap:r1(c1.box.t-bd.rect.b),inPct:r1(bd.inPct),bodyH:r1(bd.rect.b-bd.rect.t),center:c1.center.map(r1)};
+  LIFT_LOG.push(j);fs.writeFileSync(out+'/lift-results.json',JSON.stringify(LIFT_LOG,null,1));const s=`可用 ${j.avail}、需要 ${j.need}、車身下緣離框上緣 ${j.gap} px、車身高 ${j.bodyH} px、進框 ${j.inPct}%`;
+  if(j.enough){assert.ok(bd.rect.b<=c1.box.t-LIFT_GAP+1,at+' 展開（空間夠）：車身外框下緣離說明框上緣不到 '+LIFT_GAP+' px（整班車要露在框上方）：'+s);assert.ok(j.inPct<=10,at+' 展開（空間夠）：車身頂點進框超過 10%：'+s);}
+  else console.log(`[10/16 版面 ${where}] ${at} 展開：空間不夠，只驗標籤；${s}`);
+  return j;};
+ const LIFT_SAMPLES=[[T.gm,'3782',83100],[T.sm,'145',82200]];   // 23:05 跟地面最後一班 3782、22:50 跟最後南下 145（LIFT_PRINT 與改視角用；LIFT_PHONE 用四個樣本 SAMPLES）
+ const narrowNow=()=>page.evaluate(()=>getComputedStyle(document.getElementById('slToggle')).display!=='none');
+ if(sweep)await step('跟車時展開單線說明：被跟那班的標籤不被說明框蓋住、仍畫在列車投影的位置（≤1 px）；空間夠時整班車在框上方（車身下緣 ≤ 框上緣 − 8＋1、進框 ≤10%），手機尺寸的預設視角 23:05 跟 3782、22:50 跟 145 必須空間夠（22:45、22:30 也量）；收合後列車回到場景中心；1280×900 不讓位',async()=>{
+  const lifted=[],jumped=new Set(),short=[],extra=[];   // short：手機尺寸預設視角 LIFT_SAMPLES 走不到「空間夠」的樣本，整段量完才判紅（其餘尺寸照樣量完、印出）；extra：另外兩個樣本空間不夠的，只印出
+  try{for(const [w,h] of [...LIFT_PHONE,...LIFT_PRINT]){const phone=LIFT_PHONE.some(([a,b])=>a===w&&b===h),night=w===568&&h===320;await resize(w,h);await reset();
+    if(night){await page.evaluate(()=>tainanMemory.night.setOpen(true));await frames();assert.ok(await isOpen(),'568×320：最後一夜沒有打開');}
+    for(const [id,no,sec] of (phone?SAMPLES:LIFT_SAMPLES)){
      const t=await page.evaluate(([id,sec])=>{const m=tainanMemory;m.state.playing=false;m.jump(sec);m.followTrain(id);return m.state.sec;},[id,sec]);await frames();
-     const at=`${w}×${h} ${hms(sec)}${t===sec?'':'（跳到 '+hms(t)+'）'} 跟 ${no}`;if(t!==sec)jumped.add(`${hms(sec)} 跟 ${no} 跳到 ${hms(t)}`);
-     if((await page.locator('#slToggle').getAttribute('aria-expanded'))==='true'){await click('#slToggle');await frames();}
-     const c0=await probe(id);assert.ok(c0.drawn,at+'：選了車，畫面內卻沒有這班車');
-     assert.ok(c0.follow&&near(c0.center),at+' 收合：被跟那班不在場景中心 '+fmt(c0.center));assert.ok(c0.label&&near(c0.anchor),at+' 收合：標籤不在列車的投影位置 '+JSON.stringify(c0.anchor));
-     await click('#slToggle');await frames();const c1=await probe(id);
-     assert.equal(c1.exp,'true',at+'：「說明」點了沒有展開');assert.ok(c1.noteShown,at+'：展開後說明文字沒顯示');assert.ok(c1.follow,at+'：展開說明後不再跟車');
+     const at=`${w}×${h}${night?'（最後一夜打開）':''} ${hms(sec)}${t===sec?'':'（跳到 '+hms(t)+'）'} 跟 ${no}`;if(t!==sec)jumped.add(`${hms(sec)} 跟 ${no} 跳到 ${hms(t)}`);
+     const narrow=await narrowNow();
+     if(narrow){if((await page.locator('#slToggle').getAttribute('aria-expanded'))==='true'){await click('#slToggle');await frames();}
+      const c0=await probe(id);assert.ok(c0.drawn,at+'：選了車，畫面內卻沒有這班車');
+      assert.ok(c0.follow&&near(c0.center),at+' 收合：被跟那班不在場景中心 '+fmt(c0.center));assert.ok(c0.label&&near(c0.anchor),at+' 收合：標籤不在列車的投影位置 '+JSON.stringify(c0.anchor));
+      await click('#slToggle');await frames();}
+     const c1=await probe(id);assert.ok(c1.drawn,at+'：選了車，畫面內卻沒有這班車');
+     if(narrow)assert.equal(c1.exp,'true',at+'：「說明」點了沒有展開');assert.ok(c1.noteShown,at+'：展開後說明文字沒顯示');assert.ok(c1.follow,at+'：展開說明後不再跟車');
      assert.ok(c1.label,at+' 展開：被跟那班的標籤不見了（被推出可見範圍或被藏起來）');assert.ok(c1.box&&!ovl(c1.box,c1.label),at+' 展開：說明框蓋到被跟那班的標籤 '+JSON.stringify({box:c1.box,label:c1.label}));
      assert.ok(near(c1.anchor),at+' 展開：標籤離開了列車的投影位置（標籤要畫在真實位置，讓位只能動鏡頭）'+fmt(c1.anchor));
+     assert.ok(Math.abs(c1.center[0])<=c1.W/2&&Math.abs(c1.center[1])<=c1.H/2,at+' 展開：被跟那班被推出場景外 '+fmt(c1.center));
+     const j=judge(at,c1,await body(id),phone?'phone':'print');
+     if(phone&&!j.enough)(LIFT_SAMPLES.some(([a,,b])=>a===id&&b===sec)?short:extra).push(`${at}（可用 ${j.avail}、需要 ${j.need}）`);
      if(!near(c1.center))lifted.push(`${w}×${h} ${no}`);
-     await click('#slToggle');await frames();const c2=await probe(id);
-     assert.equal(c2.exp,'false',at+'：再點要收合');assert.ok(c2.follow&&near(c2.center),at+' 再收合：列車沒有回到場景中心 '+fmt(c2.center));assert.ok(c2.label&&near(c2.anchor),at+' 再收合：標籤不在列車的投影位置');
+     if(narrow){await click('#slToggle');await frames();const c2=await probe(id);
+      assert.equal(c2.exp,'false',at+'：再點要收合');assert.ok(c2.follow&&near(c2.center),at+' 再收合：列車沒有回到場景中心 '+fmt(c2.center));assert.ok(c2.label&&near(c2.anchor),at+' 再收合：標籤不在列車的投影位置');}
     }}
-   // 寬版：說明直接列出、框在場景下緣，不蓋場景中心，跟車照常置中、標籤不被蓋。
+   // 寬版：說明直接列出、框在場景下緣。1280×800 跟 3782 不蓋中心，照常置中、標籤不被蓋；1280×900 框不在中央那一欄的上半，兩個樣本都不讓位、車在中心、標籤不被蓋。
    await resize(1280,800);await reset();await page.evaluate(id=>{tainanMemory.state.playing=false;tainanMemory.followTrain(id,83100);},T.gm);await frames();
    const wide=await probe(T.gm);assert.ok(wide.drawn&&wide.noteShown,'1280×800 23:05 跟 3782：寬版要直接列出單線說明');
-   assert.ok(near(wide.center)&&wide.label&&near(wide.anchor)&&!ovl(wide.box,wide.label),'1280×800 23:05 跟 3782：寬版說明框不蓋中心，跟車要照常置中、標籤不被蓋 '+JSON.stringify(wide));}
+   assert.ok(near(wide.center)&&wide.label&&near(wide.anchor)&&!ovl(wide.box,wide.label),'1280×800 23:05 跟 3782：寬版說明框不蓋中心，跟車要照常置中、標籤不被蓋 '+JSON.stringify(wide));
+   await resize(1280,900);await reset();
+   for(const [id,no,sec] of LIFT_SAMPLES){await page.evaluate(([id,sec])=>{const m=tainanMemory;m.state.playing=false;m.jump(sec);m.followTrain(id);},[id,sec]);await frames();
+    const c=await probe(id),bd=await body(id),at=`1280×900 ${hms(sec)} 跟 ${no}`;assert.ok(c.drawn&&c.noteShown&&c.box,at+'：寬版要直接列出單線說明');
+    assert.ok(c.box.t>=bd.sceneTop+c.H/2,at+'：說明框上緣在場景中線之上（應在中央那一欄的下半）'+JSON.stringify({box:c.box,sceneTop:bd.sceneTop,H:c.H}));
+    assert.ok(c.follow&&near(c.center),at+'：說明框不在中央那一欄的上半，不該讓位，列車要在場景中心 '+fmt(c.center));
+    assert.ok(c.label&&near(c.anchor)&&!ovl(c.box,c.label),at+'：標籤被蓋或不在列車的投影位置 '+JSON.stringify({label:c.label,anchor:c.anchor}));judge(at,c,bd,'1280x900');}}
   finally{await resize(width,height);await reset();}
-  assert.ok(lifted.length>0,'九個尺寸展開說明時鏡頭一次都沒有讓開（列車都還在中心），「被跟那班放到說明框上方」沒驗到');
+  assert.ok(lifted.length>0,'展開說明時鏡頭一次都沒有讓開（列車都還在中心），「整班車放到說明框上方」沒驗到');
+  assert.ok(!short.length,`覆蓋率：手機尺寸的預設視角展開時空間不夠、整班車的判準沒驗到 ${short.length} 筆：${short.join('；')}`);
+  console.log(`[10/16 版面 ${where}] 手機尺寸預設視角 22:45、22:30 兩個樣本空間不夠、只驗標籤的：${extra.join('；')||'無'}`);
   console.log(`[10/16 版面 ${where}] 展開說明時鏡頭讓開的取樣：${lifted.join('、')}；選車時那班不在畫面、跳到進畫面那一秒的取樣：${[...jumped].join('、')||'無'}`);
  });
  // 改過方位與仰角之後再跟車展開說明：讓位要沿著當下鏡頭的方向推（不是開機時的預設方位與仰角），否則轉過或傾斜過的鏡頭會把被跟那班推到說明框底下或旁邊。
- // 先按頁面上的「旋轉」（方位 +45°）；第二組再用雙指同向往上拖（PointerEvent，兩種引擎都送得到）把仰角壓低。每一步都量鏡頭真的轉了、仰角真的變了，沒變就紅（那一組沒驗到）。
- // 360×780、667×375 展開時說明框蓋到場景中心（鏡頭要讓位）；390×844 不蓋中心，量的是不讓位時照常置中。
- const TURN_SIZES=[[360,780],[390,844],[667,375]];
- if(sweep)await step('改方位與仰角之後跟車展開說明：按「旋轉」、再加雙指改仰角，被跟那班的標籤不被說明框蓋住、仍畫在列車投影的位置（≤1 px）、列車在場景內而且車身不在說明框底下；收合後回到場景中心',async()=>{
+ // 三種：先按頁面上的「旋轉」（方位 +45°）再跟車；同上再用雙指同向往上拖（PointerEvent，兩種引擎都送得到）把仰角壓低（雙指手勢會取消跟車，所以先改視角、再跟車）；
+ // 預設視角跟車、展開說明之後再按「旋轉」（「旋轉」不取消跟車）。每一步都量鏡頭真的轉了、仰角真的變了，沒變就紅（那一組沒驗到）。車身判準同上，這幾組不要求空間一定夠。
+ const TURN_SIZES=[[360,780],[390,844],[667,375],[844,390]];
+ if(sweep)await step('改方位與仰角之後跟車展開說明：按「旋轉」、再加雙指改仰角、展開之後再按「旋轉」，被跟那班的標籤不被說明框蓋住、仍畫在列車投影的位置（≤1 px）、列車在場景內而且跟車點不在說明框底下；空間夠時整班車在框上方；收合後回到場景中心',async()=>{
   const cam=()=>page.evaluate(()=>{const c=tainanMemory.camera,f=c.getWorldDirection(new c.position.constructor());return {elev:Math.asin(-f.z)*180/Math.PI,az:Math.atan2(f.y,f.x)*180/Math.PI};});
+  const turned=(a,b)=>Math.abs((b.az-a.az+540)%360-180);
   const tiltDown=()=>page.evaluate(async()=>{const c=tainanMemory.renderer.domElement,r=c.getBoundingClientRect(),x=r.left+r.width/2,y0=r.top+r.height/2;
    const ev=(type,id,x,y)=>c.dispatchEvent(new PointerEvent(type,{pointerId:id,pointerType:'touch',isPrimary:id===11,clientX:x,clientY:y,bubbles:true,cancelable:true,buttons:type==='pointerup'?0:1}));
    let y=y0;ev('pointerdown',11,x-40,y);ev('pointerdown',12,x+40,y);for(let i=1;i<=20;i++){y=y0-i*4;ev('pointermove',11,x-40,y);ev('pointermove',12,x+40,y);await new Promise(r=>requestAnimationFrame(r));}
    ev('pointerup',11,x-40,y);ev('pointerup',12,x+40,y);});
   const lifted=[],views=[];
-  try{for(const [w,h] of TURN_SIZES)for(const tiltToo of [false,true]){await resize(w,h);await reset();await page.evaluate(()=>tainanMemory.stationView());await frames();
-    const v0=await cam();await click('#rotate');await frames();const v1=await cam(),turn=Math.abs((v1.az-v0.az+540)%360-180);
-    assert.ok(Math.abs(turn-45)<1,`${w}×${h}：按「旋轉」後方位轉了 ${turn.toFixed(1)}°，不是 45°`);
-    let v2=v1;if(tiltToo){await tiltDown();await frames();v2=await cam();assert.ok(v1.elev-v2.elev>10,`${w}×${h}：雙指往上拖之後仰角 ${v1.elev.toFixed(1)}→${v2.elev.toFixed(1)}°，沒有壓低，改仰角這一組沒驗到`);}
-    const how=`旋轉${tiltToo?'＋雙指改仰角':''}（方位 ${Math.round(v0.az)}→${Math.round(v2.az)}°、仰角 ${Math.round(v0.elev)}→${Math.round(v2.elev)}°）`,tag=`${w}×${h}${tiltToo?' 改仰角':''}`;views.push(`${w}×${h} ${how}`);
-    for(const [id,no,sec] of SAMPLES){
+  try{for(const [w,h] of TURN_SIZES)for(const variant of ['rot','rotTilt','expRot']){await resize(w,h);await reset();await page.evaluate(()=>tainanMemory.stationView());await frames();
+    const v0=await cam();let v2=v0;
+    if(variant!=='expRot'){await click('#rotate');await frames();const v1=await cam();assert.ok(Math.abs(turned(v0,v1)-45)<1,`${w}×${h}：按「旋轉」後方位轉了 ${turned(v0,v1).toFixed(1)}°，不是 45°`);v2=v1;
+     if(variant==='rotTilt'){await tiltDown();await frames();v2=await cam();assert.ok(v1.elev-v2.elev>10,`${w}×${h}：雙指往上拖之後仰角 ${v1.elev.toFixed(1)}→${v2.elev.toFixed(1)}°，沒有壓低，改仰角這一組沒驗到`);}}
+    const how=variant==='expRot'?'預設視角跟車、展開之後再按「旋轉」':`旋轉${variant==='rotTilt'?'＋雙指改仰角':''}（方位 ${Math.round(v0.az)}→${Math.round(v2.az)}°、仰角 ${Math.round(v0.elev)}→${Math.round(v2.elev)}°）`,tag=`${w}×${h} ${variant}`;views.push(`${w}×${h} ${how}`);
+    for(const [id,no,sec] of LIFT_SAMPLES){
      await page.evaluate(([id,sec])=>{const m=tainanMemory;m.state.playing=false;m.jump(sec);m.followTrain(id);},[id,sec]);await frames();
      const at=`${w}×${h} ${how} ${hms(sec)} 跟 ${no}`;
      if((await page.locator('#slToggle').getAttribute('aria-expanded'))==='true'){await click('#slToggle');await frames();}
      const c0=await probe(id);assert.ok(c0.drawn,at+'：選了車，畫面內卻沒有這班車');
      assert.ok(c0.follow&&near(c0.center),at+' 收合：被跟那班不在場景中心 '+fmt(c0.center));assert.ok(c0.label&&near(c0.anchor),at+' 收合：標籤不在列車的投影位置 '+JSON.stringify(c0.anchor));
-     await click('#slToggle');await frames();const c1=await probe(id);
+     await click('#slToggle');await frames();
+     if(variant==='expRot'){const a0=await cam();await click('#rotate');await frames();const a1=await cam();assert.ok(Math.abs(turned(a0,a1)-45)<1,at+'：展開之後按「旋轉」，方位轉了 '+turned(a0,a1).toFixed(1)+'°，不是 45°');}
+     const c1=await probe(id);
      assert.equal(c1.exp,'true',at+'：「說明」點了沒有展開');assert.ok(c1.noteShown,at+'：展開後說明文字沒顯示');assert.ok(c1.follow,at+'：展開說明後不再跟車');
      assert.ok(c1.label,at+' 展開：被跟那班的標籤不見了（被推出可見範圍或被藏起來）');assert.ok(c1.box&&!ovl(c1.box,c1.label),at+' 展開：說明框蓋到被跟那班的標籤 '+JSON.stringify({box:c1.box,label:c1.label}));
      assert.ok(near(c1.anchor),at+' 展開：標籤離開了列車的投影位置（標籤要畫在真實位置，讓位只能動鏡頭）'+fmt(c1.anchor));
      assert.ok(Math.abs(c1.center[0])<=c1.W/2&&Math.abs(c1.center[1])<=c1.H/2,at+' 展開：被跟那班被推出場景外 '+fmt(c1.center));
-     assert.ok(!c1.underBox,at+' 展開：被跟那班的車身落在說明框底下（只有標籤露在框外）'+fmt(c1.center));
+     assert.ok(!c1.underBox,at+' 展開：被跟那班的跟車點落在說明框底下（只有標籤露在框外）'+fmt(c1.center));
+     judge(at,c1,await body(id),variant);
      if(!near(c1.center))lifted.push(`${tag} ${no}`);
      await click('#slToggle');await frames();const c2=await probe(id);
      assert.equal(c2.exp,'false',at+'：再點要收合');assert.ok(c2.follow&&near(c2.center),at+' 再收合：列車沒有回到場景中心 '+fmt(c2.center));assert.ok(c2.label&&near(c2.anchor),at+' 再收合：標籤不在列車的投影位置');
@@ -589,6 +637,61 @@ async function lastDayLayoutChecks(page,{engine,width,height,click,sweep}){
   finally{await resize(width,height);await reset();await page.evaluate(()=>tainanMemory.stationView());await frames();}
   assert.ok(lifted.length>0,'改方位與仰角之後展開說明，鏡頭一次都沒有讓開，「讓位沿著當下鏡頭的方向推」沒驗到');
   console.log(`[10/16 版面 ${where}] 改方位與仰角：${views.join('；')}；展開說明時鏡頭讓開的取樣：${lifted.join('、')}`);
+ });
+ // 縮放連續：寬版（說明直接列出）跟車時，用滾輪小步縮放跨過讓位門檻，讓位量（跟車點投影在場景中線上方幾 px，用上面的 probe 自己投影，不讀頁面算好的值）不能跳。
+ // 縮放方式：Chromium 用 page.mouse.wheel 滾在畫布上（每步重找落在畫布上的點）；Playwright 的行動版 WebKit 不支援 mouse.wheel，改對畫布送 WheelEvent，走頁面同一個 wheel 處理。
+ // 滾輪不取消跟車；每步都驗還在跟車、span 真的乘了 e^(deltaY×0.001)，沒有就紅（那一步沒縮放到，相鄰差是空轉）。
+ // 一步 deltaY ±40（span ×1.041）。I8 量到一步縮放本身讓讓位量自然變 ≤6.4 px（1280×800 跟 145 拉近到 span 221 時 Chromium 6.2、WebKit 6.4；1280×700 跟 3782 ≤3.4）；
+ // 「框上緣高過門檻才讓、一讓就把車身外框置中」的寫法在門檻上一步跳 52 px。門檻取 12 px：約自然變化的兩倍、跳動的四分之一。
+ // 覆蓋率：每個樣本的整段縮放至少一步讓位量 ≤0.5 px、至少一步 ≥6 px（真的跨過門檻），否則紅。1000×650 跟 3782 從 span 330 拉遠到 403 仍讓 20–25 px（門檻在 span 約 1100），跨不到，改用 1280×700。
+ const ZOOM_SAMPLES=[[1280,800,T.sm,'145',82200],[1280,700,T.gm,'3782',83100]],ZOOM_DY=40,ZOOM_IN=10,ZOOM_OUT=15,ZOOM_JUMP=12;
+ if(sweep)await step('縮放連續：寬版跟車時用滾輪小步縮放（拉近 10 步、再拉遠到比起點遠 5 步）跨過讓位門檻，相鄰兩步的讓位量變化 ≤12 px；每個樣本至少一步 ≤0.5 px、一步 ≥6 px',async()=>{
+  const canvasPt=()=>page.evaluate(()=>{const c=tainanMemory.renderer.domElement,r=c.getBoundingClientRect();for(const fy of [.5,.3,.7,.2,.8])for(const fx of [.5,.7,.3,.85,.15]){const x=r.left+r.width*fx,y=r.top+r.height*fy;if(document.elementFromPoint(x,y)===c)return [x,y];}return null;});
+  const wheel=async dy=>{const pt=await canvasPt();assert.ok(pt,'縮放連續：場景裡找不到滾輪落得到畫布的點');
+   if(engine==='chromium'){await page.mouse.move(...pt);await page.mouse.wheel(0,dy);}
+   else await page.evaluate(([dy,x,y])=>tainanMemory.renderer.domElement.dispatchEvent(new WheelEvent('wheel',{deltaY:dy,deltaMode:0,clientX:x,clientY:y,bubbles:true,cancelable:true})),[dy,...pt]);
+   await frames();await frames();};
+  const bad=[],uncovered=[],summary=[],r2=x=>Math.round(x*100)/100;
+  try{for(const [w,h,id,no,sec] of ZOOM_SAMPLES){await resize(w,h);await reset();await page.evaluate(()=>tainanMemory.stationView());await frames();
+    await page.evaluate(([id,sec])=>{const m=tainanMemory;m.state.playing=false;m.jump(sec);m.followTrain(id);},[id,sec]);await frames();
+    const at=`${w}×${h} ${hms(sec)} 跟 ${no}`;assert.ok(!(await narrowNow()),at+'：要是寬版（說明直接列出），這組量的是寬版');
+    const read=async()=>{const c=await probe(id),sp=await page.evaluate(()=>tainanMemory.camera.top-tainanMemory.camera.bottom);
+     assert.ok(c.drawn&&c.follow&&c.noteShown,at+'：縮放中不再跟車、畫面內沒有這班車，或說明不在 '+JSON.stringify({drawn:c.drawn,follow:c.follow,note:c.noteShown}));return {lift:-c.center[1],span:sp};};
+    const rows=[await read()];
+    for(const dy of [...Array(ZOOM_IN).fill(-ZOOM_DY),...Array(ZOOM_OUT).fill(ZOOM_DY)]){await wheel(dy);const r=await read(),prev=rows.at(-1);
+     assert.ok(Math.abs(Math.log(r.span/prev.span)-dy*.001)<1e-3,at+`：滾一下（deltaY ${dy}）span ${prev.span.toFixed(1)}→${r.span.toFixed(1)}，不是乘 e^(${dy*.001})，這一步沒縮放到`);rows.push(r);}
+    const L=rows.map(r=>r.lift),d=L.slice(1).map((v,i)=>v-L[i]),worst=Math.max(...d.map(Math.abs)),k=d.findIndex(v=>Math.abs(v)===worst),lo=Math.min(...L),hi=Math.max(...L);
+    ZOOM_LOG.push({engine,at,how:engine==='chromium'?'page.mouse.wheel':'WheelEvent',spans:rows.map(r=>r2(r.span)),lifts:L.map(r2),worstStep:r2(worst),min:r2(lo),max:r2(hi)});fs.writeFileSync(out+'/zoom-results.json',JSON.stringify(ZOOM_LOG,null,1));
+    summary.push(`${at} 讓位量 ${r2(lo)}–${r2(hi)} px、相鄰最大變化 ${r2(worst)} px`);
+    if(worst>ZOOM_JUMP)bad.push(`${at}：第 ${k+1} 步（span ${r2(rows[k].span)}→${r2(rows[k+1].span)}）讓位量 ${r2(L[k])}→${r2(L[k+1])} px，變化 ${r2(worst)} px（超過 ${ZOOM_JUMP} px，縮放跨過讓位門檻時畫面跳動）`);
+    if(!(lo<=.5&&hi>=6))uncovered.push(`${at}（讓位量 ${r2(lo)}–${r2(hi)} px）`);}}
+  finally{await resize(width,height);await reset();await page.evaluate(()=>tainanMemory.stationView());await frames();}
+  console.log(`[10/16 版面 ${where}] 縮放連續（${engine==='chromium'?'page.mouse.wheel':'對畫布送 WheelEvent'}、deltaY ±${ZOOM_DY}）：${summary.join('；')}`);
+  assert.ok(!bad.length,'縮放連續：'+bad.join('；'));
+  assert.ok(!uncovered.length,'覆蓋率：縮放沒有跨過讓位門檻（整段至少一步 ≤0.5 px、一步 ≥6 px），縮放連續沒驗到：'+uncovered.join('；'));
+ });
+ // 穩定性：預留的帶子與讓位量不隨列車移動或轉彎改變。跟 3782、展開說明（寬版本來就列出）、不碰鏡頭，以 60 倍播放 3 秒，每幀量說明框上緣與被跟那班跟車點投影的縱向位置（腳本自己投影），各自變動 ≤1 px。
+ // 23:05 起那三分鐘 3782 幾乎走直線（車身在畫面上的外框高只差 0.2 px），跟著當下車身重算的寫法在這段量不出來；另加 22:58 起 3782 出站轉彎那段（外框高約 3→32 px）。
+ // 22:58 那段 667×375 照最壞外框讓 11 px，照當下外框不必讓（跟車點不動，量不出差別）；390×844 讓 69 px，照當下外框算的話跟車點會晃 24 px（I8 量的），所以兩個尺寸都量。
+ // 覆蓋率：22:58 轉彎那段至少一個尺寸整段讓位量 ≥6 px（有在讓位時量到），否則紅。
+ if(sweep)await step('跟車展開說明時以 60 倍播放 3 秒：說明框上緣與跟車點的縱向位置變動都 ≤1 px（框與畫面不隨列車移動或轉彎跳動）；22:58 轉彎那段要在讓位 ≥6 px 時量到',async()=>{
+  const bad=[];
+  try{for(const [w,h,sec] of [[667,375,83100],[900,601,83100],[667,375,82680],[390,844,82680]]){await resize(w,h);await reset();const at=`${w}×${h} ${hms(sec).slice(0,5)} 跟 3782`;
+    await page.evaluate(([id,sec])=>{const m=tainanMemory;m.state.playing=false;m.jump(sec);m.followTrain(id);},[T.gm,sec]);await frames();
+    if(await narrowNow()&&(await page.locator('#slToggle').getAttribute('aria-expanded'))!=='true'){await click('#slToggle');await frames();}
+    const r=await page.evaluate(async id=>{const m=tainanMemory,c=m.camera,d=m.data,e=document.getElementById('singleline'),host=document.getElementById('scene'),tr=d.trains.find(t=>t.id===id),sx=111320*Math.cos(d.origin[1]*Math.PI/180),tops=[],lifts=[],s0=m.state.sec,sp=m.state.speed;m.state.speed=60;m.state.playing=true;const t0=performance.now();
+     while(performance.now()-t0<3000){await new Promise(r=>requestAnimationFrame(r));if(!e.hidden&&e.getClientRects().length)tops.push(e.getBoundingClientRect().top);
+      const p=m.sample(tr,m.state.sec);if(p){const H=host.clientHeight,v=new c.position.constructor((p.coordinate[0]-d.origin[0])*sx,(p.coordinate[1]-d.origin[1])*111320,0).project(c);lifts.push(H/2-(-v.y*.5+.5)*H);}}
+     m.state.playing=false;m.state.speed=sp;return {frames:tops.length,min:Math.min(...tops),max:Math.max(...tops),pts:lifts.length,liftMin:Math.min(...lifts),liftMax:Math.max(...lifts),played:m.state.sec-s0,follow:m.state.follow===id,exp:document.getElementById('slToggle').getAttribute('aria-expanded')};},T.gm);
+    assert.ok(r.follow&&r.frames>30&&r.pts>30&&r.played>100,at+'：60 倍播放 3 秒沒有真的播、說明框不在，或不再跟車 '+JSON.stringify(r));
+    STAB_LOG.push({engine,at,sec,...r});fs.writeFileSync(out+'/stab-results.json',JSON.stringify(STAB_LOG,null,1));
+    if(r.max-r.min>1)bad.push(at+'：60 倍播放 3 秒，說明框上緣變動 '+(r.max-r.min).toFixed(1)+' px（超過 1 px）'+JSON.stringify(r));
+    if(r.liftMax-r.liftMin>1)bad.push(at+'：60 倍播放 3 秒，跟車點的縱向位置變動 '+(r.liftMax-r.liftMin).toFixed(1)+' px（超過 1 px，畫面隨列車轉彎上下晃；讓位量 '+r.liftMin.toFixed(1)+'–'+r.liftMax.toFixed(1)+' px）');
+    console.log(`[10/16 版面 ${where}] ${at} 60 倍播放 3 秒：${r.frames} 幀、播了 ${Math.round(r.played)} 秒，說明框上緣 ${r.min.toFixed(1)}–${r.max.toFixed(1)}，讓位量 ${r.liftMin.toFixed(1)}–${r.liftMax.toFixed(1)} px`);}}
+  finally{await resize(width,height);await reset();}
+  assert.ok(!bad.length,bad.join('；'));
+  const turn=STAB_LOG.filter(j=>j.engine===engine&&j.sec===82680&&j.liftMin>=6);
+  assert.ok(turn.length>0,'覆蓋率：22:58 轉彎那段沒有在讓位 ≥6 px 時量到（跟車點不晃沒驗到）：'+STAB_LOG.filter(j=>j.engine===engine&&j.sec===82680).map(j=>`${j.at} 讓位量 ${j.liftMin.toFixed(1)}–${j.liftMax.toFixed(1)} px`).join('；'));
  });
 
  if(sweep)await step('最後一夜跨旋轉：直向點了時間軸的列（自動收合）之後轉成橫向，面板照開；使用者自己按的開與關跨旋轉保留；自動收合之後在同一個版面直接按「最後一夜」要打開',async()=>{
@@ -686,4 +789,5 @@ for(const [engine,type] of Object.entries({chromium,webkit})){
 console.log(`滾輪捲說明框：Chromium 實際滾過 ${WHEEL.ran.length} 個尺寸（${WHEEL.ran.join('、')||'無'}），有資格的 ${WHEEL.eligible.length} 個；WebKit 沒驗（Playwright 的行動版 WebKit 不支援 mouse.wheel）`);
 if(WHEEL.eligible.length)assert.ok(WHEEL.ran.length>0,`Chromium 跑了 ${WHEEL.eligible.length} 個橫向窄版尺寸的「說明」鈕檢查，滾輪捲說明框卻一次都沒有真的跑到（說明都沒有被截高，或條件壞了）`);
 if(HINT_LOG.length)console.log('跟車卡右緣提示（跟 3782、22:54:25、最後一夜打開）：'+HINT_LOG.join('；'));
+if(LIFT_LOG.length){fs.writeFileSync(out+'/lift-results.json',JSON.stringify(LIFT_LOG,null,1));const short=LIFT_LOG.filter(j=>!j.enough);console.log(`跟車展開說明的讓位：量了 ${LIFT_LOG.length} 筆，空間不夠 ${short.length} 筆（${[...new Set(short.map(j=>j.engine+' '+j.at.split(' ')[0]))].join('、')||'無'}）；明細 ${out}/lift-results.json`);}
 fs.writeFileSync(out+'/browser-results.json',JSON.stringify(results,null,2));console.log('雙引擎重播驗收通過：'+results.length+' 組；'+results.map(r=>r.width).join('/'));

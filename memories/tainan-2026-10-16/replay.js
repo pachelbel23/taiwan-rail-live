@@ -175,10 +175,18 @@ try{
 $('slToggle').onclick=()=>{const b=$('slToggle');b.setAttribute('aria-expanded',String(b.getAttribute('aria-expanded')!=='true'));placeSingleLine();};
  // 單線說明框的位置（窄版與矮螢幕＝寬 899 以下或高 600 以下，有「說明」鈕的那一段；寬版照 CSS）：框貼在場景左下角，上緣離視角按鈕實際的下緣 SL_GAP，按鈕折成兩排也照實際的下緣算。
  // 兩排之下連「說明」鈕都放不下時（例：568×320 打開最後一夜，場景只剩約 300 px 寬），框改放到最後一排最後一顆按鈕的右邊，上緣讓出上面那幾排。
- // 展開而且正在跟車時，框的上緣再往下讓出一條放標籤的帶子（標籤那一欄的按鈕下緣起 SL_LABEL_ROOM），liftFollow 把被跟那班放進這條帶子；框至少留一行說明（可捲）。
+ // 展開而且正在跟車時，框的上緣再往下讓出一條帶子，放得下被跟那班的標籤＋整班車＋SL_CAR_GAP（車身用 followReach 的最壞外框），liftFollow 把整班車放進這條帶子；框至少留摘要列＋一行說明（可捲）。
  // slBand：說明文字顯示中才有。bandTop＝標籤那一欄（場景中線兩側）最低的按鈕下緣，沒有按鈕就是場景頂端；boxTop／boxL／boxR＝說明框。座標都相對場景左上角。
- const SL_GAP=10,SL_LABEL_ROOM=40,SL_LABEL_W=200;let slBand=null;
- function placeSingleLine(){const box=$('singleline'),tg=$('slToggle'),st=box.style;slBand=null;if(box.hidden)return;
+ // SL_CAR_GAP：車身外框下緣離說明框上緣至少 8 px。兩班重點車外圍有光暈（updateGlow：殼往外約 3 px、地面光約 6 px，投影到畫面縱向約 4 px），8 px 讓光暈也不碰框，另留 2 px 給像素取整。
+ const SL_GAP=10,SL_CAR_GAP=8,SL_LABEL_W=200;let slBand=null,slKey='';
+ // 被跟那班在目前鏡頭下、車頭朝任何方位時，車身離跟車點（編組中心的地面）在畫面上最遠多少 px：up 往上、down 往下。
+ // R＝各輛中心離編組中心的距離＋該輛 boundingBox 的水平半對角線，取最大；up＝R·sin(仰角)＋車頂高·cos(仰角)，down＝R·sin(仰角)−車底高·cos(仰角)，再乘每公尺像素（車輛離地 0.16 m 不到 0.2 px，不計）。
+ // 不看列車當下的方位與位置（軌道彎的時候車身只會更靠近跟車點，上限照樣成立），所以帶子與讓位量只隨視窗尺寸、縮放、仰角、LOD 改變，不會隨列車移動或轉彎跳動。
+ const bboxOf=g=>g.boundingBox||(g.computeBoundingBox(),g.boundingBox),followKey=()=>[state.follow,span,tilt,height,state.lod].join();
+ function followReach(m){const ppm=height/span,s=Math.sin(tilt),c=Math.cos(tilt);let R=0,z0=Infinity,z1=-Infinity;
+  m.cars.forEach((car,i)=>{const q=bboxOf(car.children[0].geometry);R=Math.max(R,Math.abs(m.parts[i].offsetM)+Math.hypot(Math.max(-q.min.x,q.max.x),Math.max(-q.min.y,q.max.y)));z0=Math.min(z0,q.min.z);z1=Math.max(z1,q.max.z);});
+  return {up:(R*s+z1*c)*ppm,down:(R*s-z0*c)*ppm};}
+ function placeSingleLine(){const box=$('singleline'),tg=$('slToggle'),st=box.style;slBand=null;slKey=followKey();if(box.hidden)return;
   const sr=host.getBoundingClientRect(),W=sr.width,H=sr.height,narrow=getComputedStyle(tg).display!=='none',open=!narrow||tg.getAttribute('aria-expanded')==='true';
   const rel=e=>{const r=e.getBoundingClientRect();return {l:r.left-sr.left,r:r.right-sr.left,t:r.top-sr.top,b:r.bottom-sr.top};},btns=[...host.querySelectorAll('.view-controls button')].filter(b=>b.getClientRects().length).map(rel);
   // 標籤那一欄：跟車時列車在場景中線上，標籤寬取被跟那班的實際寬度（還沒畫出來就用 SL_LABEL_W）；收起來浮在場景右上角的「最後一夜」鈕也算障礙。
@@ -186,17 +194,24 @@ $('slToggle').onclick=()=>{const b=$('slToggle');b.setAttribute('aria-expanded',
   const bandTop=Math.max(0,...[...btns,...(floating?[nt]:[])].filter(b=>b.r>cx-lw/2-4&&b.l<cx+lw/2+4).map(b=>b.b));
   if(narrow){const bottom=parseFloat(getComputedStyle(box).bottom)||0,low=Math.max(0,...btns.map(b=>b.b));let left=12,top=low+SL_GAP;
    if(H-bottom-top<tg.offsetHeight&&btns.length){const last=Math.max(...btns.map(b=>b.t)),upper=btns.filter(b=>b.t<last-1);if(upper.length){left=Math.max(...btns.filter(b=>b.t>=last-1).map(b=>b.r))+6;top=Math.max(...upper.map(b=>b.b))+SL_GAP;}}
-   let maxH=H-bottom-top;if(open&&state.follow)maxH=Math.min(maxH,Math.max(tg.offsetHeight+24,H-bottom-bandTop-SL_LABEL_ROOM));
+   let maxH=H-bottom-top;const fm=open&&state.follow&&models.get(state.follow);
+   // 帶子：標籤（底不高於 57、上緣在 bandTop＋2 之下，同 liftFollow）與車身最高點都在按鈕下緣＋2 之下，車身最低點再離框上緣 SL_CAR_GAP；放不下就退到框的最小高度。
+   if(fm){const r=followReach(fm),k=7*Math.cos(tilt)*height/span,lh=fm.label.e.offsetHeight||26;maxH=Math.min(maxH,Math.max(tg.offsetHeight+24,H-bottom-(Math.max(57+k,bandTop+2+Math.max(lh+k,r.up))+r.down+SL_CAR_GAP)));}
    st.left=left+'px';st.maxWidth=Math.max(0,W-12-left)+'px';st.maxHeight=Math.max(0,maxH)+'px';}
   else st.left=st.maxWidth=st.maxHeight='';
   if(open&&getComputedStyle($('slNote')).display!=='none'){const b=rel(box);slBand={bandTop,boxTop:b.t,boxL:b.l,boxR:b.r};}}
  {const ro=new ResizeObserver(()=>placeSingleLine());ro.observe(host);ro.observe(host.querySelector('.view-controls'));}
- // 跟車置中點：平常是場景中心。說明文字顯示中、而且說明框蓋到中心時，改放在 slBand 的 bandTop 到說明框上緣的中間，再把標籤夾在看得到的地方：
- // 標籤底（車上方 7 m 的投影）離框上緣至少 3 px、離場景頂超過 55 px（draw 的標籤可見門檻）；按鈕之下放得下標籤，就整個放在按鈕之下。
- // 只沿地面往鏡頭方向推 target（同平移，z 保持 0），標籤與車照舊畫在真實位置；拖曳一開始就取消跟車，鏡頭停在當下的位置，不會跳回中心。收合或沒蓋到中心時不動。
- function liftFollow(m){const b=slBand;if(!b||!(b.boxTop<height/2&&b.boxL<width/2&&b.boxR>width/2))return;
-  const k=7*Math.cos(tilt)*height/span,lh=m.label.e.offsetHeight||26,lo=Math.max(57,b.bandTop+2+lh),hi=b.boxTop-3;let a=(b.bandTop+b.boxTop)/2-k;a=lo<=hi?Math.min(hi,Math.max(lo,a)):hi;
-  const dy=(height/2-a-k)*span/height;if(dy<=0)return;const up=new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld,1),h=Math.max(.1,Math.hypot(up.x,up.y));target.addScaledVector(up,-dy/(h*h));target.z=0;}
+ // 跟車置中點：平常是場景中心。說明文字顯示中、說明框橫跨場景中線時，解跟車點（編組中心的地面）在畫面上的高度 g（往下為正），三條限制：
+ //  ① 標籤底（車上方 7 m 的投影，在跟車點上方 k）≤ 框上緣 − 3；② 標籤上緣 ≥ bandTop＋2，而且標籤底 ≥ 57（draw 的標籤可見門檻）；③ 最壞情況的車身下緣（跟車點往下 followReach 的 down）≤ 框上緣 − SL_CAR_GAP。
+ // 不讓位時 g＝場景中線。三條都做得到時只往上推到剛好符合（g＝①、③ 上限的較小者）：讓位量隨縮放連續變，門檻上剛好是 0，縮放跨過門檻時畫面不跳。
+ // 做不到時先保 ①、再保 ②，放棄 ③：標籤緊貼按鈕下緣、車盡量往上；連這樣標籤都會碰到框，就退到標籤底＝框上緣 − 3。
+ // 車身用最壞外框，不看列車當下的方位與位置：down 只隨視窗、縮放、仰角、LOD 變，列車移動或轉彎時讓位量不變，畫面不跟著上下晃。
+ // 只沿地面往鏡頭方向推 target（同平移，z 保持 0），標籤與車照舊畫在真實位置；只往上讓、不往下推。拖曳一開始就取消跟車，鏡頭停在當下的位置，不會跳回中心。收合、框沒橫跨中線或上限不高過中線時不動。
+ // 縮放、仰角、場景高、LOD 或被跟的車換了（帶子跟著變），先重排說明框再讀 slBand。
+ function liftFollow(m){if(slKey!==followKey())placeSingleLine();const b=slBand;if(!b||!(b.boxL<width/2&&b.boxR>width/2))return;
+  const ppm=height/span,k=7*Math.cos(tilt)*ppm,lh=m.label.e.offsetHeight||26,gLo=Math.max(57,b.bandTop+2+lh)+k,gHi=Math.min(b.boxTop-3+k,b.boxTop-SL_CAR_GAP-followReach(m).down);
+  const g=Math.min(height/2,gLo<=gHi?gHi:Math.min(gLo,b.boxTop-3+k));
+  const dy=(height/2-g)/ppm;if(dy<=0)return;const up=new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld,1),h=Math.max(.1,Math.hypot(up.x,up.y));target.addScaledVector(up,-dy/(h*h));target.z=0;}
  for(const e of document.querySelectorAll('[data-fill]')){if(e.dataset.fill==='singleFrom'&&single)e.textContent=clock(single.fromSec).slice(0,5);if(e.dataset.fill==='scheduled'){const n=[...new Set(data.trains.filter(t=>t.timing==='scheduled').map(t=>t.train))].sort();if(n.length)e.textContent=n.join('、');}}
  // ── 字幕：不確定時段依 reason 分兩種寫法；單線雙向說明在場景裡另外顯示 ──
  const reasonsOf=id=>{const r=new Set();for(const i of uncertainty.intervals)if(state.sec>=i.start&&state.sec<=i.end&&i.trains.includes(id))r.add(i.reason||'track-overlap');return r.size?r:new Set(['track-overlap']);},TAIL=' 次暫以車次標記呈現；位置仍依重建的時刻推演。';
