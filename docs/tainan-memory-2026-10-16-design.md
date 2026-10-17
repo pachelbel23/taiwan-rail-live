@@ -32,7 +32,7 @@
 2. 用加權保序回歸修掉前後矛盾。設下限：停站至少 20 秒，站間行駛時間至少是表定的 0.7 倍。
 3. 沒有實測的站：停站時間照表定，只伸縮站間行駛時間。多出來的時間算成「留置」，放在最近一個沒有實測的停靠站。
 4. 準確度：用 9/12 的秒級歷史資料回測，停靠站誤差中位 26 秒，p90 77 秒；通過站中位 20 秒，p90 61 秒。
-5. 重建好的時刻餵進既有的 `computeProfiles` → `motion`，加減速剖面全部重算。另外加一道物理可行性檢查：各車種在窗內的最高時速不得超過該車種上限（上限取主站的車種極速表），超過的就退回表定並列出。10/16 沒有任何一班超過。
+5. 重建好的時刻餵進既有的 `computeProfiles` → `motion`，加減速剖面全部重算。另外加一道物理可行性檢查：各車種在窗內的最高時速不得超過該車種上限（上限取主站的車種極速表，build 當下凍結進 `snapshot.timingSource.speedCaps`；verify 只讀凍結值，主站日後改表不會讓封存品變紅），超過的就退回表定並列出。10/16 沒有任何一班超過。
 
 兩班重點車的重建結果（秒級歷史資料；verify 會從原始紀錄重算每個錨點，145 最大差 1 秒、3782 為 0 秒）：
 
@@ -82,6 +82,7 @@
 - train id 不再用聯集索引比對；兩班重點車用車次號比對。
 - `fleet/catalog.json` 照決定 B-2 處理，不可以用 build 的舊格式覆寫。
 - `ship_web.mjs` 加一道 10/16 驗收，和 9/12 那道並列。
+- `snapshot.sources` 裡的設定檔紀錄，只對「該日期設定扣掉 `verify`」的正規 JSON 取雜湊，並記下欄位名單。加主站入口、改註解或驗收門檻，都不會讓已封存的來源紀錄過期。
 - 頁面另外存 `source-schedule.json`（範圍內班次的原始項目）和 `source-observations.json`（範圍內班次的原始觀測列），讓日後可以重算。完整原始檔只留在 `.cache/`，SHA256 記進 snapshot.sources。
 
 ## 7. 驗收
@@ -135,4 +136,4 @@ snapshot.json 在 9/12 schema 之外新增的欄位（P 產生，U 讀）：
 - `singleLine`：`{fromSec, toSec, section:['永康','保安'], note, basis}`；`basis` 記起點的推導規則與決定起點的那組重疊。
 - `uncertainty.json` 的 intervals 每筆加 `reason`：`'track-overlap'` 或 `'single-line-unresolved'`；頂層 `criterion` 記判準。
 - `defaultSec`：79200（22:00）。
-- `timingSource`：`{primary:'tdx-historical'|'d1', d1Rows, histRows, calibration}`。
+- `timingSource`：`{primary:'tdx-historical'|'d1', d1Rows, histRows, calibration, speedCaps}`；`speedCaps` 是 build 當下套用的車種極速與讀取的 index.html 雜湊。
