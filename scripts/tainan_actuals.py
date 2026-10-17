@@ -14,6 +14,8 @@
 #        D 離站：表定離站 + max(0, 60×延誤分 − 30)，不早於 A + 20 秒。通過站只有 D 晚於 A 90 秒以上（被留置）才給。
 #        歷史的延誤取該次到訪最後一列（同次到訪內會上下跳一分鐘，最後一列誤差較小）；D1 取 delay_max。
 #        起點站的紀錄是看板佔位，不當 A，只用延誤給 D。
+#        同一站的紀錄被別站的紀錄隔成兩次以上到訪（例：中洲→保安→中洲→保安），分不出哪一次才是真的到站：
+#        這種站當作沒有可用的紀錄，歷史與 D1 都不取，由前後站內插（split_stations；回測同樣拿掉）。
 #   3. 錨點互相矛盾時，用帶最小間隔的加權保序回歸（PAV）修正。最小間隔：停站 20 秒、跑行 0.7×表定，
 #      另外不得短於該車種以極速梯形剖面跑完那一段的時間（物理下限；段長與性能參數由 build 的 --export-run-floor 匯出，
 #      與網站畫車用的同一組 schedSegKmOf／resolvePerf）。
@@ -31,6 +33,7 @@ import json
 import math
 import os
 import random
+import re
 import subprocess
 import sys
 
@@ -305,6 +308,12 @@ def obs_from_d1(rows):
         else:
             o['d_dep'] = max(o['d_dep'], r['delay_max']); o['n'] += 1
     return out
+
+
+def split_stations(visit_list):
+    """被別站的紀錄隔成兩次以上到訪的站（例：中洲→保安→中洲→保安）。分不出哪一次才是真的到站，重建與回測都當作沒有可用的紀錄。"""
+    c = collections.Counter(v['sta'] for v in visit_list)
+    return sorted(s for s, k in c.items() if k > 1)
 
 
 def obs_from_hist(visit_list):
@@ -656,7 +665,9 @@ def run_date(cfg):
                 missing_floor.append('%s:%s' % key)
             hv = hist_groups.get((lab, no), [])
             dr = d1_groups.get((lab, no), [])
-            obs = merge_obs(obs_from_hist(hv), obs_from_d1(dr))
+            # 紀錄被別站隔開的站，歷史與 D1 都不取（D1 是同一份看板的分鐘取樣，一樣分不出來），由前後站內插。
+            split = split_stations(hv)
+            obs = merge_obs(obs_from_hist([v for v in hv if v['sta'] not in split]), obs_from_d1([r for r in dr if r['sta'] not in split]))
             nodes, res, info = reconstruct_physical(inst, obs, ST, rec)
             out_nodes = []
             for nd in nodes:
@@ -670,6 +681,7 @@ def run_date(cfg):
             trains.append({'key': '%s:%s' % key, 'serviceDate': inst['serviceDate'], 'train': no, 'sourceIndex': inst['sourceIndex'],
                            'label': lab, 'timing': 'observed' if info['n_anchor'] else 'scheduled',
                            'nAnchors': info['n_anchor'], 'nHistVisits': len(hv), 'nD1Rows': len(dr),
+                           'splitStations': [{'sta': s, 'name': ST.c2n.get(s), 'firsts': [v['first'] for v in hv if v['sta'] == s]} for s in split],
                            'window': [w0, w1], 'anchors': info['anchors'], 'dropped': info['dropped'],
                            'holdInferred': info['hold_inferred'], 'heldPass': info['held_pass'], 'runs': info['runs'],
                            'nodes': out_nodes, 'raw': raw})
@@ -695,7 +707,8 @@ def run_date(cfg):
     print(json.dumps({'out': path, 'trains': len(trains), 'byDate': dict(collections.Counter(t['serviceDate'] for t in trains)),
                       'observed': out['counts']['observed'], 'scheduled': out['counts']['scheduled'], 'primary': out['primary'],
                       'histFilesUsed': hist_used, 'histRowsUsed': used_hist_rows, 'd1RowsUsed': used_d1_rows,
-                      'nodeSources': dict(src), 'heldPass': {t['key']: t['heldPass'] for t in trains if t['heldPass']}}, ensure_ascii=False))
+                      'nodeSources': dict(src), 'heldPass': {t['key']: t['heldPass'] for t in trains if t['heldPass']},
+                      'splitStations': {t['key']: [s['name'] for s in t['splitStations']] for t in trains if t['splitStations']}}, ensure_ascii=False))
 
 
 R5 = ('4200', '4210', '4220', '4250', '4260')   # 永康、大橋、臺南、保安、仁德
@@ -768,6 +781,9 @@ def backtest(cfg):
             if b is None or abs(b[2]) > 3600:
                 continue
             groups.setdefault((b[0], tn), (b[1], []))[1].append(v)
+    for inst, vs in groups.values():   # 紀錄被別站隔開的站不當真值、也不當錨點（與重建同一條規則）
+        split = split_stations(vs)
+        vs[:] = [v for v in vs if v['sta'] not in split]
     print('train instances with hist visits:', len(groups))
     random.seed(20261016)
     e_recon, e_b2, e_b3 = {'stop': [], 'pass': []}, {'stop': [], 'pass': []}, {'stop': [], 'pass': []}
@@ -844,10 +860,25 @@ def backtest(cfg):
             f.write('\n')
 
 
+def date_from_argv(argv):
+    """與 tainan_memory_config.mjs 的 dateFromArgv 同一套規則：--date X 或 --date=X，只能給一次，要接 YYYY-MM-DD；沒給回傳 None。"""
+    eq = [a for a in argv if a.startswith('--date=')]
+    if len(eq) + argv.count('--date') > 1:
+        sys.exit('--date 只能給一次')
+    if eq:
+        d = eq[0][len('--date='):]
+    elif '--date' in argv:
+        i = argv.index('--date')
+        d = argv[i + 1] if i + 1 < len(argv) else ''
+    else:
+        return None
+    if not re.fullmatch(r'\d{4}-\d{2}-\d{2}', d):
+        sys.exit('--date 要接 YYYY-MM-DD')
+    return d
+
+
 def main(argv):
-    date = None
-    if '--date' in argv:
-        date = argv[argv.index('--date') + 1]
+    date = date_from_argv(argv)
     if '--backtest' in argv:
         backtest(load_config(date or '2026-09-12'))
         return

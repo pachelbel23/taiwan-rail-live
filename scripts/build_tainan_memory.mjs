@@ -342,7 +342,8 @@ const formationOf=v=>{const s=v.src,sp=ctxF.specialOf({sys:'tra_sched',train:s.t
 
 // ── 取樣（與 9/12 相同：逐秒、只留畫面範圍內；換路段時把新位置投回舊路段，接縫 ≤ 0.1 m）。取樣點是整列中心。──
 const routes=[],routeObjs=[],routeKeys=new Map(),outTrains=[],formRows=[];
-const srcOf=n=>!n?null:/^(obs|dep-only)-/.test(n.src)?'obs':n.src==='sched'?'sched':'interp';
+// 起點站的紀錄是看板佔位，重建只用它的誤點分鐘推開車時刻（dep-only）：這一列沒有到站，來源記推定（est），不記實測。
+const srcOf=n=>!n?null:/^obs-/.test(n.src)?'obs':/^dep-only-/.test(n.src)?'est':n.src==='sched'?'sched':'interp';
 for(const [i,v] of selected.entries()){
  const tr=trains[i],r=motion.record(tr),{a,b}=windowOf(v,tr),mode=items[i].mode;
  const start=Math.max(-v.offset,Math.floor(r.schedule[a].arrSec)),end=Math.min(86399-v.offset,Math.ceil(r.schedule[b].depSec));
@@ -368,8 +369,10 @@ for(const [i,v] of selected.entries()){
   return x==='obs'&&s.stop===false&&!n.held&&!(mode==='observed'&&knotIdx.has(j))?'interp':x;};
  const stops=tr.stops.slice(a,b+1).map((s,k)=>{const o=v.src.stops[a+k];
   // 通過站的時刻是剖面回填的小數秒；頁面與時間軸只用到整秒（四捨五入不破壞先後順序）。
+  // end：這班車的起點站與終點站（照班表的第一站、最後一站）。起點的到站與開車同一秒＝沒有到站，終點同理沒有開車。
   return {name:s.name,arrSec:Math.round(s.arrSec+v.offset),depSec:Math.round(s.depSec+v.offset),stop:s.stop!==false,schedArrSec:Math.round(o.arrSec+v.offset),schedDepSec:Math.round(o.depSec+v.offset),
-   src:observed?srcAt(s,a+k):'sched',holdSec:Math.max(0,Math.round((s.depSec-s.arrSec)-(o.depSec-o.arrSec)))};});
+   src:observed?srcAt(s,a+k):'sched',holdSec:Math.max(0,Math.round((s.depSec-s.arrSec)-(o.depSec-o.arrSec))),
+   ...(a+k===0&&{end:'origin'}),...(a+k===v.src.stops.length-1&&{end:'terminal'})};});
  const row={id:v.key,train:String(tr.train),typeName:tr.typeName,carName:tr.carName,color:tr.color,serviceDate:v.day,direction:dirOf(tr,a,b),
   timing:mode==='scheduled'?'scheduled':'observed',formation:F.formation,spans,stops};
  const mark=cfg.marks.find(m=>m.train===String(tr.train)&&m.serviceDate===v.day);if(mark)row.mark=mark.mark;
@@ -402,12 +405,14 @@ for(const d of cfg.observedEvents){
   wait={trainId:cands[0].u.id,train:cands[0].u.train,arrSec:cands[0].x.arrSec,src:cands[0].x.src};text=text.replace('{wait}',wait.train);}
  if(d.other){const u=byNo(d.other.train,d.other.serviceDate),x=stopOf(u,d.station);if(!(x&&x.arrSec<=sec&&sec<=x.depSec))throw Error('交會時刻不在對方停站時間內：'+d.id);
   other={trainId:u.id,train:u.train,arrSec:x.arrSec,depSec:x.depSec};text=text.replace('{other}',u.train);}
+ // follow:'other'：點這一列跟的是對方那班（頁面依 train 跟車）；時刻與來源仍取 train 那班在該站的紀錄。
+ if(d.follow!==undefined&&!(d.follow==='other'&&other))throw Error('時間軸「'+d.id+'」的 follow 只能是 other，而且要有 other');
  if(d.claim==='last-departure'&&outTrains.some(u=>u!==t&&stopOf(u,d.station)?.stop&&stopOf(u,d.station).depSec>sec))throw Error('不是最後一班離開 '+d.station);
  if(d.claim==='last-section-exit'&&selected[single.lastExit].key!==t.id)throw Error('不是最後一班離開單線區間');
  // 只有到站／通過時刻取自實測紀錄（起站的紀錄是看板佔位，不算）。離站時刻是表定離站加上誤點分鐘推得（TDX 不記離站），
  // 誤點只到分鐘，誤差約一分鐘，一律標推定。
  const node=selected.find(x=>x.key===t.id).act.nodes.find(n=>norm(n.name)===norm(s.name)),measured=d.field==='arrSec'&&s.src==='obs'&&/^obs-/.test(node?.src||'');
- events.push({id:d.id,t:sec,text,kind:measured?'observed':'inferred',train:t.train,ref:{trainId:t.id,station:s.name,field:d.field,src:s.src,
+ events.push({id:d.id,t:sec,text,kind:measured?'observed':'inferred',train:(d.follow==='other'?other:t).train,ref:{trainId:t.id,station:s.name,field:d.field,src:s.src,
   ...(d.field==='depSec'&&{basis:'delay-minutes',rule:DEP_RULE}),...(wait&&{wait}),...(other&&{other})}});
 }
 events.sort((a,b)=>a.t-b.t);
@@ -497,7 +502,7 @@ unresolved.sort((a,b)=>a.start-b.start);
 const subsLate=[...new Set(single.late.slice().sort((x,y)=>y.end-x.end).map(o=>o.sub))],straddleNos=single.straddle.map(i=>outTrains[i].train);
 const meetDrawn=occRev.filter(h=>h.kind==='opposing'&&h.drawn.length),followDrawn=occRev.filter(h=>h.kind==='following'&&h.drawn.length);
 const noteParts=['官方公告 '+hm(SL.officialSec)+' 起封鎖東正線。'];
-if(subsLate.length)noteParts.push('實測顯示，'+hm(single.fromSec)+' 前'+subsLate.join('、')+'仍有對向列車同時在區間內，所以 '+hm(single.fromSec)+' 前照一般股道畫，對向重疊的時段標「封鎖初期股道安排不明」。');
+if(subsLate.length)noteParts.push('依到站紀錄推算，'+hm(single.fromSec)+' 前'+subsLate.join('、')+'仍有對向列車同時在區間內，所以 '+hm(single.fromSec)+' 前照一般股道畫，對向重疊的時段標「封鎖初期股道安排不明」。');
 noteParts.push(hm(single.fromSec)+' 起'+SL.section.join('—')+'只剩一條線：站與站之間同一時間只有一個方向的列車，對向列車在車站交會；南下列車畫在西正線（平常的北上股道）上反向行駛'
  +(straddleNos.length?'；'+straddleNos.join('、')+' 在 '+hm(single.fromSec)+' 前已進入區間、之後才離開，整段都畫在西正線上':'')+'。');
 if(meetDrawn.length)noteParts.push(meetDrawn.every(h=>!h.place.includes('→'))?'對向列車同時停在同一座車站、資料分不出各停哪一股的時段，同樣標示。':'對向列車在單線上位置重疊、資料解不開的時段，同樣標示。');

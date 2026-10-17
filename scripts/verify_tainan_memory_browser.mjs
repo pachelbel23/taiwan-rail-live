@@ -31,7 +31,7 @@ async function controls(page,scope='body',skip=''){
 }
 // ── 10/16 版專屬檢查（--date=2026-10-16 才跑）──────────────────────────────────────────────
 // 預期值一律從 tainanMemory.data（snapshot）與下面的常數算，不呼叫頁面自己的格式化函式；失敗訊息開頭是「引擎 寬×高」與檢查名稱。
-const KIND_ZH={official:'官方',observed:'實測',inferred:'推定'},SRC_ZH={obs:'實測',interp:'內插',sched:'表定'},WORDS={'track-overlap':'股道安排待確認','single-line-unresolved':'封鎖初期股道安排不明'};
+const KIND_ZH={official:'官方',observed:'實測',inferred:'推定'},SRC_ZH={obs:'實測',interp:'內插',sched:'表定',est:'推定'},WORDS={'track-overlap':'股道安排待確認','single-line-unresolved':'封鎖初期股道安排不明'};
 const pad2=n=>String(n).padStart(2,'0');
 const hhmm=sec=>{const s=((Math.floor(sec)%86400)+86400)%86400;return pad2(Math.floor(s/3600))+':'+pad2(Math.floor(s%3600/60));};
 const evTime=t=>(t>=86400?'次日 ':'')+hhmm(t);
@@ -136,7 +136,7 @@ async function lastDayChecks(page,{engine,width,height,click,out}){
 
  await step('標籤來源旗標：每班車帶 實測／內插／表定；整班沒有即時紀錄的標「無即時動態紀錄」；重點車標籤文字',async()=>{
   const got=await page.evaluate(()=>Object.fromEntries(tainanMemory.data.trains.map(t=>{const e=tainanMemory.models.get(t.id).label.e;return [t.id,{lt:e.querySelector('.lt').textContent,flag:e.querySelector('.flag')?.textContent||'',src:e.dataset.src||'',mark:e.dataset.mark||''}];})));
-  const counts={obs:0,interp:0,sched:0};
+  const counts={obs:0,interp:0,est:0,sched:0};
   for(const t of D.trains){const g=got[t.id],k=t.timing==='scheduled'?'sched':(t.stops.find(isTainan)?.src||'obs');counts[k]++;
    assert.deepEqual(g,{lt:t.mark==='last-ground'?'地面最後一班 '+t.train:t.mark==='last-south'?'最後南下・告別列車 '+t.train:t.train+' '+t.direction,flag:t.timing==='scheduled'?'無即時動態紀錄':SRC_ZH[k],src:k,mark:t.mark},'班次 '+t.train);}
   assert.ok(counts.sched>0&&counts.obs>0,'旗標種類不足，這項檢查是空轉：'+JSON.stringify(counts));
@@ -207,7 +207,7 @@ async function lastDayChecks(page,{engine,width,height,click,out}){
     assert.equal(r.name,s.name);assert.deepEqual(r.tds,want,`${t.train} ${s.name} 的表定／重播／差／留置／來源`);assert.equal(r.holdCls,!!hold,`${t.train} ${s.name} 留置的強調樣式`);
     const slack=pass?10:0;assert.equal(r.state,g.sec>s.depSec+slack?'past':g.sec>=s.arrSec-slack?'now':'future',`${t.train} ${s.name} 的過去／現在／未來標記`);
     if(hold)holdRows++;else if(!pass&&Number(s.holdSec)<90)noHoldRows++;if(pass&&hold)heldPassRows++;for(const k of want[4])srcSeen.add(k);});
-   assert.deepEqual(g.mine,evs.filter(e=>e.train!=null&&String(e.train)===t.train).map(e=>[evTime(e.t),e.text]),t.train+' 的「這班車在最後一夜」清單');
+   assert.deepEqual(g.mine,evs.filter(e=>e.train!=null&&String(e.train)===t.train||e.ref?.trainId===t.id).map(e=>[evTime(e.t),e.text]),t.train+' 的「這班車在最後一夜」清單（點了跟別班、時刻取自這班車停站的那一列也算）');
    assert.ok((t.timing==='scheduled'?g.note.includes('沒有任何即時動態紀錄'):g.note.includes('到站誤差約半分鐘')&&g.note.includes('推定＝')),t.train+' 卡片註腳');
    assert.equal(g.hint,'跟車中：'+t.train+' 次的逐站時刻','收合列的副標');
    if(t===sm){if(!openDefault)await setPanel(true);await page.locator('#followcard').scrollIntoViewIfNeeded();const box=await page.locator('#followcard').boundingBox();assert.ok(box&&box.width>100&&box.height>60,'跟車卡在畫面上沒有大小');await shot('card-145');await setPanel(openDefault);}}

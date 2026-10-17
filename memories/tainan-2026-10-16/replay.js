@@ -151,8 +151,8 @@ try{
    row.append(name,sched,act,diff,held,src);body.append(row);return {row,s};});
   table.append(thead,body);wrap.append(table);
   const note=document.createElement('p');note.className='note';note.textContent=tr.timing==='scheduled'?'這班車沒有任何即時動態紀錄，整班照時刻表畫。':'時刻依即時動態紀錄推算，到站誤差約半分鐘。實測＝取自紀錄的到站或通過時刻；內插＝這一站沒有可用的紀錄，由前後站推算；推定＝紀錄裡沒有開車時刻，用表定加上當時的誤點分鐘推算，可能差一分鐘左右；留置＝比表定多停 90 秒以上。';
-  // 推定的等待原因寫在時間軸事件的文字裡（例如「等 3278」），逐站欄位沒有原因欄：把這班車自己的事件列在表下面。
-  const mine=events.filter(e=>e.train!=null&&e.train!==''&&String(e.train)===String(tr.train)),extra=[];
+  // 推定的等待原因寫在時間軸事件的文字裡（例如「等 3278」），逐站欄位沒有原因欄：把這班車自己的事件列在表下面。點了跟別班、時刻取自這班車停站的那一列（保安交會）也列進來。
+  const mine=events.filter(e=>e.train!=null&&e.train!==''&&String(e.train)===String(tr.train)||e.ref?.trainId===tr.id),extra=[];
   if(mine.length){const h4=document.createElement('h4'),ul=document.createElement('ul');h4.textContent='這班車在最後一夜';ul.className='mine';for(const e of mine){const li=document.createElement('li'),tm=document.createElement('time'),tx=document.createElement('span');tm.textContent=dayClock(e.t);tx.textContent=e.text;li.append(tm,tx);ul.append(li);}extra.push(h4,ul);}
   card.append(h,cardStatus,wrap,...extra,note);}
  function refreshCard(){const tr=state.follow?data.trains.find(t=>t.id===state.follow):null,hint=$('nightToggle').querySelector('.s');if(!tr){card.hidden=true;if(cardFor!==null){cardFor=null;hint.textContent=NIGHT_HINT;}return;}

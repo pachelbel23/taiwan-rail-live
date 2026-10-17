@@ -82,11 +82,12 @@ const CONFIGS = {
       {id: 'underground-opens', t: 86400 + 21600, text: '地下化通車', kind: 'official'},
     ],
     // 觀測類時間軸：時刻由 build 從重建結果取（train 在 station 的 field），text 的 {wait} 由 build 找出那段時間在同站交會的對向車。
+    // follow: 'other'＝點這一列跟的是 other 那班，時刻仍取 train 那班在該站的紀錄。
     observedEvents: [
       {id: 'south-waits-yongkang', train: '145', serviceDate: '2026-10-16', station: '永康', field: 'arrSec', text: '{train} 到永康，等 {wait}', wait: {direction: '北上', at: '永康'}},
       {id: 'south-at-tainan', train: '145', serviceDate: '2026-10-16', station: '臺南', field: 'arrSec', text: '{train} 到臺南'},
       {id: 'last-waits-baoan', train: '3782', serviceDate: '2026-10-16', station: '保安', field: 'arrSec', text: '{train} 到保安，等 {wait}', wait: {direction: '南下', at: '保安'}},
-      {id: 'meet-baoan', train: '145', serviceDate: '2026-10-16', station: '保安', field: 'arrSec', text: '{train}、{other} 在保安交會', other: {train: '3782', serviceDate: '2026-10-16'}},
+      {id: 'meet-baoan', train: '145', serviceDate: '2026-10-16', station: '保安', field: 'arrSec', text: '{other}、{train} 在保安交會', other: {train: '3782', serviceDate: '2026-10-16'}, follow: 'other'},
       {id: 'last-at-tainan', train: '3782', serviceDate: '2026-10-16', station: '臺南', field: 'arrSec', text: '{train} 到臺南'},
       {id: 'last-leaves-tainan', train: '3782', serviceDate: '2026-10-16', station: '臺南', field: 'depSec', text: '{train} 開出臺南，地面臺南站最後一班', claim: 'last-departure'},
       {id: 'last-leaves-yongkang', train: '3782', serviceDate: '2026-10-16', station: '永康', field: 'depSec', text: '{train} 離開永康，地面鐵道營運結束', claim: 'last-section-exit'},

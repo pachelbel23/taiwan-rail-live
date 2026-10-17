@@ -282,13 +282,17 @@ function checkObserved(){
  const CR=data.sources.filter(s=>s.config==='scripts/tainan_memory_config.mjs');
  ok(CR.length===1&&CR[0].date===cfg.date&&Array.isArray(CR[0].fields)&&CR[0].fields.length>0&&CR[0].fields.every(f=>typeof f==='string')&&!CR[0].fields.includes('verify')&&/^[0-9a-f]{64}$/.test(CR[0].sha256),'snapshot.sources 沒有（或有多筆）設定檔的欄位雜湊紀錄，或欄位不對');
  ok(generationConfigSha256(cfg.date,CR[0].fields)===CR[0].sha256,'snapshot.sources 記的設定欄位雜湊與目前的 tainan_memory_config.mjs 不符（產生資料所用的設定改了，快照沒有重建）');
- const scheduled=new Set(TS.scheduledTrains),KEYS='name,arrSec,depSec,stop,schedArrSec,schedDepSec,src,holdSec',srcCount={obs:0,interp:0,sched:0};
+ const scheduled=new Set(TS.scheduledTrains),KEYS='name,arrSec,depSec,stop,schedArrSec,schedDepSec,src,holdSec',srcCount={obs:0,interp:0,est:0,sched:0};
  for(const tr of data.trains){const raw=schedOf.get(tr.serviceDate+':'+tr.train),off=tr.serviceDate===cfg.previous?-86400:0;let prev=-Infinity;
   ok((tr.timing==='observed'||tr.timing==='scheduled')&&(tr.timing==='scheduled')===scheduled.has(tr.id),'timing 與 timingSource.scheduledTrains 不一致：'+tr.train);
   ok(tr.stops.length>0,'沒有逐站時刻：'+tr.train);
   for(const s of tr.stops){const at=tr.train+' '+s.name,r=raw.stops.find(x=>norm(x.name)===norm(s.name));
-   ok(Object.keys(s).join()===KEYS,'停站欄位不對：'+at);
-   ok(Object.hasOwn(srcCount,s.src)&&(s.src==='sched')===(tr.timing==='scheduled'),'src 不對（只有整班沒有實測的車是 sched）：'+at);srcCount[s.src]++;
+   // end：起點站、終點站，照 source-schedule 的第一站、最後一站。起點的紀錄是看板佔位，重建只用它的誤點分鐘推開車時刻，
+   // 這一列記推定（est）：推定只出現在起點，起點也不得記實測。
+   const end=norm(s.name)===norm(raw.stops[0].name)?'origin':norm(s.name)===norm(raw.stops.at(-1).name)?'terminal':undefined;
+   ok(Object.keys(s).join()===KEYS+(end?',end':'')&&s.end===end,'停站欄位不對（end 要照 source-schedule 的起訖站）：'+at);
+   ok(Object.hasOwn(srcCount,s.src)&&(s.src==='sched')===(tr.timing==='scheduled')&&(s.src==='est'?end==='origin':end!=='origin'||s.src!=='obs'),
+    'src 不對（只有整班沒有實測的車是 sched；推定只在起點，起點不記實測）：'+at);srcCount[s.src]++;
    ok(Number.isInteger(s.arrSec)&&Number.isInteger(s.depSec)&&prev<=s.arrSec&&s.arrSec<=s.depSec,'到離站時刻倒退：'+at);prev=s.depSec;
    ok(r&&s.stop===(r.stop!==false)&&s.schedArrSec===Math.round(r.arrSec+off)&&s.schedDepSec===Math.round(r.depSec+off),'表定時刻或停靠／通過與 source-schedule 不符：'+at);
    ok(Math.abs(s.holdSec-Math.max(0,(s.depSec-s.arrSec)-(s.schedDepSec-s.schedArrSec)))<=1,'holdSec 不是比表定多停的秒數：'+at);
@@ -302,27 +306,28 @@ function checkObserved(){
  for(const tr of data.trains){const rows=obsOf.get(tr.id).rows;
   for(const r of rows){ok((r.source==='tdx-historical'||r.source==='d1')&&SO.files.some(f=>f.file==='.cache/'+r.file),'觀測列沒標來源，或來源檔不在 files：'+tr.train);
    ok((r.source==='d1'?r.train_no:r.TrainNo)===tr.train,'觀測列的車次不對：'+tr.train);rowCount[r.source]=(rowCount[r.source]||0)+1;}
-  for(const s of tr.stops)if(s.src==='obs')ok(rows.some(r=>rowStation(r)===norm(s.name)),'標成實測的站沒有原始觀測列：'+tr.train+' '+s.name);}
+  for(const s of tr.stops)if(s.src==='obs'||s.src==='est')ok(rows.some(r=>rowStation(r)===norm(s.name)),'標成實測或推定的站沒有原始觀測列：'+tr.train+' '+s.name);}
  // 3b. 實測時刻的精度：標成實測（obs）的到站／通過時刻，與 source-observations 裡該班該站那次到訪的第一筆紀錄相差不得超過
  //     anchorToleranceSec。換算與 tainan_actuals.py 的 A 錨點相同：秒級歷史取 SrcUpdateTime（依 SrcUpdateTime、UpdateTime 排序，連續同站的列
  //     合成一次到訪）；沒有歷史列的站用 D1，取最早一列的 obs_at−32 秒。起站不比（起站的紀錄是看板佔位，重建只用它的延誤給離站）。
- //     同一站的歷史列被別站的列隔成兩段以上（例：保安→中洲→保安），是同一次到訪的紀錄亂序，分不出哪一段才是真的到站：容許範圍改成
- //     「最早一段的第一筆」到「最晚一段的第一筆」各再放寬門檻，每一筆都列在輸出的 b1.outOfOrder。這條規則只看資料本身，不認車次。
+ //     同一站的歷史列被別站的列隔成兩段以上（例：中洲→保安→中洲→保安），分不出哪一段才是真的到站：重建把這種站當作沒有可用的紀錄，
+ //     由前後站內插（tainan_actuals.py 的 split_stations）。這裡從原始列重算，這種站不得標實測，每一站都列在輸出的 b1.split。只看資料本身，不認車次。
  const day0=Date.parse(cfg.date+'T00:00:00+08:00')/1000,secOf=iso=>Date.parse(iso)/1000-day0,TOL=V.anchorToleranceSec;
- const b1={tolSec:TOL,checked:0,maxAbsSec:0,worst:null,outOfOrder:[]},b1Bad=[];
+ const b1={tolSec:TOL,checked:0,maxAbsSec:0,worst:null,split:[]},b1Bad=[],b1Split=[];
  for(const tr of data.trains){if(tr.timing!=='observed')continue;
   const rows=obsOf.get(tr.id).rows,origin=norm(schedOf.get(tr.serviceDate+':'+tr.train).stops[0].name),runs=new Map(),d1=new Map();
   const H=rows.filter(r=>r.source==='tdx-historical').map(r=>({n:norm(r.StationName),s:secOf(r.SrcUpdateTime),u:secOf(r.UpdateTime)})).sort((a,b)=>a.s-b.s||a.u-b.u);
   for(let i=0,j;i<H.length;i=j+1){j=i;while(j+1<H.length&&H[j+1].n===H[i].n)j++;if(!runs.has(H[i].n))runs.set(H[i].n,[]);runs.get(H[i].n).push(H[i].s);}
   for(const r of rows)if(r.source==='d1'){const n=rowStation(r),t=secOf(r.obs_at)-RP.A_off_d1;if(!d1.has(n)||t<d1.get(n))d1.set(n,t);}
-  for(const s of tr.stops){const n=norm(s.name);if(s.src!=='obs'||n===origin)continue;
+  for(const [n,f] of runs)if(f.length>1){const s=tr.stops.find(x=>norm(x.name)===n);b1.split.push({train:tr.train,station:s?s.name:n,src:s?s.src:null,first:f.map(x=>hms(Math.round(x))).join('／')});if(s?.src==='obs')b1Split.push(tr.train+' '+s.name);}
+  for(const s of tr.stops){const n=norm(s.name);if(s.src!=='obs'||n===origin||runs.get(n)?.length>1)continue;
    const firsts=runs.get(n)||(d1.has(n)?[d1.get(n)]:null);ok(firsts,'標成實測的站找不到可比的原始紀錄：'+tr.train+' '+s.name);
-   const lo=Math.min(...firsts),hi=Math.max(...firsts),dev=s.arrSec<lo?s.arrSec-lo:s.arrSec>hi?s.arrSec-hi:0;b1.checked++;
-   const row={train:tr.train,station:s.name,stop:s.stop,arr:hms(s.arrSec),first:firsts.map(x=>hms(Math.round(x))).join('／'),devSec:Math.round(dev)};
-   if(firsts.length>1)b1.outOfOrder.push(row);
+   const dev=s.arrSec-firsts[0];b1.checked++;
+   const row={train:tr.train,station:s.name,stop:s.stop,arr:hms(s.arrSec),first:hms(Math.round(firsts[0])),devSec:Math.round(dev)};
    if(Math.abs(dev)>b1.maxAbsSec){b1.maxAbsSec=Math.round(Math.abs(dev));b1.worst=row;}
    if(Math.abs(dev)>TOL)b1Bad.push(row);}}
  ok(b1.checked>0,'實測時刻精度判準沒有比到任何一站（判準失明）');
+ ok(!b1Split.length,'紀錄被別站隔開的站不得標實測（'+b1Split.length+' 站）：'+b1Split.join('；'));
  ok(!b1Bad.length,'標成實測的到站／通過時刻與原始紀錄相差超過 '+TOL+' 秒（'+b1Bad.length+' 列）：'+b1Bad.map(r=>r.train+' '+r.station+' '+r.arr+'／紀錄 '+r.first+'（'+r.devSec+' 秒）').join('；'));
  // 4. 重點車：照 tainan_actuals.py 的錨點規則，從原始列重算範圍內每個實測錨點，與重建時刻相差不得超過門檻
  const anchors={};
@@ -332,8 +337,9 @@ function checkObserved(){
   for(const r of rows.filter(r=>r.source==='d1').map(r=>({...r,t:secOf(r.obs_at)})).sort((a,b)=>a.t-b.t)){const n=rowStation(r),o=obs.get(n);
    if(o)o.dDep=Math.max(o.dDep,r.delay_max);else obs.set(n,{src:'d1',A:r.t-RP.A_off_d1,dFirst:r.delay,dDep:r.delay_max});}
   // 秒級歷史（同站以歷史為準）：連續同站的列合成一次到訪，取第一次到訪；A＝第一列 SrcUpdateTime，離站延誤取最後一列
-  const H=rows.filter(r=>r.source==='tdx-historical').map(r=>({...r,s:secOf(r.SrcUpdateTime),u:secOf(r.UpdateTime)})).sort((a,b)=>a.s-b.s||a.u-b.u),seen=new Set();
-  for(let i=0,j;i<H.length;i=j+1){j=i;while(j+1<H.length&&H[j+1].StationID===H[i].StationID)j++;const n=norm(H[i].StationName);if(seen.has(n))continue;seen.add(n);obs.set(n,{src:'hist',A:H[i].s,dFirst:H[i].DelayTime,dDep:H[j].DelayTime});}
+  const H=rows.filter(r=>r.source==='tdx-historical').map(r=>({...r,s:secOf(r.SrcUpdateTime),u:secOf(r.UpdateTime)})).sort((a,b)=>a.s-b.s||a.u-b.u),seen=new Set(),split=new Set();
+  for(let i=0,j;i<H.length;i=j+1){j=i;while(j+1<H.length&&H[j+1].StationID===H[i].StationID)j++;const n=norm(H[i].StationName);if(seen.has(n)){split.add(n);continue;}seen.add(n);obs.set(n,{src:'hist',A:H[i].s,dFirst:H[i].DelayTime,dDep:H[j].DelayTime});}
+  for(const n of split)obs.delete(n);   // 紀錄被別站隔開的站沒有可用的紀錄，歷史與 D1 都不取（tainan_actuals.py 的 split_stations）
   for(const s of tr.stops){const o=obs.get(norm(s.name));if(!o)continue;const cand=s.schedDepSec+Math.max(0,60*o.dDep-RP.dep_bias);
    if(norm(s.name)===first){list.push({station:s.name,kind:'D-origin',src:o.src,anchor:cand,field:'depSec'});continue;}
    const dev=o.A-(s.schedArrSec+60*o.dFirst);if(Math.abs(dev)>RP.max_incons){list.push({station:s.name,kind:'A',src:o.src,anchor:o.A,dropped:Math.round(dev)});continue;}
@@ -431,6 +437,7 @@ function checkObserved(){
   reversed.push({train:r.train,from:hms(r.startSec),to:hms(r.endSec),drawnSec:n,enter:where(r.crossovers.start),leave:where(r.crossovers.end),turnouts:r.turnouts.total});}
  const times=[...single.note.matchAll(/(\d{1,2}):(\d{2})/g)].map(m=>m[0].padStart(5,'0'));
  ok(times.includes(hm(fromSec))&&times.includes(hm(SL.officialSec))&&times.every(x=>x===hm(fromSec)||x===hm(SL.officialSec)),'singleLine.note 的時刻只能是官方封鎖與單線起點：'+times.join('、'));
+ ok(!single.note.includes('實測'),'singleLine.note 不寫「實測」：單線前後的時段是依到站紀錄推算的');
  // 7. 時間軸：官方事項照設定；單線那一列在起點、依據同上；觀測類每一列的時刻＝那一班在那一站的到／離站，文字由範本套車次、不含時刻
  const E=data.events,TIME=/\d{1,2}\s*[:：]\s*\d{2}/;
  ok(Array.isArray(E)&&E.length===cfg.officialEvents.length+1+cfg.observedEvents.length&&new Set(E.map(e=>e.id)).size===E.length,'時間軸的列數或 id 不對');
@@ -444,9 +451,10 @@ function checkObserved(){
  for(const d of cfg.observedEvents){const e=E.find(x=>x.id===d.id),t=byNo(d.train,d.serviceDate),s=stopOf(t,d.station);ok(e&&t&&s,'時間軸缺「'+d.id+'」或找不到那一班那一站');
   // 只有到站／通過的實測時刻標實測（起站除外）；離站時刻是表定離站加上誤點分鐘推得，標推定並寫明依據。
   const measured=d.field==='arrSec'&&s.src==='obs'&&norm(s.name)!==norm(schedOf.get(t.serviceDate+':'+t.train).stops[0].name);
-  ok(e.train===t.train&&e.t===s[d.field]&&e.kind===(measured?'observed':'inferred')&&e.ref?.trainId===t.id&&norm(e.ref.station)===norm(s.name)&&e.ref.field===d.field&&e.ref.src===s.src
+  ok(d.follow===undefined||d.follow==='other'&&!!d.other,'時間軸「'+d.id+'」的 follow 只能是 other，而且要有 other');
+  ok(e.train===(d.follow==='other'?d.other.train:t.train)&&e.t===s[d.field]&&e.kind===(measured?'observed':'inferred')&&e.ref?.trainId===t.id&&norm(e.ref.station)===norm(s.name)&&e.ref.field===d.field&&e.ref.src===s.src
    &&(d.field!=='depSec'||e.ref.basis==='delay-minutes'),
-   '時間軸「'+d.id+'」的時刻不是 '+d.train+' 在'+d.station+'的 '+d.field+'，或 kind／來源不對（離站時刻要標推定、依據 delay-minutes）');
+   '時間軸「'+d.id+'」的時刻不是 '+d.train+' 在'+d.station+'的 '+d.field+'，或跟的車、kind／來源不對（離站時刻要標推定、依據 delay-minutes）');
   let text=d.text.replace('{train}',t.train);
   if(d.wait){const c=data.trains.filter(u=>u!==t&&u.direction===d.wait.direction).map(u=>({u,x:stopOf(u,d.wait.at)})).filter(({x})=>x&&x.arrSec>=s.arrSec&&x.arrSec<=s.depSec);
    ok(c.length===1&&e.ref.wait?.trainId===c[0].u.id,'時間軸「'+d.id+'」等的車要是停站期間唯一到站的'+d.wait.direction+'車：'+c.map(x=>x.u.train));text=text.replace('{wait}',c[0].u.train);}
@@ -454,7 +462,7 @@ function checkObserved(){
   ok(e.text===text,'時間軸「'+d.id+'」的文字與範本不符：'+e.text);
   if(d.claim==='last-departure')ok(data.trains.every(u=>u===t||!(stopOf(u,d.station)?.depSec>e.t)),'時間軸「'+d.id+'」不是最後一班離開'+d.station);
   if(d.claim==='last-section-exit')ok(t===lastExit.tr&&e.t===toSec&&uses.every(x=>x.u.every(u=>u.leave<=e.t)),'時間軸「'+d.id+'」不是最後一班離開單線區間');
-  trace.push(d.id+'＝'+t.train+' '+s.name+' '+d.field+' '+hms(e.t)+'（'+s.src+'，'+e.kind+'）');}
+  trace.push(d.id+'＝'+t.train+' '+s.name+' '+d.field+' '+hms(e.t)+'（'+s.src+'，'+e.kind+(d.follow==='other'?'，點了跟 '+d.other.train:'')+'）');}
  // 8. 不確定時段：判準欄位、每段有 reason；build 列出的單線解不掉時段都在裡面
  if(cfg.ambiguity)ok(U.criterion===cfg.ambiguity.criterion,'uncertainty.json 的 criterion 應為 '+cfg.ambiguity.criterion);
  for(const i of U.intervals)ok(['track-overlap','single-line-unresolved'].includes(i.reason),'不確定時段缺 reason 或 reason 不認得：'+(i.trainNos||i.trains));
