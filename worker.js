@@ -7911,8 +7911,9 @@ async function ingestThsrSchedule(env) {
       const daily = await fetchThsrDaily(env, token, dateIso);
       const { doc, meta } = thsrConvertDaily(daily, dateIso, stationMap);
       // 回 200 卻一班都轉不出來(不是陣列、空陣列、或欄位/站名改了形狀),當那天失敗、保留既有值,同上游出錯。
-      // 照樣寫進去是 0 班,一發就能把整個窗蓋掉,前端畫不出高鐵。空陣列也算失敗:TDX 歷史資料(2024-01 起)裡,
-      // 改開颱風特別班次的日子列的仍是原班表,唯一 0 筆的一天(2024-11-20)查不到停駛紀錄。
+      // 照樣寫進去是 0 班,一發就能把整個窗蓋掉,前端畫不出高鐵。空陣列也算失敗:TDX 高鐵 DailyTrainInfo 歷史封存
+      // (2024-01 起)裡,官方公告取消原班表、改開特別班次的日子(2024-10-31、2026-07-11)封存的仍是同星期幾的
+      // 一般班表;有封存的日子只有 2024-11-20 一天是 0 筆,看不出 0 筆代表停駛。
       if (meta.converted === 0) {
         const why = !Array.isArray(daily) ? `not an array: ${String(JSON.stringify(daily)).slice(0, 80)}`
           : meta.total === 0 ? 'empty array' : `0/${meta.total} converted: ${JSON.stringify(meta.skipped[0]).slice(0, 120)}`;
