@@ -7838,7 +7838,8 @@ function thsrScheduleUrl(env, dateIso) {
 // 寫法同 fetchHistDayWithTimeout:計時器一路蓋到 r.json() 讀完 body,結束在 finally 清掉。
 // 值的算法:每日 cron(15 1 * * *)那一發先跑 ingestDelayHistory、再跑這裡,共用同一個 15 分鐘(900 秒)
 // 牆鐘。誤點段最壞 739 秒(見 HIST_FETCH_TIMEOUT_MS 上方);這裡最壞＝THSR_SCHED_FETCH_DAYS(7)天×15 秒
-// + 逐日間隔 250ms×6 ＝106.5 秒。合計 845.5 秒 ≈ 14.1 分鐘,剩約 54 秒給沒有逾時的 token 與 D1 呼叫。
+// + 逐日間隔 250ms×6 ＝106.5 秒。合計 845.5 秒 ≈ 14.1 分鐘,剩約 54 秒給沒有逾時的 token、D1(含前面的
+// pruneStationEvents)與站點座標的 ASSETS 讀取。
 // 自我檢查(thsrSelfHeal)走每分鐘 cron 那一發,不會和誤點歷史 ingest 同一發(固定時刻錯開),那邊這段最壞就是 106.5 秒。
 const THSR_FETCH_TIMEOUT_MS = 15000;
 async function fetchThsrDaily(env, token, dateIso) {
@@ -7868,7 +7869,7 @@ async function thsrStationMap(env) {
 }
 
 // scheduled handler 的高鐵班表 ingest:抓「今天起 THSR_SCHED_FETCH_DAYS 天」,轉換失敗的那天
-// 保留既有值(console.warn),全部失敗(或抓到的日子都沒車)就整體不覆寫既有 blob(冪等,下次 cron 續補)。days 只留最新
+// 保留既有值(console.warn),全部失敗就整體不覆寫既有 blob(冪等,下次 cron 續補)。days 只留最新
 // THSR_SCHED_KEEP_DAYS 個日鍵;skip 統計放進 blob 的 _meta(不進 denseDoc 本體,denseDoc 頂層鍵
 // 須與現行靜態檔完全一致)。
 async function ingestThsrSchedule(env) {
@@ -7908,11 +7909,15 @@ async function ingestThsrSchedule(env) {
       // 只是這支端點輕得多所以不必到 2 秒);整窗 7 天約 1.5 秒,遠在 cron 預算內。
       if (i > 0) await sleep(250);
       const daily = await fetchThsrDaily(env, token, dateIso);
-      // 回 200 但內容不對,當那天失敗、保留既有值(同上游出錯):不是陣列＝回應格式改了;有車次卻一班
-      // 都轉不出來＝欄位或站名改了。照樣寫進去的話是 0 班,一發就能把整個窗蓋掉,前端畫不出高鐵。
-      if (!Array.isArray(daily)) throw new Error(`tdx thsr-schedule not an array for ${dateIso}: ${String(JSON.stringify(daily)).slice(0, 80)}`);
       const { doc, meta } = thsrConvertDaily(daily, dateIso, stationMap);
-      if (meta.total > 0 && meta.converted === 0) throw new Error(`tdx thsr-schedule 0/${meta.total} converted for ${dateIso}: ${JSON.stringify(meta.skipped[0]).slice(0, 120)}`);
+      // 回 200 卻一班都轉不出來(不是陣列、空陣列、或欄位/站名改了形狀),當那天失敗、保留既有值,同上游出錯。
+      // 照樣寫進去是 0 班,一發就能把整個窗蓋掉,前端畫不出高鐵。空陣列也算失敗:TDX 歷史資料(2024-01 起)裡,
+      // 改開颱風特別班次的日子列的仍是原班表,唯一 0 筆的一天(2024-11-20)查不到停駛紀錄。
+      if (meta.converted === 0) {
+        const why = !Array.isArray(daily) ? `not an array: ${String(JSON.stringify(daily)).slice(0, 80)}`
+          : meta.total === 0 ? 'empty array' : `0/${meta.total} converted: ${JSON.stringify(meta.skipped[0]).slice(0, 120)}`;
+        throw new Error(`tdx thsr-schedule ${why} for ${dateIso}`);
+      }
       const dayKey = dateIso.replace(/-/g, '');
       days[dayKey] = doc;
       metas[dayKey] = { total: meta.total, converted: meta.converted, skipped: meta.skipped };
@@ -7923,11 +7928,8 @@ async function ingestThsrSchedule(env) {
     }
   }
 
-  // 抓到的日子沒有一天有車,也當全部失敗、不覆寫:連續一整個窗都全線停駛幾乎不可能,整窗回空陣列比較
-  // 可能是上游壞了。只有某幾天回空陣列、別天有車時照寫 0 班——那可能是颱風全線停駛的日子,官方沒車就畫沒車。
-  if (!Object.values(results).some(r => r.ok && r.converted > 0)) {
-    for (const [d, r] of Object.entries(results)) if (r.ok) results[d] = { ok: false, error: 'tdx thsr-schedule: no trains on any fetched day' };
-    console.warn(`[cron thsr-sched] ${wanted.length} 天沒有一天抓到車次(失敗或回空陣列),不覆寫既有 blob:`, JSON.stringify(results));
+  if (!Object.values(results).some(r => r.ok)) {
+    console.warn(`[cron thsr-sched] ${wanted.length} 天全部失敗,不覆寫既有 blob:`, JSON.stringify(results));
     return { results, written: false };
   }
 
