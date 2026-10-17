@@ -7834,12 +7834,28 @@ function thsrScheduleUrl(env, dateIso) {
   const base = (env && env.THSR_SCHEDULE_BASE_URL_OVERRIDE) || THSR_SCHEDULE_URL_BASE;
   return `${base}/${dateIso}?%24format=JSON`;
 }
+// 單日請求的逾時:TDX 不回應或 body 停在半路時,沒有逾時的話這一發 cron 會吊到 15 分鐘牆鐘上限。
+// 寫法同 fetchHistDayWithTimeout:計時器一路蓋到 r.json() 讀完 body,結束在 finally 清掉。
+// 值的算法:每日 cron(15 1 * * *)那一發先跑 ingestDelayHistory、再跑這裡,共用同一個 15 分鐘(900 秒)
+// 牆鐘。誤點段最壞 739 秒(見 HIST_FETCH_TIMEOUT_MS 上方);這裡最壞＝THSR_SCHED_FETCH_DAYS(7)天×15 秒
+// + 逐日間隔 250ms×6 ＝106.5 秒。合計 845.5 秒 ≈ 14.1 分鐘,剩約 54 秒給沒有逾時的 token 與 D1 呼叫。
+// 自我檢查(thsrSelfHeal)走每分鐘 cron 那一發,不會和誤點歷史 ingest 同一發(固定時刻錯開),那邊這段最壞就是 106.5 秒。
+const THSR_FETCH_TIMEOUT_MS = 15000;
 async function fetchThsrDaily(env, token, dateIso) {
   const url = thsrScheduleUrl(env, dateIso);
-  const r = await fetch(url, { headers: { authorization: 'Bearer ' + token, accept: 'application/json' }, redirect: 'manual' });
-  if (r.status === 401) { tok = null; throw new Error('tdx 401 thsr-schedule'); }
-  if (!r.ok) throw new Error('tdx thsr-schedule ' + r.status + ' for ' + dateIso);
-  return await r.json();
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), THSR_FETCH_TIMEOUT_MS);
+  try {
+    const r = await fetch(url, { headers: { authorization: 'Bearer ' + token, accept: 'application/json' }, redirect: 'manual', signal: controller.signal });
+    if (r.status === 401) { tok = null; throw new Error('tdx 401 thsr-schedule'); }
+    if (!r.ok) throw new Error('tdx thsr-schedule ' + r.status + ' for ' + dateIso);
+    return await r.json();
+  } catch (e) {
+    if (controller.signal.aborted) throw new Error('tdx thsr-schedule timeout for ' + dateIso);
+    throw e;
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 let thsrStationMapMem = null;
@@ -7852,7 +7868,7 @@ async function thsrStationMap(env) {
 }
 
 // scheduled handler 的高鐵班表 ingest:抓「今天起 THSR_SCHED_FETCH_DAYS 天」,轉換失敗的那天
-// 保留既有值(console.warn),全部失敗就整體不覆寫既有 blob(冪等,下次 cron 續補)。days 只留最新
+// 保留既有值(console.warn),全部失敗(或抓到的日子都沒車)就整體不覆寫既有 blob(冪等,下次 cron 續補)。days 只留最新
 // THSR_SCHED_KEEP_DAYS 個日鍵;skip 統計放進 blob 的 _meta(不進 denseDoc 本體,denseDoc 頂層鍵
 // 須與現行靜態檔完全一致)。
 async function ingestThsrSchedule(env) {
@@ -7892,7 +7908,11 @@ async function ingestThsrSchedule(env) {
       // 只是這支端點輕得多所以不必到 2 秒);整窗 7 天約 1.5 秒,遠在 cron 預算內。
       if (i > 0) await sleep(250);
       const daily = await fetchThsrDaily(env, token, dateIso);
+      // 回 200 但內容不對,當那天失敗、保留既有值(同上游出錯):不是陣列＝回應格式改了;有車次卻一班
+      // 都轉不出來＝欄位或站名改了。照樣寫進去的話是 0 班,一發就能把整個窗蓋掉,前端畫不出高鐵。
+      if (!Array.isArray(daily)) throw new Error(`tdx thsr-schedule not an array for ${dateIso}: ${String(JSON.stringify(daily)).slice(0, 80)}`);
       const { doc, meta } = thsrConvertDaily(daily, dateIso, stationMap);
+      if (meta.total > 0 && meta.converted === 0) throw new Error(`tdx thsr-schedule 0/${meta.total} converted for ${dateIso}: ${JSON.stringify(meta.skipped[0]).slice(0, 120)}`);
       const dayKey = dateIso.replace(/-/g, '');
       days[dayKey] = doc;
       metas[dayKey] = { total: meta.total, converted: meta.converted, skipped: meta.skipped };
@@ -7903,8 +7923,11 @@ async function ingestThsrSchedule(env) {
     }
   }
 
-  if (!Object.values(results).some(r => r.ok)) {
-    console.warn(`[cron thsr-sched] ${wanted.length} 天全部失敗,不覆寫既有 blob:`, JSON.stringify(results));
+  // 抓到的日子沒有一天有車,也當全部失敗、不覆寫:連續一整個窗都全線停駛幾乎不可能,整窗回空陣列比較
+  // 可能是上游壞了。只有某幾天回空陣列、別天有車時照寫 0 班——那可能是颱風全線停駛的日子,官方沒車就畫沒車。
+  if (!Object.values(results).some(r => r.ok && r.converted > 0)) {
+    for (const [d, r] of Object.entries(results)) if (r.ok) results[d] = { ok: false, error: 'tdx thsr-schedule: no trains on any fetched day' };
+    console.warn(`[cron thsr-sched] ${wanted.length} 天沒有一天抓到車次(失敗或回空陣列),不覆寫既有 blob:`, JSON.stringify(results));
     return { results, written: false };
   }
 
@@ -8636,5 +8659,5 @@ export const _thsr = {
   thsrConvertSeatList, isThsrSeatCode, thsrSeatUrl, thsrSeat,
   // 自我檢查:測試要自備 env(DELAY_DB/ASSETS/TDX 覆寫)與 event.scheduledTime(節奏閘門看它,不看真時鐘)。
   thsrSelfHeal, THSR_SCHED_FETCH_DAYS, THSR_SCHED_KEEP_DAYS, THSR_HEAL_EVERY_MIN, THSR_HEAL_FROM_HOUR,
-  THSR_REFRESH_SLOTS,
+  THSR_REFRESH_SLOTS, THSR_FETCH_TIMEOUT_MS,
 };
