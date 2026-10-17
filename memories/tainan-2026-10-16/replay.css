@@ -33,15 +33,16 @@ select{appearance:none;-webkit-appearance:none;height:44px;min-height:44px;paddi
 .src{display:inline-block;font-size:10px;line-height:1.5;border-radius:9px;padding:0 6px;white-space:nowrap}.src-obs{background:#dcebdf;color:#1f5a38}.src-interp{background:#f4ead2;color:#6b4c14}.src-sched{background:#e7e7e1;color:#444}
 /* 單線雙向說明：疊在場景左下角（不佔版面，出現時不會把下方控件推走）；說明文字不接收指標事件。
    寬版直接列出完整說明；窄版（寬 899 px 以下，面板接在場景下方的那一段）與矮螢幕（高 520 px 以下，橫向手機）預設只留一行摘要和「說明」鈕，
-   點開才看完整文字：完整說明在手機上會佔掉場景的三分之一以上，蓋住正在跟的列車。說明框疊在所有標籤之上（含正在跟的那班，z-index 3）。 */
+   點開才看完整文字：完整說明在手機上會佔掉場景的三分之一以上，蓋住正在跟的列車。說明框疊在所有標籤之上（含正在跟的那班，z-index 3）。
+   展開時高度上限要讓出場景上方的視角按鈕（按鈕高 44 px、距場景頂 4–12 px）：橫向手機的場景只有一百多 px 高，放不下的文字在框內捲動，所以展開後的說明文字要接收指標。 */
 #singleline{position:absolute;left:12px;bottom:34px;max-width:calc(100% - 24px);margin:0;padding:5px 9px;border-left:3px solid #a87a31;border-radius:4px;background:#f6efdcf2;color:#5f4410;font-size:11px;line-height:1.45;pointer-events:none;z-index:4}
 #singleline p{margin:0}#slToggle{display:none}
 @media(max-width:899px),(max-height:520px){
- #singleline{display:flex;flex-direction:column-reverse;padding:0}
- #slToggle{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:32px;padding:4px 9px;border:0;border-radius:4px;background:transparent;color:inherit;font-size:11px;line-height:1.3;text-align:left;pointer-events:auto}
+ #singleline{display:flex;flex-direction:column-reverse;padding:0;max-height:calc(100% - 96px)}
+ #slToggle{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:32px;padding:4px 9px;border:0;border-radius:4px;background:transparent;color:inherit;font-size:11px;line-height:1.3;text-align:left;pointer-events:auto;flex:none}
  #slToggle:hover{background:#efe4c4}#slToggle .sl-act{flex:none;font-weight:700;color:#7a5410;white-space:nowrap}
  #slToggle .chev{display:inline-block;margin-left:3px;transition:transform .15s}#slToggle[aria-expanded=true] .chev{transform:rotate(180deg)}
- #slNote{display:none;padding:5px 9px 4px;border-bottom:1px solid #dccb9b;font-size:10px;line-height:1.4}#slToggle[aria-expanded=true]+#slNote{display:block}
+ #slNote{display:none;min-height:0;overflow-y:auto;padding:5px 9px 4px;border-bottom:1px solid #dccb9b;font-size:10px;line-height:1.4}#slToggle[aria-expanded=true]+#slNote{display:block;pointer-events:auto;touch-action:pan-y}
 }
 #scene.squeezed #singleline,#scene.squeezed .scene-note{display:none}
 /* 重點車標籤：金色＝地面最後一班；深紅＝最後南下的告別列車。來源旗標：實測／內插／表定。 */
@@ -58,4 +59,4 @@ select{appearance:none;-webkit-appearance:none;height:44px;min-height:44px;paddi
  #night:not(.closed) #nightBody{display:block}#night.closed{position:absolute;right:12px;top:12px;width:auto;border:1px solid #c8ccc1;border-radius:8px;z-index:4;box-shadow:0 1px 4px #40513d30}#night.closed #nightToggle{width:auto}#night.closed .s{display:none}
 }
 @media(max-width:600px){h1{font-size:clamp(15px,5vw,20px);letter-spacing:.04em}#nightToggle{padding:4px 12px}#events{padding:6px 8px 10px}#next{flex:1 1 auto;white-space:nowrap}}
-@media(max-height:520px){#caption{display:block;min-height:0;margin:2px 0 0;font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#singleline{bottom:8px}.ev .evb,.ev .evs{min-height:40px;padding-top:4px;padding-bottom:4px}}
+@media(max-height:520px){#caption{display:block;min-height:0;margin:2px 0 0;font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#singleline{bottom:8px;max-height:calc(100% - 66px)}.ev .evb,.ev .evs{min-height:40px;padding-top:4px;padding-bottom:4px}}

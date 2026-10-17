@@ -269,7 +269,7 @@ async function singleLineChecks(page,{engine,width,height,click,sweep}){
   const others=[...document.querySelectorAll('#scene button,#scene a,#scene input,#scene select,#scene .scene-note')].filter(o=>!box.contains(o)&&o.getClientRects().length&&cs(o).display!=='none').map(o=>({id:o.id||o.className||o.tagName,...R(o)}));
   return {vw:innerWidth,vh:innerHeight,hidden:box.hidden,squeezed:q('scene').classList.contains('squeezed'),scene:R(q('scene')),box:R(box),boxPe:cs(box).pointerEvents,
    toggle:{display:cs(tg).display,pe:cs(tg).pointerEvents,exp:tg.getAttribute('aria-expanded'),ctl:tg.getAttribute('aria-controls'),...R(tg)},sum:q('slSum').textContent,
-   note:{display:cs(note).display,pe:cs(note).pointerEvents,vis:cs(note).visibility,text:note.textContent,...R(note)},
+   note:{display:cs(note).display,pe:cs(note).pointerEvents,vis:cs(note).visibility,oy:cs(note).overflowY,ta:cs(note).touchAction,sh:note.scrollHeight,ch:note.clientHeight,text:note.textContent,...R(note)},
    label:le.hidden?null:R(le),drawn:!!m.sample(tr,m.state.sec),others};},[id,sec]);
  // 時段外（單線說明結束後、開始前）整塊都不能被畫出來：窄版另外設了 display，不能蓋過 hidden 屬性；只看 hidden 屬性會漏掉這種蓋過。
  const offAt=async(w,h)=>{for(const sec of [D.single.fromSec-60,D.single.toSec+60]){await follow(D.gm.id,sec);
@@ -311,7 +311,10 @@ async function singleLineChecks(page,{engine,width,height,click,sweep}){
   await click('#slToggle');await frames();g=await state();
   assert.equal(g.toggle.exp,'true',at+'：點一下後 aria-expanded 要是 true');assert.notEqual(g.note.display,'none',at+'：點開後要顯示完整說明');assert.equal(g.note.vis,'visible');assert.equal(g.note.text,D.single.note,at+'：展開後的說明文字');
   assert.ok(g.note.h>20&&g.note.l>=g.scene.l-1&&g.note.r<=g.scene.r+1&&g.note.t>=g.scene.t-1&&g.note.b<=g.scene.b+1,at+'：展開後說明文字有一部分在場景外（被裁掉）'+JSON.stringify({note:g.note,scene:g.scene}));
-  assert.equal(g.note.pe,'none',at+'：展開後說明文字仍該不接收指標');assert.equal(g.toggle.pe,'auto');
+  // 橫向手機的場景太矮，展開後的說明會被截高：被截掉的部分要能在框內捲動（接收指標、overflow-y 可捲、觸控可上下拖），而且真的捲得動。
+  if(g.note.sh>g.note.ch+1){assert.equal(g.note.pe,'auto',at+'：說明被截高、文字卻不接收指標，捲不到後半段');assert.ok(['auto','scroll'].includes(g.note.oy),at+'：說明被截高、卻不能捲動（overflow-y '+g.note.oy+'）');assert.notEqual(g.note.ta,'none',at+'：說明被截高、觸控卻不能上下拖');
+   const moved=await page.evaluate(()=>{const n=document.getElementById('slNote');n.scrollTop=n.scrollHeight;const t=n.scrollTop;n.scrollTop=0;return t;});assert.ok(moved>0,at+'：說明被截高，scrollTop 卻推不動');}
+  assert.equal(g.toggle.pe,'auto');
   s=await scan();assert.deepEqual(s.errors,[],at+' 展開：'+JSON.stringify(s.errors)+' 細節：'+JSON.stringify(s.detail));assert.ok(s.toggleHit,at+` 展開：「說明」鈕座標的 elementFromPoint 不是它自己（是 ${s.hitName}）`);
   ratios.push({w,h,state:'expanded',ratioPct:Math.round(g.box.w*g.box.h/(g.scene.w*g.scene.h)*1000)/10});
   await click('#slToggle');await frames();g=await state();
