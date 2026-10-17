@@ -3780,3 +3780,13 @@ Object.assign(window.RAIL_I18N_MESSAGES.en, {
 Object.assign(window.RAIL_I18N_MESSAGES.ja, {
   '高鐵班表每天早上的更新若沒成功，當天稍後會自動再抓幾次': '高鉄の時刻表は、朝の更新に失敗した日も当日中に自動で取り直すようにしました。',
 });
+
+// 2026-10-18 「更多」加 10/16 臺南地面鐵道最後一天的重播入口（v1018a）。
+Object.assign(window.RAIL_I18N_MESSAGES.en, {
+  '臺南地面鐵道最後一天・歷史重播': 'Tainan surface railway’s last day · Historical replay',
+  '新增臺南地面鐵道最後一天（10/16）的重播：依當天實際到離站紀錄重現 226 班列車，可調時間、加速、跟車': 'Added a replay of the last day of Tainan’s surface railway (10/16): 226 trains recreated from that day’s actual arrival and departure records, with time controls, fast-forward and train following',
+});
+Object.assign(window.RAIL_I18N_MESSAGES.ja, {
+  '臺南地面鐵道最後一天・歷史重播': '台南の地上鉄道・最終日の運行を再生',
+  '新增臺南地面鐵道最後一天（10/16）的重播：依當天實際到離站紀錄重現 226 班列車，可調時間、加速、跟車': '台南の地上鉄道の最終日（10/16）を再生できるようにしました。当日の実際の発着記録から226本の列車を再現し、時刻の変更、早送り、列車の追跡ができます',
+});
