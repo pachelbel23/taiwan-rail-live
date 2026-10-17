@@ -143,10 +143,10 @@ try{
   const wrap=document.createElement('div'),table=document.createElement('table'),head=document.createElement('tr'),body=document.createElement('tbody');wrap.className='tw';
   for(const [t,sub] of [['站'],['表定','到／開'],['實測','到／開'],['差','實測−表定'],['留置'],['來源']]){const th=document.createElement('th');th.scope='col';th.append(t);if(sub){th.append(document.createElement('br'),sub);}head.append(th);}
   const thead=document.createElement('thead');thead.append(head);
-  cardRows=tr.stops.map(s=>{const row=document.createElement('tr'),pass=s.stop===false,hold=Number(s.holdSec)>=90?Number(s.holdSec):0,has=Number.isFinite(s.schedArrSec);row.dataset.name=s.name;row.dataset.src=s.src||'';row.dataset.hold=String(hold);
+  cardRows=tr.stops.map(s=>{const row=document.createElement('tr'),pass=s.stop===false,hold=Number(s.holdSec)>=90?Number(s.holdSec):0,passed=pass&&!hold,has=Number.isFinite(s.schedArrSec);row.dataset.name=s.name;row.dataset.src=s.src||'';row.dataset.hold=String(hold);
    const name=document.createElement('th');name.scope='row';name.textContent=s.name;
-   const sched=has?(pass?lines('td','通過',T(s.schedArrSec)):lines('td',T(s.schedArrSec),T(s.schedDepSec))):lines('td','—'),act=pass?lines('td','通過',T(s.arrSec)):lines('td',T(s.arrSec),T(s.depSec));
-   const diff=has?(pass?lines('td',DIFF(s.arrSec-s.schedArrSec)):lines('td',DIFF(s.arrSec-s.schedArrSec),DIFF(s.depSec-s.schedDepSec))):lines('td','—'),held=lines('td',hold?DUR(hold):'—');if(hold)held.className='hold';
+   const sched=has?(pass?lines('td','通過',T(s.schedArrSec)):lines('td',T(s.schedArrSec),T(s.schedDepSec))):lines('td','—'),act=passed?lines('td','通過',T(s.arrSec)):lines('td',T(s.arrSec),T(s.depSec));
+   const diff=has?(passed?lines('td',DIFF(s.arrSec-s.schedArrSec)):lines('td',DIFF(s.arrSec-s.schedArrSec),DIFF(s.depSec-s.schedDepSec))):lines('td','—'),held=lines('td',hold?DUR(hold):'—');if(hold)held.className='hold';
    const src=document.createElement('td'),chip=document.createElement('span');chip.className='src src-'+(s.src||'none');chip.textContent=SRC[s.src]||'—';src.append(chip);
    row.append(name,sched,act,diff,held,src);body.append(row);return {row,s};});
   table.append(thead,body);wrap.append(table);
@@ -158,11 +158,13 @@ try{
  function refreshCard(){const tr=state.follow?data.trains.find(t=>t.id===state.follow):null,hint=$('nightToggle').querySelector('.s');if(!tr){card.hidden=true;if(cardFor!==null){cardFor=null;hint.textContent=NIGHT_HINT;}return;}
   if(cardFor!==tr.id){renderCard(tr);cardFor=tr.id;hint.textContent='跟車中：'+tr.train+' 次的逐站時刻';}card.hidden=false;const sec=state.sec;
   for(const {row,s} of cardRows){const slack=s.stop===false?10:0,st=sec>s.depSec+slack?'past':sec>=s.arrSec-slack?'now':'future';if(row.dataset.state!==st)row.dataset.state=st;}
-  const first=tr.stops[0],last=tr.stops[tr.stops.length-1],here=tr.stops.find(s=>s.stop!==false&&sec>=s.arrSec&&sec<=s.depSec),next=tr.stops.find(s=>sec<s.arrSec);
+  const first=tr.stops[0],last=tr.stops[tr.stops.length-1],here=tr.stops.find(s=>(s.stop!==false||Number(s.holdSec)>=90)&&sec>=s.arrSec&&sec<=s.depSec),next=tr.stops.find(s=>sec<s.arrSec);
   cardStatus.textContent=(here?'停在'+here.name:sec<first.arrSec?'尚未到'+first.name:sec>last.depSec?'已駛離最後一站':next?'行駛中，下一站'+next.name:'行駛中')+(sample(tr,sec)?'':'（目前在畫面範圍外）')+(tr.timing==='scheduled'?'；沒有即時動態紀錄，照表定時刻':'');}
  // ── 單線雙向說明與文案裡跟資料有關的數字（說明文字的預設值與 spec 相同，資料不同時以資料為準）──
  const single=data.singleLine;
- function refreshSingleLine(){const e=$('singleline'),on=!!single&&state.sec>=single.fromSec&&state.sec<=single.toSec;if(on&&!e.textContent)e.textContent=single.note||((single.section||[]).join('—')+'之間只剩一條線，對向列車輪流通過。');e.hidden=!on;}
+ function refreshSingleLine(){const e=$('singleline'),note=$('slNote'),on=!!single&&state.sec>=single.fromSec&&state.sec<=single.toSec;if(on&&!note.textContent){note.textContent=single.note||((single.section||[]).join('—')+'之間只剩一條線，對向列車輪流通過。');$('slSum').textContent=clock(single.fromSec).slice(0,5)+' 起單線雙向';}e.hidden=!on;}
+// 窄版只顯示一行摘要，按「說明」才展開完整文字；寬版的 CSS 不顯示這顆鈕、直接列出完整說明。展開狀態只存在 aria-expanded。
+$('slToggle').onclick=()=>{const b=$('slToggle');b.setAttribute('aria-expanded',String(b.getAttribute('aria-expanded')!=='true'));};
  for(const e of document.querySelectorAll('[data-fill]')){if(e.dataset.fill==='singleFrom'&&single)e.textContent=clock(single.fromSec).slice(0,5);if(e.dataset.fill==='scheduled'){const n=[...new Set(data.trains.filter(t=>t.timing==='scheduled').map(t=>t.train))].sort();if(n.length)e.textContent=n.join('、');}}
  // ── 字幕：不確定時段依 reason 分兩種寫法；單線雙向說明在場景裡另外顯示 ──
  const reasonsOf=id=>{const r=new Set();for(const i of uncertainty.intervals)if(state.sec>=i.start&&state.sec<=i.end&&i.trains.includes(id))r.add(i.reason||'track-overlap');return r.size?r:new Set(['track-overlap']);},TAIL=' 次暫以車次標記呈現；位置仍依重建的時刻推演。';
@@ -208,7 +210,7 @@ try{
  // rAF 的時間戳可能比 last（宣告當下的 performance.now()）早一點：dt 不小於 0，免得第一幀把 22:00:00 倒退成 21:59:59。
  function draw(now){requestAnimationFrame(draw);const dt=Math.max(0,Math.min(.1,(now-last)/1000));last=now;if(document.hidden)return;if(state.nearReady)setLod(span<fleet.lod.nearBelowSpan?'near':span>fleet.lod.farAboveSpan?'far':state.lod);if(state.playing&&!$('details').open)state.sec=(state.sec+dt*state.speed)%86400;active.length=0;
   const uncertain=new Set(uncertainty.intervals.filter(i=>state.sec>=i.start&&state.sec<=i.end).flatMap(i=>i.trains));
-  for(const tr of data.trains){const m=models.get(tr.id),p=sample(tr,state.sec);m.group.visible=!!p&&!uncertain.has(tr.id);m.label.coordinate=p?.coordinate||null;m.label.e.classList.toggle('uncertain',uncertain.has(tr.id));if(!p)continue;const poses=formationPoses(p.path,p.s,1,m.parts,()=>.16);if(!poses){m.group.visible=false;m.label.coordinate=null;continue;}active.push({id:tr.id,train:tr.train,direction:tr.direction,route:p.route,s:p.s,coordinate:p.coordinate,trackUncertain:uncertain.has(tr.id)});poses.forEach((pose,i)=>{const xy=world(pose.coordinate);m.cars[i].position.set(...xy,pose.height);m.cars[i].rotation.z=pose.angle;});if(state.follow===tr.id){target.set(...world(p.coordinate),0);view();}}
+  for(const tr of data.trains){const m=models.get(tr.id),p=sample(tr,state.sec);m.group.visible=!!p&&!uncertain.has(tr.id);m.label.coordinate=p?.coordinate||null;m.label.e.classList.toggle('uncertain',uncertain.has(tr.id));m.label.e.classList.toggle('following',state.follow===tr.id);if(!p)continue;const poses=formationPoses(p.path,p.s,1,m.parts,()=>.16);if(!poses){m.group.visible=false;m.label.coordinate=null;continue;}active.push({id:tr.id,train:tr.train,direction:tr.direction,route:p.route,s:p.s,coordinate:p.coordinate,trackUncertain:uncertain.has(tr.id)});poses.forEach((pose,i)=>{const xy=world(pose.coordinate);m.cars[i].position.set(...xy,pose.height);m.cars[i].rotation.z=pose.angle;});if(state.follow===tr.id){target.set(...world(p.coordinate),0);view();}}
   const occupied=[];for(const l of labels){if(!l.coordinate){l.e.hidden=true;continue;}const xy=world(l.coordinate),p=new THREE.Vector3(...xy,7).project(camera),x=(p.x*.5+.5)*width,y=(-p.y*.5+.5)*height;const visible=p.z>=-1&&p.z<=1&&x>0&&x<width&&y>55&&y<height-30;l.e.hidden=!visible;if(visible){l.e.style.transform=`translate(${x}px,${y}px) translate(-50%,-100%)`;if(!l.e.classList.contains('train-label')){const b=l.e.getBoundingClientRect();if(occupied.some(a=>b.left<a.right&&b.right>a.left&&b.top<a.bottom&&b.bottom>a.top))l.e.hidden=true;else occupied.push(b);}}}
   updateGlow(span/Math.max(1,height));renderer.render(scene,camera);state.frames++;
   // 每個整秒、或跟車對象換了（下拉選單、時間軸事件、拖曳取消跟車）就更新字幕、單線說明與跟車卡。
