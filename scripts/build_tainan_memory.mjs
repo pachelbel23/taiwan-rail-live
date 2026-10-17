@@ -19,6 +19,11 @@
 //   5. 物理可行性：每 0.5 秒差分實體取樣器的里程，點速不得超過車種極速。極速＝resolvePerf 的 v，也就是網站畫車的
 //      speedCapOf 與 issue #15 閘門 verify_phys_speed_cap.mjs 用的同一張表（PERF_RULES／PERF_BY_TYPE，不留容差）。
 //      超過的先拿掉該班的通過站折點重建，仍超過才整班退回表定，並列在 timingSource.fallbacks。
+//      套用的極速依 (carName, typeName) 凍結進 timingSource.speedCaps（連同當時 index.html 的雜湊）；verify 只讀凍結值，
+//      主站日後調整極速表，已封存的一天不會跟著變紅。
+//   6. 設定檔的來源紀錄：snapshot.sources 裡 config 那一筆記的是「產生資料所用的設定欄位」的雜湊（欄位名單與算法在
+//      tainan_memory_config.mjs 的 generationFields／generationConfigSha256），不是整個檔的雜湊——改註解、verify 的門檻與
+//      主站入口都與資料無關，不該讓紀錄過期。verify 照這一筆記的欄位名單重算，要與目前的設定檔相符。
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
@@ -29,7 +34,7 @@ import {createRouteRuntime} from '../rail-3d/physical/route-runtime.js';
 import {makeTopology} from '../rail-3d/physical/topology.js';
 import {stationKey} from '../rail-3d/physical/timing.js';
 import {formationFor,assembleFormation} from '../rail-3d/integration/formations.js';
-import {configFor,dateFromArgv,resolveInput} from './tainan_memory_config.mjs';
+import {configFor,dateFromArgv,resolveInput,generationFields,generationConfigSha256} from './tainan_memory_config.mjs';
 
 const cfg=configFor(dateFromArgv()),root=cfg.root,out=cfg.outDir,argv=process.argv;
 const EXPORT_FLOOR=argv.includes('--export-run-floor');
@@ -491,17 +496,30 @@ const singleLine={fromSec:single.fromSec,toSec:single.toSec,section:SL.section,n
 
 // ── 來源與實測校準 ──
 const fileSource=f=>({file:f,sha256:hash(fs.readFileSync(repoFile(f)))});
+// 設定檔不記整個檔的雜湊（檔頭第 6 點）：記產生資料所用的設定欄位與它們的雜湊。沒有 file 鍵，免得被當成檔案雜湊去比對。
+const CONFIG_FILE='scripts/tainan_memory_config.mjs';
+const configSource=()=>{const fields=generationFields(cfg.date);
+ return {config:CONFIG_FILE,date:cfg.date,fields,note:'fields 列的設定欄位做成鍵遞迴排序的 JSON（canonicalJson）後取 sha256；verify 的門檻、主站入口與註解不在內。',
+  sha256:generationConfigSha256(cfg.date,fields)};};
 const cacheSource=ref=>{const f=resolveInput(cfg,ref);return fs.existsSync(f)?{file:'.cache/'+path.relative(cfg.cacheRoot,f),sha256:hash(fs.readFileSync(f))}:null;};
-const sources=[...REPO_INPUTS.map(fileSource),
+const sources=[...REPO_INPUTS.map(f=>f===CONFIG_FILE?configSource():fileSource(f)),
  ...Object.entries(sched).filter(([,s])=>s.ref.cache).map(([d,s])=>({file:'.cache/'+s.rel,sha256:s.sha256,commit:s.ref.commit,path:s.ref.path,serviceDate:d})),
  ...[cfg.actuals.out,cfg.actuals.runFloor,cfg.actuals.stations,cfg.actuals.calibration,...cfg.actuals.hist,...cfg.actuals.d1,...cfg.actuals.recordOnly].map(cacheSource).filter(Boolean)];
 const calib=JSON.parse(fs.readFileSync(resolveInput(cfg,cfg.actuals.calibration),'utf8'));
 const fallbacks=selected.flatMap((v,i)=>items[i].mode!=='observed'&&v.act.timing!=='scheduled'?[{trainId:v.key,train:String(v.src.train),mode:items[i].mode,reason:'speed-cap'}]:[]);
+// 極速上限凍結：每個 (carName, typeName) 一筆，值是這次實際套用的上限（A.speed[i].cap＝resolvePerf 的 v，範圍內沒有高鐵與 DR1000）。
+// verify 照班次的 carName／typeName 查這張表，不讀主站；同一車種套到不同上限就凍結不成一張表，直接停。
+const capByClass=new Map();
+for(const [i,row] of outTrains.entries()){const carName=String(row.carName??''),typeName=String(row.typeName??''),k=JSON.stringify([carName,typeName]),cap=A.speed[i].cap,prev=capByClass.get(k);
+ if(prev&&prev.capKmh!==cap)throw Error('同一車種套到不同的極速，凍結不成一張表：'+k+' '+prev.capKmh+' 與 '+cap);
+ if(!prev)capByClass.set(k,{carName,typeName,capKmh:cap});}
+const speedCaps={source:'index.html 的 PERF_RULES／PERF_BY_TYPE（resolvePerf；範圍內只有台鐵）',indexSha256:hash(fs.readFileSync(indexPath)),
+ caps:[...capByClass].sort(([a],[b])=>a<b?-1:1).map(([,e])=>e)};
 const timingSource={primary:act.primary,histRows:act.counts.histRowsUsed,d1Rows:act.counts.d1RowsUsed,histFiles:act.histFilesUsed,
  calibration:{method:'2026-09-12 秒級歷史：已實測的站隨機保留 30% 不給重建，比對重建時刻與實測（到站誤差絕對值）',date:calib.date,params:calib.params,
   stopErrSec:{n:calib.stop.n,p50:Math.round(calib.stop.p50abs),p90:Math.round(calib.stop.p90abs)},passErrSec:{n:calib.pass.n,p50:Math.round(calib.pass.p50abs),p90:Math.round(calib.pass.p90abs)},
   d1ArrDiffSec:{n:calib.d1A.n,p50:Math.round(calib.d1A.p50abs),p90:Math.round(calib.d1A.p90abs)}},
- scheduledTrains:act.counts.scheduled,fallbacks};
+ scheduledTrains:act.counts.scheduled,fallbacks,speedCaps};
 
 // ── 寫檔 ──
 const info=readRepo('data/tra_station_info.json'),stations=['大橋','台南','保安'].map(name=>({name:info[name].name,lon:info[name].lon,lat:info[name].lat,id:info[name].id}));

@@ -2,7 +2,9 @@
 // verify_tainan_memory 與 tainan_actuals.py 都從這裡讀參數；沒帶 --date 時一律是 2026-09-12，既有封存的行為不變。
 // 路徑：file 相對 repo 根目錄；cache 相對 .cache（不進版控，worktree 底下沒有，見 cacheRoot）。
 //   node scripts/tainan_memory_config.mjs --json [--date YYYY-MM-DD]   印出解析後的設定（tainan_actuals.py 用）
+// 另外匯出 generationFields／generationConfigSha256：build 把「產生資料所用的設定欄位」的雜湊記進 snapshot.sources，verify 重算比對（說明見該段）。
 import fs from 'node:fs';
+import crypto from 'node:crypto';
 import path from 'node:path';
 import {execFileSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
@@ -124,11 +126,15 @@ export function dateFromArgv(argv = process.argv) {
   return d;
 }
 
-// 回傳深拷貝，並補上 root、cacheRoot 與絕對路徑解析函式。
-export function configFor(date = DEFAULT_DATE) {
+function rawConfig(date) {
   const c = CONFIGS[date];
   if (!c) throw Error('沒有 ' + date + ' 的台南重播設定；可用：' + Object.keys(CONFIGS).join('、'));
-  const cfg = structuredClone(c);
+  return c;
+}
+
+// 回傳深拷貝，並補上 root、cacheRoot 與絕對路徑解析函式。
+export function configFor(date = DEFAULT_DATE) {
+  const cfg = structuredClone(rawConfig(date));
   cfg.root = ROOT; cfg.cacheRoot = cacheRoot(); cfg.outDir = path.join(ROOT, cfg.dir);
   return cfg;
 }
@@ -139,6 +145,25 @@ export function resolveInput(cfg, ref) {
   if (ref.file) return path.join(cfg.root, ref.file);
   if (ref.cache) return path.join(cfg.cacheRoot, ref.cache);
   throw Error('無法解析的輸入：' + JSON.stringify(ref));
+}
+
+// ── snapshot.sources 的設定檔紀錄 ──
+// 記整個設定檔的雜湊，會在改註解、加 verify.entry 時無故過期。改記「產生資料所用的設定欄位」：該日期設定的全部頂層欄位，
+// 扣掉 NOT_GENERATION（verify＝驗收門檻與主站入口）；註解不在設定的內容裡。內容做成鍵遞迴排序的 JSON（canonicalJson）再取 sha256。
+// 只看原始設定（CONFIGS），不看 configFor 補上的絕對路徑，所以換一棵工作樹雜湊不變。
+// build 把欄位名單（generationFields）與雜湊寫進 snapshot.sources；verify 照「快照記的欄位名單」重算比對：
+// 日後設定多出的欄位、verify 內的改動與註解都不影響已封存的紀錄，只有名單內的欄位改了才不符（＝設定改了而快照沒有重建）。
+const NOT_GENERATION = ['verify'];
+// 物件鍵依 UTF-16 碼位遞迴排序（與 Array#sort 預設相同），陣列保持原順序，其餘同 JSON.stringify。
+export function canonicalJson(v) {
+  if (Array.isArray(v)) return '[' + v.map(canonicalJson).join(',') + ']';
+  if (v && typeof v === 'object') return '{' + Object.keys(v).sort().filter(k => v[k] !== undefined).map(k => JSON.stringify(k) + ':' + canonicalJson(v[k])).join(',') + '}';
+  return JSON.stringify(v) ?? 'null';
+}
+export const generationFields = date => Object.keys(rawConfig(date)).filter(k => !NOT_GENERATION.includes(k)).sort();
+export function generationConfigSha256(date, fields = generationFields(date)) {
+  const c = rawConfig(date), picked = Object.fromEntries(fields.filter(k => k in c).map(k => [k, c[k]]));
+  return crypto.createHash('sha256').update(canonicalJson(picked)).digest('hex');
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url) && process.argv.includes('--json')) {

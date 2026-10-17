@@ -7,10 +7,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import zlib from 'node:zlib';
-import vm from 'node:vm';
 import assert from 'node:assert/strict';
 import {pathToFileURL} from 'node:url';
-import {configFor,dateFromArgv,knownDates} from './tainan_memory_config.mjs';
+import {configFor,dateFromArgv,knownDates,generationConfigSha256} from './tainan_memory_config.mjs';
 const cfg=configFor(dateFromArgv()),V=cfg.verify,DATA_ONLY=process.argv.includes('--data-only'),dirAt=process.argv.indexOf('--dir');
 if(dirAt>0&&!process.argv[dirAt+1])throw Error('--dir 要接目錄');
 const dir=dirAt>0?path.resolve(process.argv[dirAt+1]):cfg.outDir,read=f=>JSON.parse(fs.readFileSync(path.join(dir,f),'utf8'));
@@ -253,16 +252,9 @@ const roads=DATA_ONLY?null:(()=>{
  ok(/馬路依 OpenStreetMap/.test(about)&&/示意/.test(about.slice(about.indexOf('馬路依 OpenStreetMap'))),'「關於這一天」沒寫馬路的資料來源與示意');
  return {ways:r.ways.length,tunnels:r.stats.tunnels,sidewalkSides:flagged,keptHalf,keptLengthPct:+(100*keptLen/flagLen).toFixed(1),marked:r.stats.marked,triangles:total,checked};
 })();
-// 車種極速：主站 index.html 的 PERF_DEFAULT…resolvePerf 原樣拿來跑（網站畫車與 issue #15 閘門用的同一張表）。
-// 高鐵與 DR1000 的判斷換成「否」：範圍內只有台鐵，DR1000 只跑平溪、深澳、集集、內灣（DIESEL_BRANCH_IDS）。
-function loadPerf(){
- const html=fs.readFileSync(path.join(cfg.root,'index.html'),'utf8'),a=html.indexOf('const PERF_DEFAULT'),b=html.indexOf('function speedCapOf');
- assert.ok(a>0&&b>a,'實測重播：index.html 找不到車種極速表（PERF_DEFAULT…speedCapOf）');
- const ctx=vm.createContext({isHSR:()=>false,isDr1000:()=>false});vm.runInContext(html.slice(a,b)+'\n;globalThis.__perf=resolvePerf;',ctx);
- return tr=>ctx.__perf({carName:tr.carName,typeName:tr.typeName});
-}
 // ── 實測重播（timing＝observed 的日期）：設計文件第 7 節的判準。逐站時刻與原始資料、重點車的錨點、物理可行性、單線雙向、
-// 時間軸、停站、股道占用。只讀這個目錄與主站 index.html（車種極速表），不讀 .cache。每條斷言的訊息都以「實測重播：」開頭。
+// 時間軸、停站、股道占用。只讀這個目錄與設定檔，不讀 .cache，也不讀主站 index.html：車種極速是 build 凍結在
+// timingSource.speedCaps 的值，主站日後調整極速表，已封存的一天不該跟著變紅。每條斷言的訊息都以「實測重播：」開頭。
 function checkObserved(){
  const ok=(c,m)=>assert.ok(c,'實測重播：'+m),SL=cfg.singleLine,norm=n=>String(n).replace(/台/g,'臺'),U=uncertainty;
  const hms=x=>[Math.floor(x/3600),Math.floor(x%3600/60),x%60].map(n=>String(n).padStart(2,'0')).join(':'),hm=x=>hms(x).slice(0,5);
@@ -274,10 +266,22 @@ function checkObserved(){
  ok(TS&&['tdx-historical','d1'].includes(TS.primary)&&Number.isInteger(TS.histRows)&&Number.isInteger(TS.d1Rows)&&TS.calibration?.stopErrSec&&Array.isArray(TS.scheduledTrains),'timingSource 欄位不完整');
  const RP={A_off_d1:32,dep_bias:30,min_dwell:20,max_incons:900,hold_flag_s:90};
  for(const [k,v] of Object.entries(RP))ok(TS.calibration.params?.[k]===v,'timingSource 記的重建參數 '+k+' 應為 '+v);
+ // 車種極速的凍結表：build 當下從主站 index.html 的 PERF_RULES／PERF_BY_TYPE（resolvePerf）依 (carName, typeName) 凍結，第 5 段照班次的
+ // carName／typeName 查它。對應方式與原本即時讀 resolvePerf 相同（範圍內只有台鐵，高鐵與 DR1000 的判斷皆為否）。
+ const SC=TS.speedCaps,classKey=(carName,typeName)=>JSON.stringify([carName??'',typeName??'']);
+ ok(SC&&typeof SC.source==='string'&&/^[0-9a-f]{64}$/.test(SC.indexSha256)&&Array.isArray(SC.caps)&&SC.caps.length>0,'timingSource.speedCaps 欄位不完整');
+ ok(SC.caps.every(c=>typeof c.carName==='string'&&typeof c.typeName==='string'&&Number.isFinite(c.capKmh)&&c.capKmh>0)&&new Set(SC.caps.map(c=>classKey(c.carName,c.typeName))).size===SC.caps.length,'timingSource.speedCaps.caps 有重複的車種，或極速不是正數');
+ const capOfClass=new Map(SC.caps.map(c=>[classKey(c.carName,c.typeName),c.capKmh]));
  // 2. 逐站時刻：欄位齊全、不倒退；表定時刻與停靠／通過逐站等於 source-schedule 的原始項目；整班沒有實測的車，停靠站照表定（通過站的時刻是剖面回填）
- const schedOf=new Map(sources.trains.map(s=>[s.serviceDate+':'+s.train,s])),fileSha=new Map(data.sources.map(s=>[s.file,s.sha256]));
+ const schedOf=new Map(sources.trains.map(s=>[s.serviceDate+':'+s.train,s])),fileSha=new Map(data.sources.filter(s=>s.file).map(s=>[s.file,s.sha256]));
  ok(sources.date===cfg.date&&sources.trains.length===data.trains.length&&data.trains.every(t=>schedOf.has(t.serviceDate+':'+t.train)),'source-schedule 的班次與 snapshot 不一致');
  for(const s of sources.schedules)ok(fileSha.get(s.file)===s.sha256,'source-schedule 記的班表雜湊與 snapshot.sources 不符：'+s.file);
+ ok(fileSha.get('index.html')===SC.indexSha256,'timingSource.speedCaps 記的 index.html 雜湊與 snapshot.sources 不符');
+ // 設定檔的來源紀錄：snapshot.sources 記的是產生資料所用的設定欄位的雜湊（不是整個檔）。照快照記的欄位名單重算，要等於目前設定檔的值；
+ // 不符＝產生資料的設定改了而快照沒有重建。verify 的門檻、主站入口與註解不在欄位名單內，改了不影響。
+ const CR=data.sources.filter(s=>s.config==='scripts/tainan_memory_config.mjs');
+ ok(CR.length===1&&CR[0].date===cfg.date&&Array.isArray(CR[0].fields)&&CR[0].fields.length>0&&CR[0].fields.every(f=>typeof f==='string')&&!CR[0].fields.includes('verify')&&/^[0-9a-f]{64}$/.test(CR[0].sha256),'snapshot.sources 沒有（或有多筆）設定檔的欄位雜湊紀錄，或欄位不對');
+ ok(generationConfigSha256(cfg.date,CR[0].fields)===CR[0].sha256,'snapshot.sources 記的設定欄位雜湊與目前的 tainan_memory_config.mjs 不符（產生資料所用的設定改了，快照沒有重建）');
  const scheduled=new Set(TS.scheduledTrains),KEYS='name,arrSec,depSec,stop,schedArrSec,schedDepSec,src,holdSec',srcCount={obs:0,interp:0,sched:0};
  for(const tr of data.trains){const raw=schedOf.get(tr.serviceDate+':'+tr.train),off=tr.serviceDate===cfg.previous?-86400:0;let prev=-Infinity;
   ok((tr.timing==='observed'||tr.timing==='scheduled')&&(tr.timing==='scheduled')===scheduled.has(tr.id),'timing 與 timingSource.scheduledTrains 不一致：'+tr.train);
@@ -318,9 +322,9 @@ function checkObserved(){
   const used=list.filter(a=>a.field);ok(used.length>0,no+' 在範圍內沒有實測錨點');
   for(const a of used){a.recon=stopOf(tr,a.station)[a.field];a.diff=+(a.recon-a.anchor).toFixed(1);ok(Math.abs(a.diff)<=V.anchorToleranceSec,no+' 在'+a.station+'的 '+a.kind+' 錨點與重建時刻差 '+a.diff+' 秒（上限 '+V.anchorToleranceSec+'）');}
   anchors[no]={maxAbsDiffSec:Math.max(...used.map(a=>Math.abs(a.diff))),list:list.map(a=>({station:a.station,kind:a.kind,src:a.src,anchor:hms(Math.round(a.anchor)),...(a.field?{recon:hms(a.recon),diffSec:a.diff}:{dropped:'inconsistent',devSec:a.dropped})}))};}
- // 5. 物理可行性：每秒里程差換算的點速不得超過車種極速。容差只給取樣的進位：里程存到 1 mm，一秒差分最多差 1 mm/s＝0.0036 km/h。
- const perfOf=loadPerf(),EPS_KMH=.004,speed={};let worst={over:-Infinity};
- for(const tr of data.trains){const cap=perfOf(tr).v;let v=0;
+ // 5. 物理可行性：每秒里程差換算的點速不得超過車種極速（第 1 段檢查過的凍結表）。容差只給取樣的進位：里程存到 1 mm，一秒差分最多差 1 mm/s＝0.0036 km/h。
+ const EPS_KMH=.004,speed={};let worst={over:-Infinity};
+ for(const tr of data.trains){const cap=capOfClass.get(classKey(tr.carName,tr.typeName));ok(cap!==undefined,'timingSource.speedCaps 沒有這個車種的極速：'+tr.train+' '+tr.carName+'／'+tr.typeName);let v=0;
   for(const sp of tr.spans)for(let j=1;j<sp.s.length;j++)v=Math.max(v,(sp.s[j]-sp.s[j-1])*3.6);
   ok(v<=cap+EPS_KMH,'點速超過車種極速：'+tr.train+' '+v.toFixed(3)+' > '+cap+' km/h');
   if(v-cap>worst.over)worst={over:v-cap,train:tr.train,kmh:+v.toFixed(2),capKmh:cap};
