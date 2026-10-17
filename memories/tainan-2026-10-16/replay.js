@@ -11,12 +11,13 @@ const query=new URLSearchParams(location.search),timeQuery=query.get('t');
 const timeGiven=!!timeQuery&&/^\d{1,2}:\d{2}(:\d{2})?$/.test(timeQuery);
 if(timeGiven){const [h,m,s=0]=timeQuery.split(':').map(Number);state.sec=cleanSec(h*3600+m*60+s);}
 // 「最後一夜」面板：寬版與橫向手機（高 520 以下）放在場景右側，直立的窄版接在場景下方。寬 900 以上與寬 700 以上的橫向手機預設展開，其餘預設收合；寬不到 700 的橫向手機收成場景右上角的按鈕（接在場景下方的話，場景底下放不下，面板會壓到重播控制）。使用者按過之後以按的為準，旋轉螢幕或改視窗大小不重設。
+// 窄版點時間軸的列會自動收合面板（goEvent）：這個收合記在 nightAuto，不算使用者的選擇，只在當下的版面有效；版面在側欄／非側欄之間切換時就失效，回到使用者按的或預設。
 // 窄版展開時場景被壓到只剩一條，#scene 加 squeezed：CSS 把單線說明與操作提示先收起來，免得疊在視角按鈕與車次標籤上。
-const sideLayout=matchMedia('(min-width:900px), (max-height:520px)'),openByDefault=matchMedia('(min-width:900px), (min-width:700px) and (max-height:520px)');let nightUser=null;
-const nightOpen=()=>nightUser??openByDefault.matches;
+const sideLayout=matchMedia('(min-width:900px), (max-height:520px)'),openByDefault=matchMedia('(min-width:900px), (min-width:700px) and (max-height:520px)');let nightUser=null,nightAuto=null;
+const nightOpen=()=>nightAuto??nightUser??openByDefault.matches;
 function applyNight(){const n=$('night'),open=nightOpen();n.classList.toggle('open',open);n.classList.toggle('closed',!open);$('nightToggle').setAttribute('aria-expanded',String(open));$('scene').classList.toggle('squeezed',!sideLayout.matches&&open);}
-const setNight=open=>{nightUser=open;applyNight();};
-$('nightToggle').onclick=()=>setNight(!nightOpen());sideLayout.addEventListener('change',applyNight);openByDefault.addEventListener('change',applyNight);applyNight();
+const setNight=open=>{nightUser=open;nightAuto=null;applyNight();};
+$('nightToggle').onclick=()=>setNight(!nightOpen());sideLayout.addEventListener('change',()=>{nightAuto=null;applyNight();});openByDefault.addEventListener('change',applyNight);applyNight();
 let integrity;
 // 網格以 .bin.gz 存放（Cloudflare 不壓 octet-stream，未壓縮要多下載約 9 MB）；解壓後仍比對原始 .bin 的封存雜湊。
 async function gunzip(b){try{if(typeof DecompressionStream==='function')return await new Response(new Blob([b]).stream().pipeThrough(new DecompressionStream('gzip'))).arrayBuffer();}catch{}const {gunzipSync}=await import('./vendor/fflate-gunzip.js'),a=gunzipSync(new Uint8Array(b));return a.buffer.slice(a.byteOffset,a.byteOffset+a.byteLength);}
@@ -87,10 +88,11 @@ try{
  data.stations.forEach(s=>label(s.name,[s.lon,s.lat]));label('臺南舊站房',stationMeta.anchor);
  // ── 10/16 新增 ──
  // 新欄位（timing、mark、stops[].src／schedArrSec／holdSec、events、singleLine）一律用 ?. 防呆：缺欄位時只是少了旗標、時間軸與逐站時刻，頁面照常開。
- const SRC={obs:'實測',interp:'內插',sched:'表定',est:'推定'},isTainan=s=>s.name.replace('台','臺')==='臺南',tainanStop=tr=>tr.stops.find(isTainan),anchorStop=tr=>tainanStop(tr)||tr.stops[0];
+ const SRC={obs:'實測',interp:'內插',sched:'表定',est:'推定'},DEP_SRC={obs:'est',interp:'interp',est:'est',sched:'sched'},isTainan=s=>s.name.replace('台','臺')==='臺南',tainanStop=tr=>tr.stops.find(isTainan),anchorStop=tr=>tainanStop(tr)||tr.stops[0];
  const MARK_LABEL={'last-ground':tr=>'地面最後一班 '+tr.train,'last-south':tr=>'最後南下・告別列車 '+tr.train},MARK_NAME={'last-ground':'地面最後一班','last-south':'最後南下・告別列車'};
- // 標籤上的來源旗標：整班沒有即時動態紀錄＝「無即時動態紀錄」；其餘看臺南站那一格的來源（實測／內插／表定）。
- function trainFlag(tr){if(tr.timing==='scheduled')return {key:'sched',text:'無即時動態紀錄'};if(!tr.timing)return null;const k=tainanStop(tr)?.src||'obs';return {key:k,text:SRC[k]||''};}
+ // 標籤上的來源旗標：整班沒有即時動態紀錄＝「無即時動態紀錄」；其餘看 anchorStop（臺南那一列，沒經過臺南的班次看第一列）的來源：實測／內插／推定／表定。
+ // 起點站沒有到站，那一列的 src 記的是開車時刻的來源（看板紀錄的誤點分鐘推出來的＝推定）。沒有來源就不掛旗標，不預設成實測。
+ function trainFlag(tr){if(tr.timing==='scheduled')return {key:'sched',text:'無即時動態紀錄'};if(!tr.timing)return null;const k=anchorStop(tr)?.src;return SRC[k]?{key:k,text:SRC[k]}:null;}
  function trainLabel(tr){const e=document.createElement('span'),main=document.createElement('span'),flag=trainFlag(tr);e.className='map-label train-label'+(MARK_LABEL[tr.mark]?' mark-'+tr.mark:'');main.className='lt';main.textContent=MARK_LABEL[tr.mark]?MARK_LABEL[tr.mark](tr):tr.train+' '+tr.direction;e.append(main);
   if(MARK_LABEL[tr.mark])e.dataset.mark=tr.mark;if(flag){const f=document.createElement('span');f.className='flag flag-'+flag.key;f.textContent=flag.text;e.append(f);e.dataset.src=flag.key;}
   $('labels').append(e);const item={e,coordinate:null};labels.push(item);return item;}
@@ -130,31 +132,37 @@ try{
   when.append(mk,tm);row.append(when,tx,kd);li.append(row);$('events').append(li);nightRows.push(li);}
  $('night').hidden=!events.length;
  function refreshNight(sec){let cur=-1;events.forEach((ev,i)=>{if(ev.t<=sec)cur=i;});nightRows.forEach((li,i)=>{const st=i<cur?'past':i===cur?'current':'future';if(li.dataset.state===st)return;li.dataset.state=st;const b=li.firstElementChild;if(b.tagName==='BUTTON'){if(st==='current')b.setAttribute('aria-current','true');else b.removeAttribute('aria-current');}li.querySelector('.mk').textContent=st==='past'?'✓':st==='current'?'●':'○';});}
- // 窄版點了事件就收起面板，讓人看到跳過去之後的場景；寬版面板在側邊，不收。
- function goEvent(ev){const tr=ev.train!=null&&ev.train!==''?trainByKey(ev.train,ev.t):null;if(tr)followTrain(tr.id,ev.t);else jump(ev.t);if(!sideLayout.matches)setNight(false);}
- // ── 跟車逐站時刻卡：表定／重播／差多少／留置（holdSec≥90 秒才算）／來源。來源分到站與開車兩行：到站是實測、內插或表定；開車時刻 TDX 沒有紀錄，一律由表定加誤點分鐘推得（build 的 DEP_RULE），標推定，整班照表定的班次標表定。時間一律是當天的時鐘時間，跨午夜的前一營運日用「前日」「次日」標明。──
+ // 窄版點了事件就收起面板，讓人看到跳過去之後的場景；寬版面板在側邊，不收。這個收合記成 nightAuto（不是使用者按的），換版面就失效。
+ function goEvent(ev){const tr=ev.train!=null&&ev.train!==''?trainByKey(ev.train,ev.t):null;if(tr)followTrain(tr.id,ev.t);else jump(ev.t);if(!sideLayout.matches){nightAuto=false;applyNight();}}
+ // ── 跟車逐站時刻卡：站／表定／重播／來源／差多少／留置（holdSec≥90 秒才算）。來源緊接在重播後面：側欄窄、表格要左右捲時，先被切掉的是差與留置；右邊還有欄位時右緣有淡出提示。
+ // 來源分到站與開車兩行。到站照 src：obs 實測、interp 內插、sched 表定。開車照 DEP_SRC：obs 的站（含被留置的通過站）是表定加誤點分鐘推得＝推定；interp 的站到站與開車都由鄰近的站推算＝內插；
+ // 起點站（est）的紀錄是看板佔位，只用它的誤點分鐘推開車時刻＝推定；sched＝表定。起點站（end 'origin'）到站與開車同一秒＝沒有到站，終點站（end 'terminal'）同理沒有開車：
+ // 那一行在表定、重播、來源、差都記「—」；到、開不同秒的起訖站照常兩行。通過站（沒有留置）只有一行。時間一律是當天的時鐘時間，跨午夜的前一營運日用「前日」「次日」標明。──
  const T=sec=>{if(!Number.isFinite(sec))return '—';const r=Math.round(sec),d=Math.floor(r/86400);return (d<0?'前日 ':d>0?'次日 ':'')+clock(r-d*86400);};
  const DUR=sec=>{const s=Math.round(Math.abs(sec)),m=Math.floor(s/60),r=s%60;return (m?m+'分':'')+(r||!m?r+'秒':'');},DIFF=d=>!Number.isFinite(d)?'—':Math.abs(d)<5?'準點':(d>0?'晚':'早')+DUR(d);
- const card=$('followcard'),NIGHT_HINT=$('nightToggle').querySelector('.s').textContent;let cardFor=null,cardRows=[],cardStatus=null;
+ const card=$('followcard'),NIGHT_HINT=$('nightToggle').querySelector('.s').textContent;let cardFor=null,cardRows=[],cardStatus=null,cardMore=null;
  const lines=(tag,...ls)=>{const c=document.createElement(tag);for(const l of ls){const s=document.createElement('span');s.className='ln';s.textContent=l;c.append(s);}return c;};
  function renderCard(tr){card.replaceChildren();const h=document.createElement('h3'),no=document.createElement('span'),ty=document.createElement('span');no.textContent=tr.train+' 次';ty.className='ty';ty.textContent=tr.typeName+' '+tr.direction;h.append(no,ty);
   if(MARK_NAME[tr.mark]){const g=document.createElement('span');g.className='tag'+(tr.mark==='last-south'?' south':'');g.textContent=MARK_NAME[tr.mark];h.append(g);}
   cardStatus=document.createElement('p');cardStatus.className='st';
   const wrap=document.createElement('div'),table=document.createElement('table'),head=document.createElement('tr'),body=document.createElement('tbody');wrap.className='tw';
-  for(const [t,sub] of [['站'],['表定','到／開'],['重播','到／開'],['差','重播−表定'],['留置'],['來源','到／開']]){const th=document.createElement('th');th.scope='col';th.append(t);if(sub){th.append(document.createElement('br'),sub);}head.append(th);}
+  for(const [t,sub] of [['站'],['表定','到／開'],['重播','到／開'],['來源','到／開'],['差','重播−表定'],['留置']]){const th=document.createElement('th');th.scope='col';th.append(t);if(sub){th.append(document.createElement('br'),sub);}head.append(th);}
   const thead=document.createElement('thead');thead.append(head);
-  cardRows=tr.stops.map(s=>{const row=document.createElement('tr'),pass=s.stop===false,hold=Number(s.holdSec)>=90?Number(s.holdSec):0,passed=pass&&!hold,has=Number.isFinite(s.schedArrSec);row.dataset.name=s.name;row.dataset.src=s.src||'';row.dataset.hold=String(hold);
+  cardRows=tr.stops.map(s=>{const row=document.createElement('tr'),pass=s.stop===false,hold=Number(s.holdSec)>=90?Number(s.holdSec):0,passed=pass&&!hold,has=Number.isFinite(s.schedArrSec),noArr=s.end==='origin'&&s.arrSec===s.depSec,noDep=s.end==='terminal'&&s.arrSec===s.depSec,ad=(a,d)=>[noArr?'—':a,noDep?'—':d];row.dataset.name=s.name;row.dataset.src=s.src||'';row.dataset.hold=String(hold);
    const name=document.createElement('th');name.scope='row';name.textContent=s.name;
-   const sched=has?(pass?lines('td','通過',T(s.schedArrSec)):lines('td',T(s.schedArrSec),T(s.schedDepSec))):lines('td','—'),act=passed?lines('td','通過',T(s.arrSec)):lines('td',T(s.arrSec),T(s.depSec));
-   const diff=has?(passed?lines('td',DIFF(s.arrSec-s.schedArrSec)):lines('td',DIFF(s.arrSec-s.schedArrSec),DIFF(s.depSec-s.schedDepSec))):lines('td','—'),held=lines('td',hold?DUR(hold):'—');if(hold)held.className='hold';
-   const src=document.createElement('td');for(const k of passed?[s.src]:[s.src,tr.timing==='scheduled'?'sched':'est']){const ln=document.createElement('span'),chip=document.createElement('span');ln.className='ln';chip.className='src src-'+(k||'none');chip.textContent=SRC[k]||'—';ln.append(chip);src.append(ln);}
-   row.append(name,sched,act,diff,held,src);body.append(row);return {row,s};});
+   const sched=has?(pass?lines('td','通過',T(s.schedArrSec)):lines('td',...ad(T(s.schedArrSec),T(s.schedDepSec)))):lines('td','—'),act=passed?lines('td','通過',T(s.arrSec)):lines('td',...ad(T(s.arrSec),T(s.depSec)));
+   const diff=has?(passed?lines('td',DIFF(s.arrSec-s.schedArrSec)):lines('td',...ad(DIFF(s.arrSec-s.schedArrSec),DIFF(s.depSec-s.schedDepSec)))):lines('td','—'),held=lines('td',hold?DUR(hold):'—');if(hold)held.className='hold';
+   const src=document.createElement('td');for(const k of passed?[s.src]:ad(s.src,DEP_SRC[s.src])){const ln=document.createElement('span');ln.className='ln';if(SRC[k]){const chip=document.createElement('span');chip.className='src src-'+k;chip.textContent=SRC[k];ln.append(chip);}else ln.textContent='—';src.append(ln);}
+   row.append(name,sched,act,src,diff,held);body.append(row);return {row,s};});
   table.append(thead,body);wrap.append(table);
-  const note=document.createElement('p');note.className='note';note.textContent=tr.timing==='scheduled'?'這班車沒有任何即時動態紀錄，整班照時刻表畫。':'時刻依即時動態紀錄推算，到站誤差約半分鐘。實測＝取自紀錄的到站或通過時刻；內插＝這一站沒有可用的紀錄，由前後站推算；推定＝紀錄裡沒有開車時刻，用表定加上當時的誤點分鐘推算，可能差一分鐘左右；留置＝比表定多停 90 秒以上。';
+  // 右緣提示：表格右邊還有內容（還沒捲到底）時，.twr 加 more，CSS 在右緣畫一道淡出（不接收指標）；捲到底或沒有溢出時拿掉。捲動、表格或外框變大小時重算。
+  const twr=document.createElement('div'),more=document.createElement('span');twr.className='twr';more.className='tw-more';more.setAttribute('aria-hidden','true');twr.append(wrap,more);
+  const syncMore=()=>twr.classList.toggle('more',wrap.scrollWidth-wrap.clientWidth-wrap.scrollLeft>1);wrap.addEventListener('scroll',syncMore,{passive:true});cardMore?.disconnect();cardMore=new ResizeObserver(syncMore);cardMore.observe(wrap);cardMore.observe(table);
+  const note=document.createElement('p');note.className='note';note.textContent=tr.timing==='scheduled'?'這班車沒有任何即時動態紀錄，整班照時刻表畫。':'時刻依即時動態紀錄推算，到站誤差約半分鐘。實測＝取自紀錄的到站或通過時刻；內插＝這一站沒有可用的紀錄，到站與開車都由鄰近的站推算；推定＝紀錄裡沒有開車時刻，用表定加上當時的誤點分鐘推算，可能差一分鐘左右；留置＝比表定多停 90 秒以上；「—」＝起點站沒有到站、終點站沒有開車。';
   // 推定的等待原因寫在時間軸事件的文字裡（例如「等 3278」），逐站欄位沒有原因欄：把這班車自己的事件列在表下面。點了跟別班、時刻取自這班車停站的那一列（保安交會）也列進來。
   const mine=events.filter(e=>e.train!=null&&e.train!==''&&String(e.train)===String(tr.train)||e.ref?.trainId===tr.id),extra=[];
   if(mine.length){const h4=document.createElement('h4'),ul=document.createElement('ul');h4.textContent='這班車在最後一夜';ul.className='mine';for(const e of mine){const li=document.createElement('li'),tm=document.createElement('time'),tx=document.createElement('span');tm.textContent=dayClock(e.t);tx.textContent=e.text;li.append(tm,tx);ul.append(li);}extra.push(h4,ul);}
-  card.append(h,cardStatus,wrap,...extra,note);}
+  card.append(h,cardStatus,twr,...extra,note);}
  function refreshCard(){const tr=state.follow?data.trains.find(t=>t.id===state.follow):null,hint=$('nightToggle').querySelector('.s');if(!tr){card.hidden=true;if(cardFor!==null){cardFor=null;hint.textContent=NIGHT_HINT;}return;}
   if(cardFor!==tr.id){renderCard(tr);cardFor=tr.id;hint.textContent='跟車中：'+tr.train+' 次的逐站時刻';}card.hidden=false;const sec=state.sec;
   for(const {row,s} of cardRows){const slack=s.stop===false?10:0,st=sec>s.depSec+slack?'past':sec>=s.arrSec-slack?'now':'future';if(row.dataset.state!==st)row.dataset.state=st;}
@@ -162,9 +170,33 @@ try{
   cardStatus.textContent=(here?'停在'+here.name:sec<first.arrSec?'尚未到'+first.name:sec>last.depSec?'已駛離最後一站':next?'行駛中，下一站'+next.name:'行駛中')+(sample(tr,sec)?'':'（目前在畫面範圍外）')+(tr.timing==='scheduled'?'；沒有即時動態紀錄，照表定時刻':'');}
  // ── 單線雙向說明與文案裡跟資料有關的數字（說明文字的預設值與 spec 相同，資料不同時以資料為準）──
  const single=data.singleLine;
- function refreshSingleLine(){const e=$('singleline'),note=$('slNote'),on=!!single&&state.sec>=single.fromSec&&state.sec<=single.toSec;if(on&&!note.textContent){note.textContent=single.note||((single.section||[]).join('—')+'之間只剩一條線，對向列車輪流通過。');$('slSum').textContent=clock(single.fromSec).slice(0,5)+' 起單線雙向';}e.hidden=!on;}
+ function refreshSingleLine(){const e=$('singleline'),note=$('slNote'),on=!!single&&state.sec>=single.fromSec&&state.sec<=single.toSec;if(on&&!note.textContent){note.textContent=single.note||((single.section||[]).join('—')+'之間只剩一條線，對向列車輪流通過。');$('slSum').textContent=clock(single.fromSec).slice(0,5)+' 起單線雙向';}e.hidden=!on;placeSingleLine();}
 // 窄版只顯示一行摘要，按「說明」才展開完整文字；寬版的 CSS 不顯示這顆鈕、直接列出完整說明。展開狀態只存在 aria-expanded。
-$('slToggle').onclick=()=>{const b=$('slToggle');b.setAttribute('aria-expanded',String(b.getAttribute('aria-expanded')!=='true'));};
+$('slToggle').onclick=()=>{const b=$('slToggle');b.setAttribute('aria-expanded',String(b.getAttribute('aria-expanded')!=='true'));placeSingleLine();};
+ // 單線說明框的位置（窄版與矮螢幕，有「說明」鈕的那一段；寬版照 CSS）：框貼在場景左下角，上緣離視角按鈕實際的下緣 SL_GAP，按鈕折成兩排也照實際的下緣算。
+ // 兩排之下連「說明」鈕都放不下時（例：568×320 打開最後一夜，場景只剩約 300 px 寬），框改放到最後一排最後一顆按鈕的右邊，上緣讓出上面那幾排。
+ // 展開而且正在跟車時，框的上緣再往下讓出一條放標籤的帶子（標籤那一欄的按鈕下緣起 SL_LABEL_ROOM），liftFollow 把被跟那班放進這條帶子；框至少留一行說明（可捲）。
+ // slBand：說明文字顯示中才有。bandTop＝標籤那一欄（場景中線兩側）最低的按鈕下緣，沒有按鈕就是場景頂端；boxTop／boxL／boxR＝說明框。座標都相對場景左上角。
+ const SL_GAP=10,SL_LABEL_ROOM=40,SL_LABEL_W=200;let slBand=null;
+ function placeSingleLine(){const box=$('singleline'),tg=$('slToggle'),st=box.style;slBand=null;if(box.hidden)return;
+  const sr=host.getBoundingClientRect(),W=sr.width,H=sr.height,narrow=getComputedStyle(tg).display!=='none',open=!narrow||tg.getAttribute('aria-expanded')==='true';
+  const rel=e=>{const r=e.getBoundingClientRect();return {l:r.left-sr.left,r:r.right-sr.left,t:r.top-sr.top,b:r.bottom-sr.top};},btns=[...host.querySelectorAll('.view-controls button')].filter(b=>b.getClientRects().length).map(rel);
+  // 標籤那一欄：跟車時列車在場景中線上，標籤寬取被跟那班的實際寬度（還沒畫出來就用 SL_LABEL_W）；收起來浮在場景右上角的「最後一夜」鈕也算障礙。
+  const nt=rel($('nightToggle')),floating=nt.r>0&&nt.l<W&&nt.b>0&&nt.t<H,cx=W/2,lw=(state.follow&&models.get(state.follow)?.label.e.offsetWidth)||SL_LABEL_W;
+  const bandTop=Math.max(0,...[...btns,...(floating?[nt]:[])].filter(b=>b.r>cx-lw/2-4&&b.l<cx+lw/2+4).map(b=>b.b));
+  if(narrow){const bottom=parseFloat(getComputedStyle(box).bottom)||0,low=Math.max(0,...btns.map(b=>b.b));let left=12,top=low+SL_GAP;
+   if(H-bottom-top<tg.offsetHeight&&btns.length){const last=Math.max(...btns.map(b=>b.t)),upper=btns.filter(b=>b.t<last-1);if(upper.length){left=Math.max(...btns.filter(b=>b.t>=last-1).map(b=>b.r))+6;top=Math.max(...upper.map(b=>b.b))+SL_GAP;}}
+   let maxH=H-bottom-top;if(open&&state.follow)maxH=Math.min(maxH,Math.max(tg.offsetHeight+24,H-bottom-bandTop-SL_LABEL_ROOM));
+   st.left=left+'px';st.maxWidth=Math.max(0,W-12-left)+'px';st.maxHeight=Math.max(0,maxH)+'px';}
+  else st.left=st.maxWidth=st.maxHeight='';
+  if(open&&getComputedStyle($('slNote')).display!=='none'){const b=rel(box);slBand={bandTop,boxTop:b.t,boxL:b.l,boxR:b.r};}}
+ {const ro=new ResizeObserver(()=>placeSingleLine());ro.observe(host);ro.observe(host.querySelector('.view-controls'));}
+ // 跟車置中點：平常是場景中心。說明文字顯示中、而且說明框蓋到中心時，改放在 slBand 的 bandTop 到說明框上緣的中間，再把標籤夾在看得到的地方：
+ // 標籤底（車上方 7 m 的投影）離框上緣至少 3 px、離場景頂超過 55 px（draw 的標籤可見門檻）；按鈕之下放得下標籤，就整個放在按鈕之下。
+ // 只沿地面往鏡頭方向推 target（同平移，z 保持 0），標籤與車照舊畫在真實位置；拖曳一開始就取消跟車，鏡頭停在當下的位置，不會跳回中心。收合或沒蓋到中心時不動。
+ function liftFollow(m){const b=slBand;if(!b||!(b.boxTop<height/2&&b.boxL<width/2&&b.boxR>width/2))return;
+  const k=7*Math.cos(tilt)*height/span,lh=m.label.e.offsetHeight||26,lo=Math.max(57,b.bandTop+2+lh),hi=b.boxTop-3;let a=(b.bandTop+b.boxTop)/2-k;a=lo<=hi?Math.min(hi,Math.max(lo,a)):hi;
+  const dy=(height/2-a-k)*span/height;if(dy<=0)return;const up=new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld,1),h=Math.max(.1,Math.hypot(up.x,up.y));target.addScaledVector(up,-dy/(h*h));target.z=0;}
  for(const e of document.querySelectorAll('[data-fill]')){if(e.dataset.fill==='singleFrom'&&single)e.textContent=clock(single.fromSec).slice(0,5);if(e.dataset.fill==='scheduled'){const n=[...new Set(data.trains.filter(t=>t.timing==='scheduled').map(t=>t.train))].sort();if(n.length)e.textContent=n.join('、');}}
  // ── 字幕：不確定時段依 reason 分兩種寫法；單線雙向說明在場景裡另外顯示 ──
  const reasonsOf=id=>{const r=new Set();for(const i of uncertainty.intervals)if(state.sec>=i.start&&state.sec<=i.end&&i.trains.includes(id))r.add(i.reason||'track-overlap');return r.size?r:new Set(['track-overlap']);},TAIL=' 次暫以車次標記呈現；位置仍依重建的時刻推演。';
@@ -182,7 +214,7 @@ $('slToggle').onclick=()=>{const b=$('slToggle');b.setAttribute('aria-expanded',
  $('speed').onchange=e=>state.speed=Number(e.target.value);
  $('next').onclick=()=>{const at=tr=>anchorStop(tr).arrSec,next=byArrival.find(tr=>at(tr)>state.sec+25)||byArrival[0];jump(at(next)-25);stationView();};
  $('train').onchange=e=>followTrain(e.target.value);
- $('about').onclick=()=>{$('details').showModal();};
+ $('about').onclick=$('aboutNav').onclick=()=>{$('details').showModal();};
  // 手勢：單指或左鍵拖曳平移；雙指捏合縮放＋轉動改方位、雙指一起上下推改傾斜（兩指合計移動 16 px 後判定是哪一種，這次手勢就鎖定，判定前的位移在判定當下一次補上）。
  // 判定要等兩指都離開起點 2 px 以上；只有一指在動（另一指按著不動）時，等那一指走到 48 px 再判定。傾斜＝兩指各自以上下為主、方向相同（同 MapLibre 的雙指傾斜）。
  // 不看兩指連線的角度與距離：瀏覽器一指一個 pointermove 依序送，判定當下常是一指多走一步或先動，兩指靠近或上下疊著推時連線會斜、距離會變，會被誤判成捏合、推了沒反應。
@@ -210,7 +242,7 @@ $('slToggle').onclick=()=>{const b=$('slToggle');b.setAttribute('aria-expanded',
  // rAF 的時間戳可能比 last（宣告當下的 performance.now()）早一點：dt 不小於 0，免得第一幀把 22:00:00 倒退成 21:59:59。
  function draw(now){requestAnimationFrame(draw);const dt=Math.max(0,Math.min(.1,(now-last)/1000));last=now;if(document.hidden)return;if(state.nearReady)setLod(span<fleet.lod.nearBelowSpan?'near':span>fleet.lod.farAboveSpan?'far':state.lod);if(state.playing&&!$('details').open)state.sec=(state.sec+dt*state.speed)%86400;active.length=0;
   const uncertain=new Set(uncertainty.intervals.filter(i=>state.sec>=i.start&&state.sec<=i.end).flatMap(i=>i.trains));
-  for(const tr of data.trains){const m=models.get(tr.id),p=sample(tr,state.sec);m.group.visible=!!p&&!uncertain.has(tr.id);m.label.coordinate=p?.coordinate||null;m.label.e.classList.toggle('uncertain',uncertain.has(tr.id));m.label.e.classList.toggle('following',state.follow===tr.id);if(!p)continue;const poses=formationPoses(p.path,p.s,1,m.parts,()=>.16);if(!poses){m.group.visible=false;m.label.coordinate=null;continue;}active.push({id:tr.id,train:tr.train,direction:tr.direction,route:p.route,s:p.s,coordinate:p.coordinate,trackUncertain:uncertain.has(tr.id)});poses.forEach((pose,i)=>{const xy=world(pose.coordinate);m.cars[i].position.set(...xy,pose.height);m.cars[i].rotation.z=pose.angle;});if(state.follow===tr.id){target.set(...world(p.coordinate),0);view();}}
+  for(const tr of data.trains){const m=models.get(tr.id),p=sample(tr,state.sec);m.group.visible=!!p&&!uncertain.has(tr.id);m.label.coordinate=p?.coordinate||null;m.label.e.classList.toggle('uncertain',uncertain.has(tr.id));m.label.e.classList.toggle('following',state.follow===tr.id);if(!p)continue;const poses=formationPoses(p.path,p.s,1,m.parts,()=>.16);if(!poses){m.group.visible=false;m.label.coordinate=null;continue;}active.push({id:tr.id,train:tr.train,direction:tr.direction,route:p.route,s:p.s,coordinate:p.coordinate,trackUncertain:uncertain.has(tr.id)});poses.forEach((pose,i)=>{const xy=world(pose.coordinate);m.cars[i].position.set(...xy,pose.height);m.cars[i].rotation.z=pose.angle;});if(state.follow===tr.id){target.set(...world(p.coordinate),0);liftFollow(m);view();}}
   const occupied=[];for(const l of labels){if(!l.coordinate){l.e.hidden=true;continue;}const xy=world(l.coordinate),p=new THREE.Vector3(...xy,7).project(camera),x=(p.x*.5+.5)*width,y=(-p.y*.5+.5)*height;const visible=p.z>=-1&&p.z<=1&&x>0&&x<width&&y>55&&y<height-30;l.e.hidden=!visible;if(visible){l.e.style.transform=`translate(${x}px,${y}px) translate(-50%,-100%)`;if(!l.e.classList.contains('train-label')){const b=l.e.getBoundingClientRect();if(occupied.some(a=>b.left<a.right&&b.right>a.left&&b.top<a.bottom&&b.bottom>a.top))l.e.hidden=true;else occupied.push(b);}}}
   updateGlow(span/Math.max(1,height));renderer.render(scene,camera);state.frames++;
   // 每個整秒、或跟車對象換了（下拉選單、時間軸事件、拖曳取消跟車）就更新字幕、單線說明與跟車卡。
