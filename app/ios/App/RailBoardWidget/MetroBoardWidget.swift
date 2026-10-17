@@ -24,7 +24,7 @@ struct MetroEntry: TimelineEntry {
     // 點這張卡要在背景開等車卡的目標。nil ＝這一格沒有站可追(還沒選站、自動選站解析失敗、
     // 或被通行證閘門擋下要導去方案頁)⇒ 照舊走 widgetURL 深連結,見 MetroBoardView.body。
     var waitTarget: MetroWaitTarget? = nil
-    // 小工具設定的「背景」（2026-09-23 裁示：捷運卡只有車模／素色，沒有場景）。
+    // 小工具設定的「背景」（捷運卡只有車模／素色，沒有場景）。
     // 實際畫不畫看 cardBackdrop——空狀態沒有車可畫。
     var backdrop: RailBackdrop = .plain
 }
@@ -56,7 +56,7 @@ extension MetroEntry {
     }
 
     /// 🔴 空白看板的四種原因必須分得出來。以前「連不上」「資料過舊」「真的沒車」印同一句,
-    ///    使用者回報「沒有班次資訊」時,查修的人無從判斷是哪一種,只能從頭猜——2026-08-15
+    ///    畫面只寫「沒有班次資訊」時,查修的人無從判斷是哪一種,只能從頭猜——2026-08-15
     ///    小工具整天每一站都空白就卡在這裡,最後是靠把手機上的 URLCache 拉下來才定案。
     ///    門檻取 180 秒:大於邊緣快取最長的 s-maxage(機捷 110 秒)並留餘裕,正常刷新不會誤觸;
     ///    真被某層快取餵了舊主體時,畫面直說過舊,不再偽裝成「官方沒有班次」。
@@ -99,7 +99,7 @@ struct MetroBoardProvider: AppIntentTimelineProvider {
         e.backdrop = configuration.backdrop
         // 官方視野約 12 分鐘。刷新間隔壓在視野內,讓「下一次刷新之前資料還有效」。
         // 系統不保證照做——所以版面一律顯示資料時刻,不假裝即時。
-        // 🔴 真機回饋(08-14):單一 entry ⇒ 倒數走完【全卡僵在 0:00】直到下次刷新。
+        // 🔴 單一 entry ⇒ 倒數走完【全卡僵在 0:00】直到下次刷新。
         //    WidgetKit 的 timeline 可以預排未來 entries(Live Activity 做不到的,這裡做得到)。
         //
         // 🔴 改版後(2026-08-17)邊界從兩個變成一整排。原因:改版前倒數是 Text(timerInterval:),
@@ -142,7 +142,7 @@ struct MetroBoardProvider: AppIntentTimelineProvider {
                            waitTarget: e.waitTarget, backdrop: e.backdrop)
             }
         }
-        // 🔴 刷新策略(真機回饋 08-14 第五輪:「只剩一兩班看起來像沒車」):有預排邊界時用 .atEnd
+        // 🔴 刷新策略(08-14 第五輪實機測試:預排資料快用完時,看板會讓人誤以為沒有車):有預排邊界時用 .atEnd
         //    ——資料視野走完的那一刻才向系統要下一輪,不提早浪費、也不晚於「畫面已空」;
         //    固定 .after(10min) 會在視野只剩 2 分鐘時還傻等 8 分鐘。搭配三個免預算的刷新源:
         //    開 App 即 reload(AppDelegate)、使用者正在看的小工具過期時系統常主動補抓、
@@ -316,7 +316,7 @@ struct MetroBoardContainer: View {
 //
 // 🔴 Small 從「兩列列表」改成「單班大卡」是【內容減量】：改版前小卡列兩列（可能是兩個方向），
 //    改版後只講一班。設計稿的取捨是「小卡上兩列都讀不清，不如一班讀得準」，而代價是
-//    雙向站的小卡使用者少看到一個方向。已在交付時明講給使用者裁示。
+//    雙向站的小卡使用者少看到一個方向。這是刻意的取捨。
 
 struct MetroBoardView: View {
     let entry: MetroEntry
@@ -422,7 +422,7 @@ struct MetroBoardView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             .background(alignment: .bottomTrailing) {
-                // mockup A 捷運小卡:right:-16px; bottom:-4px; 110×72(相對卡片邊緣)
+                // mockup 的捷運車模小卡:right:-16px; bottom:-4px; 110×72(相對卡片邊緣)
                 // ⇒ 從內容框再往外推一個系統邊距,讓卡片圓角把車尾裁掉。
                 if entry.cardBackdrop == .model, let m = model(lead) {
                     // 🔴 扁長車（寬高比大過框的 110:72，例如高捷輕軌 Citadis）等比縮進框時高度不到 72，
@@ -467,7 +467,7 @@ struct MetroBoardView: View {
         let follows = Array(rows.dropFirst().prefix(followLimit))
         VStack(alignment: .leading, spacing: 0) {
             if entry.cardBackdrop == .model {
-                // A 頭帶:與台鐵看板同一個元件(RailModelBand),右邊停下一班的代表車。
+                // 車模頭帶:與台鐵看板同一個元件(RailModelBand),右邊停下一班的代表車。
                 RailModelBand(title: RailNativeL10n.name(entry.title), model: rows.first.flatMap(model),
                               large: family == .systemLarge, scale: scale) {
                     HStack(spacing: scale.pt(4)) {
@@ -760,7 +760,7 @@ enum MetroPalette {
     }
 
     /// 站別標頭的點:【只有單一路線的站才畫】。
-    /// 🔴 真機回饋(08-15):台北車站原本畫紅點,底下卻列著藍線(板南線)的班次——
+    /// 🔴 台北車站原本畫紅點,底下卻列著藍線(板南線)的班次——
     ///    轉乘站取第一條線等於隨機指定一條,是錯的識別而不是不精確的識別。
     ///    識別不了就不畫;每一列自己的線色由 rowLine 負責,資訊不會因此消失。
     static func color(sys: String, station: String) -> Color? {

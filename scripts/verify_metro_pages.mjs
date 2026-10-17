@@ -152,7 +152,7 @@ for (const p of pages) {
   descSeen.set(desc, tag);
   ok(title.length <= 100, `${tag} title 不超過 100 字`, `${title.length}`);
   ok(desc.length <= 330, `${tag} description 不超過 330 字`, `${desc.length}`);
-  // 標題句型（使用者指定的三種句型；系統／總覽頁另有句型）
+  // 標題句型（路線頁三種語言各一種；系統／總覽頁另有句型）
   if (p.kind === 'line') {
     const re = { zh: /^.+路線圖、車站與(首末班車|營運時間)(｜.+)?｜軌島$/, en: /^.+ Map, Stations & (First\/Last Trains|Operating Hours)( \| .+)? \| Rail Island$/, ja: /^.+ 路線図・駅一覧・(始発終電|運行時間)(｜.+)?｜軌島$/ }[p.lang];
     ok(re.test(title), `${tag} 路線頁 title 句型`, title);
@@ -282,7 +282,7 @@ for (const p of pages) {
   }
   if (p.lang === 'ja') ok(/[\u3040-\u309f\u30a0-\u30ff]/.test(textOf(secs.answer || secs.lines || '')), `${tag} 日文頁正文含假名`);
   if (p.lang !== 'en') ok(!ASCII_PUNCT_AFTER_CJK.test(bodyText), `${tag} 中日文頁沒有接在中日文字後的半形標點`, (bodyText.match(/.{0,20}(?:[\u3040-\u30ff\u3400-\u9fff\uff00-\uffef][,:;] |[\u3040-\u30ff\u3400-\u9fff]\.\s).{0,20}/) || [])[0]);
-  // 環狀線不寫營運單位（依指示歸台北捷運；資料在 trtc.json 內，但頁面不提是誰營運）
+  // 環狀線不寫營運單位（資料歸在台北捷運、放在 trtc.json 內，但頁面不提是誰營運）
   if (p.key === 'taipei/circular') {
     const mainText = ['answer', 'stops', 'times', 'stationTimes', 'live', 'source'].map(id => textOf(secs[id] || '')).join(' ') + ' ' + textOf(html.match(/<section class="hero">[\s\S]*?<\/section>/)?.[0] || '');
     ok(!OPERATOR_WORDS.test(mainText), `${tag} 環狀線頁不寫營運單位`, (mainText.match(OPERATOR_WORDS) || [])[0]);
@@ -630,7 +630,7 @@ for (const s of SPEC) {
   log(`  ${s.slug.padEnd(17)} ${hmOf(first)}–${hmOf(last)}${last >= 86400 ? '(+1)' : ''}${est ? '（估算線）' : ''}`);
 }
 
-// C. 來源差異附註：環狀線週六、週日、國定假日「新北產業園區 → 大坪林」末班（09-29 23:03 使用者「末班加註」）。
+// C. 來源差異附註：環狀線週六、週日、國定假日「新北產業園區 → 大坪林」末班要附註兩個來源的差異。
 // 頁面照資料（TDX）寫 00:34（+1）；營運單位官網另一份 PDF 時刻表寫 00:00（外部事實，2026-09-18／09-23 查過，記在下面常數）。
 // 期望值從 data/trtc_times.json 直接算，不看產生器；附註只陳述兩個來源各寫什麼、不判斷哪個對，也只出現在環狀線頁。
 console.log('C. 來源差異附註（環狀線假日末班，三語）');

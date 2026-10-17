@@ -38,7 +38,7 @@ const ROOT = resolve(process.argv[2] || join(import.meta.dirname, '..'));
 let PORT = Number(process.env.BOOTSCHED_PORT || 0);
 // 兩個注入點,走的是兩條不同的崩潰路徑,缺一不可:
 //   thsr 台鐵以外、無 special ⇒ 直接死在 applySchedSystems 的 `for (const tr of sys.data.trains)`
-//        ——這正是 2026-09-04 回報的 `sys.data.trains is not iterable`(高鐵班表走 /api/,
+//        ——這正是曾經出現過的 `sys.data.trains is not iterable`(高鐵班表走 /api/,
 //        而 check-obs-removed 的 /api 代理在 fetch 拋錯時 fulfill 的就是 200 `{}`)。
 //   tra  有 special:true ⇒ applySchedSystems 更早一行的 buildLoopTrains(sys.data) 先炸
 //        (`data.trains.some(...)`),連 for 迴圈都走不到。

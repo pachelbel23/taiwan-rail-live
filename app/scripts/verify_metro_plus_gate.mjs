@@ -2,10 +2,10 @@
 // 捷運小工具通行證閘門的差分驗收。
 //
 // 判準不同源(心得 29):真 Swift 的 MetroPlusCore 大括號抽取後裸編譯,對上這裡獨立寫的
-// JS 期望模型(不是照抄 Swift,是照【裁示語意】重寫:免費一站、名額跟著現裝實例走、
+// JS 期望模型(不是照抄 Swift,是照【規則語意】重寫:免費額度 1 站、名額跟著現裝實例走、
 // 自動選站要通行證、fail-open)。兩邊都算一次同一組情境,逐格比對。
 //
-// 另有 S 組原始碼斷言:守住「同批必須有明講 CTA」這條裁示——擋下的兩條路徑都要帶 passCTA,
+// 另有 S 組原始碼斷言:守住擋下時必須附上說明與購買入口這條規則——擋下的兩條路徑都要帶 passCTA,
 // 且卡片檢視真的畫得出來(不是只放在 entry 裡沒人讀)。
 // A 組守 Android 的同一件事(MULTI_STATION_NEEDS_PASS 與 passUnlocked),C 組守文案(方案面板、條款、
 // 說明中心與英日文)。2026-10-05 起出 App(app/scripts/verify-release.mjs)與網站出貨(scripts/ship_web.mjs 2.28)都會跑。
@@ -34,14 +34,14 @@ const intentSrc = readFileSync(INTENT, 'utf8');
 const stripComments = s => s.replace(/\/\*[\s\S]*?\*\//g, m => m.replace(/[^\n]/g, ' ')).replace(/(^|[^:])\/\/.*$/gm, '$1');
 const blank = s => s.replace(/[^\n]/g, ' ');
 
-// ── S 組:原始碼層的裁示守門 ─────────────────────────────────────────
+// ── S 組:原始碼層的規則守門 ─────────────────────────────────────────
 // 🔴 2026-10-05 起 freeStationLimit = nil:多站與自動對所有人免費(即時資訊不設付費門檻是
 //    資料授權的條件)。S2 以下守的 CTA 路徑仍保留,limit 改回數字時照樣要講清楚。
 const limitDecls = stripComments(intentSrc).match(/\bfreeStationLimit\s*:[^\n]*/g) || [];
 ok('S1 freeStationLimit 是 nil(多站與自動免費)',
    limitDecls.length === 1 && /freeStationLimit\s*:\s*Int\?\s*=\s*nil\b/.test(limitDecls[0]),
    limitDecls.join(' | ') || '(找不到)');
-// 🔴 這條是「明講 CTA」裁示的牙:兩條擋下路徑各自都要帶 passCTA,漏一條就是靜默空白卡。
+// 🔴 這條是擋下必附 CTA 那條規則的牙:兩條擋下路徑各自都要帶 passCTA,漏一條就是靜默空白卡。
 const autoBranch = widgetSrc.match(/case \.needPassAuto:[\s\S]*?case \.needPassMulti/);
 ok('S2 needPassAuto 帶 CTA 文案', !!autoBranch
    && /passCTA:\s*(?:RailNativeL10n\.text\()?"[^"\n]+"/.test(autoBranch[0]));
@@ -335,16 +335,16 @@ const CASES = [
   // 🔴 2026-08-16 新增:名額累積成兩筆的情境。舊 claim 在「換站」時只會被 configured 過濾掉、
   //    不會從陣列裡刪除 ⇒ claimed 單調成長([甲] → 換到乙 → [甲,乙]);使用者日後只要再放一張卡
   //    設回甲,兩筆 claim 同時復活、兩站都被判 allowed ＝ 免費拿到兩站。這條**不需要任何競態**,
-  //    從沒訂過通行證的人也做得到,而且可以重複操作到 N 站。裁示是「免費一站」,故期望模型
-  //    照裁示寫成「最多 limit 個名額算數」,與 Swift 實作是否這樣寫無關(心得 29:判準不得同源)。
+  //    從沒訂過通行證的人也做得到,而且可以重複操作到 N 站。免費額度為 1 站,故期望模型
+  //    照規則寫成最多只有 limit 個名額算數,與 Swift 實作是否這樣寫無關(心得 29:判準不得同源)。
   ['免費+claim 累積兩筆:較早那筆 → 放行', false, 1, false, 'trtc|板橋', ['trtc|板橋', 'trtc|中山'], ['trtc|板橋', 'trtc|中山'], 2],
   ['免費+claim 累積兩筆:較晚那筆 → 擋', false, 1, false, 'trtc|中山', ['trtc|板橋', 'trtc|中山'], ['trtc|板橋', 'trtc|中山'], 2],
   ['免費+claim 累積三筆:第三筆 → 擋', false, 1, false, 'trtc|忠孝復興', ['trtc|板橋', 'trtc|中山', 'trtc|忠孝復興'], ['trtc|板橋', 'trtc|中山', 'trtc|忠孝復興'], 3],
   ['免費+limit=2 累積三筆:第三筆 → 擋', false, 2, false, 'trtc|忠孝復興', ['trtc|板橋', 'trtc|中山', 'trtc|忠孝復興'], ['trtc|板橋', 'trtc|中山', 'trtc|忠孝復興'], 3],
-  // 🔴 2026-08-17 真機回報:「只有一張小工具,選完站以後想換站卻被告知要訂閱」。
+  // 🔴 2026-08-17 真機上的情境:只放一張卡時,替這張卡改選別的站也會被擋成訂閱提示。
   //    換站當下 WidgetCenter 枚舉回來的仍是【換站前】的舊站(設定要退出編輯才生效),
   //    於是舊站與待生效的新站在閘門眼裡長得像兩張卡兩站 ⇒ 使用者被自己的卡擋住。
-  //    裁示是「免費一站」,不是「免費一個站名、選了就不准改」——一張卡一次只顯示一站,
+  //    額度算的是同時顯示的站數,與站名選定後能否更動無關——一張卡一次只顯示一站,
   //    現裝格數沒超過名額時結構上不可能超額,無論枚舉回來的是新值還是舊值。
   ['免費+單卡換站(枚舉仍是舊站) → 放行', false, 1, false, 'trtc|中山', ['trtc|板橋'], ['trtc|板橋'], 1],
   ['免費+單卡換站(已生效) → 放行', false, 1, false, 'trtc|中山', ['trtc|板橋', 'trtc|中山'], ['trtc|中山'], 1],
@@ -357,9 +357,9 @@ const CASES = [
   ['免費+第三張卡編輯中 → 擋', false, 2, false, 'trtc|忠孝復興', ['trtc|板橋', 'trtc|中山'], ['trtc|板橋', 'trtc|中山'], 3],
 ];
 
-// 獨立期望模型:照裁示語意重寫,刻意不看 Swift 實作。
-// 🔴 裁示是「免費【一】站」⇒ 不論 claimed 陣列長成什麼樣,任何時刻最多只有 limit 個站鍵算數。
-//    這一行(prefix(limit))就是「一站」這三個字;少了它,模型會退化成 Swift 實作的鏡子,
+// 獨立期望模型:照規則語意重寫,刻意不看 Swift 實作。
+// 🔴 額度以站數計 ⇒ 不論 claimed 陣列長成什麼樣,任何時刻最多只有 limit 個站鍵算數。
+//    這一行(prefix(limit))就是額度上限本身;少了它,模型會退化成 Swift 實作的鏡子,
 //    而鏡子照不出上面那三條累積情境(2026-08-16 前的版本正是如此,所以漏了整整一個洞)。
 function expected(plus, limit, isAuto, current, claimed, configured, slots) {
   if (plus) return 'allowed';
@@ -369,7 +369,7 @@ function expected(plus, limit, isAuto, current, claimed, configured, slots) {
   const live = claimed.filter(k => configured.includes(k)).slice(0, limit);
   if (live.includes(current)) return 'allowed';
   if (live.length < limit) return 'claimFree';
-  // 🔴 裁示算的是「同時看得到幾站」,不是「這個站名有沒有被登記過」。一張卡一次只顯示一站,
+  // 🔴 額度算的是桌面上同時顯示的站數,與站名是否登記過無關。一張卡一次只顯示一站,
   //    所以現裝格數 ≤ 名額時超額是結構上不可能的事,claim 表與枚舉值再怎麼過期都改變不了。
   //    擋人的責任因此完全落在「卡片張數真的超過名額」這一種情形上。
   if (slots <= limit) return 'claimFree';

@@ -91,7 +91,7 @@ function main() {
     const marketing = arg('--marketing'), build = arg('--build');
     if (!marketing || !build) { console.error('✋ --update 必須同時給 --marketing 與 --build（那一顆真的上傳成功的版號）'); process.exit(2); }
     // 新版上架後是把它【加入】仍在使用者手上的聯集，不是拿新檔覆蓋歷史。
-    // 也必須保留 allowRemoved：那是使用者已裁示下架的功能帳本；洗掉它會把刻意刪除誤報成回歸。
+    // 也必須保留 allowRemoved：那是已確定下架的功能帳本；洗掉它會把刻意刪除誤報成回歸。
     // --carry 只供基線已被舊版更新器覆寫時，從已知正本救回歷史聯集；平常直接沿用 BASELINE。
     const carryPath = arg('--carry');
     const carried = carryPath

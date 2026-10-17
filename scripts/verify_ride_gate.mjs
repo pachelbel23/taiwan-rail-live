@@ -134,7 +134,7 @@ for (const engineName of ENGINES) {
     !!(picks.done && picks.future && picks.running && picks.short),
     `跑完 ${picks.done && picks.done.no} / 未發 ${picks.future && picks.future.no} / 在跑 ${picks.running && picks.running.no} / 最短 ${picks.short && picks.short.no}`);
 
-  // ── A 已經跑完的車：使用者回報的那條路 ──
+  // ── A 已經跑完的車：實際出過事的那條路 ──
   if (picks.done) {
     const t = picks.done;
     await reset(page);

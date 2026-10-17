@@ -113,7 +113,7 @@ if (gaps.length) {
   console.error(`❌ 正式庫缺 ${gaps.length} 項 schema（程式碼會讀寫它們，缺了就是靜默失敗）：`);
   for (const g of gaps) console.error(`   - ${g.col ? `${g.table}.${g.col}` : `整張表 ${g.table}`}（${g.file}）`);
   const toApply = [...new Set(gaps.map(g => g.file))];
-  console.error('   補套（正式庫寫入，要使用者 go）：');
+  console.error('   補套（正式庫寫入，須先確認）：');
   for (const f of toApply) console.error(`   arch -arm64 node ./node_modules/wrangler/bin/wrangler.js d1 execute DELAY_DB --remote --file=schema/${f}`);
   process.exit(1);
 }

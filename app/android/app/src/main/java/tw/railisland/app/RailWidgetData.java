@@ -292,7 +292,7 @@ final class RailWidgetData {
         boolean includePass;
         /** 這一輪被「預設不顯示通過列」擋掉幾列;>0 而看板又是空的,代表本站今日無車停靠。 */
         int hiddenPass;
-        /** C 場景站名牌下緣的鄰站（往南那一站放左 ◀、往北那一站放右 ▶）；推不出來就是 null，那一側不畫。 */
+        /** 場景背景站名牌下緣的鄰站（往南那一站放左 ◀、往北那一站放右 ▶）；推不出來就是 null，那一側不畫。 */
         String neighborSouth;
         String neighborNorth;
         final List<Row> rows = new ArrayList<>();
@@ -746,7 +746,7 @@ final class RailWidgetData {
     }
 
     /**
-     * C 場景站名牌的鄰站（與 iOS 同一條規則）：本站發車班次的「下一個停靠站」，用方向三角同一個
+     * 場景背景站名牌的鄰站（與 iOS 同一條規則）：本站發車班次的「下一個停靠站」，用方向三角同一個
      * 緯度判準分成往北／往南兩組，每組取離本站最近的那一站。某一側沒有班次就是 null（只畫一側）。
      * 用停靠站而不是線形上的相鄰站：小工具資料只有停靠序列，而牌子要告訴人「車往哪一站開」。
      */

@@ -112,7 +112,7 @@ const WAIT_BASE_INDEX = execFileSync('git', ['show', `${WAIT_BASE_COMMIT}:index.
   cwd: ROOT, encoding: 'utf8', maxBuffer: 4 * 1024 * 1024,
 });
 // 🔴 第三層(2026-08-15 斷線批次,蓄意、已審):renderFreqBoard 多了「即時訊號中斷」提示
-//   (使用者明示需求:斷線時要在看板上講清楚倒數為何可能不準)。實查該批次只動這一支——
+//   (目的:斷線期間看板要自己交代倒數為什麼可能失準)。實查該批次只動這一支——
 //   applyTrtcOfficialBoard 與 renderTrtcOfficialFreqBoard 對 acbb7c3 仍逐 byte 相同,
 //   故只把這一支往前釘到引入它的 9fcc0aa,另外兩支留在 acbb7c3,絆線覆蓋面不縮小。
 const OUTAGE_BASE_COMMIT = process.env.TRTC_DIRECT_OUTAGE_BASE || '9fcc0aa';

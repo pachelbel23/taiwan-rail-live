@@ -1,6 +1,6 @@
 // 捷運等車卡(Live Activity 手動入口,Task 6)JS 側驗證——Playwright 真引擎 + 本機靜態伺服器。
 //
-// 背景:原生 plugin(window.Capacitor.Plugins.RailMetroWait)由主對話並行實作,本檔只驗網頁側:
+// 背景:原生 plugin(window.Capacitor.Plugins.RailMetroWait)另行實作,本檔只驗網頁側:
 //   看板 h3「在這站等」鈕的出現條件、開卡 payload 組裝(北捷 eta 秒級 vs 高捷/機捷分鐘級,絕不混算)、
 //   waitOpen 深連結接收。比照 scripts/verify_live_activity.mjs 的自架本機 HTTP server 模式——
 //   同一台 server 同時吐 index.html/靜態檔與特判的 /api/* 回應,不用 page.route,外部資源
@@ -498,7 +498,7 @@ const cr = await chromium.launch();
 
 // (登記於 verify-release.mjs TOAST_REVIEWED 的兩個等車卡 toast 指紋,由本檔 H 組與 C/G 組實測覆蓋)
 // ══════════ H:waitOpen 帶不存在的站名——不炸 boot、toast 說明、start 不被呼叫 ══════════
-// (主對話驗收時補上:E 只驗 happy path,深連結站名對不回 web 站物件的防禦分支原本零覆蓋。
+// (後來補上:E 只驗 happy path,深連結站名對不回 web 站物件的防禦分支原本零覆蓋。
 //  E 的 happy path 同時充當本組的正向對照:同一個 listener、同一支記錄器,好站名真的會 start。)
 {
   const { ctx, page, errors } = await boot(cr, { withPlugin: true });

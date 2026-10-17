@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- 三種尺寸各自一個 provider（小／中／大），選單上一項一張，跟 iOS 藝廊的 小／中／大 一對一
-     （使用者 2026-09-02 裁示「種類要跟 iOS 一樣多」）。三個共用同一支 provider 的邏輯與同一份
+     （種類數量與 iOS 對齊）。三個共用同一支 provider 的邏輯與同一份
      setSizeSpecificViewLayouts 版面表，差別只有「加進桌面時預設多大」與大張桶開不開（WidgetFamily）。
-     🔴 寬度「4 欄手機給 4、5 欄手機給 5」（使用者裁示）的做法：targetCellWidth 寫 5。
+     🔴 寬度目標是 4 欄手機佔 4 格、5 欄手機佔 5 格，做法：targetCellWidth 寫 5。
         Launcher3 系（Pixel 與多數原廠桌面）只在 targetCell 落在 [minSpan, 欄數] 之內才採用：
         5 欄手機直接得到 5 格；4 欄手機因為 5 大於欄數，整組 targetCell 被丟掉、改用
         minWidth／minHeight 換算，minWidth=320dp 在 4 欄（格寬約 80dp）算成 4 格。

@@ -378,7 +378,7 @@
             android:textColor="@color/wg_ink_faint"
             android:textSize="10sp" android:visibility="gone"
             />
-        <!-- A 車模（WidgetBackground.metroCar）。小卡與 iOS 相同：不加頭帶、只放車，停在註腳列右端；
+        <!-- 車模（WidgetBackground.metroCar）。小卡與 iOS 相同：不加頭帶、只放車，停在註腳列右端；
              素色時 binder 收掉。 -->
         <ImageView
             android:id="@+id/wb_car"

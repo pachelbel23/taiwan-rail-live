@@ -132,7 +132,7 @@ for (const eng of ENGINES) {
     // 🔴 這條釘的是「誤點加大時列車還在不在動」。2026-09-07 之前 minRate=0 ⇒ rise=adv ⇒
     //   有效時間完全停住、列車在畫面上定格；之後 minRate=.25 ⇒ rise=adv×.75 ⇒ 列車以標稱
     //   速度的四分之一慢速前進。沒有這條，後人把 minRate 改回 0（或順手調成別的值）不會有任何
-    //   東西轉紅，而那正是使用者指名要修掉的行為。
+    //   東西轉紅，而那正是當初要修掉的行為。
     //   判準非同源：期望值 RISE_STEP 由規定值 MIN_RATE 推導，不讀 TRA_MOTION_PROFILE。
     state.live.map = new Map(use.map(t => [String(t.train), DELAY_MIN]));
     let prevRise = use.map(t => liveDelaySec(t));

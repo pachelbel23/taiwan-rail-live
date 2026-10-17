@@ -25,7 +25,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * 捷運等車卡 B 方案「進站軌道」的 Android 半邊：Android 16 ProgressStyle 的兩端是上一站與本站，
+ * 捷運等車卡「進站軌道」版面的 Android 半邊：Android 16 ProgressStyle 的兩端是上一站與本站，
  * 進度條上的 tracker 換成自家車模的【正側面】圖（與 iOS 鎖定畫面同一張），分段用路線色。
  *
  * 規則與 iOS（MetroWidgetShared.swift waitHop、MetroWaitActivity.swift MetroWaitDisplay）同一套：

@@ -6,9 +6,9 @@
 // 正本流程寫在 app/出貨規則.md 第五節。這支是那一節的守門人，不要在這裡另立說法。
 //
 // 為什麼要有這支（2026-09-01 立，起因是同一天的真實事故）：
-// 那天 ~/Library/Developer/Xcode/Archives 底下同時存在**兩顆 1.5.3 (86)**——使用者自己
-// archive 了一顆、我用 CLI 又 archive 了一顆。我 patch 的是我那顆，使用者在 Organizer 裡
-// 挑的是他那顆（沒 patch），上傳後 ASC 回二進位錯誤（ITMS-90111），86 這個號就燒掉了。
+// 那天 ~/Library/Developer/Xcode/Archives 底下同時存在**兩顆 1.5.3 (86)**——手動
+// archive 了一顆、又用 CLI archive 了一顆。patch 的是 CLI 那顆，人工在 Organizer 裡
+// 挑到上傳的是手動那顆（沒 patch），上傳後 ASC 回二進位錯誤（ITMS-90111），86 這個號就燒掉了。
 // Organizer 的清單只顯示「App／日期／版本」，兩顆長得一模一樣，人眼分不出來。
 // 這不是第一次：1.5.2 (83) 在磁碟上有四顆、1.4.9 (69) 那顆得靠手打檔名 "patched" 才記得住。
 //
@@ -141,7 +141,7 @@ if (arch) {
     }
 
     // ── C3：小工具 extension 有沒有被打進去 ───────────────────────────────────
-    // 2026-09-01 使用者那顆是用 RailBoardWidgetExtension 這個 scheme 出的。它照樣產出
+    // 2026-09-01 有一顆是用 RailBoardWidgetExtension 這個 scheme 出的。它照樣產出
     // 含 App.app 的 archive、版號也對,人眼看不出差別。這條驗的是「該有的都在」。
     const plugIns = join(appDir, 'PlugIns');
     const appex = existsSync(plugIns) ? readdirSync(plugIns).filter(n => n.endsWith('.appex')) : [];

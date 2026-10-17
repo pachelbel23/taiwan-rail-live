@@ -159,7 +159,7 @@ public final class MetroWidgetConfigActivity extends AppCompatActivity {
                 if (visibleStations.get(i).name.equals(station)) { stationAt = i + 1; stationSpinner.setSelection(i + 1); }
             }
         }
-        // 方向:先同步重建清單再選回存過的值。使用者 2026-09-02 回報「選了方向就取消不了」——
+        // 方向:先同步重建清單再選回存過的值,否則設定過的方向之後改不回「全部方向」——
         // 舊版 restore() 根本沒讀回方向,重開設定頁永遠顯示「全部方向」,存檔卻還是舊方向。
         // 🔴 車站 spinner 的 listener 會在下一個 layout 再呼叫一次 updateDirections(),
         //    那一次靠「重建時保留已選」把這裡選好的值留住(見 updateDirections)。

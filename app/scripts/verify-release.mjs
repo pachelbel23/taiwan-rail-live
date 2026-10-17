@@ -661,7 +661,7 @@ export async function verifyRelease({
   assertAppLineageContent(html);
   assertWidgetPlusSyncSites(html);
 
-  // ── 創始會員截止時刻的「上線錨點」(B-4,2026-08-03 裁示)───────────────────────
+  // ── 創始會員截止時刻的「上線錨點」(B-4)───────────────────────
   // 創始價視窗＝上線錨點時刻起算固定 30 天。上線錨點由 revenuecat-config.js 的
   // window.RAIL_REVENUECAT_CONFIG.foundingLaunchAt 提供(見該檔註解),程式碼本身不留猜的
   // 日期。index.html 端「未設定」有安全預設(foundingFrom() 一律回傳 false,沒人是創始
@@ -674,12 +674,12 @@ export async function verifyRelease({
     'revenuecat-config.js 找不到 foundingLaunchAt 欄位——請在該檔 window.RAIL_REVENUECAT_CONFIG 補上 '
     + "foundingLaunchAt(ISO8601 時刻字串,建議台北時區午夜整點,例如 '2026-09-01T00:00:00+08:00';"
     + '這一版不辦創始期就填 false)');
-  // false ＝「明確裁示這一版不辦創始期」(2026-08-09)。刻意與 null 分開:null 是「還沒決定」,
+  // false ＝這一版明確不辦創始期(2026-08-09)。刻意與 null 分開:null 是「還沒決定」,
   // 兩者若共用同一個值,這道閘門就再也分不出「決定不辦」與「忘了決定」——而它存在的唯一理由
   // 正是後者。false 直接放行,不必也不該再比對日期(沒有窗,自然沒有「早於 build 日」可言);
   // index.html 的 FOUNDING_LAUNCH_MS 對它解析出 NaN,foundingFrom() 一律回 false ⇒ 沒人是創始會員。
   if (foundingLaunchAtMatch[1] === 'false') {
-    console.log('  · foundingLaunchAt=false：本版不辦創始期（明確裁示,非「忘了填」）');
+    console.log('  · foundingLaunchAt=false：本版不辦創始期（有意不辦,非「忘了填」）');
   } else {
     const foundingLaunchAtRaw = foundingLaunchAtMatch[1] === 'null'
       ? null
@@ -781,7 +781,7 @@ export async function verifyRelease({
 
   // 本版「更新了什麼」內建文案:剛更新完的彈窗與「更多」面板的常駐入口都吃它。
   // 判準刻意是「文案裡要出現本版版號」——擋的正是「版號升了、set-release-mode 的 why
-  // 忘了改」那個形狀(1.4.8 舊文頂著 1.4.9 出門,就是 build 74 被使用者當場抓到的事故)。
+  // 忘了改」那個形狀(1.4.8 舊文頂著 1.4.9 出門,就是 build 74 出過的事故)。
   // sandbox 測試包豁免:那類 why 是測試說明,不跟行銷版號連動。
   const whatsNewMatch = /window\.RAIL_APP_WHATS_NEW="((?:[^"\\]|\\.)*)"/.exec(html);
   assert(whatsNewMatch, '發行包缺少 window.RAIL_APP_WHATS_NEW 注入——剛更新完的「更新了什麼」會整組消失。'
@@ -1034,7 +1034,7 @@ export async function verifyRelease({
     //    等於禁止任何人把這段歷史寫下來——而那正是下一個讀到 followEntryZoom 的人最需要的。
     //    正向對照就是下面那條 satRetina:同一個注入機制,格式若變它會先紅,這條不會空過。
     assert(!/"followZoomCap"\s*:/.test(html) && !/APP_CFG\.followZoomCap/.test(html),
-      'RAIL_APP_CONFIG 又出現 followZoomCap——跟車上限已裁示移除(近景點列車會被拉遠、立體列車看不到)');
+      'RAIL_APP_CONFIG 又出現 followZoomCap——跟車上限已移除(近景點列車會被拉遠、立體列車看不到)');
     // 衛星 Retina 止血開關:只驗機制還活著(值可為 true/false,由 Esri 額度狀況決定)
     assert(/"satRetina":(true|false)/.test(html), 'RAIL_APP_CONFIG 未載明 satRetina(衛星高解析止血開關)');
     assert(html.includes('APP_CFG.satRetina'), 'index.html 的 SAT_RETINA 消費機制消失——App 端衛星解析度開關失效');

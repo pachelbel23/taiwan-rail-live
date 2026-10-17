@@ -62,7 +62,7 @@ safety replacement，但語料無 raw pass1/pass2 claims/events，故不冒充�
 
 ### 3.3 舊班表名冊診斷與 ref proxy
 
-依後續「官方即時優先」裁示，班表已不是名冊真值；下列只診斷舊 binder
+後續改採官方即時優先的設計，班表已不是名冊真值；下列只診斷舊 binder
 錯槽的幅度，不作驗收 gate。午間 dir1 expected/active=55/42，missing/extra=43/30；
 dir2=55/63，missing/extra=3/11。尖峰 dir1=205/218，missing/extra=106/119；
 dir2=247/257，missing/extra=30/40。
@@ -109,13 +109,13 @@ ref 仍只能做 survivor proxy：午間Y可見 birth 4，`N≤2` 為3/4，count
 ### 4.4 舊 C/D/E 翻面
 
 舊 binder 身分唯一性基線：尖峰41快照、5,133 active samples，重複 track/trip=0/0；
-午間11快照、1,170 samples，亦為0/0。但舊「active binding 必須等於班表名冊」E已被使用者
-明確作廢，不再把 missing/extra 寫成錯誤。新 E 為「官方 fresh 時名冊 = collapsed rows +
+午間11快照、1,170 samples，亦為0/0。但舊「active binding 必須等於班表名冊」E已
+作廢，不再把 missing/extra 寫成錯誤。新 E 為「官方 fresh 時名冊 = collapsed rows +
 可逐筆列舉的末段 extension」，見下節。
 
 ## 5. 修法與理由
 
-根因診斷並不支持在舊 binder 上再加一種猜法。本單依最新設計裁示把「存在性」
+根因診斷並不支持在舊 binder 上再加一種猜法。本單依最新設計把「存在性」
 與「班次標籤」拆開，並套給北捷全線：
 
 1. `collapseClaims()` 的每一列就是本輪必須顯示的一台官方車；不讀班表、
@@ -156,7 +156,7 @@ Worker 行為判準25/25及12/12各自獨立 wiring mutations通過；上游 acq
 | C 身分唯一 | 舊 binder 尖峰5,133 samples，duplicate track/trip=0/0 | 新 roster 80輪 duplicate `vehicleId`=0；duplicate rows 仍一列一 ID | PASS |
 | D 保序 | 舊 schedule diagnostic 尖峰359對中8 inversion（不作新 gate） | 新 official roster 跨輪53,317對、0 inversion | PASS |
 | E 名冊 | 舊強制等於班表，已作廢 | 80/80輪精確等於 rows+extensions；丟 current/ghost/XBT motion mutation 均紅 | PASS |
-| F 全線控制 | 只處理 Y 會違反新裁示 | 9線、18方向、11,669 rows 全量通過；BR 2,946、其他線8,723 | PASS |
+| F 全線控制 | 只處理 Y 會違反新設計 | 9線、18方向、11,669 rows 全量通過；BR 2,946、其他線8,723 | PASS |
 | G 零回歸 | 見下表 | 可離線完整執行者全綠；listener/browser/R4 明列阻擋 | 部分環境阻擋 |
 
 尖峰逐線官方 rows（修後名冊各保留100%）：`BL 1,960`、`BR 2,946`、

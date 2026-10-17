@@ -120,7 +120,7 @@ if (existing.length) {
   for (const e of existing) console.error(`   ・${e}`);
   console.error(`
    規則四：一個 build 號只對應一份載貨。同號兩份不同內容，是 2026-09-01 燒掉 build 86
-   的直接原因（我 patch 一顆、使用者上傳另一顆，Organizer 裡兩顆長得一模一樣）。
+   的直接原因（patch 的是一顆、上傳的是另一顆，Organizer 裡兩顆長得一模一樣）。
 
    三條出路：
    ・那顆就是你要的     → 跑 node app/scripts/verify_archive_ready.mjs 驗它，不要重打。

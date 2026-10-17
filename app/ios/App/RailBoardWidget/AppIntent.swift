@@ -72,9 +72,9 @@ func compositeSection() -> IntentItemSection<String>? {
     )
 }
 
-// 起站選單：245 個台鐵站原本只分「台鐵／高鐵」兩段，只能一路下拉找（使用者 2026-07-30 回報）。
-// 改成依縣市由北到南分段（使用者裁示：不要多一格縣市選單）。
-// 🔴 這一列「沒有」搜尋框（2026-07-30 使用者在真機設定畫面確認）：單選 String 參數的選單是
+// 起站選單：245 個台鐵站原本只分「台鐵／高鐵」兩段，只能一路下拉找。
+// 改成依縣市由北到南分段（縣市只是清單內的分段，沒有獨立的縣市參數）。
+// 🔴 這一列「沒有」搜尋框（2026-07-30 在真機設定畫面確認過）：單選 String 參數的選單是
 // 彈出式的，iOS 不給搜尋列，只有 [String] 多選（「只看這些」）才有。文案一度寫成「可以直接打
 // 站名搜尋」，那是錯的、已改掉——要再寫「搜尋」兩個字之前，先回設定畫面確認它真的出現了。
 // 目前的替代路徑是縣市分段，加上最上面那段「我的地點」直接選存過的地方。
@@ -107,14 +107,14 @@ struct OriginOptionsProvider: DynamicOptionsProvider {
     }
 }
 
-// 目的站：也依縣市分段（使用者 2026-07-30 回報「起訖站不同縣市這樣不好查」）。
+// 目的站：也依縣市分段（起訖站跨縣市時，不分段很難找到目的站）。
 //
-// 🔴 這裡不要再加「目的站區域」那一格（2026-07-30 實測做不到，使用者裁示改走縣市分段）：
+// 🔴 這裡不要再加「目的站區域」那一格（2026-07-30 實測做不到，所以改走縣市分段）：
 // 這一列的清單必須依賴 origin 才知道哪些站到得了，而 @IntentParameterDependency 一旦把
 // 「目的站區域」也列進來（不管是跟 origin 一起兩個、或只留區域一個），設定畫面的「目的站」
 // 那一列就整列點不動——點下去連 extension 都不會被喚醒（系統紀錄零活動），因為 AppIntents
 // 判定依賴沒被滿足就直接停用那一列。改成 AppEnum＋預設值、把值存進設定再重開也一樣不動。
-// 2026-08-06 又找到兩種「載入一下就收起來」：App 更新後完整班表還在背景建立時，這裡可能
+// 2026-08-06 又找到兩種讓選單載入後立刻收起的情況：App 更新後完整班表還在背景建立時，這裡可能
 // ①讀檔丟錯，或 ②iOS 暫時還沒把 origin dependency 交進來／舊鍵一時對不到而得到空陣列。
 // 任何一種若回 .empty，系統都會直接把目的站選單收掉。直達站連動本身保留；只有依賴值或
 // 共享資料尚未就緒時才暫列內建的完整站表，讓使用者永遠有東西可選。
@@ -134,13 +134,13 @@ struct DestinationOptionsProvider: DynamicOptionsProvider {
             // （`RailBoardWidget.swift:151` 的 placeTimeline 在第 159 行讀 configuration.destination
             // 之前就早退）。
             //
-            // 🔴 2026-08-07 使用者回報「起站選共站後，目的站一點就跳出去、打不開」：原本這裡回
+            // 🔴 2026-08-07 的症狀：共站當起站時，點目的站欄位，選單一開就被系統收掉、打不開。原本這裡回
             // `.empty` 想把這一格「停用」，但上面第 119 行自己的註解就寫了——回 .empty 系統會直接
             // 把選單收掉，那不是停用而是壞掉。改成照樣列出完整站表，並用 promptLabel 說明這格
             // 不生效。選到什麼都不影響渲染（早退路徑根本不讀），而且存進去的仍是合法站鍵 ⇒
             // 日後把起站改回一般車站時解得開，不會觸發 destinationLost 的「找不到這個車站」。
             //
-            // 🔴 2026-08-08 使用者二度回報同一件事，原因不是修法錯而是**修正被擱在別的分支**：
+            // 🔴 2026-08-08 同一個症狀再度出現，原因不是修法錯而是**修正被擱在別的分支**：
             // 上面那顆只 commit 在 `feat/railboard-widget`（軌島-小工具 那棵樹）的 7c5c9af，
             // main 與 feat/la-push 都沒有 ⇒ 之後出的 27／28／29／31 全部照舊壞掉。
             // 出 build 的線目前是 feat/la-push，只在小工具樹修等於沒修。
@@ -172,8 +172,8 @@ struct DestinationOptionsProvider: DynamicOptionsProvider {
         }
         guard !destinations.isEmpty else { return .empty }
 
-        // 「不指定」永遠排第一:單選 picker 選過就沒有清除手勢(使用者 2026-09-02 回報「選了
-        // 方向就取消不了,只能刪掉小工具重來」)。值是 ASCII 哨兵,timeline 讀 destinationKey 時收成 nil。
+        // 「不指定」永遠排第一:單選 picker 選過就沒有清除手勢(沒有這一項,選過的目的站
+        // 就改不回來,只能刪掉小工具重加)。值是 ASCII 哨兵,timeline 讀 destinationKey 時收成 nil。
         let anySection = IntentItemSection<String>(
             LocalizedStringResource(stringLiteral: RailNativeL10n.text("不限")),
             items: [IntentItem<String>(ConfigurationAppIntent.anyDestination,
@@ -218,7 +218,7 @@ struct BoardFilterOptionsProvider: DynamicOptionsProvider {
         // 「含通過列車」不是篩掉什麼、是多顯示什麼，所以獨立一段，也不算進「留空就是全部」。
         var passSwitch: [FilterOption] = []
         if let composite = RailBoardStore.shared.compositeSelection(forKey: origin) {
-            // 🔴 共站改吃官方發車看板之後，這一格是「兩站的車種與車次聯集」。
+            // 🔴 共站改以官方發車看板為資料來源之後，這一格是「兩站的車種與車次聯集」。
             //    方向那一刀跟著消失：官方發車看板的方向就是終點站，而共站這個入口不吃目的站。
             //    既有設定裡若還存著方向鍵，`BoardFilterSet.matches(_ template:)` 只看車種與車次
             //    ⇒ 那些鍵變成無效但不會把看板篩成空的。
@@ -340,7 +340,7 @@ struct ConfigurationAppIntent: WidgetConfigurationIntent {
     var readable: Bool
 
     // 主要數字要倒數還是時刻。起因是網友反應：「希望火車的小工具顯示的是到站／出發時間
-    // 而不是還有幾分鐘到」，使用者裁示做成讓人自己選（2026-09-01）。
+    // 而不是還有幾分鐘到」，所以做成可以自己選（2026-09-01）。
     // 🔴 兩種模式是【同一份資料的兩種畫法】，不是兩種資料：兩邊都用 effectiveTime／
     //    effectiveDate（誤點後的實際時刻），所以切換不會改變「這班車幾點走」的答案。
     // 🔴 有副標的列，倒數退到副標那一行（「2 分後 · 準點」），兩件事都還在；
@@ -352,7 +352,7 @@ struct ConfigurationAppIntent: WidgetConfigurationIntent {
     @Parameter(title: "主要顯示發車時刻", default: false)
     var clockFirst: Bool
 
-    // 2026-09-23 使用者裁示：「就用 A 跟 C，開始實作到 App 小工具」，設定加「背景」三選一、
+    // 2026-09-23 起小工具設定加了「背景」三選一（車模／場景／素色），
     // 預設車模。版面規格見 RailWidgetArt.swift。
     // 🔴 刻意用 String＋optionsProvider、不用 AppEnum：09-23 模擬器（iOS 26.5）實測 AppEnum 版
     //    設定畫面選得到、也存得進去（serializedParameters 裡是 background = scene），但 extension 的
@@ -400,7 +400,7 @@ extension ConfigurationAppIntent {
         return destination
     }
 
-    /// 「背景」設定。沒動過（nil）或讀不懂的存值一律當車模（裁示的預設）。
+    /// 「背景」設定。沒動過（nil）或讀不懂的存值一律當車模（預設值）。
     var backdrop: RailBackdrop { background.flatMap(RailBackdrop.init(rawValue:)) ?? .model }
 
     static var previewCommute: ConfigurationAppIntent {

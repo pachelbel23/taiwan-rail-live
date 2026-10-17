@@ -440,7 +440,7 @@ func render(_ entry: MixedBoardEntry, width: CGFloat, height: CGFloat,
 
 /// 🔴 gate：兩區都排滿時，底部不准留一整列以上的空白。
 ///
-/// 這條直接編碼 08-15 的真機回饋（「大卡下半還有空位卻只列三班」）。設計稿字面的
+/// 這條直接編碼實機上看到的問題：大卡下半段空著，卻只排出三班。設計稿字面的
 /// 「每區兩班次要」在 350pt 的框裡會空 68pt ⇒ 這道 gate 會紅，而破版 gate 永遠不會。
 func fillGate(_ png: Data, height: CGFloat, name: String) {
     guard let b = inkBounds(png, scale: 3) else {
@@ -497,7 +497,7 @@ struct Harness {
         // 深色（非 mono）：桌面深色模式的實際長相,送審圖要用這張去合成使用者的主畫面截圖。
         _ = render(mixed(metroTaipei, .board(railTaipei)), width: 364, height: 382,
                    scheme: .dark, to: outDir + "/mixed-large-dark.png")
-        // 送審圖用：使用者那台是 402pt 機型,量到的大卡實際是 350×364pt(不是 364×382)。
+        // 送審圖用：402pt 寬機型實測,量到的大卡實際是 350×364pt(不是 364×382)。
         let store = render(mixed(metroStore, .board(railTaipei), at: clockNow),
                            width: 350, height: 364,
                            scheme: .dark, to: outDir + "/mixed-large-store.png")

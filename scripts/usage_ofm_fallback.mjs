@@ -2,7 +2,7 @@
 //
 // 為什麼需要這支:App 判定 OFM 上場後 8 秒內載不出來(或連錯 4 次)就當場退回 Stadia raster,整個
 // session 都留在計費底圖上;網站則跳「街道底圖載入異常」。2026-09-03 之前這件事只在使用者的 console
-// 留一行 warn,全體使用者裡有多少人正在燒 Stadia 一個數字都沒有(使用者自己的手機在 WiFi 上就中過一次)。
+// 留一行 warn,全體使用者裡有多少人正在燒 Stadia 一個數字都沒有(在 WiFi 上實測就中過一次)。
 // 現在 index.html 的 ofmFailBeacon 在 fail 那一刻打一發 /api/basemap-fallback,Worker 寫一筆
 // railisland_usage(blob1='ofmfail',blob2=裝置 m|d,blob3=來源 app|web,blob4=原因 slow|error|na,double1=zoom)。
 //

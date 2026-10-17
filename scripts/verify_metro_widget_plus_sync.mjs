@@ -1,7 +1,7 @@
 // 捷運小工具通行證旗標的「同步」回歸——Playwright 真引擎 + 本機靜態伺服器。
 //
-// 為什麼要有這一支(2026-08-16 使用者實機回報:「登出後還是可以選擇最近的站,也可以同時放好多個
-// 小工具」,裝機 1.4.5 build 60,閘門早在 build 58 之前就進去了):
+// 為什麼要有這一支(2026-08-16 實機上登出之後,小工具仍可自動選最近的站、仍可同時放多個,
+// 裝機 1.4.5 build 60,閘門早在 build 58 之前就進去了):
 //
 //   小工具的閘門判定住在 extension(MetroPlusGate/MetroPlusCore),它讀 App Group 的
 //   metro.plusActive;那顆旗標【只能】由 App 的網頁端推。已經有 verify_metro_plus_gate.mjs 在守
@@ -11,7 +11,7 @@
 //     · 到期/退費(plusRefresh 拿到明確的 false)同樣沒推
 //     · 反向也壞:購買/恢復購買成功後也沒推 ⇒ 付了錢的人小工具還鎖著
 //   而 MetroPlusCore.decide 第一行就是 `if plus { return .allowed }` ⇒ 一顆過期的 true
-//   同時解開「自動選站」與「多站」兩個閘門,正是使用者看到的兩個症狀。
+//   同時解開「自動選站」與「多站」兩個閘門,正是實機上看到的兩個症狀。
 //
 // 判準刻意驗【行為】不驗原始碼字面:量的是「原生 plugin 的 setPlus 到底被呼叫了幾次、帶什麼值」,
 // 不是「index.html 裡有沒有出現 metroWidgetSyncPlus 這串字」——後者對「呼叫了但值是錯的」
@@ -170,7 +170,7 @@ const B = await chromium.launch();
   await ctx.close();
 }
 
-// ═════ M3 登出(使用者回報的那條):accountEndSession ⇒ 必須推 false ═════
+// ═════ M3 登出(實機上出事的那條):accountEndSession ⇒ 必須推 false ═════
 {
   const { ctx, page } = await newPage(B, { init: STUB, initArg: { active0: true } });
   const errs = attach(page, 'M3');

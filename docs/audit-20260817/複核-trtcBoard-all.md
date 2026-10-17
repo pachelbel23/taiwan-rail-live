@@ -99,7 +99,7 @@ else _easedShift.set(ek, { cur: visualShift, at: performance.now(), sim: motionS
 - 5 秒步進 3498 筆中有 7 筆 >0.5 km，含一筆 **−1.09 km（倒退）**；p50 0.048 km、p99 0.144 km。
 
 **這條只影響「配到的」班次、用的是各車自己的 `visualShift`，與 `_trtcBoard.all` 無關。**
-使用者回報的「倒退跑」若在 v0817c 之後仍存在，這裡才是要查的地方。
+若倒退現象在 v0817c 之後仍存在，這裡才是要查的地方。
 
 ## 6. 未確定點
 

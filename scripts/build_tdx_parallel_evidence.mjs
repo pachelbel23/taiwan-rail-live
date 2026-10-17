@@ -262,7 +262,7 @@ const doc = {
   generatedAt: '2026-09-14',
   generator: 'scripts/build_tdx_parallel_evidence.mjs',
   purpose: '用 TDX 官方逐股幾何核實 scripts/lib/parallel_tracks.mjs 的 UNVERIFIED_REFS 排除清單；verified=true 的 way 對之後要當第二股算。',
-  ruling: '2026-09-14 使用者裁示：「交通部都有資料，那我們就應該知道有，怎麼會是當作沒有核實就不畫？」⇒ TDX 官方逐股幾何算核實來源。',
+  ruling: 'TDX 官方逐股幾何算核實來源：有官方資料可查的平行股道，不該一律當成未核實而排除。',
   source: idx.source,
   thresholds: { sampleStepM: SAMPLE_STEP_M, snapMaxM: SNAP_MAX_M, secondStrandWindowM: [LO_M, HI_M], searchRadiusM: SEARCH_R_M, verifiedFrac: VERIFIED_FRAC, minCoveredSamples: MIN_COVERED },
   calibration: '同支腳本 --calibrate：已知雙線（縱貫線／宜蘭線）比例 0.95–1.00、第二股中位 3.9–4.2 m；已知單線（集集線／平溪線／內灣線）0.00–0.05。北迴線 0.50–0.54（TDX 在那條線的隧道段也只畫一條）⇒ build_tra_track_sections.mjs 的 KNOWN_DOUBLE_REFS override 不可移除。',

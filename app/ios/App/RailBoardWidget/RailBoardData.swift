@@ -657,7 +657,7 @@ private enum RailBoardPlaces {
     private static let tieBreakMeters = 300.0
 
     /// - Parameter departureCount: 站索引 → 該站看板的發車班次數。共站平手時用它決勝，
-    ///   讓「家在板橋」落到台鐵板橋而不是只有幾班車的高鐵板橋（使用者 2026-07-30 裁示）。
+    ///   讓家設在板橋的人落到台鐵板橋，而不是只有幾班車的高鐵板橋。
     static func options(
         rootURL: URL,
         stations: [StationOption],

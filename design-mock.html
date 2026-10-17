@@ -36,22 +36,22 @@
     --paper:#FFFDF6;            /* 卡片底（兩種暖白已合併，#FFF8EC 廢止） */
     --paper-tr:rgba(255,253,246,.97);
     --panel-glass:rgba(255,253,246,.30);
-    /* 🔴 2026-08-27 裁示:「調亮色到 55 不錯 暗色不動」。
+    /* 🔴 只調亮色面板底的透明度(.55),暗色不動。
        亮色主題的**面板本體**單獨拉到 .55——衛星底圖那組情境,`.30` 兩個主題都被空照吃掉
        (亮色最糟 2.07、暗色 1.62),而空照同一張圖裡有亮有暗 ⇒ 深字被暗處吃、亮字被亮處吃,
        單靠字色沒有一個方向能同時贏(實景對照:衛星底圖做法對照.png)。
        刻意**不動 `--panel-glass`**:那顆還被頂列可讀底帶／看板分頁列／橫式停靠站名牌吃著,
-       使用者核可的畫面裡那些都還是 .30,一起改就變成「核可的畫面 ≠ 出貨的畫面」。
-       暗色主題那顆照裁示不動(見下方 --panel-body-glass 的暗色值)。 */
+       那些地方現在都還是 .30,連它們一起改,出貨的畫面就會跟先前驗過的畫面不同。
+       暗色主題那顆不動(見下方 --panel-body-glass 的暗色值)。 */
     --panel-body-glass:rgba(255,253,246,.55);
     /* 面板標題列(看板 h3／平交道與附近車站 xc-head／列車 sheet tc-head)的玻璃底。
-       2026-08-27 裁示:「半透明面板的上方沒有變成半透明的…看起來很奇怪。」標題列原本是實色,
+       面板本體是半透明、頂端標題列卻不透,上下兩截不一致。標題列原本是實色,
        因為它 sticky、內容會從底下捲過去。改半透明之後自己帶一層 blur(6px),捲過去的內容糊掉、
        不會與標題字打架。alpha 比面板的 .30 高:白字壓在navy 上要撐得住,量得到的數字見
        verify_translucent_contrast。 */
     --navy-glass:rgba(42,74,115,.80);
     --panel-head-glass:rgba(255,253,246,.78);
-    /* 2026-08-27 起不再用於文字外圈(裁示:可讀性用字色不用光暈)。只剩「路線/車種識別色點」的
+    /* 2026-08-27 起不再用於文字外圈(文字可讀性改由字色處理,不靠光暈)。只剩「路線/車種識別色點」的
        1.5px 實心外環在用——那是分界線不是光暈,色點的顏色由資料決定,沒有環會直接消失在同色路網上。 */
     --glass-halo:rgba(255,253,246,.95);
     --bg-page:#EFE6D2;          /* 頁面底 */
@@ -100,7 +100,7 @@
     color-scheme:dark;
     --paper:#141D31; --paper-tr:rgba(20,29,49,.97); --panel-glass:rgba(20,29,49,.30);
     --navy-glass:rgba(127,166,224,.80); --panel-head-glass:rgba(20,29,49,.78);
-    --panel-body-glass:rgba(20,29,49,.30);   /* 裁示:暗色不動,維持 .30 */
+    --panel-body-glass:rgba(20,29,49,.30);   /* 暗色沿用 .30,不調整 */
     --glass-halo:rgba(8,13,24,.95);
     --spark-line:#8FB4EC; --spark-fill:rgba(143,180,236,.18); --spark-cursor:#FF7B67;
     --spark-axis:#A5B4CE; --spark-halo:#0B1220;
@@ -175,7 +175,7 @@
     text-align: center;
   }
   html[data-theme=dark] .plate { box-shadow: 0 0 0 1.5px var(--plate-frame), 0 5px 14px rgba(0,0,0,.5); }
-  /* 切分頁時牌子不可變寬變窄(v0727c 使用者回報「切到捷運牌子變大」)。牌寬吃內容最寬者,
+  /* 切分頁時牌子不可變寬變窄(v0727c 的症狀:換到捷運分頁時牌子被撐大)。牌寬吃內容最寬者,
      而最寬的通常是 .plate-sub:四顆分頁 199~225px、群內只勾林鐵時的 ALISHAN FOREST RAILWAY
      到 249.9px(WebKit 最寬,比 Chromium 多約 7px),故取 252 一次蓋住全部。
      ⚠️ 只套 header 的牌:手機頂列迷你牌 .tb-plate 也帶 .plate,套下去會把短標籤擠出畫面。
@@ -208,7 +208,7 @@
   }
   .plate-arrow { width: 52px; height: 9px; display: block; margin: 0 6px; color: #fff8ec; }
   .header-mid { display: flex; flex-direction: column; gap: 8px; flex: 1 1 420px; min-width: 0; }
-  /* min-height:導言長短不一會多折一行、把整張地圖上下推(v0727c 使用者回報「按鈕下方文字行數不同也會跳」)。
+  /* min-height:導言長短不一會多折一行、把整張地圖上下推(v0727c 的症狀:各分頁導言行數不同,按鈕位置跟著跳)。
      四顆分頁的導言在 901–1680px 之間最多折三行(12px × 1.55 × 3 ≈ 56px),一律先留滿三行的位子。
      同一個值也吃掉首屏 CLS 的殘量(#lead 靜態預置文案與 boot 換上的文案長短不同)。 */
   header #lead { margin: 0; color: var(--faint); font-size: calc(12px * var(--uis)); line-height: 1.55; min-height: 56px; max-width: 640px; text-wrap: pretty; }
@@ -610,7 +610,7 @@
   .mpl-soon-head { margin-left: 14px; }
   .mpl-soon-head b { font-size: 10.5px; font-weight: 800; letter-spacing: 1px; color: var(--faint); }
   .mpl-lone-head hr, .mpl-soon-head hr { flex: 1; height: 1px; margin: 0; border: 0; background: var(--line-faint); }
-  /* 準備中:降級但看得見(使用者裁示)。不可點,但仍留在它本來的家族底下。 */
+  /* 準備中:降一級顯示、不隱藏。不可點,但仍留在它本來的家族底下。 */
   .mpl-row.soon { min-height: 32px; padding: 5px 0; opacity: .5; pointer-events: none; border-bottom: 0; cursor: default; }
   .mpl-row.soon .mpl-dot { width: 12px; height: 2px; border: 0; border-radius: 2px; background: var(--faint); }
   .mpl-row.soon .mpl-txt b { font-size: 12.5px; font-weight: 700; }
@@ -772,8 +772,8 @@
   body.collect-map .controls, body.collect-map .tabbar,
   body.collect-map .badge, body.collect-map .map-actions { display: none; }
   /* 錄製「詳細面板」全螢幕接管時比照 body.collect-map 收掉會說謊的 UI(理由同上)。
-     🔴 2026-07-28 規格覆審：這條原本綁的是 body.recording(整段錄製期間)，使用者回饋
-     「應該也要能讓使用者繼續使用裝置」之後，錄製期預設是地圖可見可操作(見 #recordBar)，
+     🔴 2026-07-28 規格覆審：這條原本綁的是 body.recording(整段錄製期間)，但錄製期間裝置本來就該能照常使用，
+     所以錄製期預設是地圖可見可操作(見 #recordBar)，
      這條規則收窄成只在「詳細面板」真的整片接管畫面時才生效——面板的黑幕本來就物理蓋住
      這些控件，這裡純粹是不讓它們留在可 focus/可被螢幕報讀器唸到的地方(不說謊)。
      .record-bar 同理收掉：黑幕蓋住它是物理事實，這裡只是讓它別留在 DOM 焦點順序裡。 */
@@ -1142,19 +1142,19 @@
   .traincard .tc-st:hover { background: var(--bg-stage); }
   .traincard .tc-st .n { flex: 1; min-width: 0; }
   /* 到/開兩欄:表頭列與資料列是各自獨立的 flex row,欄寬吃內容的話,表頭「到」(單字寬)
-     會懸在兩個時刻欄中間(2026-08-12 使用者回報)。兩種列都給同一個固定寬＋右對齊,
+     會懸在兩個時刻欄中間。兩種列都給同一個固定寬＋右對齊,
      欄位才會跨列對齊;36px 蓋得住 tabular-nums 的「00:00」。 */
   .traincard .tc-st > span:not(.n) { flex: none; width: 36px; text-align: right; }
   .traincard .tc-st.hd > span:not(.n) { letter-spacing: 0; } /* 尾字的 letter-spacing 會讓右緣縮 1px,拿掉才對得齊 */
   /* 轉乘標。落點只有兩處:車站看板的站況區(回答「這站是什麼」),與跟隨/搭乘卡的下一站
      (回答「要不要在這站下車換車」——唯一會改變行動的時刻)。v0810 之前掛在資訊卡的逐站停靠表每一列,
-     使用者回報「不顯眼、不知何時會需要用到」:轉乘是車站的屬性不是某班車某一站的屬性,
+     缺點是轉乘資訊埋在長表裡,難以察覺、也看不出何時派得上用場:轉乘是車站的屬性不是某班車某一站的屬性,
      擺在那份桌面預設收合的清單裡等於同一件事重複四十次,埋兩層又是噪音。
      兩張卡都很窄(跟隨 240px、捷運 220px,扣內距只剩 214/194),而路線名可以長到「轉 高鐵、西部幹線
      （山線）、淡水信義線、機場捷運」——所以標**內部可換行**、外面的列也要 flex-wrap，讓它擠不下時
-     自己掉到下一行，而不是撐破卡片(v0810b 使用者截圖抓到捷運卡整條凸出去)。
+     自己掉到下一行，而不是撐破卡片(v0810b 的症狀:捷運卡被整條撐出邊界)。
      刻意**不收成「+N」再靠點擊展開**：那等於把資訊藏在一個沒有回饋的紅框後面，
-     手機叫不出 title、使用者也試不出點下去會怎樣——正是「不知道何時會用到」的翻版。全列出來。 */
+     手機叫不出 title、使用者也試不出點下去會怎樣——跟資訊埋在表裡看不到是同一種毛病。全列出來。 */
   .xfer-tag {
     flex: 0 1 auto; min-width: 0; max-width: 100%;
     font-size: calc(11px * var(--uis)); font-weight: 800; color: var(--red); white-space: normal; overflow-wrap: anywhere;
@@ -1163,7 +1163,7 @@
   /* 轉乘接續。落點在 .xfer-tag 那一列的下方(跟隨卡/捷運卡/手機列車卡),共用那一區的字級變數。 */
   /* v0901 窄卡排版:容器寬度不是這一塊能決定的(桌面 240 / 全畫面 300 / 手機與放空 176),
      所以斷點吃 container query 而不是裝置——放空模式與手機 sheet 也會落到窄支。
-     欄位優先序:車次與「剩 N 分」永不壓縮、永不換行(那是使用者要的兩個數字),
+     欄位優先序:車次與「剩 N 分」永不壓縮、永不換行(那是乘客最在意的兩個數字),
      只有 .xfc-d(時刻＋往哪)吃 ellipsis。 */
   .xfer-conn { container-type: inline-size; margin-top: 7px;
     border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; }
@@ -1347,7 +1347,7 @@
   .seal[data-ach], .achv-chip[data-ach] { cursor: help; }
   /* ── 車站章(.stn-seal):打卡收集用,比 .seal 小一號因為量大(全網約 600 座) ──
      三態(設計書第 2 節):跟完=灰藍虛線不旋轉 / 搭過=實線單圈不旋轉 / 到訪=雙圈+歪斜(手蓋的章一定是歪的)。
-     站等升級走 .t0(特等站,金);次數直接標數字不做疊印濃度(使用者 07-25 明示)。 */
+     站等升級走 .t0(特等站,金);次數直接標數字,不做疊印濃度。 */
   .stn-seal {
     width: calc(50px * var(--uit)); height: calc(50px * var(--uit));
     border-radius: 50%; border: 2px solid var(--red); color: var(--red);
@@ -1381,7 +1381,7 @@
   }
   .ph-sec .pl-map:hover { opacity: .86; }
   /* 懸賞板入口改成懸賞既有的紅(#bountyBriefGo/.bt-take 那組 --red/--red-deep,不自創新色)：
-     使用者實測回饋「太不起眼,連自己都差點沒找到」。只疊色彩與字重,幾何(min-height/padding)
+     原本太不起眼、不容易發現。只疊色彩與字重,幾何(min-height/padding)
      完全沿用上面 .pl-map 共用規則不重複定義——不能動 verify_checkin.mjs L10 的護照高度預算。 */
   .ph-sec .pl-map.pl-bounty { background: var(--red); border: 1px solid var(--red-deep); color: #fffdf6; font-weight: 900; }
   /* 「校正貢獻」節專屬收窄(只動這個新節,不動 .ph-sec 共用規則,其餘七節間距不受影響):
@@ -1641,8 +1641,8 @@
     opacity: 0; transform: translateY(-10px); transition: opacity .4s ease, transform .4s ease;
   }
   .toast.show { opacity: 1; transform: none; }
-  /* ── 角落小提示 ── 使用者裁示(2026-08-18):內部對帳類的訊息(例:位置依官方校正)不要用
-     置中大卡擋住整個畫面,收到角落小字即可。刻意獨立成一個容器:原本的 .toasts 是置中欄,
+  /* ── 角落小提示 ── 內部對帳類的訊息(例:位置依官方校正)改走角落小字,不用
+     置中大卡,以免擋住整個畫面。刻意獨立成一個容器:原本的 .toasts 是置中欄,
      在裡面翻轉定位會跟它的 flex 置中打架。 */
   .toasts.corner {
     top: auto; bottom: 14px; left: 12px;
@@ -1703,7 +1703,7 @@
   body.idle .controls, body.idle .leaflet-control-container, body.idle #randBtn, body.idle #nearBtn, body.idle #fsFab, body.idle .tabbar { opacity: 0; pointer-events: none; }
   /* 唯一的出口不跟著淡光:放空時控制列只剩「離開放空」＋「視角」兩顆,idle 只降到看得見、且保持可按。
      原本跟其他家具一起 opacity:0 + pointer-events:none ⇒ 第一下觸控只是喚回控制列、按不到鈕,要按兩下
-     (使用者回報「安卓有時候進放空後連退出的按鈕都會不見按不到」,2026-08-31)。 */
+     (症狀:Android 進放空模式後,退出鈕有時消失、按不到)。 */
   body.idle.ambient .controls { opacity: .5; pointer-events: auto; }
   body.idle .stage, body.idle * { cursor: none; }
   #overlay { position: absolute; inset: 0; pointer-events: none; z-index: 500; }
@@ -1864,7 +1864,7 @@
     backdrop-filter: blur(3px) saturate(1.08);
     /* 背後換成地圖之後,原本的土灰兩級（次要/更淡）與三級分隔線疊在路網上會糊掉——只在面板子樹內
        各升一階,不動全域變數(頁面其他地方的背景仍是實色紙面,不需要加深)。 */
-    /* 🔴 2026-08-27 裁示「用字色不要用光暈」之後,次要兩級再壓深一階(原 #463C2C／#5F5440)。
+    /* 🔴 2026-08-27 光暈整組拿掉、可讀性改由字色負責之後,次要兩級再壓深一階(原 #463C2C／#5F5440)。
        為什麼壓深一定有效:面板底是 alpha .30 的**淺**紙面,所以合成後的底色再暗也不會低於
        0.30×紙面亮度——亮色主題的底有地板,字越深、最壞情況越好。暗色主題沒有這條地板(見下方
        反向那組),那邊改亮到頂也吃不到同樣的保障,量得到的殘差見交付說明。 */
@@ -1883,15 +1883,15 @@
     --ok: #0B4A26;
     --red: #8E1F11;
     --warn-ink: #4A2A05;
-    /* 🔴 2026-08-27 使用者裁示:「面板變成半透明的時候要維持文字的易讀性,可以直接改文字的顏色,
-       不要加光暈來做。」原本這裡給整個面板子樹鋪 text-shadow 外圈(--glass-halo),整組拿掉——
+    /* 🔴 2026-08-27 起:面板半透明時,文字易讀性改靠調整字色維持,
+       不另加光暈。原本這裡給整個面板子樹鋪 text-shadow 外圈(--glass-halo),整組拿掉——
        連帶那兩條配套規則(button 不繼承要明確接回、自帶底色的元件要豁免)也一併廢除,
        沒有外圈就沒有東西要接、要豁免。可讀性改由上面那幾條「只在半透明子樹內壓深一階」的字色扛。
-       (07-30 的原始指示本來就是「文字要調顏色」,外圈是實作時自己加的,現在改回去。) */
+       (原本的規格就只調字色,外圈光暈是實作時額外加的,現在改回。) */
   }
-  /* 🔴 2026-08-27 裁示:標題列也要半透明。它們 sticky、面板內容會從底下捲過去,所以各自帶一層
+  /* 🔴 2026-08-27 起標題列同樣做成半透明。它們 sticky、面板內容會從底下捲過去,所以各自帶一層
      blur(6px)——捲過去的字糊成色塊,不會與標題字混在一起。面板本體的 .30/blur(3px) 一格不動
-     (使用者凍結值),這是標題列自己的值。 */
+     (固定值),這是標題列自己的值。 */
   body.panel-translucent .board h3,
   body.panel-translucent .xing-card .xc-head,
   body.panel-translucent #nearCard .xc-head {
@@ -1919,9 +1919,9 @@
      而它是「這段跑多快」的主要載體。色相不變,只加濃度。 */
   /* 另外給曲線一層自己的淡底板:線色是固定的深藍/淺藍,壓在衛星影像的深色區塊上實測只有 1.6:1
      ——那是「這段跑多快」唯一的載體,不能靠加粗救。底板只蓋曲線那 46px 高的方塊,面板整體的
-     透明度與模糊值不動(使用者指定),地圖仍透得出來。 */
+     透明度與模糊值不動,地圖仍透得出來。 */
   body.panel-translucent { --spark-fill: rgba(42,74,115,.34); --spark-w: 1.9; --spark-plate: rgba(255,253,246,.72); }
-  /* 暗色＋衛星影像是全部情境裡曲線最糟的一張(使用者實機截圖):原本的 #8FB4EC 疊在透上來的
+  /* 暗色＋衛星影像是全部情境裡曲線最糟的一張(實機截圖):原本的 #8FB4EC 疊在透上來的
      綠灰照片上實測只有 5.52(七個情境最低)。線色提亮一階＋圖表底板加深到 .80 ⇒ 6.26。
      註:「只把底板加深」量出來幾乎沒用(5.60)——最糟的那 5% 像素是線壓在自己的半透明填色上,
      加深底板會把填色一起加深,兩者一起變暗、差距不變。 */
@@ -2134,7 +2134,7 @@
   .board .ev-note { flex: 1 1 7em; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .board .ev-tag { flex: none; padding: 0 5px; border-radius: 4px; background: var(--line-faint); font-size: calc(10.5px * var(--uis)); }
   .board .ev-go { flex: none; margin-left: auto; color: var(--faint); }
-  /* 設計 3e:今日之最四格。1.5px 邊框卡而不是實色底——實色底會跟看板列的虛線分隔打架(設計原話)。
+  /* 設計 3e:今日之最四格。1.5px 邊框卡而不是實色底——實色底會跟看板列的虛線分隔打架。
      兩欄用 flex-wrap + flex:1 1 46%,不用 grid-template-columns:字級放大到特大時允許它掉成一欄,
      不會被固定兩欄壓成擠不下的窄格。整格是觸控目標,下限沿用 44/52/60 那組(--uit)。 */
   #explorePanel .hl-grid { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 2px; }
@@ -2177,8 +2177,8 @@
   .board .row .min { color: var(--navy); font-weight: 700; flex: none;
     width: var(--min-col, auto); min-width: 44px; text-align: right; white-space: nowrap; }
   /* 特大 ×1.5 的那一列只剩 車次·時刻·倒數 三格(設計 6b),而官方板在最後一分鐘會把「3 分」
-     換成「即將進站／列車進站」——四個字擠掉同一列的車次與時刻。使用者裁示:「如果特大字的
-     時候需要精簡,就精簡後面進站那邊」⇒ 特大時改用 data-soon 裡的短字。
+     換成「即將進站／列車進站」——四個字擠掉同一列的車次與時刻。取捨是:空間不夠時
+     只縮進站那一欄、車次與時刻不動 ⇒ 特大時改用 data-soon 裡的短字。
      手法比照上面 lateTag 的 attr() 換字樣(不動 DOM ⇒ 標準/大字級的零變化對照守得住),
      但短字是 boardAlignColumns 用 t() 產生後寫進屬性的,不像 lateTag 把中文寫死在 content 裡,
      所以英日(Due／まもなく、Arriving／到着中)一樣吃得到。 */
@@ -2196,7 +2196,7 @@
     background: none; border: 0; color: var(--on-navy); opacity: .8; cursor: pointer; line-height: 1;
   }
   /* ×(U+00D7)的字形只佔 em 框約一半:17px 字級墨跡僅 8.3px,挨著 ☆15px(墨跡 14.5px)顯得特別小
-     (使用者指正「關閉圖示本身就比星星小」)。兩鈕鎖同一字型棧再放大 × 到 28px:
+     (實際看起來關閉鈕比星星還小)。兩鈕鎖同一字型棧再放大 × 到 28px:
      - 不鎖字型時 chromium 的 × 走 SF(有此字元)、☆ fallback PingFang(SF 無 U+2606),
        兩顆字型不同導致怎麼調都對不齊;鎖 PingFang 後兩引擎墨跡度量幾乎一致(實測 ☆ 皆 14.6×14.5)。
      - ✕✖╳ 等替代字元在 WebKit 落到別的 fallback(墨跡崩到 7px),跨引擎不可靠,不用。
@@ -2212,7 +2212,7 @@
   .board .board-star.on { color: #ffd977; opacity: 1; }
   /* 捷運等車卡入口(Task 6):h3 內另起一行(不像 close/star 用絕對定位插槽——
      .board 桌面寬 360px(v0901 前為 280),硬塞第三顆同款圖示鈕仍會擠壓長站名),故不影響 h3 padding-right。
-     08-14 真機回饋「按鈕不明顯、不知道用途」——待機態改滿寬金底 CTA,追蹤中反轉成描邊。 */
+     08-14 真機上看不出這是按鈕、也不清楚用途——待機態改滿寬金底 CTA,追蹤中反轉成描邊。 */
   .board .board-wait {
     display: block; margin: 6px 0 2px; padding: 6px 12px;
     /* 🔴 不可以寫成 `font: 800 12.5px/1.5 inherit` 的簡寫:`inherit` 是 CSS-wide 關鍵字,
@@ -2997,7 +2997,7 @@
   .tabbar {
     position: fixed; left: 0; right: 0; bottom: 0; z-index: 1100;
     display: none; align-items: flex-start;
-    /* v0721f 使用者回饋:下方留白收斂——內容區 58→52(鈕44+上4+下2+框1.5),safe-area 折讓 6px(max 保護無瀏海=0);--tabbar-clear 必須同式 */
+    /* v0721f:下方留白收斂——內容區 58→52(鈕44+上4+下2+框1.5),safe-area 折讓 6px(max 保護無瀏海=0);--tabbar-clear 必須同式 */
     height: calc(52px * var(--uit) + max(var(--sa-b) - 6px, 0px));
     padding: 4px 4px calc(2px + max(var(--sa-b) - 6px, 0px));
     background: var(--paper); border-top: 1.5px solid var(--line);
@@ -3076,19 +3076,19 @@
      不再補一條同義的 display:none(補了也是死碼)。既有那幾列的 inline style 不動,它們照樣有效。 */
   .more-sheet .ms-row.ms-stat .ms-tail b { color: var(--ink); font-weight: 800; }
   .more-sheet .ms-sec { padding: 9px 14px 3px; font-size: calc(11px * var(--uis)); font-weight: 800; letter-spacing: 3px; color: var(--faint); border-bottom: 1px dashed var(--line-faint); }
-  /* 🔴 單字圓章(設計 3d 的 <i class="ms-ic">)2026-08-27 依使用者指示整組拿掉:「每一行前面都有
-     一個字,那個有點多餘」。連帶拆掉的是它撐出來的三條配套規則——圓章本體、`.ms-ic + span`
+  /* 🔴 單字圓章(設計 3d 的 <i class="ms-ic">)2026-08-27 整組拿掉,理由是每列開頭多一個字屬冗餘裝飾。
+     連帶拆掉的是它撐出來的三條配套規則——圓章本體、`.ms-ic + span`
      的 flex:1(沒有第三個子項之後,.ms-row 的 space-between 自己就把標籤靠左、尾巴靠右)、
      以及讀數列為了跟圓章對齊而補的等寬縮排(見下)。 */
   /* (原本這裡有一條 .ms-stat 的等寬縮排,用來讓讀數列的標籤對齊帶圓章的動作列;圓章拿掉之後
      兩種列的標籤起點本來就一樣,縮排會反過來讓讀數列凸出去,故一併移除。判準 Q4 仍守著對齊。) */
   .more-sheet .ms-row.warnrow { background: var(--warn-bg); color: var(--warn-ink); font-weight: 800; }
-  /* 評分列不用 emoji(2026-08-12 使用者裁決:更多選單不放 emoji),改品牌紅粗體強調 */
+  /* 評分列不用 emoji(更多選單不放 emoji),改品牌紅粗體強調 */
   .more-sheet .ms-row .rate-cta { color: var(--red); font-weight: 800; }
   .more-sheet .ms-note { margin: 10px 14px 0; font-size: calc(10.5px * var(--uis)); color: var(--faint); flex: none; }
   .more-scrim { position: fixed; inset: 0; z-index: 1105; background: rgba(30,44,64,.26); display: none; }
-  /* ── 資料狀態小卡(點時鐘徽章開,2026-08-27 使用者要求)──────────────────────────
-     頂列把 LIVE／看板校正／REPLAY／尖峰／車數 全收成 7px 色點之後(D4 排法B),那些字樣與
+  /* ── 資料狀態小卡(點時鐘徽章開,2026-08-27 新增)──────────────────────────
+     頂列把 LIVE／看板校正／REPLAY／尖峰／車數 全收成 7px 色點之後(D4 頂列單排版),那些字樣與
      每顆燈 title 裡的「為什麼」在**觸控裝置上完全沒有入口**——手機沒有 hover。「更多 →
      資料狀態」看得到值,但看不到原因,而且要繞三步。點徽章直接開這張是最短的路。
      🔴 放 body 層不放 .stage:.stage 會把 z-index 封頂(見 memory modal-stacking-context)。
@@ -3217,14 +3217,14 @@
     /* 🔴 徽章也要在白名單裡:頂列本體 pointer-events:none(它是整條橫帶,不能吃掉地圖拖曳),
        漏掉徽章的話「點時鐘看資料狀態」在手機殼下完全點不到(桌面沒有這條所以看不出來)。 */
     .topbar .tb-plate, .topbar .grouptabs, .topbar .alert-chip, .topbar .badge, .topbar .gtab-one { pointer-events: auto; }
-    /* ══ 設計 D4 排法B(2026-08-22 使用者拍板):頂列收成一排 42px,省 56px 全給地圖 ══
+    /* ══ 設計 D4 頂列單排版(2026-08-22 起):頂列收成一排 42px,省 56px 全給地圖 ══
        一排的組成:[logo 方牌 42] [時鐘膠囊(時鐘＋狀態色點)] ──auto── [公告 36 圓] [群組 4×36 圓]
        徽章本體由 placeBadge() 搬進頂列(手機一律搬,live 除外),這裡只管樣式。 */
     body.fs .topbar { align-items: center; flex-wrap: wrap; }
     /* 🔴 大字檔一排塞不下:393pt 特大實測 膠囊118 + logo57 + 公告49 + 四顆214 + 間距 = 482 > 393。
-       解法選「換行」而不是「縮小圓鈕」——設計對照表的觸控目標 44/52/60 是硬需求,為了排成一排
+       解法是讓頂列拆成兩排,而不縮小圓鈕——設計對照表的觸控目標 44/52/60 是硬需求,為了排成一排
        把它縮回去等於用大字模式的使用者去換版面。
-       🔴 換行**哪一組下去**由使用者 2026-08-26 裁示:四顆群組是主要導航,留在第一排;
+       🔴 換行**哪一組下去**:四顆群組屬於主要導航,固定留在第一排;
           降到第二排的是公告鈕,並靠右與右緣工具欄(隨機跟隨/附近車站)同一條基準線。
        (這本來是設計 D7「大字模式」該回答的題目,那幾頁目前讀不到:TURN 3/4 與中段檔仍被 256KiB 截斷。) */
     /* 🔴 兩排的分法不用 flex 換行,改用 grid 明寫格位——flex 這裡有兩個坑:(a) 想把四顆頁籤留在
@@ -3233,13 +3233,13 @@
        四顆頁籤自己被擠到第二排、公告鈕再被擠到第三排,頂列一路長到 176px(近半個畫面)。
        grid 兩列固定:第一排 [logo ‥ 四顆頁籤],第二排 [時鐘膠囊 ‥ 公告鈕]。時鐘讓到第二排是
        幾何逼出來的——第一排要放得下四顆設計尺寸的頁籤,就容不下 128px 的膠囊(360pt 全寬才 340)。
-       公告鈕靠右 ⇒ 與右緣工具欄(隨機跟隨/附近車站)同一條基準線,即使用者要的「對齊」。 */
-    /* 🔴 2026-08-27 使用者連下三個裁示,推翻上面 08-26 那段「時鐘讓到第二排」與 D4 的方形 logo:
-         ①「時鐘徽章現在在大跟特大設定 會跑到第二排 我希望無論如何都收在第一排」
-         ②「或者是 你把那四顆鈕收成一顆 點擊會打開就好」(在 2×2 與收合兩案之間選了收合)
-         ③ 標準字級也收成一顆(長方形牌 96px vs 方形 logo 42px,標準檔 360pt 單排差 27px;
+       公告鈕靠右 ⇒ 與右緣工具欄(隨機跟隨/附近車站)同一條基準線,版面要的就是這種對齊。 */
+    /* 🔴 2026-08-27 連續三項改動,推翻上面 08-26 那段「時鐘讓到第二排」與 D4 的方形 logo:
+         ① 大字與特大字級下時鐘徽章會掉到第二排;改成任何字級都留在第一排
+         ② 四顆群組鈕改成單一按鈕,點擊後才展開
+         ③ 標準字級也併成單一按鈕(長方形牌 96px vs 方形 logo 42px,標準檔 360pt 單排差 27px;
             讓牌收寬會讓「軌島」兩字直排 ⇒ 不能用,量到的是 39~62px 寬 × 58px 高)
-       所以**三個字級一致**:四顆頁籤在手機殼一律收成一顆 #gtabOne,頂列維持單排,
+       所以**三個字級一致**:四顆頁籤在手機殼一律併成單一按鈕 #gtabOne,頂列維持單排,
        [軌島牌][時鐘膠囊][公告][一顆] 排得進同一排。D4「頂列收成一排、省下來全給地圖」
        的原意因此在三個字級都成立(標準 42／大 49.5／特大 57.1px)。
        ⇒ 刻意**不寫任何 grid 覆蓋**:大/特大沿用同一套 flex 單排規則,少一套會漂移的版面。
@@ -3255,8 +3255,8 @@
       width: calc(42px * var(--uit)); height: calc(42px * var(--uit));
       flex: none; display: block; border-radius: 9px; box-shadow: var(--shadow-1);
     }
-    /* 🔴 2026-08-27 使用者改裁示,推翻 D4 的「方形 logo 取代文字牌」:
-         「左上的logo 我希望要維持以前的款式 就是長方形而非正方形的」。
+    /* 🔴 2026-08-27 改回舊款,推翻 D4 的「方形 logo 取代文字牌」:
+         左上角沿用舊款的長方形牌,不改成正方形。
        所以反過來——文字版軌島牌(含起訖站帶)回來,42×42 的方形 logo 圖讓位。
        兩者的 DOM 都留著(方形那顆只是 display:none),要換回去改這一條就好。 */
     body.fs .topbar .tb-logo { display: none; }
@@ -3269,8 +3269,8 @@
       background: var(--paper); border: 1.5px solid var(--line); box-shadow: var(--shadow-1);
     }
     body.fs .topbar .badge .clock { font-size: calc(16px * var(--ui)); font-weight: 900; }
-    /* 🔴 2026-08-27 使用者裁示,推翻 08-22 的「狀態全部收成色點」:
-         「現在已經把右邊四個按鈕縮小的狀況下,時間按鈕其實可以直接寫詳細資訊了。」
+    /* 🔴 2026-08-27 改版,推翻 08-22 起狀態字樣一律收成色點的做法:
+         右邊四顆鈕縮小後騰出了橫向空間,狀態字樣可以直接放進時間膠囊。
        ⇒ 手機殼的狀態改回**寫字**(沿用桌面那組已經在用的樣式:LIVE 綠、看板校正 藍、重播 紅牌、
          尖峰 琥珀牌),只把字級收小一階,#count 仍留在卡裡不進膠囊(它是會逐秒變動的長字串)。
        🔴 只有在真的排不下的組合才退回色點——見下方 .badge.st-dot,由 fitBadgeDetail() 量完才掛。
@@ -3404,9 +3404,9 @@
        就是要,英文把它逼出來了。退讓順序不變:先讓 plate-foot 的起訖站名(省略號),再由 fitBadgeDetail()
        把狀態旗標降成色點,標題自己是最後一道——它有 nowrap,**永遠不准折成直排的「軌島」**
        (實測會把整條頂列從 ~50px 撐到 66px),裝不下時收成省略號,不再被 .stage 的 overflow 硬切。 */
-    /* 🔴 2026-08-27 使用者裁示:「左上角的軌島招牌大小請跟著時間資訊那顆一起變大變小」。
+    /* 🔴 2026-08-27 起:招牌的字級倍率與時間徽章連動,字級改變時兩者同步縮放。
        原本這裡把牌的三個字級倍率**退回 1**(寫死 14／9.5／6px),理由是「把省下的寬度讓給四顆分頁」
-       ——四顆已經收成一顆,那個理由不成立了,整組取消,牌回去吃 base 的 calc(14px * var(--ui))。
+       ——四顆已併成單一按鈕,那個理由不成立了,整組取消,牌回去吃 base 的 calc(14px * var(--ui))。
        留著 flex:0 1 auto 與 plate-foot 的省略:那是「擠的時候先讓品牌標示」的退路,不是尺寸凍結。 */
     /* 公告警示鈕與四顆短標都固定 36px；透明 ::after 仍補足 44px 觸控熱區。
        v6 在 360dp＋有公告時三者總寬超過可用寬，最右「捷」會被裁掉；固定幾何後不再讓字級／
@@ -3497,7 +3497,7 @@
     }
     /* 手機:工具全部住在 tab bar「更多」sheet;帶收成速度膠囊(見下) */
     .tabbar { display: flex; }
-    /* 版權列:一條單行貼齊底緣(2026-08-29 使用者實機回報)。
+    /* 版權列:一條單行貼齊底緣。
        原本是「右下角換行、每個來源都留可見命中框」,在 CARTO 底圖(字串短)看起來沒事;
        換衛星底圖後字串變成 'Leaflet | 臺灣輪廓：內政部, Tiles © Esri — Source: Esri, Maxar,
        Earthstar Geographics',在 360–414dp 折成三行(系統字級放大是四行)、高 37.5px,直接壓住
@@ -3515,7 +3515,7 @@
     .leaflet-control-attribution::-webkit-scrollbar { width: 0; height: 0; }
     /* 左下的跟車卡(#followPanel)與捷運跟隨小卡(#freqCard)底緣落在這條的同一高度帶
        (兩者都是 left:8 / bottom:tabbar-clear+2 / 寬 176),所以它們在場時把左側 216px 讓回去。
-       用 :has() 只在真的有卡時才縮——沒卡就整條用滿,那才是「一條平的貼齊下方」。
+       用 :has() 只在真的有卡時才縮——沒卡就整條用滿,版權列貼著畫面下緣呈單一橫條。
        舊瀏覽器不支援 :has() 的話退回整條:結果是重疊,不是壞掉。 */
     body:has(#followPanel:not([hidden])) .leaflet-control-attribution,
     body:has(#freqCard:not([hidden])) .leaflet-control-attribution {
@@ -3530,7 +3530,7 @@
     .leaflet-bottom.leaflet-right { bottom: 58px; }
     /* 公告橫幅在手機整個退場(2026-07-30):入口改成頂列的 .alert-chip(見上面那條規則)。
        橫幅原本是 top:100 的整寬橫條,常駐時會蓋住搜尋面板的輸入框、也會撞上被底部 sheet 推高的
-       跟隨小卡(使用者實機回報,兩張截圖各一);更貴的是它拖著一整條讓位鏈——站名牌、平交道提示、
+       跟隨小卡(兩種情況實機上都出現過,各有截圖);更貴的是它拖著一整條讓位鏈——站名牌、平交道提示、
        平交道卡、地圖動作列全部要為它下移 38~42px,每多一個頂部元件就多一條規則。
        收成頂列鈕之後這條鏈整條拆除,手機頂部幾何回到單一基準(頂列 8~48 → 徽章列 58 → 動作列 100
        → 站名牌 141 → 平交道卡 191),不再有「有沒有公告」這個變數。
@@ -3570,8 +3570,8 @@
     .xing-card .xc-foot { padding: 6px 10px 8px; font-size: calc(10px * var(--uis)); }
     .xing-card .xc-empty { padding: 12px 10px; font-size: calc(11.5px * var(--uis)); }
     /* 站名牌(手機直式):收成置中的小膠囊,不再是整寬橫條。
-       🔴 2026-08-27 使用者裁示:「現在火車到站時 站牌顯示太大了,很干擾而且會擋住後面的資訊,
-          請依照現在做的樣式去更改這個站牌顯示。」實測改前 特大/393 是 377×97、站名字級 39px,
+       🔴 2026-08-27 起:列車到站時的站牌縮小,避免它佔據畫面、遮住後方資訊。
+          版型改照現成的橫式樣式。實測改前 特大/393 是 377×97、站名字級 39px,
           整條橫跨螢幕壓在地圖上。改後尺寸與字級都比照橫式那一版(早就是小膠囊)與頂列的膠囊語彙。
        置中而不是靠左:與時鐘膠囊、速度膠囊共用同一條中線;寬度吃 max-content,站名多長就多寬。 */
     .dwell-plate {
@@ -3593,8 +3593,8 @@
     }
     /* 面板家族:手機一律變底部 sheet(圓上角+抓把)。
        ── sheet 三段高與安全區夾限(2026-07-30)──
-       高度 = min(該段的百分比, 從安全區頂緣到 sheet 底緣的可用高)。第二項是使用者回報的
-       「iPhone Air 上面會超過」的修法:sheet 底邊釘在 tab bar 上方、高度原本寫死 88%,螢幕越高
+       高度 = min(該段的百分比, 從安全區頂緣到 sheet 底緣的可用高)。第二項是用來修
+       iPhone Air 上緣超出螢幕的問題:sheet 底邊釘在 tab bar 上方、高度原本寫死 88%,螢幕越高
        剩下的 12% 越不夠讓開瀏海——420×912 算出頂緣 43px,正好落在動態島底下,標題列被吃掉。
        用 min() 夾住而不是把 88% 調小:沒有瀏海的機型 env=0,兩項算出來一樣,不平白損失可視面積。
        🔧 `--sheet-safe-top` 全檔沒有定義,只在這三處被 var() 引用 ⇒ 產品行為永遠走 fallback 的
@@ -3607,7 +3607,7 @@
       border-radius: 14px 14px 10px 10px;
     }
     .board::before { content: ""; display: block; width: 38px; height: 4px; border-radius: 3px; background: rgba(255,253,246,.55); position: absolute; top: 5px; left: 50%; transform: translateX(-50%); z-index: 3; }
-    /* ══ 設計 D1–D3 整合卡:跟車中打開車站看板 ⇒ 同一張卡兩個分頁 ══
+    /* ══ 設計 D1–D3 整合卡:跟車中打開車站看板 ⇒ 兩個分頁共用一張卡 ══
        🔴 刻意不新造 sheet:#board 已經有三段高／sticky h3／☆×／讓位／SHEET_PANEL_IDS 一整套,
           再造一個殼等於把那些契約全部重寫一遍。這裡只在它 render 完之後插入分頁列,
           並把 #followPanel 搬進槽裡(比照 msFlowSlot 把 #flowWrap 搬進抽屜再搬回的既有做法)。 */
@@ -3678,7 +3678,7 @@
        而且日誌還空著時憑空留 88px 白。這一頁全部走同一個捲軸,高度交給內容。 */
     body.fs .board .uni-slot .tc-events #tcEvents { height: auto; overflow: visible; }
     .board h3 { border-radius: 13px 13px 0 0; padding-top: 12px; }
-    /* 🔴 觸控目標(使用者 2026-08-26 回報「再小的字體設定時,關掉的 X 太小了,容易點不到」):
+    /* 🔴 觸控目標(症狀:字級設到最小時,✕ 鈕的命中框偏小、不易點中):
        ✕/☆/🔔 的命中框原本是 22×22,而且**不隨字級放大**(寬高寫死 px,只有字形吃 --ui)——
        在 40px 高的標題列裡垂直、水平都不到 44。桌面有游標,維持原樣;
        手機是整條 377px 的抽屜列,沒有理由只給 22px ⇒ 三顆一律撐成 44×44。
@@ -3695,7 +3695,7 @@
     .board .board-notify { right: 88px; }
     .board h3 { padding-right: 94px; }
     .board.has-notify h3 { padding-right: 138px; }
-    /* ── 附近車站卡:併入 sheet 家族(2026-07-25 裁決)──
+    /* ── 附近車站卡:併入 sheet 家族(2026-07-25 起)──
        它原本吃 .xing-card 的上錨幾何(頂緣 152、高 462),把地圖中心埋在卡內 274px,藍點必然看不到。
        改成與 .board 同一組底部 sheet 幾何;三段高/讓位/重新取景靠 SHEET_PANEL_IDS 走同一套機制。
        用 id 選擇器蓋 .xing-card 那條鏈(id 特異度天然勝出,不受規則先後影響);其餘三張 .xing-card
@@ -3750,7 +3750,7 @@
     .notify-dialog { width: 100%; max-height: calc(100dvh - 82px - var(--sa-b)); align-self: end; border-radius: 16px 16px 10px 10px; }
     .notify-field { grid-template-columns: 96px minmax(0, 1fr); }
     /* 手機資訊卡整體縮小:卡寬與字級圖示全面降一級;底部讓開速度膠囊 */
-    /* 貼底小卡讓開 tab bar:原 60px 無 env,瀏海機(env≈34)tab bar 高 92px 會蓋住小卡下緣(真機回報病灶)。
+    /* 貼底小卡讓開 tab bar:原 60px 無 env,瀏海機(env≈34)tab bar 高 92px 會蓋住小卡下緣(真機上出現過的病灶)。
        改 var+2px:非瀏海機 env=0 仍為 60px(零變化),瀏海機 60+env 抬到 tab bar 上緣。 */
     /* 卡寬跟著字級走(設計檔小卡家族:x1.25 是 250、x1.5 是 300,基準 200 ⇒ 寬度本來就吃倍率)。
        不跟著放大的話,字變大而框不變,長車種名會被擠成一條又高又窄的柱子。 */
@@ -3863,7 +3863,7 @@
     /* 全畫面:tab bar 疊在地圖上,底欄元素上移讓開 */
     body.fs .leaflet-bottom.leaflet-right { bottom: calc(var(--tabbar-clear) + 6px); } /* =原 64+env */
     body.fs .follow-panel, body.fs .freq-card { width: calc(176px * var(--ui)); }
-    /* 版權字放**最下角**、膠囊疊在它上方(v0819a 使用者裁決:原本把版權抬到膠囊上方,那行字看起來像浮在畫面中間)。
+    /* 版權字放**最下角**、膠囊疊在它上方(v0819a:原本把版權抬到膠囊上方,結果那行字漂在畫面中段)。
        仍然是垂直分離——膠囊置中、版權右對齊,窄寬(≤414)兩者水平必然重疊(實測 360/375/414 都疊),
        所以只能靠上下錯開,不能靠左右讓位。這裡刻意**不另寫規則**,直接讓上面那條 body.fs 的
        tabbar-clear+6px 生效(與放空態同高),順序改由膠囊上抬達成,見下方 .controls 那條。
@@ -3925,7 +3925,7 @@
     body:not(.ambient):not(.cexp).cfaint .controls #todOut { display: none; }
     /* ── 展開態(cexp):完整帶貼底整寬,三列格線 ──
        ① 播放 ＋ 速度軌　② 時刻尺（整列可拖）＋「現在」　③ 音樂
-       2026-07-25 裁決:原本第 2 列是「時刻讀數｜現在｜放空模式」,那個位置讓給時刻尺;
+       2026-07-25 起:原本第 2 列是「時刻讀數｜現在｜放空模式」,那個位置讓給時刻尺;
        放空／視角／分隔線一併收進「更多」抽屜(抽屜早有 data-proxy 列,功能不損失)。 */
     body.cexp .controls {
       left: 8px; right: 8px; bottom: 8px; transform: none;
@@ -3945,7 +3945,7 @@
     body.cexp .controls #musicCtl { grid-area: 3 / 1 / 4 / 4; }
     body.cexp .controls .speedrail { width: auto; flex: 1; }
     /* 時刻尺:收合膠囊(slim/faint)只留讀數——尺與指針在那個高度塞不下也沒手指空間;
-       展開帶(cexp)才長成整列可拖的尺。原本手機整個不啟用(2026-07-25 早上裁決),同日下午改為只在展開帶啟用。 */
+       展開帶(cexp)才長成整列可拖的尺。原本手機整個不啟用(2026-07-25 早上),同日下午改為只在展開帶啟用。 */
     .timerail { width: auto; height: auto; }
     body:not(.cexp) .timerail .tr-tape, body:not(.cexp) .timerail .tr-needle, body:not(.cexp) .tr-delta { display: none; }
     /* 讀數的觸控熱區:收合態沒有尺可拖,還原成 ≥44px(v0718i);展開帶必須收成讀數本身大小,
@@ -3978,7 +3978,7 @@
     body.ambient .follow-panel .fp-head b { font-size: calc(13px * var(--ui)); }
     body.ambient .follow-panel .fp-head .spd b { font-size: calc(15px * var(--ui)); }
     body.ambient .follow-panel .fp-next .stn { font-size: calc(14px * var(--ui)); white-space: nowrap; }
-    /* ── 右緣工具欄(§04c-P 裁決,直式與橫式共用同一個元件):⇄ 換一班/隨機跟隨 → ◎ 附近車站 →
+    /* ── 右緣工具欄(§04c-P,直式與橫式共用同一個元件):⇄ 換一班/隨機跟隨 → ◎ 附近車站 →
        🔒跟隨鎖,44×44 垂直一疊、icon-only、右錨。原本兩顆帶字膠囊橫躺地圖中上方＋鎖鈕孤懸右緣
        中段=「四個東西三種尺寸三條基準線」(§04c D2/D3);收成一欄後只剩一條右緣基準線,寬度不再
        跟著字數浮動。跟隨鎖由 placeControlRail() 從 Leaflet 控制角搬進來(桌面搬回去)。
@@ -3987,10 +3987,10 @@
       display: flex; flex-direction: column; align-items: flex-end; gap: 8px;
       position: absolute; right: calc(10px + var(--sa-r, 0px)); top: calc(100px + var(--sa-t)); z-index: 620;
     }
-    /* 🔴 上面那個 100 是照【標準檔】頂列實高凍結的常數(頂列底 50 ＋ 50 的留白帶)。排法B 之後
+    /* 🔴 上面那個 100 是照【標準檔】頂列實高凍結的常數(頂列底 50 ＋ 50 的留白帶)。D4 頂列單排版之後
        時鐘徽章已經是頂列的一部分,頂列會隨字級長高(實測 42→103→117),常數就被壓進頂列裡:
        大 相交 468px²、特大 1103px²,而且兩個引擎都中——被蓋住的固定是 DOM 最後那顆「捷」,
-       正是使用者 2026-08-26 回報的那個。改成從量到的頂列實高推,留白帶維持 50 不變 ⇒
+       與先前看到的症狀吻合。改成從量到的頂列實高推,留白帶維持 50 不變 ⇒
        標準檔算出來仍是 8+42+50=100,幾何一格不動;只掛 html[data-fs],沒選字級的人完全不受影響。
        🔴 量「高度」不量「底緣座標」:安全區在 Capacitor 是開機後才注入且不觸發任何事件,
        量底緣會留下對不上的舊值(見 memory top-stack-hardcoded-offsets 形狀一)。 */
@@ -4058,7 +4058,7 @@
     body.fs .board, body.fs #nearCard, body.fs #searchPanel, body.fs .traincard.tc-sheet,
     body.fs .board.sheet-small, body.fs #nearCard.sheet-small,
     body.fs .traincard.tc-sheet.sheet-small {
-      top: calc(8px + var(--sa-t)); /* v3(08-27 裁示):上錨到頂——「可以擋住右上角那些按鈕沒關係,不然捲軸太短空間太小」 */
+      top: calc(8px + var(--sa-t)); /* v3(08-27):上錨到頂,右上角那些按鈕被蓋住可以接受,換取較長的捲動空間 */
       bottom: calc(var(--tabbar-clear) + 8px);
       left: auto; right: calc(8px + var(--sa-r));
       width: var(--rail-w); max-width: none;
@@ -4075,8 +4075,8 @@
       margin: 0 -14px 8px; padding: 5px 14px 6px;
       background: var(--paper);
     }
-    /* 🔴 半透明時比照 08-27 裁示「標題列半透明＋blur(6px)」(見 body.panel-translucent .board h3 那條):
-       sticky 層下捲過的字要糊成色塊;只給玻璃不給 blur 就是字疊字(08-27 真機橫式回報的那鍋粥)。 */
+    /* 🔴 半透明時比照「標題列半透明＋blur(6px)」(見 body.panel-translucent .board h3 那條):
+       sticky 層下捲過的字要糊成色塊;只給玻璃不給 blur 就是字疊字(橫式真機上實際出現過)。 */
     body.fs.panel-translucent .board .uni-tabs {
       background: var(--panel-glass);
       -webkit-backdrop-filter: blur(6px) saturate(1.08);
@@ -4094,9 +4094,9 @@
     body.fs .traincard.tc-sheet.sheet-small .tc-sparkwrap,
     body.fs .traincard.tc-sheet.sheet-small .tc-stops { display: block; }
 
-    /* ── 跟車卡在橫式=右側欄(§04c v3,2026-08-27 使用者裁示)────────────────────────
+    /* ── 跟車卡在橫式=右側欄(§04c v3,2026-08-27)────────────────────────
        v2(08-26)廢除左欄的理由是「同一份資訊在卡的『這班車』分頁裡已經有了」——但那一頁只在
-       看板開著時存在;跟車而沒開站板時整份跟車資訊無處可去(真機回報「點跟車沒看到資訊卡」)。
+       看板開著時存在;跟車而沒開站板時整份跟車資訊無處可去(真機上開啟跟車後,資訊卡沒有出現)。
        v3 讓 #followPanel 自己就是右側欄:與看板側欄同一幾何、同樣上錨到頂;點卡仍走既有的
        openTrainSheet 展開完整資料。搬進看板槽裡時 .uni-slot 那條(position:static,特異性較高)
        接管,這裡的幾何整組失效;[hidden] 的 display:none !important 照樣蓋過一切。 */
@@ -4117,7 +4117,7 @@
        同時免掉直式 sheet-open 那條 bottom:46%!important 打進來的幾何衝突(上錨+46%底=壓扁)。
        關掉 sheet 由 updateSheetOpenClass 摘 class,側欄自己回來——與 train-open 隱藏同族先例。 */
     body.fs.sheet-open .follow-panel { display: none; }
-    /* 「我上車了」不再釘底(08-27 真機回報:釘底=永遠浮在其他文字上擋字。側欄已上錨到頂、
+    /* 「我上車了」不再釘底(08-27 真機上看到:釘底=永遠浮在其他文字上擋字。側欄已上錨到頂、
        捲動空間變大,讓它照 DOM 順序隨內容流動即可)。 */
     /* 捷運跟車卡維持左下小卡(§04c 只重排台鐵/高鐵跟隨欄):沿用限高與 sheet-open 底錨 */
     body.fs.sheet-open .freq-card { bottom: calc(var(--tabbar-clear) + 2px) !important; }
@@ -4125,7 +4125,7 @@
       max-height: calc(100dvh - var(--tabbar-clear) - 64px - var(--sa-t));
       overflow-y: auto;
     }
-    /* §04c v2「改·第 8 條」站名牌雙錨點(2026-08-26 使用者裁示「照設計做」):
+    /* §04c v2「改·第 8 條」站名牌雙錨點(2026-08-26 起以設計稿為準):
        卡開著 ⇒ 併進卡頭當一列(下面 .dp-docked);卡沒開 ⇒ 仍是露出地圖置中的獨立牌。
        兩條路徑**共用同一顆 #dwellPlate**(設計明寫「只換錨點」),搬家由 dockDwellPlate() 做。
        🔴 原本這裡是「側欄一開就把牌整個淡出」,理由是中線帶只剩 73~133px 物理放不下——
@@ -4164,7 +4164,7 @@
     /* ── 觀察模式(＝既有放空模式)的橫式形態(§04c v2 新增,17f)────────────────
        設計:只留頂列,其餘 HUD 淡出至 0(180ms)、DOM 保留。頂列留著的理由是「觀察模式最常被問的
        就是現在幾點、幾班在跑」,而手機殼那條把頂列 display:none ⇒ 橫式反轉回來。
-       🔴 與設計的一處刻意差異(2026-08-26 使用者裁示):**速度膠囊不淡出**。膠囊裡就是離開放空
+       🔴 與設計的一處刻意差異:**速度膠囊不淡出**。膠囊裡就是離開放空
           模式的那顆鈕;設計靠「點畫面任一處全部復原」把它叫回來,而本專案沒有那套復原狀態機,
           全淡掉等於把人關在模式裡出不去。膠囊留著當出口,其餘照設計。 */
     body.fs.ambient .topbar { display: flex; }
@@ -4197,15 +4197,15 @@
        工具堆還停在 56 ⇒ 隨機跟隨鈕整顆疊進頂列(實測 rand y56–100 vs 頂列 8–127)。
        同一個公式:標準檔算出來仍是 8+42+6=56,幾何一格不動。 */
     html[data-fs] body.fs .map-actions { top: calc(8px + var(--sa-t) + var(--tb-h, 42px) + 6px); }
-    /* v3(08-27 裁示):側欄開著時工具堆不再左移讓位——「可以擋住右上角那些按鈕沒關係,
-       不然捲軸太短空間太小」。側欄在上層,被蓋住期間本來就點不到,關卡即回。
+    /* v3(08-27):側欄開著時工具堆不再左移讓位——右上角那些按鈕被蓋住可以接受,
+       換取較長的捲動空間。側欄在上層,被蓋住期間本來就點不到,關卡即回。
        (被蓋住≠消失:z 序 board/follow-panel 650 > map-actions 620。) */
-    /* §04c 契約7 退役(2026-08-27 真機回報「上面多了一個半透明沒有特別用處的區塊」):
+    /* §04c 契約7 退役(2026-08-27 真機上看到頂端多出一塊半透明、沒有用途的區塊):
        原設計「頂列整條帶當可讀底」從未真正成立——徽章自己的紙面 pill(body.fs .badge 特異性較高)
        一直都在,軌島牌與群組圓鈕也各自帶底,帶只剩中段一條空玻璃=雙重底。拆掉帶的底、描邊與
        圓角,回到與直式一致的「各元件自帶底」;盒幾何(零垂直 padding、padding-left 8)不動。 */
     body.fs .topbar { padding: 0 0 0 8px; align-items: center; }
-    /* 🔴 2026-08-27 裁示:外圈(halo)整組拿掉,可讀性靠字色——同面板家族那條註解。 */
+    /* 🔴 2026-08-27 起外圈(halo)整組拿掉,可讀性改由字色負責——同面板家族那條註解。 */
     /* mock 右上幾何:公告 26 圓鈕、短標 44×28/gap 6；工具堆維持 44×44/gap 8，三者共用右錨。
        三個固定盒都吃 --ui:字級放大時字撐大了盒子不跟著長,字會被自己的框切掉(設計檔 TURN 10/12
        明寫「圖示、觸控目標一起放大」)。 */
@@ -4231,7 +4231,7 @@
        就是要,英文把它逼出來了。退讓順序不變:先讓 plate-foot 的起訖站名(省略號),再由 fitBadgeDetail()
        把狀態旗標降成色點,標題自己是最後一道——它有 nowrap,**永遠不准折成直排的「軌島」**
        (實測會把整條頂列從 ~50px 撐到 66px),裝不下時收成省略號,不再被 .stage 的 overflow 硬切。 */
-    /* 「更多」抽屜橫放收斂(2026-08-12 實機退回:left/right 0 的全寬底抽屜直接壓進動態島):
+    /* 「更多」抽屜橫放收斂(2026-08-12 實機上發現:left/right 0 的全寬底抽屜直接壓進動態島):
        左右各讓出安全區(--sa-l/--sa-r=env 別名,橫放時動態島就在其中一側)、限寬置中成對話框形,
        高度收斂留出頂列。列高/字級沿用手機值(48px 觸控目標;字太大的真因是 text-size-adjust,見 html)。 */
     body.fs .more-sheet {
@@ -4248,10 +4248,10 @@
        跟隨小卡、跟隨鎖、側欄。地圖本身**刻意不讓**——它該滿版鋪到螢幕邊緣,被島遮住一角無妨,
        不能讀的是文字與按鈕。變數為 0 時下列每一條都退化成原值,直向與桌面逐值不變。 */
     body.fs .topbar { left: calc(10px + var(--sa-l)); right: calc(10px + var(--sa-r)); }
-    /* v4(08-27 真機 905 回饋):「放橫的時候右邊按鈕沒有靠到邊 浮在中間」⇒ 右緣的 sa-r 讓位
+    /* v4(08-27 真機 905):橫放時右側按鈕離邊緣一段距離、飄在中段 ⇒ 右緣的 sa-r 讓位
        拿掉,頂列右群(分組鈕/公告)與工具堆貼實體邊(兩者右緣對齊是 L3e 契約,必須同步動);
        左緣照舊讓 sa-l(軌島牌壓到動態島才真的不能讀)。
-       v5(08-27 裁示「應該改成一排橫的在右上方的按鈕而不是直的」):貼邊後直欄跨進島帶
+       v5(08-27):右上方按鈕組由直排改成橫排——貼邊後直欄跨進島帶
        (島在橫放時位於單側垂直中央,y≈170–230)——402pt 高裡直欄不是壓島就是頂到下緣,
        結構性無解;改成橫排收進頂帶(y≈56–100,橫放的頂帶沒有島),兩種持法都乾淨。
        row-reverse 保住直欄的兩個契約:DOM 首顆(隨機跟隨)貼右上角=直欄時代的「最上顆」;
@@ -4261,7 +4261,7 @@
     /* 標籤 chip 直欄錨在鈕左緣外側——橫排會壓到左鄰的鈕,改錨鈕的下緣外側(y≈104 起,離島帶還遠)。
        右對齊鈕右緣不置中:角落顆置中會讓 chip 探出視窗右緣被裁;向左展開的下方只有地圖。 */
     body.fs .map-actions .mt-tip { right: 0; left: auto; top: calc(100% + 8px); transform: none; }
-    /* 🔴 橫式一律單排(使用者 2026-08-26 裁示):直式大/特大要拆兩排是因為 360–430pt 放不下,
+    /* 🔴 橫式不分字級都排成一排:直式大/特大要拆兩排是因為 360–430pt 放不下,
        橫放的可用寬有 830+px,logo57＋膠囊128＋四顆214＋公告49＋間距 = 約 470,一排綽綽有餘;
        而橫放的高只有 440,兩排頂列會吃掉 27% 的畫面高。所以這裡把直式那個 grid 兩排版整個退回
        單排 flex,並把被 grid 版清掉的兩個 auto 邊界接回來(它們才是 flex 版的左右分群機制)。 */
@@ -4276,7 +4276,7 @@
     .leaflet-right .leaflet-control { margin-right: calc(10px + var(--sa-r)); }
     body.fs .controls { left: calc(12px + var(--sa-l)); right: calc(12px + var(--sa-r)); }
 
-    /* ── 停靠站名牌:直向那套「左右各 8px 整寬」在矮視窗吃掉 98% 寬(使用者回報「站牌太大」)──
+    /* ── 停靠站名牌:直向那套「左右各 8px 整寬」在矮視窗吃掉 98% 寬──
        改成寬度隨內容(站名最長四字)並整體降一級字。停靠時地圖仍是主角。
        🔴 縮窄之後不能還放左上角:矮視窗把跟隨小卡頂到 y127(placeFsOverlays 的讓位),
           原本 836px 寬的整寬版是「兩側都露出來」才看得到,縮到 129px 就整個躲進小卡後面
@@ -4314,7 +4314,7 @@
        只在 sheet 開著時讓(側欄不在時它們該用回全寬),train-open 是「列車」sheet 的旗標、
        它不在 SHEET_PANEL_IDS 裡所以 body.sheet-open 涵蓋不到,要另外列。
        (#dwellPlate 曾是驗收實際抓到的那個:停靠站名牌整寬 8px→8px,一停站就壓在側欄下;
-        08-11 使用者回報「站牌太大」後它改成左錨窄版,結構上已在左半邊,不再需要也不再吃這條
+        08-11 站牌改版後它改成左錨窄版,結構上已在左半邊,不再需要也不再吃這條
         ——`right` 對「left+width 都設了」的盒子是無效宣告,留著只會誤導。) */
     body.fs.sheet-open .alert-detail, body.fs.train-open .alert-detail,
     body.fs.sheet-open .alert-banner, body.fs.train-open .alert-banner,
@@ -4387,12 +4387,12 @@
     .more-sheet .grab { display: none; } /* 拖曳把手是觸控隱喻,桌面不需要 */
     /* 列高:手機 48px 是觸控目標下限,桌面滑鼠不需要那麼高——收緊讓整份設定一屏看完 */
     .more-sheet .ms-row { min-height: 40px; padding: 8px 14px; font-size: calc(13px * var(--ui)); }
-    /* 「資料狀態」是手機限定:那些字樣只在手機被收成色點(設計 D4 排法B),桌面頂列徽章本來就寫著全文,
+    /* 「資料狀態」是手機限定:那些字樣只在手機被收成色點(設計 D4 頂列單排版),桌面頂列徽章本來就寫著全文,
        再列一次是純重複。DOM 留著、只在桌面藏起來——旗標/版面回到手機就自己回來。 */
     .more-sheet #msSecStat, .more-sheet .ms-row.ms-stat { display: none; }
     .more-sheet .ms-sec { padding: 7px 14px 2px; }
     #toolsFab { display: inline-flex !important; } /* 桌面重新啟用抽屜開關(手機仍由 tab bar「更多」負責) */
-    /* 偏好類設定收進抽屜(2026-07-25 使用者拍板):站介紹/方向/平交道/省電/外觀/軌道 帶上不再常駐。
+    /* 偏好類設定收進抽屜(2026-07-25):站介紹/方向/平交道/省電/外觀/軌道 帶上不再常駐。
        元素留在 DOM,抽屜列照樣靠 btn.click() 代理它們。
        刻意用 CSS 而非 inline display——syncMoreSheet 以 btn.style.display==='none' 判斷
        「功能未開放就連抽屜列一起藏」,改 inline 會把抽屜裡的列也藏掉。 */
@@ -4939,10 +4939,10 @@
   <div class="mock-note">tab bar 78px（含 home indicator 安全距 <span class="mock-kbd">env(safe-area-inset-bottom)</span>）；狀態列 44px 頂替 <span class="mock-kbd">safe-area-inset-top</span>。sheet 開啟即 <span class="mock-kbd">body.sheet-open</span>（速度膠囊讓位、跟隨卡上移）；「更多」sheet 承接原 ☰ 抽屜全部條目＝<span class="mock-kbd">body.tools-open</span>。省電模式手機預設開（琥珀警示列）。無橫向捲動；觸控目標 ≥44px。</div>
 </section>
 
-<!-- ═══════ 04b · 手機改版：開啟即全螢幕地圖（0720 真機 QA 拍板） ═══════ -->
+<!-- ═══════ 04b · 手機改版：開啟即全螢幕地圖（源自 0720 真機 QA） ═══════ -->
 <section class="mock-sec" id="s-mobile-fs">
   <div class="mock-h"><span class="mock-no">04b</span>手機改版 · 開啟即全螢幕地圖（長頁捲動廢止，內容全改 sheet/tab 進出）</div>
-  <div class="mock-note" style="margin:0 0 14px">背景（07-20 真機 QA）：① 下滑手勢被地圖吃掉，列車介紹／護照等長頁內容區到不了；② 右上選單難發現。拍板：≤900（MOBILE_MQ）boot 即 <span class="mock-kbd">body.fs</span> 常駐——地圖就是 App 本體，其餘內容住進 sheet。桌面 ≥901 完全不動。</div>
+  <div class="mock-note" style="margin:0 0 14px">背景（07-20 真機 QA）：① 下滑手勢被地圖吃掉，列車介紹／護照等長頁內容區到不了；② 右上選單難發現。做法：≤900（MOBILE_MQ）boot 即 <span class="mock-kbd">body.fs</span> 常駐——地圖就是 App 本體，其餘內容住進 sheet。桌面 ≥901 完全不動。</div>
   <div class="mock-row">
 
     <div>
@@ -5385,14 +5385,14 @@
     <p style="font-size:12px;color:var(--muted);max-width:880px;margin:0 0 6px;line-height:1.9">
       軌島 App 的付費功能：<b>音樂會跟著你正在看的那班車開到哪、現在幾點，自動換情境</b>。
       免費是 57 首隨機；付費是另一條曲庫，<b>16 個情境池</b>歸在
-      <b>3 個家族</b>底下（另有 2 個不屬任何家族）。家族與池<b>兩層都要能選</b>（產品裁示）。
+      <b>3 個家族</b>底下（另有 2 個不屬任何家族）。家族與池<b>兩層都要能選</b>（產品規則）。
     </p>
     <p style="font-size:12px;color:var(--muted);max-width:880px;margin:0 0 16px;line-height:1.9">
       <b>改了什麼</b>：21 列平鋪 → <b>現在播放 → 主打 → 家族／歌池</b>三段。
       ① 頂端「現在播放」說得出曲名、屬於哪個情境池、<b>以及為什麼是這首</b>；
       ② 「跟著列車」升成主打卡，不再只是第一列；
       ③ 16 個池收進三個可收合的家族，預設只展開作用中的那一個；
-      ④ 13 個未上架的降級成單行擺在各家族底部的「準備中」段——<b>降級但看得見</b>；
+      ④ 13 個未上架的降級成單行擺在各家族底部的「準備中」段——<b>降一級顯示、不隱藏</b>；
       ⑤ 「通行證」四個字從 20 次降到<b>整份清單一次</b>，由頂端一條帶講，並帶著「看方案」入口。
       下面每一份都是<b>瀏覽器渲染 index.html 的真實選單抄出來的 DOM</b>，不是手寫的示意。
     </p>
@@ -5402,7 +5402,7 @@
       <div style="flex:none;width:620px"><div class="mock-note" style="margin:0 0 6px;max-width:100%">B · 桌面 620 · 曲末待換池</div><div class="takeout-dialog mplm" style="width:620px;max-height:none;"><div class="takeout-head"><h2>配樂情境</h2><button type="button" aria-label="關閉">×</button></div><div class="takeout-body"><div class="mpl-now"><div class="mpl-now-hd"><span class="mpl-now-track">Before the Train-2</span><span class="mpl-now-num">1:08</span></div><div class="mpl-now-pool">捷運流動</div><div class="mpl-now-why">自動選池：捷運 · 白天</div><div class="mpl-now-pending">情境已經換到「南部 · 深夜」，這首播完才切。</div><div class="mpl-now-ctl"><button type="button" class="mpl-b1">暫停</button><button type="button" class="mpl-b2">換首</button><input type="range" class="mpl-vol" min="0" max="100" step="1" aria-label="音量"><span class="mpl-now-num">50</span></div></div><div class="mpl-band"><span>通行證使用中 · 16 個情境池，3 個已上架。</span><button type="button" hidden="">看方案</button></div><div><button type="button" class="mpl-hero on" data-mode="auto"><span class="mpl-hero-hd"><b>跟著列車</b><span class="mpl-tag">使用中</span></span><i>車開到哪、現在幾點就換到對應的配樂</i><em>現在依 南部 · 深夜 選池</em></button><div class="mpl-fam"><button type="button" class="mpl-row" data-mode="family:city-circuit"><span class="mpl-dot"></span><span class="mpl-txt"><b>城市環線</b><i class="mpl-fam-sub">白天到深夜的城市與捷運</i></span><span class="mpl-slot">3 可播 · 2 準備中</span></button><button type="button" class="mpl-fam-x" data-fam="city-circuit" aria-expanded="true" aria-label="收合">▾</button></div><button type="button" class="mpl-row sub" data-mode="pool:city-pop-day"><span class="mpl-dot"></span><span class="mpl-txt"><b>都會日行</b><i>高架捷運、玻璃帷幕與城市白天的向前感</i></span><span class="mpl-slot">9 首・24 分</span></button><button type="button" class="mpl-row sub" data-mode="pool:urban-jazz"><span class="mpl-dot"></span><span class="mpl-txt"><b>都市爵士</b><i>站前咖啡店、傍晚轉乘與暖色窗光</i></span><span class="mpl-slot">6 首・21 分</span></button><button type="button" class="mpl-row sub" data-mode="pool:metro-motion"><span class="mpl-dot"></span><span class="mpl-txt"><b>捷運流動</b><i>日常通勤、短站距與乾淨俐落的城市節奏</i></span><span class="mpl-slot">7 首・17 分</span></button><div class="mpl-soon-head"><b>準備中 · 2</b><hr></div><div class="mpl-row sub soon"><span class="mpl-dot"></span><span class="mpl-txt"><b>城市雨景</b></span><span class="mpl-slot">尚未上架</span></div><div class="mpl-row sub soon"><span class="mpl-dot"></span><span class="mpl-txt"><b>午夜城市</b></span><span class="mpl-slot">尚未上架</span></div><div class="mpl-fam"><button type="button" class="mpl-row" data-mode="family:open-landscape"><span class="mpl-dot"></span><span class="mpl-txt"><b>開闊風景</b><i class="mpl-fam-sub">海岸、平原與東部縱谷</i></span><span class="mpl-slot">0 可播 · 6 準備中</span></button><button type="button" class="mpl-fam-x" data-fam="open-landscape" aria-expanded="false" aria-label="展開">▸</button></div><div class="mpl-fam"><button type="button" class="mpl-row" data-mode="family:quiet-hours"><span class="mpl-dot"></span><span class="mpl-txt"><b>靜謐時刻</b><i class="mpl-fam-sub">清晨、山霧與黃昏</i></span><span class="mpl-slot">0 可播 · 3 準備中</span></button><button type="button" class="mpl-fam-x" data-fam="quiet-hours" aria-expanded="false" aria-label="展開">▸</button></div><div class="mpl-lone-head"><b>單獨情境池</b><i>不屬任何家族，不參與自動選池</i><hr></div><div class="mpl-row sub soon"><span class="mpl-dot"></span><span class="mpl-txt"><b>山海聚落共創</b></span><span class="mpl-slot">尚未上架</span></div><div class="mpl-row sub soon"><span class="mpl-dot"></span><span class="mpl-txt"><b>鐵道質地配樂</b></span><span class="mpl-slot">尚未上架</span></div><button type="button" class="mpl-row mpl-free" data-mode="free"><span class="mpl-dot"></span><span class="mpl-txt"><b>隨機</b><i>不分情境,整座曲庫隨機播</i></span><span class="mpl-slot">57 首・152 分</span></button></div></div></div><div style="font-size:11px;color:var(--faint);margin-top:8px;line-height:1.7;max-width:100%">情境已經生效、但換池只發生在曲末(絕不打斷正在播的曲子)。不講這一句就會被當成自動沒在運作。</div></div>
       <div style="flex:none;width:374px"><div class="mock-note" style="margin:0 0 6px;max-width:100%">C · 手機 374 · 未訂閱／音樂關閉中</div><div class="takeout-dialog mplm" style="width:374px;max-height:none;"><div class="takeout-head"><h2>配樂情境</h2><button type="button" aria-label="關閉">×</button></div><div class="takeout-body"><div class="mpl-now"><div class="mpl-now-hd"><span class="mpl-now-track">音樂關閉中</span><span class="mpl-now-num"></span></div><div class="mpl-now-pool" hidden=""></div><div class="mpl-now-why">按播放開始，或直接選一個情境。</div><div class="mpl-now-pending" hidden=""></div><div class="mpl-now-ctl"><button type="button" class="mpl-b1">播放</button><button type="button" class="mpl-b2">換首</button><input type="range" class="mpl-vol" min="0" max="100" step="1" aria-label="音量"><span class="mpl-now-num">50</span></div></div><div class="mpl-band"><span>以下情境需要通行證。未訂閱也看得到完整清單。</span><button type="button">看方案</button></div><div><button type="button" class="mpl-hero" data-mode="auto"><span class="mpl-hero-hd"><b>跟著列車</b></span><i>車開到哪、現在幾點就換到對應的配樂</i></button><div class="mpl-fam"><button type="button" class="mpl-row" data-mode="family:city-circuit"><span class="mpl-dot"></span><span class="mpl-txt"><b>城市環線</b><i class="mpl-fam-sub">白天到深夜的城市與捷運</i></span><span class="mpl-slot">3 可播 · 2 準備中</span></button><button type="button" class="mpl-fam-x" data-fam="city-circuit" aria-expanded="false" aria-label="展開">▸</button></div><div class="mpl-fam"><button type="button" class="mpl-row" data-mode="family:open-landscape"><span class="mpl-dot"></span><span class="mpl-txt"><b>開闊風景</b><i class="mpl-fam-sub">海岸、平原與東部縱谷</i></span><span class="mpl-slot">0 可播 · 6 準備中</span></button><button type="button" class="mpl-fam-x" data-fam="open-landscape" aria-expanded="false" aria-label="展開">▸</button></div><div class="mpl-fam"><button type="button" class="mpl-row" data-mode="family:quiet-hours"><span class="mpl-dot"></span><span class="mpl-txt"><b>靜謐時刻</b><i class="mpl-fam-sub">清晨、山霧與黃昏</i></span><span class="mpl-slot">0 可播 · 3 準備中</span></button><button type="button" class="mpl-fam-x" data-fam="quiet-hours" aria-expanded="false" aria-label="展開">▸</button></div><div class="mpl-lone-head"><b>單獨情境池</b><i>不屬任何家族，不參與自動選池</i><hr></div><div class="mpl-row sub soon"><span class="mpl-dot"></span><span class="mpl-txt"><b>山海聚落共創</b></span><span class="mpl-slot">尚未上架</span></div><div class="mpl-row sub soon"><span class="mpl-dot"></span><span class="mpl-txt"><b>鐵道質地配樂</b></span><span class="mpl-slot">尚未上架</span></div><button type="button" class="mpl-row mpl-free on" data-mode="free"><span class="mpl-dot"></span><span class="mpl-txt"><b>隨機</b><i>不分情境,整座曲庫隨機播</i></span><span class="mpl-slot">57 首・152 分</span></button></div></div></div><div style="font-size:11px;color:var(--faint);margin-top:8px;line-height:1.7;max-width:100%">付費界線只講一次,而且那一次帶著入口。整份清單照樣看得到,列上不再出現「通行證」。</div></div>
       <div style="flex:none;width:374px"><div class="mock-note" style="margin:0 0 6px;max-width:100%">D · 手機 374 · 手動選一個情境池</div><div class="takeout-dialog mplm" style="width:374px;max-height:none;"><div class="takeout-head"><h2>配樂情境</h2><button type="button" aria-label="關閉">×</button></div><div class="takeout-body"><div class="mpl-now"><div class="mpl-now-hd"><span class="mpl-now-track">Blue Signal</span><span class="mpl-now-num">3:25</span></div><div class="mpl-now-pool">都市爵士</div><div class="mpl-now-why">手動選定 · 不隨列車變動</div><div class="mpl-now-pending" hidden=""></div><div class="mpl-now-ctl"><button type="button" class="mpl-b1">暫停</button><button type="button" class="mpl-b2">換首</button><input type="range" class="mpl-vol" min="0" max="100" step="1" aria-label="音量"><span class="mpl-now-num">50</span></div></div><div class="mpl-band"><span>通行證使用中 · 16 個情境池，3 個已上架。</span><button type="button" hidden="">看方案</button></div><div><button type="button" class="mpl-hero" data-mode="auto"><span class="mpl-hero-hd"><b>跟著列車</b></span><i>車開到哪、現在幾點就換到對應的配樂</i></button><div class="mpl-fam"><button type="button" class="mpl-row" data-mode="family:city-circuit"><span class="mpl-dot"></span><span class="mpl-txt"><b>城市環線</b><i class="mpl-fam-sub">白天到深夜的城市與捷運</i></span><span class="mpl-slot">3 可播 · 2 準備中</span></button><button type="button" class="mpl-fam-x" data-fam="city-circuit" aria-expanded="true" aria-label="收合">▾</button></div><button type="button" class="mpl-row sub" data-mode="pool:city-pop-day"><span class="mpl-dot"></span><span class="mpl-txt"><b>都會日行</b><i>高架捷運、玻璃帷幕與城市白天的向前感</i></span><span class="mpl-slot">9 首・24 分</span></button><button type="button" class="mpl-row sub on" data-mode="pool:urban-jazz"><span class="mpl-dot"></span><span class="mpl-txt"><b>都市爵士</b><i>站前咖啡店、傍晚轉乘與暖色窗光</i></span><span class="mpl-slot">6 首・21 分</span></button><button type="button" class="mpl-row sub" data-mode="pool:metro-motion"><span class="mpl-dot"></span><span class="mpl-txt"><b>捷運流動</b><i>日常通勤、短站距與乾淨俐落的城市節奏</i></span><span class="mpl-slot">7 首・17 分</span></button><div class="mpl-soon-head"><b>準備中 · 2</b><hr></div><div class="mpl-row sub soon"><span class="mpl-dot"></span><span class="mpl-txt"><b>城市雨景</b></span><span class="mpl-slot">尚未上架</span></div><div class="mpl-row sub soon"><span class="mpl-dot"></span><span class="mpl-txt"><b>午夜城市</b></span><span class="mpl-slot">尚未上架</span></div><div class="mpl-fam"><button type="button" class="mpl-row" data-mode="family:open-landscape"><span class="mpl-dot"></span><span class="mpl-txt"><b>開闊風景</b><i class="mpl-fam-sub">海岸、平原與東部縱谷</i></span><span class="mpl-slot">0 可播 · 6 準備中</span></button><button type="button" class="mpl-fam-x" data-fam="open-landscape" aria-expanded="false" aria-label="展開">▸</button></div><div class="mpl-fam"><button type="button" class="mpl-row" data-mode="family:quiet-hours"><span class="mpl-dot"></span><span class="mpl-txt"><b>靜謐時刻</b><i class="mpl-fam-sub">清晨、山霧與黃昏</i></span><span class="mpl-slot">0 可播 · 3 準備中</span></button><button type="button" class="mpl-fam-x" data-fam="quiet-hours" aria-expanded="false" aria-label="展開">▸</button></div><div class="mpl-lone-head"><b>單獨情境池</b><i>不屬任何家族，不參與自動選池</i><hr></div><div class="mpl-row sub soon"><span class="mpl-dot"></span><span class="mpl-txt"><b>山海聚落共創</b></span><span class="mpl-slot">尚未上架</span></div><div class="mpl-row sub soon"><span class="mpl-dot"></span><span class="mpl-txt"><b>鐵道質地配樂</b></span><span class="mpl-slot">尚未上架</span></div><button type="button" class="mpl-row mpl-free" data-mode="free"><span class="mpl-dot"></span><span class="mpl-txt"><b>隨機</b><i>不分情境,整座曲庫隨機播</i></span><span class="mpl-slot">57 首・152 分</span></button></div></div></div><div style="font-size:11px;color:var(--faint);margin-top:8px;line-height:1.7;max-width:100%">手動選定就不再隨列車變動——「為什麼在播這首」那一行負責把這件事說出來。</div></div>
-      <div style="flex:none;width:374px"><div class="mock-note" style="margin:0 0 6px;max-width:100%">E · 手機 374 · 選家族＋三個家族全部展開（最長狀態）</div><div class="takeout-dialog mplm" style="width:374px;max-height:none;"><div class="takeout-head"><h2>配樂情境</h2><button type="button" aria-label="關閉">×</button></div><div class="takeout-body"><div class="mpl-now"><div class="mpl-now-hd"><span class="mpl-now-track">Boulevard Momentum</span><span class="mpl-now-num">3:39</span></div><div class="mpl-now-pool">都會日行</div><div class="mpl-now-why">手動選定家族：城市環線 · 池輪流</div><div class="mpl-now-pending" hidden=""></div><div class="mpl-now-ctl"><button type="button" class="mpl-b1">暫停</button><button type="button" class="mpl-b2">換首</button><input type="range" class="mpl-vol" min="0" max="100" step="1" aria-label="音量"><span class="mpl-now-num">50</span></div></div><div class="mpl-band"><span>通行證使用中 · 16 個情境池，3 個已上架。</span><button type="button" hidden="">看方案</button></div><div><button type="button" class="mpl-hero" data-mode="auto"><span class="mpl-hero-hd"><b>跟著列車</b></span><i>車開到哪、現在幾點就換到對應的配樂</i></button><div class="mpl-fam on"><button type="button" class="mpl-row on" data-mode="family:city-circuit"><span class="mpl-dot"></span><span class="mpl-txt"><b>城市環線</b><i class="mpl-fam-sub">白天到深夜的城市與捷運</i></span><span class="mpl-slot">3 可播 · 2 準備中</span></button><button type="button" class="mpl-fam-x" data-fam="city-circuit" aria-expanded="true" aria-label="收合">▾</button></div><button type="button" class="mpl-row sub" data-mode="pool:city-pop-day"><span class="mpl-dot"></span><span class="mpl-txt"><b>都會日行</b><i>高架捷運、玻璃帷幕與城市白天的向前感</i></span><span class="mpl-slot">9 首・24 分</span></button><button type="button" class="mpl-row sub" data-mode="pool:urban-jazz"><span class="mpl-dot"></span><span class="mpl-txt"><b>都市爵士</b><i>站前咖啡店、傍晚轉乘與暖色窗光</i></span><span class="mpl-slot">6 首・21 分</span></button><button type="button" class="mpl-row sub" data-mode="pool:metro-motion"><span class="mpl-dot"></span><span class="mpl-txt"><b>捷運流動</b><i>日常通勤、短站距與乾淨俐落的城市節奏</i></span><span class="mpl-slot">7 首・17 分</span></button><div class="mpl-soon-head"><b>準備中 · 2</b><hr></div><div class="mpl-row sub soon"><span class="mpl-dot"></span><span class="mpl-txt"><b>城市雨景</b></span><span class="mpl-slot">尚未上架</span></div><div class="mpl-row sub soon"><span class="mpl-dot"></span><span class="mpl-txt"><b>午夜城市</b></span><span class="mpl-slot">尚未上架</span></div><div class="mpl-fam"><button type="button" class="mpl-row" data-mode="family:open-landscape"><span class="mpl-dot"></span><span class="mpl-txt"><b>開闊風景</b><i class="mpl-fam-sub">海岸、平原與東部縱谷</i></span><span class="mpl-slot">0 可播 · 6 準備中</span></button><button type="button" class="mpl-fam-x" data-fam="open-landscape" aria-expanded="true" aria-label="收合">▾</button></div><div class="mpl-soon-head"><b>準備中 · 6</b><hr></div><div class="mpl-row sub soon"><span class="mpl-dot"></span><span class="mpl-txt"><b>北海岸天色</b></span><span class="mpl-slot">尚未上架</span></div><div class="mpl-row sub soon"><span class="mpl-dot"></span><span class="mpl-txt"><b>蘭陽雨原</b></span><span class="mpl-slot">尚未上架</span></div><div class="mpl-row sub soon"><span class="mpl-dot"></span><span class="mpl-txt"><b>花蓮山海</b></span><span class="mpl-slot">尚未上架</span></div><div class="mpl-row sub soon"><span class="mpl-dot"></span><span class="mpl-txt"><b>台東開闊線</b></span><span class="mpl-slot">尚未上架</span></div><div class="mpl-row sub soon"><span class="mpl-dot"></span><span class="mpl-txt"><b>西部平原</b></span><span class="mpl-slot">尚未上架</span></div><div class="mpl-row sub soon"><span class="mpl-dot"></span><span class="mpl-txt"><b>南方日光</b></span><span class="mpl-slot">尚未上架</span></div><div class="mpl-fam"><button type="button" class="mpl-row" data-mode="family:quiet-hours"><span class="mpl-dot"></span><span class="mpl-txt"><b>靜謐時刻</b><i class="mpl-fam-sub">清晨、山霧與黃昏</i></span><span class="mpl-slot">0 可播 · 3 準備中</span></button><button type="button" class="mpl-fam-x" data-fam="quiet-hours" aria-expanded="true" aria-label="收合">▾</button></div><div class="mpl-soon-head"><b>準備中 · 3</b><hr></div><div class="mpl-row sub soon"><span class="mpl-dot"></span><span class="mpl-txt"><b>山霧支線</b></span><span class="mpl-slot">尚未上架</span></div><div class="mpl-row sub soon"><span class="mpl-dot"></span><span class="mpl-txt"><b>晨曦初班</b></span><span class="mpl-slot">尚未上架</span></div><div class="mpl-row sub soon"><span class="mpl-dot"></span><span class="mpl-txt"><b>黃昏斜光</b></span><span class="mpl-slot">尚未上架</span></div><div class="mpl-lone-head"><b>單獨情境池</b><i>不屬任何家族，不參與自動選池</i><hr></div><div class="mpl-row sub soon"><span class="mpl-dot"></span><span class="mpl-txt"><b>山海聚落共創</b></span><span class="mpl-slot">尚未上架</span></div><div class="mpl-row sub soon"><span class="mpl-dot"></span><span class="mpl-txt"><b>鐵道質地配樂</b></span><span class="mpl-slot">尚未上架</span></div><button type="button" class="mpl-row mpl-free" data-mode="free"><span class="mpl-dot"></span><span class="mpl-txt"><b>隨機</b><i>不分情境,整座曲庫隨機播</i></span><span class="mpl-slot">57 首・152 分</span></button></div></div></div><div style="font-size:11px;color:var(--faint);margin-top:8px;line-height:1.7;max-width:100%">整列可點＝選家族(硬條件),右側 44px 才是展開。13 個未上架的收在各家族底部的「準備中」段:降級但看得見。</div></div>
+      <div style="flex:none;width:374px"><div class="mock-note" style="margin:0 0 6px;max-width:100%">E · 手機 374 · 選家族＋三個家族全部展開（最長狀態）</div><div class="takeout-dialog mplm" style="width:374px;max-height:none;"><div class="takeout-head"><h2>配樂情境</h2><button type="button" aria-label="關閉">×</button></div><div class="takeout-body"><div class="mpl-now"><div class="mpl-now-hd"><span class="mpl-now-track">Boulevard Momentum</span><span class="mpl-now-num">3:39</span></div><div class="mpl-now-pool">都會日行</div><div class="mpl-now-why">手動選定家族：城市環線 · 池輪流</div><div class="mpl-now-pending" hidden=""></div><div class="mpl-now-ctl"><button type="button" class="mpl-b1">暫停</button><button type="button" class="mpl-b2">換首</button><input type="range" class="mpl-vol" min="0" max="100" step="1" aria-label="音量"><span class="mpl-now-num">50</span></div></div><div class="mpl-band"><span>通行證使用中 · 16 個情境池，3 個已上架。</span><button type="button" hidden="">看方案</button></div><div><button type="button" class="mpl-hero" data-mode="auto"><span class="mpl-hero-hd"><b>跟著列車</b></span><i>車開到哪、現在幾點就換到對應的配樂</i></button><div class="mpl-fam on"><button type="button" class="mpl-row on" data-mode="family:city-circuit"><span class="mpl-dot"></span><span class="mpl-txt"><b>城市環線</b><i class="mpl-fam-sub">白天到深夜的城市與捷運</i></span><span class="mpl-slot">3 可播 · 2 準備中</span></button><button type="button" class="mpl-fam-x" data-fam="city-circuit" aria-expanded="true" aria-label="收合">▾</button></div><button type="button" class="mpl-row sub" data-mode="pool:city-pop-day"><span class="mpl-dot"></span><span class="mpl-txt"><b>都會日行</b><i>高架捷運、玻璃帷幕與城市白天的向前感</i></span><span class="mpl-slot">9 首・24 分</span></button><button type="button" class="mpl-row sub" data-mode="pool:urban-jazz"><span class="mpl-dot"></span><span class="mpl-txt"><b>都市爵士</b><i>站前咖啡店、傍晚轉乘與暖色窗光</i></span><span class="mpl-slot">6 首・21 分</span></button><button type="button" class="mpl-row sub" data-mode="pool:metro-motion"><span class="mpl-dot"></span><span class="mpl-txt"><b>捷運流動</b><i>日常通勤、短站距與乾淨俐落的城市節奏</i></span><span class="mpl-slot">7 首・17 分</span></button><div class="mpl-soon-head"><b>準備中 · 2</b><hr></div><div class="mpl-row sub soon"><span class="mpl-dot"></span><span class="mpl-txt"><b>城市雨景</b></span><span class="mpl-slot">尚未上架</span></div><div class="mpl-row sub soon"><span class="mpl-dot"></span><span class="mpl-txt"><b>午夜城市</b></span><span class="mpl-slot">尚未上架</span></div><div class="mpl-fam"><button type="button" class="mpl-row" data-mode="family:open-landscape"><span class="mpl-dot"></span><span class="mpl-txt"><b>開闊風景</b><i class="mpl-fam-sub">海岸、平原與東部縱谷</i></span><span class="mpl-slot">0 可播 · 6 準備中</span></button><button type="button" class="mpl-fam-x" data-fam="open-landscape" aria-expanded="true" aria-label="收合">▾</button></div><div class="mpl-soon-head"><b>準備中 · 6</b><hr></div><div class="mpl-row sub soon"><span class="mpl-dot"></span><span class="mpl-txt"><b>北海岸天色</b></span><span class="mpl-slot">尚未上架</span></div><div class="mpl-row sub soon"><span class="mpl-dot"></span><span class="mpl-txt"><b>蘭陽雨原</b></span><span class="mpl-slot">尚未上架</span></div><div class="mpl-row sub soon"><span class="mpl-dot"></span><span class="mpl-txt"><b>花蓮山海</b></span><span class="mpl-slot">尚未上架</span></div><div class="mpl-row sub soon"><span class="mpl-dot"></span><span class="mpl-txt"><b>台東開闊線</b></span><span class="mpl-slot">尚未上架</span></div><div class="mpl-row sub soon"><span class="mpl-dot"></span><span class="mpl-txt"><b>西部平原</b></span><span class="mpl-slot">尚未上架</span></div><div class="mpl-row sub soon"><span class="mpl-dot"></span><span class="mpl-txt"><b>南方日光</b></span><span class="mpl-slot">尚未上架</span></div><div class="mpl-fam"><button type="button" class="mpl-row" data-mode="family:quiet-hours"><span class="mpl-dot"></span><span class="mpl-txt"><b>靜謐時刻</b><i class="mpl-fam-sub">清晨、山霧與黃昏</i></span><span class="mpl-slot">0 可播 · 3 準備中</span></button><button type="button" class="mpl-fam-x" data-fam="quiet-hours" aria-expanded="true" aria-label="收合">▾</button></div><div class="mpl-soon-head"><b>準備中 · 3</b><hr></div><div class="mpl-row sub soon"><span class="mpl-dot"></span><span class="mpl-txt"><b>山霧支線</b></span><span class="mpl-slot">尚未上架</span></div><div class="mpl-row sub soon"><span class="mpl-dot"></span><span class="mpl-txt"><b>晨曦初班</b></span><span class="mpl-slot">尚未上架</span></div><div class="mpl-row sub soon"><span class="mpl-dot"></span><span class="mpl-txt"><b>黃昏斜光</b></span><span class="mpl-slot">尚未上架</span></div><div class="mpl-lone-head"><b>單獨情境池</b><i>不屬任何家族，不參與自動選池</i><hr></div><div class="mpl-row sub soon"><span class="mpl-dot"></span><span class="mpl-txt"><b>山海聚落共創</b></span><span class="mpl-slot">尚未上架</span></div><div class="mpl-row sub soon"><span class="mpl-dot"></span><span class="mpl-txt"><b>鐵道質地配樂</b></span><span class="mpl-slot">尚未上架</span></div><button type="button" class="mpl-row mpl-free" data-mode="free"><span class="mpl-dot"></span><span class="mpl-txt"><b>隨機</b><i>不分情境,整座曲庫隨機播</i></span><span class="mpl-slot">57 首・152 分</span></button></div></div></div><div style="font-size:11px;color:var(--faint);margin-top:8px;line-height:1.7;max-width:100%">整列可點＝選家族(硬條件),右側 44px 才是展開。13 個未上架的收在各家族底部的「準備中」段:降一級顯示、不隱藏。</div></div>
       <div style="flex:none;width:374px"><div class="mock-note" style="margin:0 0 6px;max-width:100%">F · 手機 374 · English（最緊的情形）</div><div class="takeout-dialog mplm" style="width:374px;max-height:none;"><div class="takeout-head"><h2>Soundtrack</h2><button type="button" aria-label="關閉">×</button></div><div class="takeout-body"><div class="mpl-now"><div class="mpl-now-hd"><span class="mpl-now-track">Before the Train-2</span><span class="mpl-now-num">1:08</span></div><div class="mpl-now-pool">Metro in Motion</div><div class="mpl-now-why">Picked automatically: Metro · Daytime</div><div class="mpl-now-pending" hidden=""></div><div class="mpl-now-ctl"><button type="button" class="mpl-b1">Pause</button><button type="button" class="mpl-b2">Next</button><input type="range" class="mpl-vol" min="0" max="100" step="1" aria-label="Volume"><span class="mpl-now-num">50</span></div></div><div class="mpl-band"><span>Pass active · 16 settings, 3 available now.</span><button type="button" hidden="">See plans</button></div><div><button type="button" class="mpl-hero on" data-mode="auto"><span class="mpl-hero-hd"><b>Follow the train</b><span class="mpl-tag">On</span></span><i>The music changes with where the train is and what time it is</i><em>Now picking by Metro · Daytime</em></button><div class="mpl-fam"><button type="button" class="mpl-row" data-mode="family:city-circuit"><span class="mpl-dot"></span><span class="mpl-txt"><b>City Loop</b><i class="mpl-fam-sub">The city and its metro, from daylight to late night</i></span><span class="mpl-slot">3 ready · 2 coming</span></button><button type="button" class="mpl-fam-x" data-fam="city-circuit" aria-expanded="true" aria-label="Collapse">▾</button></div><button type="button" class="mpl-row sub" data-mode="pool:city-pop-day"><span class="mpl-dot"></span><span class="mpl-txt"><b>Daytime Downtown</b><i>Elevated metro, glass facades and the forward pull of a city by day</i></span><span class="mpl-slot">9 tracks・24 min</span></button><button type="button" class="mpl-row sub" data-mode="pool:urban-jazz"><span class="mpl-dot"></span><span class="mpl-txt"><b>Urban Jazz</b><i>Cafés by the station, evening transfers and warm window light</i></span><span class="mpl-slot">6 tracks・21 min</span></button><button type="button" class="mpl-row sub" data-mode="pool:metro-motion"><span class="mpl-dot"></span><span class="mpl-txt"><b>Metro in Motion</b><i>Daily commutes, short hops and a clean city rhythm</i></span><span class="mpl-slot">7 tracks・17 min</span></button><div class="mpl-soon-head"><b>Coming soon · 2</b><hr></div><div class="mpl-row sub soon"><span class="mpl-dot"></span><span class="mpl-txt"><b>Rainy City</b></span><span class="mpl-slot">Coming soon</span></div><div class="mpl-row sub soon"><span class="mpl-dot"></span><span class="mpl-txt"><b>Midnight City</b></span><span class="mpl-slot">Coming soon</span></div><div class="mpl-fam"><button type="button" class="mpl-row" data-mode="family:open-landscape"><span class="mpl-dot"></span><span class="mpl-txt"><b>Open Country</b><i class="mpl-fam-sub">Coastlines, plains and the eastern rift valley</i></span><span class="mpl-slot">0 ready · 6 coming</span></button><button type="button" class="mpl-fam-x" data-fam="open-landscape" aria-expanded="false" aria-label="Expand">▸</button></div><div class="mpl-fam"><button type="button" class="mpl-row" data-mode="family:quiet-hours"><span class="mpl-dot"></span><span class="mpl-txt"><b>Quiet Hours</b><i class="mpl-fam-sub">Early mornings, mountain mist and dusk</i></span><span class="mpl-slot">0 ready · 3 coming</span></button><button type="button" class="mpl-fam-x" data-fam="quiet-hours" aria-expanded="false" aria-label="Expand">▸</button></div><div class="mpl-lone-head"><b>Standalone settings</b><i>Not in any family, never picked automatically</i><hr></div><div class="mpl-row sub soon"><span class="mpl-dot"></span><span class="mpl-txt"><b>Island Community Sessions</b></span><span class="mpl-slot">Coming soon</span></div><div class="mpl-row sub soon"><span class="mpl-dot"></span><span class="mpl-txt"><b>Rail Texture Score</b></span><span class="mpl-slot">Coming soon</span></div><button type="button" class="mpl-row mpl-free" data-mode="free"><span class="mpl-dot"></span><span class="mpl-txt"><b>Shuffle</b><i>Shuffles the whole library, whatever the setting</i></span><span class="mpl-slot">57 tracks・152 min</span></button></div></div></div><div style="font-size:11px;color:var(--faint);margin-top:8px;line-height:1.7;max-width:100%">英文的家族副標會折兩行,截兩行不截字;狀態槽不縮。三語都要塞得下是硬條件。</div></div>
     </div>
   </div>
@@ -5490,7 +5490,7 @@
         <tr><td>3 三等</td><td class="num">2.7 / 1.4</td><td>#5B78A0 α.8</td><td>500 11px</td><td class="num">12</td></tr>
         <tr><td>4 簡易</td><td class="num">2 / 1.2</td><td>#8AA0C0 α.8</td><td>500 10.5px</td><td class="num">13</td></tr>
       </table>
-      <div class="spm-row" style="margin-top:8px">tier 0/1 填色恆＝<span class="val">#FFFDF6</span>；tier 2–4＝pal().stnFill（隨主題）。站名畫軌道側邊：法線偏移 <span class="val">18px</span>（分級站 r+16）、字配底圖色 halo、標籤互撞＝跳過不畫、<b>禁止對列車避讓</b>（歷史退件）。</div>
+      <div class="spm-row" style="margin-top:8px">tier 0/1 填色恆＝<span class="val">#FFFDF6</span>；tier 2–4＝pal().stnFill（隨主題）。站名畫軌道側邊：法線偏移 <span class="val">18px</span>（分級站 r+16）、字配底圖色 halo、標籤互撞＝跳過不畫、<b>禁止對列車避讓</b>（列車永遠畫在真實位置）。</div>
     </div>
 
     <div class="spm" style="width:470px">

@@ -60,7 +60,7 @@ const attrSource = readFileSync(resolve(here, '../ios/App/App/RailFollowAttribut
 // 同上：等站卡的保鮮期常數住在雙 target 的 TraWaitAttributes.swift，是「設 staleDate 的那側」
 // 與「畫過期樣式的那側」唯一的共同祖先。
 const traAttrSource = readFileSync(resolve(here, '../ios/App/App/TraWaitAttributes.swift'), 'utf8');
-// 等車卡進站軌道（B 方案）的上一站查表住在雙 target 的 MetroWidgetShared.swift：抽出出貨用的那一份，
+// 等車卡進站軌道的上一站查表住在雙 target 的 MetroWidgetShared.swift：抽出出貨用的那一份，
 // 餵【真的】MetroWidgetData.json（複製到執行檔旁邊，裸執行檔的 Bundle.main 就是那個目錄），
 // 驗到的是目錄資料＋查表規則本身，不是 harness 手捏的上一站。
 const sharedSource = readFileSync(resolve(here, '../ios/App/App/MetroWidgetShared.swift'), 'utf8');
@@ -173,7 +173,7 @@ staticProgressGate();
  * 那個建構子在【組 ContentState 的當下】把秒數折成 `.seconds(52)`／`.minutes(3)` 這種
  * 算好的死數字，而 Live Activity 的視圖只在收到新 ContentState 時重繪一次 ⇒ 兩次推播之間
  * 畫面上那個數字不會變。08-17 小工具改版就是這樣讓跟車卡與等車卡雙雙凍住的
- * （使用者實機回報：鎖屏「16 分」整段不動，旁邊的進度條卻爬到 90%）。
+ * （實機上出現過：鎖屏「16 分」整段不動，旁邊的進度條卻爬到 90%）。
  * LA 一律走 `.until(絕對到站時刻)` 讓系統自己重排重繪。
  *
  * 🔴 這道 gate 補的是值層 gate 照不到的洞：值層只驗得到 fixture 走過的那幾條分支，
@@ -433,7 +433,7 @@ let followWorst = RailFollowDisplay.make(
     arrivalDate: nowSec + 23 * 60, departedDate: nowSec - 11 * 60,
     delaySec: 1_260, stopping: false, notice: nil, isStale: false, now: now)
 
-// ── 跟車卡：進站軌道（B 方案，docs/follow-card-track-20260923.md 三）─────────────
+// ── 跟車卡：進站軌道（docs/follow-card-track-20260923.md 三）─────────────
 // 台鐵 420 次自強：臺北 → 板橋，發車 nowSec-7 分、到站 minutesToArrive 分後。
 // tickMinutesFromNow：伺服器/前景這一發送出的時刻，用「距現在幾分」表示（可為 nil＝還沒收過帶
 // tick 的推播）。與 arrivalDate／departedDate 同一個座標系，方便手算行駛比例核對 gate。
@@ -523,7 +523,7 @@ let waitWorst = MetroWaitDisplay.make(
     crowd: [3, 3, 2, 2, 3, 3], dataAt: nowSec - 30, endAt: nowSec + 45 * 60,
     notice: "板南線板橋站往南港方向延誤約 5 分", pushed: true, isStale: false, now: now)
 
-// ── 捷運等車卡：進站軌道（B 方案）────────────────────────────────────────────
+// ── 捷運等車卡：進站軌道 ────────────────────────────────────────────
 // 上一站一律由【出貨的查表】對【真的目錄】算（見 hopGate），不在這裡手捏。
 let catalog = MetroWidgetCatalog.shared
 let hopTaipei = catalog.waitHop(sys: "trtc", station: "台北車站", dest: "象山")
@@ -602,7 +602,7 @@ let traWorst = TraWaitDisplay.make(
     notice: "臺鐵即時資料中斷，誤點分鐘為最後一次官方更新", pushed: true,
     isStale: false, now: traNow)
 
-// ── 臺鐵等站卡：進站軌道（B 方案）─────────────────────────────────────────
+// ── 臺鐵等站卡：進站軌道 ─────────────────────────────────────────
 // 設計稿那一班：自強 172，板橋 21:19 開 → 臺北 表定 21:26、官方誤點 1 分。
 // 🔴 時刻同樣寫死成具體的日期時間：期望的車位＝(tick − 21:20)／(21:27 − 21:20)，
 //    這個比例在 gate 裡用手算的分鐘數比，不拿實作自己的算式比。
@@ -723,7 +723,7 @@ func inkBounds(_ png: Data, scale: CGFloat) -> (x0: CGFloat, x1: CGFloat, y0: CG
 ///   144 points (≈192 px)"
 ///
 /// 🔴 這兩個數字是外部常數，不是我手打的門檻——超過就是【使用者會看到上下緣被切掉】，
-///    而不是「稍微擠了一點」。2026-08-17 使用者回報「通知卡片邊緣被卡掉了」的根因正是
+///    而不是「稍微擠了一點」。2026-08-17 通知卡片邊緣被系統截掉的症狀，根因正是
 ///    等車卡自然高度 198–216pt、跟車卡 162–180pt，全部超過 160。
 ///    這支腳本以前【結構上照不到】：算繪時 height 傳 nil（自然高度、想長多高長多高），
 ///    而破版判定只比左右兩邊，上下一次都沒驗（原註解卻寫著「只驗左右與上下有沒有貼邊」）。
@@ -731,7 +731,7 @@ let lockScreenMaxHeight: CGFloat = 160
 let islandExpandedMaxHeight: CGFloat = 144
 /// 🔴 動態島展開的【下半】實測預算——上面那個 144 是整張展開版面的外部常數，但這支腳本只算繪下半，
 ///    而下半的上方還壓著鏡頭帶（leading／trailing）。只拿下半去比 144 結構上照不到：
-///    2026-09-23 台鐵等站卡 B 在這裡量到下半 125pt、144 gate 全綠，模擬器（iPhone 17 Pro、iOS 26.5）
+///    2026-09-23 台鐵等站卡進站軌道版面在這裡量到下半 125pt、144 gate 全綠，模擬器（iPhone 17 Pro、iOS 26.5）
 ///    上卻把最底那列（官方值＋結束鈕）切掉一半。同一張截圖逐列量像素：島內容在距島頂約 133pt 被裁、
 ///    下半從約 42pt 開始 ⇒ 約 91pt；取 86 留 5pt 餘裕。改版後（下半 83pt）同一台模擬器實拍，
 ///    最底一列完整、墨跡到距島頂約 137pt。量法見 TraWaitIslandBottom 的註解。
@@ -1155,8 +1155,8 @@ func traClockHHmm(_ epoch: Double) -> String {
 
 /// 🔴 gate:等站卡的主角時刻 = 表定 + 官方誤點,而且【只】等於那個。
 ///
-/// 這是整張卡的精度紅線落成判準(memory: tra-thsr-no-official-eta、使用者長期裁示
-/// 「有資訊就一定要對」)。兩個輸入都是官方值 ⇒ 相加可以顯示;再往下一層換算成
+/// 這是整張卡的精度紅線落成判準(memory: tra-thsr-no-official-eta,這是規則,
+/// 不是假設)。兩個輸入都是官方值 ⇒ 相加可以顯示;再往下一層換算成
 /// 「還有幾分幾秒」就是製造官方沒有的精度。
 func traPrecisionGate() {
     func fail(_ msg: String) -> Never {
@@ -1194,7 +1194,7 @@ func traPrecisionGate() {
         }
         if d.delayText != wantDelayText {
             fail("「\\(name)」的誤點句是「\\(d.delayText)」,應該是「\\(wantDelayText)」"
-               + "——官方值一律照抄,不夾正、不合併")
+               + "——誤點句必須是官方原值,不夾正、不合併")
         }
         if d.delayTone != wantTone {
             fail("「\\(name)」的語氣判錯了(nil 與 0 是兩件事:沒有資訊 vs 官方說準點)")
@@ -1256,7 +1256,7 @@ func traPrecisionGate() {
 /// 🔴 gate(精度反向對照):等站卡渲染出來的每一個字,都不准長得像倒數,也不准隨時間變。
 ///
 /// traPrecisionGate() 驗的是「主角那個值對不對」,這一道驗的是「整張卡有沒有別的地方
-/// 偷偷畫了秒級精度」——派工的原話是「卡片渲染輸出絕不出現 mm:ss 倒數形式(正則掃)」。
+/// 偷偷畫了秒級精度」——規格是渲染輸出裡不得有任何 mm:ss 形式的倒數(以正則掃描)。
 /// 判準有兩半,缺一不可:
 ///   · 靜態掃:禁字(秒／還有／剩／倒數)＋含冒號的欄位必須是 24 小時制鐘面。
 ///   · 動態掃:同一份輸入在兩個不同的 now 算出來,每一個字串都必須【逐字相同】。
@@ -1777,7 +1777,7 @@ struct Harness {
         _ = render(RailFollowLockView(display: followArriving), width: 360, maxHeight: lockScreenMaxHeight, mono: true,
                    to: outDir + "/la-follow-arriving-mono.png")
 
-        // 跟車卡・進站軌道（B）：淺色／深色 × 行駛中／即將進站／停靠中／剛發車 × 台鐵（emu3000）／高鐵（700t）
+        // 跟車卡・進站軌道：淺色／深色 × 行駛中／即將進站／停靠中／剛發車 × 台鐵（emu3000）／高鐵（700t）
         for dark in [true, false] {
             let tag = dark ? "dark" : "light"
             for (name, d) in [("running", followBRunning), ("arriving", followBArriving),
@@ -1825,7 +1825,7 @@ struct Harness {
         _ = render(MetroWaitLockView(display: waitWorst), width: 300, maxHeight: lockScreenMaxHeight,
                    to: outDir + "/la-wait-worst-narrow300.png")
 
-        // 捷運候車・進站軌道（B）：淺色／深色 × 行駛中／停上一站／還沒到上一站／進站／沒接上推播（行駛・進站）／過期
+        // 捷運候車・進站軌道：淺色／深色 × 行駛中／停上一站／還沒到上一站／進站／沒接上推播（行駛・進站）／過期
         for dark in [true, false] {
             let tag = dark ? "dark" : "light"
             for (name, d) in [("running", waitBRunning), ("atprev", waitBAtPrev), ("far", waitBFar),
@@ -1860,7 +1860,7 @@ struct Harness {
         _ = render(TraWaitLockView(display: traLate), width: 360, maxHeight: lockScreenMaxHeight, mono: true,
                    to: outDir + "/la-trawait-late-mono.png")
 
-        // 臺鐵等站・進站軌道（B）：淺色／深色 × 行駛中／還沒到上一站／車應已到／沒接上推播（行駛・到站）／沒有官方誤點
+        // 臺鐵等站・進站軌道：淺色／深色 × 行駛中／還沒到上一站／車應已到／沒接上推播（行駛・到站）／沒有官方誤點
         for dark in [true, false] {
             let tag = dark ? "dark" : "light"
             for (name, d) in [("running", traBRunning), ("far", traBFar), ("arrived", traBArrived),
@@ -1883,7 +1883,7 @@ struct Harness {
                    to: outDir + "/island-follow-bottom.png")
         _ = render(RailFollowIslandBottom(display: followStopping), width: 360, maxHeight: islandExpandedMaxHeight, inset: 21.5,
                    to: outDir + "/island-follow-bottom-stopping.png")
-        // 跟車卡・進站軌道（B）動態島：四態 × 台鐵／高鐵。
+        // 跟車卡・進站軌道動態島：四態 × 台鐵／高鐵。
         for (name, d) in [("running", followBRunning), ("arriving", followBArriving),
                           ("stopping", followBStopping), ("departed", followBJustDeparted)] {
             _ = render(RailFollowIslandBottom(display: d), width: 360, maxHeight: islandExpandedMaxHeight, inset: 21.5,

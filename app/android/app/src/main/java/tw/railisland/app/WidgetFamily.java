@@ -9,8 +9,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 小／中／大三種尺寸各自一個 provider（選單一項一張，跟 iOS 藝廊一對一；使用者 2026-09-02 裁示
- * 「種類要跟 iOS 一樣多」），邏輯全在「中」那個類別，小／大只是空殼子類。這裡放兩件跨類別要一致的事：
+ * 小／中／大三種尺寸各自一個 provider（選單一項一張，跟 iOS 藝廊一對一，兩邊的小工具種類數量相同），
+ * 邏輯全在「中」那個類別，小／大只是空殼子類。這裡放兩件跨類別要一致的事：
  *  (1) 同一家族的 id 要三個 provider 一起數——只數本類會漏掉小／大兩種，免費站名額與 updateAll 都會漏；
  *  (2) API 31 以下沒有 setSizeSpecificViewLayouts，要靠「這一格綁的是哪個 provider」挑版面。
  */

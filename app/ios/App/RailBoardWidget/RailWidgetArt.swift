@@ -6,11 +6,11 @@ import AppKit
 import UIKit
 #endif
 
-// 小工具背景：A 車模頭帶／C 小世界場景／素色。
+// 小工具背景：車模頭帶／小世界場景／素色。
 //
-// 2026-09-23 使用者裁示：「就用 A 跟 C，開始實作到 App 小工具」「三題都照建議」——
-//  1. 小工具設定加「背景」：車模（A，預設）／場景（C）／素色（改版前的樣子）
-//  2. A 的車模跟著【下一班的車種】換；小工具資料只有車種（區間車／自強／區間快／莒光/復興／
+// 規格摘要（2026-09-23 起）：
+//  1. 小工具設定加「背景」：車模（預設）／場景／素色（改版前的樣子）
+//  2. 車模跟著【下一班的車種】換；小工具資料只有車種（區間車／自強／區間快／莒光/復興／
 //     其他／高鐵），沒有車型欄位 ⇒ 每個車種一台代表車
 //  3. 捷運卡不提供「場景」（現有三個場景都是台鐵題材）
 // 定稿：~/Desktop/軌島小工具背景方案/小工具背景方案.html（Artifact 第 2 版）。
@@ -42,7 +42,7 @@ extension EnvironmentValues {
     }
 
     /// 系統這一次有沒有畫出 containerBackground。
-    /// 🔴 著色（accented）模式、StandBy 等情境系統會把整張背景拿掉，C 的場景跟著消失——
+    /// 🔴 著色（accented）模式、StandBy 等情境系統會把整張背景拿掉，場景背景跟著消失——
     ///    這時版面要退回一般版面，不能留一個「給場景看的空洞」。出貨路徑由根 View 從
     ///    `\.showsWidgetContainerBackground` 抄過來（那個值對外唯讀，harness 設不了，
     ///    跟 railFamilyOverride 同一個理由）；單色模式另外由 railMonochrome 蓋掉。
@@ -126,7 +126,7 @@ enum RailWidgetArt {
         family == .systemLarge ? 150 : 96
     }
 
-    /// A 頭帶的高度（從卡片上緣算起，設計基準 pt）。小卡沒有頭帶，車停在右下角。
+    /// 車模頭帶的高度（從卡片上緣算起，設計基準 pt）。小卡沒有頭帶，車停在右下角。
     static func bandHeight(_ family: WidgetFamily) -> CGFloat {
         family == .systemLarge ? 86 : 60
     }
@@ -154,7 +154,7 @@ enum RailWidgetArt {
 
 // MARK: - 站名牌資料
 
-/// C 左上角琺瑯站名牌要寫什麼。
+/// 場景左上角琺瑯站名牌要寫什麼。
 struct RailPlateInfo {
     enum Band {
         /// 鄰站帶「◀ 萬華　松山 ▶」：左＝往南那一側的鄰站，右＝往北。某一側沒有就只寫一側。
@@ -276,7 +276,7 @@ struct RailCardBackdrop: View {
 
 // MARK: - 琺瑯站名牌
 
-/// C 左上角的站名牌。App 頂端站名牌（網站 `.plate`）同一組色票：
+/// 場景左上角的站名牌。App 頂端站名牌（網站 `.plate`）同一組色票：
 /// 白底深藍大字＋框、下緣一條藏青色鄰站帶。
 ///
 /// 🔴 高度是固定的（每一段都用 frame 夾住），版面預算才算得準：`height(_:band:scale:)`
@@ -433,12 +433,12 @@ struct RailStationPlate: View {
 // MARK: - 小工具
 
 /// 0xRRGGBB → Color。這一層的色票是設計稿的固定值（站名牌、頭帶），不是資料驅動的路線色／車種色。
-// MARK: - A 頭帶的內容層
+// MARK: - 車模頭帶的內容層
 
 /// 站名（中卡 20／大卡 24 粗體）＋更新時間疊兩行靠左，右邊停下一班的代表車、壓在頭帶下緣上。
 /// 頭帶底色畫在 containerBackground（RailCardBackdrop），高度同一個常數 bandHeight。
 /// 台鐵看板與捷運看板共用這一份，兩張卡的頭帶才不會各自漂。
-/// 車的位置照 mockup A 大卡（right:18px; bottom:4px; 118×77），中卡等比縮成 84×56。
+/// 車的位置照 mockup 的車模大卡（right:18px; bottom:4px; 118×77），中卡等比縮成 84×56。
 struct RailModelBand<Stamp: View>: View {
     let title: String
     /// nil ＝認不出下一班是哪一台（轉乘站分不出線）⇒ 頭帶照畫、不畫車，版面不跳。
@@ -471,7 +471,7 @@ struct RailModelBand<Stamp: View>: View {
 
 // MARK: - 場景上的小字墊底
 
-/// C 場景上的小字（班表警示、中卡的更新時間）墊一塊半透明底：場景是一整張圖，
+/// 場景背景上的小字（班表警示、中卡的更新時間）墊一塊半透明底：場景是一整張圖，
 /// 11pt 的橘字／灰字直接壓在樹叢與屋頂上讀不出來（算繪 harness 第一輪就看到）。
 /// 色票照 mockup 的 `.pill`：淺 rgba(255,255,255,.8)、深 rgba(28,28,30,.72)。
 /// 🔴 只有場景真的畫出來時才墊：著色模式與系統拿掉背景時，這塊底會被算成一塊實心色塊。

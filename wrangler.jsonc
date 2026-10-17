@@ -45,7 +45,7 @@
   //
   // 🔴 這顆 DO 的落點【只能】用 apac-ne(程式碼裡的 TRTC_POLLER_HINT)。實測(2026-09-02,各 8 顆新 DO):
   //    apac-ne → NRT×4/KIX×3/ICN×1、香港 0;apac-se → 香港 7/8;apac → 香港 3/8;無提示 → 香港 4/8。
-  //    使用者長期裁示「雲端 region 排除中國與香港」,所以另外三種一律不合格。
+  //    落點規則是排除中國與香港,所以另外三種一律不合格。
   //    位置在建立當下決定且之後不會搬,但提示是 best effort 不是保證 ⇒ worker.js 每一輪都把 DO
   //    自報的 colo 帶回 /api/trtc-live 的 cd.poller,落在禁區就退回各 colo 直打。
   // new_sqlite_classes(不是 new_classes):本帳號已不允許新建 key-value 型 DO 命名空間。
@@ -94,8 +94,8 @@
   //   ・而且不可能完成——coverageOf() 第一行就 `if (a.name === b.name) continue`(worker.js:1278),
   //     dwell 段永遠進不了 coverage,sample_count 不會加、點數不給、認領不會關
   // 誤點統計這邊的代價只有「今天沒有第二次補抓」,09:15 那發是冪等且已經跑過,不影響資料。
-  // 2026-07-29 兩洞已在本機修好並驗收；12:15 cron 仍是 owner 刻意停用。是否恢復只由 owner
-  // 決定，agent 不得自行把 "15 4 * * *" 加回來或部署 triggers。
+  // 2026-07-29 兩洞已在本機修好並驗收；12:15 cron 仍維持停用，
+  // 不得自行把 "15 4 * * *" 加回來或部署 triggers。
   "triggers": {
     "crons": ["* * * * *", "15 1 * * *"]
   },

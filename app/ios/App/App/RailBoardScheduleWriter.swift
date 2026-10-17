@@ -116,7 +116,7 @@ enum RailBoardScheduleWriter {
             if input.id == "tra", let onlineTra { document = onlineTra.document }
             // 台鐵：線上快取與打包那份取窗較新的。快取放 Library/Caches，更新 App 不會清；
             // 離線更新 App 時，剛打包進來的新窗不能輸給一份還「涵蓋今天」的舊快取
-            // （2026-09-21 使用者裝了 1.6.8 仍看到上一個窗）。其他系統照舊只有打包那份。
+            // （1.6.8 裝上去之後仍看到上一個窗）。其他系統照舊只有打包那份。
             if document == nil || input.id == "tra",
                let inputURL = Bundle.main.url(forResource: input.resource, withExtension: nil),
                let data = try? Data(contentsOf: inputURL),
@@ -146,7 +146,7 @@ enum RailBoardScheduleWriter {
             // 🔴 共站【不再】走 buildPlaceBoards：那是幾何管線（把座標投影到軌道、算幾點跨過
             //    那個里程），對「我的地點」是對的，對共站是錯的——台北車站有月台，車會停，
             //    而幾何時刻不含停靠時間，畫面上還得寫「經過」才對得上資料，等於告訴使用者
-            //    這班車不停（2026-08-17 使用者在真機回報）。共站改成記下成員站，讓看板端
+            //    這班車不停（真機上共站的每一列都這樣）。共站改成記下成員站，讓看板端
             //    直接讀那些站的官方發車看板。
             try publish(
                 builder: builder,
@@ -253,7 +253,7 @@ enum RailBoardScheduleWriter {
     /// 🔴 什麼時候該重抓：快取涵蓋今天**且 `refreshAheadDays` 天後仍在窗內**才直接用。
     /// 原本的判準是「涵蓋今天就用」——而小工具在窗剩 ≤3 天時就會寫「班表只到 X · 請更新軌島」
     /// （`RailBoardData` 的 `daysRemaining <= 3`），於是每個 14 天窗的最後 3 天，小工具一邊叫人
-    /// 更新、這裡一邊拒絕去抓網站上早就換好的新窗（2026-09-21 使用者第 N 次在真機看到）。
+    /// 更新、這裡一邊拒絕去抓網站上早就換好的新窗（真機上反覆出現的矛盾畫面）。
     /// 兩邊必須共用同一個門檻：提醒出現的那一天，就是這裡開始抓的那一天。
     private static let refreshAheadDays = 3
 
@@ -407,8 +407,8 @@ enum RailBoardScheduleWriter {
     /// 但那要靠人記得。改成把版本寫在格式旁邊，改格式的那一手就會看到它。
     ///
     /// 2＝加入 `PlaceBoardPass.dir` 與 composite-board（2026-07-31）。
-    /// 3＝共站改吃官方發車看板：`composites.json` 加 `sts`，`composite-board/` 整個廢除
-    ///    （2026-08-17，使用者在真機看到共站寫「經過」）。
+    /// 3＝共站改以官方發車看板為資料來源：`composites.json` 加 `sts`，`composite-board/` 整個廢除
+    ///    （2026-08-17，原因是真機上共站的每一列都寫「經過」）。
     private static let boardFormatVersion = 3
 
     private static func shouldRebuild(

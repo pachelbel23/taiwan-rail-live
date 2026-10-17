@@ -186,7 +186,7 @@ func precisionOf(_ sys: String) -> String {
 
 // 🔴 sys 一定要帶:每一列的線色與線名是 MetroRowView 用 sys＋station 呼 rowLine(...) 算的,
 //    entry.sys 是 nil 就等於整張卡的逐列線點【一顆都不會畫】——算繪出來的圖會漂亮地通過
-//    肉眼檢查,卻完全照不到線色這件事(2026-08-15 補:這正是使用者回報的那個缺陷所在的圖層)。
+//    肉眼檢查,卻完全照不到線色這件事(2026-08-15 補:這正是當時那個缺陷所在的圖層)。
 func makeEntry(sys: String, station: String, snapshot: MetroSnapshot?, now: Double) -> MetroEntry {
     MetroEntry(date: Date(), title: station,
                lineColor: MetroPalette.color(sys: sys, station: station),
@@ -197,7 +197,7 @@ func makeEntry(sys: String, station: String, snapshot: MetroSnapshot?, now: Doub
 
 // 🔴 算繪專用的整體時間平移:Text(timerInterval:) 讀的是【真實牆鐘】,凍結樣本的 eta 全在
 //    過去 ⇒ 倒數一律顯示 0:00——那是倒數的【最窄形】,「12:44」這種寬形的溢版風險完全
-//    驗不到(2026-08-14 主對話收貨時抓到的盲區)。修法:把每列 etaEpoch 統一加上
+//    驗不到(2026-08-14 驗收時發現的盲區)。修法:把每列 etaEpoch 統一加上
 //    (真實現在 − 樣本 now),等於把整份快照平移到現在——每列的【剩餘秒數】與樣本擷取
 //    當下逐秒相同,不是手捏 rows;dataAt 保持樣本值,「HH:mm 更新」照樣顯示資料時刻。
 func shiftedToWallClock(_ s: MetroSnapshot, sampleNow: Double) -> MetroSnapshot {
@@ -520,7 +520,7 @@ func checkInk(_ png: Data, name: String, width: CGFloat, height: CGFloat) {
     print("寫出 \\(name)（\\(Int(width))×\\(Int(height)) pt @3x,墨跡 y \\(Int(b.y0))–\\(Int(b.y1))/\\(Int(height - 16))）")
 }
 
-// ── 車模背景（2026-09-23 裁示：捷運卡只有車模／素色）──────────────────────────
+// ── 車模背景（捷運卡只有車模／素色）──────────────────────────────────────────
 let artDirectory = ${JSON.stringify(resolve(here, '../ios/App/RailBoardWidget/Assets.xcassets'))}
 
 func withModel(_ e: MetroEntry) -> MetroEntry { var c = e; c.backdrop = .model; return c }
@@ -633,7 +633,7 @@ struct Harness {
         // 深色（非 mono）：桌面深色模式的實際長相,送審圖合成用。
         render(MetroBoardView(entry: taipeiEntry), family: .systemMedium,
                width: 364, height: 170, scheme: .dark, to: outDir + "/metro-medium-dark.png")
-        // 送審圖用：使用者那台是 402pt 機型,量到的卡片實際是 350×164pt。
+        // 送審圖用：402pt 寬機型實測,量到的卡片實際是 350×164pt。
         // 拿 364pt 的圖去縮會讓字級整體小 4%,直接照那台的點數渲染才是它真的長相。
         // 🔴 用忠孝復興不用台北車站：同一張送審圖裡下面那張混合大卡已經是台北車站,
         //    兩張卡同一站會看起來像同一個小工具擺兩次;忠孝復興還順便帶到轉乘站兩條線。

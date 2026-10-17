@@ -111,13 +111,13 @@ check('實際抽取前端查表函式：臺北跨系統與三貂嶺同系統支�
   const sandiaolingRoutes = Array.from(context.__transferApi.transferRoutesForStop({ sys: 'tra_sched', stops: sandiaolingStops }, sandiaolingStops[1]), route => route.key);
   assert.deepEqual(sandiaolingRoutes, ['TRA:PX']);
 
-  // ── 落點 A 用的 transferRoutesAtStation：只列別的系統（同系統的線由看板自己的班次清單回答）──
+  // ── 看板站況區用的 transferRoutesAtStation：只列別的系統（同系統的線由看板自己的班次清單回答）──
   const atStation = key => new Set(context.__transferApi.transferRoutesAtStation(stationStop(key)).map(route => route.key));
   assert.deepEqual(atStation('TRA:1000'), new Set(['THSR:THSR', 'TRTC:BL', 'TRTC:R', 'TYMC:A']), '台鐵台北看板應列四條跨系統');
   // 同一個站體、換成北捷節點：兩條北捷線都要被扣掉（板南線與淡水信義線都在該站的班次清單裡）
   assert.deepEqual(atStation('TRTC:BL12'), new Set(['THSR:THSR', 'TRA:WL', 'TYMC:A']), '北捷台北看板不該再列北捷自己的線');
 
-  // ── 落點 B（捷運）用的 transferRoutesForMetro：只扣「正在搭的那條線」，同系統其他線是有效轉乘 ──
+  // ── 跟隨卡的「下一站」那一列（捷運）用的 transferRoutesForMetro：只扣「正在搭的那條線」，同系統其他線是有效轉乘 ──
   // 這是與看板相反的取捨：人在板南線車上時，淡水信義線正是他要的答案。
   const forMetro = ln => new Set(context.__transferApi.transferRoutesForMetro(ln, stationStop('TRTC:BL12')).map(route => route.key));
   // 兩個排除分支各自要有專屬判準，否則其中一支壞掉會被另一支蓋住：先驗只給線名、再驗只給 id。
@@ -229,14 +229,14 @@ check('台鐵異名共構與同系統多線都已寫進轉乘表', () => {
 });
 
 check('兩個落點的接線都在，舊落點已拆乾淨', () => {
-  // 落點 A：看板站況區。stnMetaHtml 是兩條看板路徑（台鐵/高鐵、捷運/林鐵）共用的同一個函式，
+  // 看板站況區。stnMetaHtml 是兩條看板路徑（台鐵/高鐵、捷運/林鐵）共用的同一個函式，
   // 所以只要驗它有叫 transferMetaHtml，四個系統就都吃得到。
   // omitMap 是同一站資訊組裝器的顯示選項，不改第一個 st 參數與轉乘標的接線語意。
   assert.match(html, /function stnMetaHtml\(st(?:,\s*[^)]*)?\)[\s\S]{0,900}?transferMetaHtml\(st\)/);
   assert.equal((html.match(/stnMetaHtml\(st\)/g) || []).length, 2, '兩條完整站況看板呼叫路徑變了，共用前提要重新確認');
   assert.equal((html.match(/stnMetaHtml\(st,\s*true\)/g) || []).length, 1, '原生精簡看板的 omitMap 呼叫路徑變了');
   assert.match(html, /\.board \.stnMeta \.xfer \{/);
-  // 落點 B：兩張跟隨卡的「下一站」各有一顆標，且都真的被填。
+  // 跟隨卡的「下一站」那一列：兩張跟隨卡各有一顆標，且都真的被填。
   for (const id of ['fpXfer', 'fcXfer']) {
     assert.match(html, new RegExp(`<span class="xfer-tag" id="${id}" hidden></span>`), `${id} 靜態節點不見了`);
     assert.match(html, new RegExp(`setTransferTag\\('${id}'`), `${id} 沒有任何填值端`);

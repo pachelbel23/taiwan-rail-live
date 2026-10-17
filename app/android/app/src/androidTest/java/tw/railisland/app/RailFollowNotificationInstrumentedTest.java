@@ -100,7 +100,7 @@ public final class RailFollowNotificationInstrumentedTest {
             Math.round(state.optDouble("arrivalAt")));
     }
 
-    // ── 進站軌道（B 方案）純函式：不需要 SDK 36，API 35 也驗得到。 ──────────────────
+    // ── 進站軌道純函式：不需要 SDK 36，API 35 也驗得到。 ──────────────────
 
     @Test
     public void followCarPositionCoversRunningStoppingAndNoCarCases() {
@@ -200,7 +200,7 @@ public final class RailFollowNotificationInstrumentedTest {
         }
     }
 
-    // ── 進站軌道（B 方案）Android 16 真機 gate：API 35 上結構性只能 Assume-skip，
+    // ── 進站軌道 Android 16 真機 gate：API 35 上結構性只能 Assume-skip，
     //    同檔既有的 postTrack／postTraTrack 系列（RailWaitNotificationInstrumentedTest）也是同樣待遇；
     //    上面的純函式測試才是這台模擬器驗得到的部分。 ──────────────────
 

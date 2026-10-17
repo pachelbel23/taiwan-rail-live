@@ -283,18 +283,18 @@ UPDATE_BASELINE=1 DATES=all node scripts/verify_tra_overlap_families.mjs   # 看
 
 ### 9.8 F12 時間模型 ＋ F9 資料補齊：整合落地（2026-09-14 傍晚，同一分支；未併 main、未部署）
 
-**使用者裁示（逐字）**
+**本批採用的規則**
 
-- 「當然是你把資料有的都補上去」「交通部都有資料，那我們就應該知道有，怎麼會是當作沒有核實就不畫？」
+- 路網以資料來源為準，已有記載的軌道全部補進，不另設額外門檻。
   ⇒ OSM／TDX 有的軌道都進路網，TDX 官方逐股幾何算核實來源。
-- 「不得把施工線、地面保存線、未核實用途的 yard 隨手當現役客運線」。
-- 「位置不用準，時間一定要準：站牌時間完全照官方」。
+- 現役客運線只收營運中的線；施工中、僅保存於地面、或用途未經核實的 yard 一律不算。
+- 取捨原則：站牌時間以官方為準，位置容許近似。
 - 不得靠移動畫面上的列車、隱藏行進列車、縮短車身、放鬆基線或拉高 `BLOCK_CAP_SEC=120` 消除紅燈；
   **不得為了讓閘門變綠改判準、基線或門檻**。
 
-同日稍後使用者提供台鐵官方《路線修築沿革》，一度裁示「南迴線沒有添築雙線紀錄 ⇒ 改回單線」；
+同日稍後取得台鐵官方《路線修築沿革》，一度據此把南迴線改判為單線（理由：沿革表沒有添築雙線紀錄）；
 獨立核實（`worktrees/f9-prep-0914/output/audit-0914/double-track-truth.md`）指出**沿革表只記施工案，
-沒列不等於單線**（沙崙線 2011 建成即雙線、整條表沒列），裁示再訂正為「6 對全部保留核實」。
+沒列不等於單線**（沙崙線 2011 建成即雙線、整條表沒列），判定再訂正為 6 對全部保留核實。
 第二輪退回了 4 對的 TDX 核實旗標，區間表實際改判單線的只有大武|枋野一對（單／雙 62／181 → 63／180，其餘三對本就由幾何判雙線），
 第三輪全部訂正回來；243 對逐對依據的詳本已抄進 `docs/tra-double-track-truth-0914.md`（真相表 fixture 的 `provenance` 指向它）。
 三輪的產物都留著可比對（`scratchpad/f9/step1-tdx6/`、`step1-officialhist/`、出貨現況），逐輪數字在
@@ -307,7 +307,7 @@ UPDATE_BASELINE=1 DATES=all node scripts/verify_tra_overlap_families.mjs   # 看
    的站區股道 → `scripts/fixtures/tra-station-tracks-osm-0914.json`（**1 266 條 way／307 494 m／96 站**＋`bridge` 2 條）；
    `scripts/extend_tra_station_tracks.mjs`（新）依共用節點接回 `network.json`（接頭同 node id、座標差 <0.5 m、
    `nodeTags` 只補不改、記 `extensions` 以便重跑無害）。**補入 1 268 條、ways 4 373 → 5 641。**
-3. **排除的非客運線（照裁示）**：臺中港線 `106915416`／`89697472`、花蓮臨港線 `693143447`／`693144762`／`693144763`
+3. **排除的非客運線（依上述規則）**：臺中港線 `106915416`／`89697472`、花蓮臨港線 `693143447`／`693144762`／`693144763`
    ——無 `service` 標籤的貨運／港線支線補進去會被 `topology.isTrack()` 當一般正線、不受 `YARD_CAP_M` 限制。
    蘇澳港線 4 條帶 `service=spur` 照舊收。另排除 `581275240`（斗南 crossover，`layer=1` 與唯一相連的既有側線矛盾，
    會讓 `build_rail_levels` 結構性無解；**不動 8% 坡度／7 m 淨距／收斂斷言**，改成不收這條）。
@@ -413,7 +413,7 @@ node scripts/verify_tra_plan_binding.mjs && node scripts/verify_remaining_statio
 F1 把 171 段臺北→萬華順行派車從西正線 `1551465831` 改走 F9 補進來的東正線鏈，繞路 **+0.17 m**、**換節點 0**、
 **F2 的行為與 HEAD 控制組逐筆相同**（它本來就會搬潮州那一次，見下）；4 秒全日掃描三日 **production 645 → 619、long 688 → 658**，消失的 56 場**全部**是萬華–臺北對開、
 **零新增**、任何家族任何日期都沒有退步。逐步紀錄在 `output/audit-0914/f17-run.md`。
-`verify_remaining_station_routes` 一度紅（25 份已釘計畫被改到＋1 台借模板的車不在名冊裡），依 **2026-09-14 裁示**擴充名冊並附逐份證據後 **EXIT 0**；F4 基線已更新並原樣重跑確認（見「裁示與處置」）。
+`verify_remaining_station_routes` 一度紅（25 份已釘計畫被改到＋1 台借模板的車不在名冊裡），**2026-09-14** 擴充名冊並附逐份證據後 **EXIT 0**；F4 基線已更新並原樣重跑確認（見「處置」一節）。
 
 **做了什麼**
 
@@ -485,23 +485,23 @@ F1 把 171 段臺北→萬華順行派車從西正線 `1551465831` 改走 F9 補
 `verify_run_profiles_match`（**FAIL 0**，且 `data/tra_run_profiles.json` **md5 與 HEAD 逐 byte 相同**）、`verify_tra_plan_binding`、
 `verify_passing_avoidance`、`verify_tra_pass_continuity`（4/4）、`verify_physical_runtime_cache`、
 **官方停靠時刻 21 992 筆差異 0**、`verify_data_manifest`／`verify_data_provenance`（依檔頭規定重產，diff 只有 `tra_track_sections` 一個雜湊）、
-**F4 棘輪 6 次掃描 0 退步**、**120 秒閘門三日各 12/12 PASS**（A′ 9/12 6→5、9/13 5→4、9/14 4→3）、`verify_remaining_station_routes`（裁示後 **EXIT 0**：trains 76／changes 83／samples 89 396／protectedCount 4）。
+**F4 棘輪 6 次掃描 0 退步**、**120 秒閘門三日各 12/12 PASS**（A′ 9/12 6→5、9/13 5→4、9/14 4→3）、`verify_remaining_station_routes`（處置後 **EXIT 0**：trains 76／changes 83／samples 89 396／protectedCount 4）。
 `display-profiles.json` 沒重建（沒加 way，md5 不變）；`level-profiles.json` 只差 `inputSha256`；
 `tra_track_sections.json` 243 對只有 `臺北|萬華` 的 `parallelFrac` 0.964 → 0.970，單／雙線旗標 0 改變。
 
-**裁示與處置：`verify_remaining_station_routes` 紅 → EXIT 0（2026-09-14 裁示）**
+**處置：`verify_remaining_station_routes` 紅 → EXIT 0（2026-09-14）**
 
 紅的內容：F17 改到了 fixture 釘住的 79 份計畫裡的 **25 份**（21 份在 `changes` 名冊內、4 份是 `protectedTemplates`），
 外加 `tra_sched:213:37440:48000`——它自己沒有計畫，以 `route-template` 借用 `tra_sched:281:58980:88980`，
 借的區段剛好涵蓋模板第 45 段（臺北→萬華）。HEAD 控制組同一支閘門 EXIT 0，證明是 F17 造成、不是既有紅。
 
-裁示原文（節錄）：「**這 5 台走的是同一個修法、不是回歸，准予擴充名冊，但要附證據、不改閘門判準。**」依此處置：
+處置依據：這 5 台屬同一個修法的結果，不是回歸；可擴充名冊，條件是附逐份證據且閘門判準維持原狀。依此處置：
 
 1. **`changes` 補第 83 筆**，新 `kind: "direction-seed"`：
    `{"key":"tra_sched:213:37440:48000","station":"臺北→萬華","oldPaths":[501],"newPaths":[21117],`
    `"from":47100,"to":47361.99998706579,"date":"2026-09-13","timeSec":47100,"holds":"0/0","note":"借用模板 281 的第 45 段隨 F17 改走東正線"}`。
    先驗過閘門的逐 change 迴圈只讀 `key`（`:9`）、`from`／`to`（`:11`）與**可選**的 `toNode`（`:7` 有 `if(c.toNode)` 守著），
-   所以 `fromNode`／`toNode` 依裁示省略，**閘門程式一行都沒改**（`git status --porcelain -- 'scripts/verify_*.mjs'` 為空）。
+   所以 `fromNode`／`toNode` 省略，**閘門程式一行都沒改**（`git status --porcelain -- 'scripts/verify_*.mjs'` 為空）。
 2. **25 份 `afterPlans` 重釘**；`protectedTemplates` 那 4 份的 **`beforePlans` 同步重釘**——
    閘門 `:5` 的比較基準就是 `beforePlans`，只動 `afterPlans` 會讓 `:9` 的「未改車班因模板變更被動換軌」當場紅（實測 EXIT 1）。
    兩邊一起改，§9.6 立下的 `beforePlans === afterPlans`＝「本批不動這 4 份模板」不變式原封不動，`protectedCount === 4` 照常成立。
@@ -524,7 +524,7 @@ F1 把 171 段臺北→萬華順行派車從西正線 `1551465831` 改走 F9 補
 
 ### 9.10 F18 汐科座標：站表成為站座標的單一來源（2026-09-14 深夜，同一分支；未併 main、未部署；**閘門全綠，但目標距離沒達成**）
 
-> 🅿️ **封存（2026-09-14 19:40）**：本節與相鄰節（§9.10／§9.11）的程式、fixture、資料變更**全部沒有 commit**，整包在 `output/audit-0914/f18-candidate/`（`f18-tracked.patch`＋`untracked/`，gitignored）；原因是 F18b 讓「Ap-雙線同股」六次掃描各 +1～+2，依「不得放鬆基線」回退，出貨與否交使用者裁示（§9.11 待裁）。HEAD 上汐科維持「站標與停車點一起偏東北 330 m」的一致狀態。
+> 🅿️ **封存（2026-09-14 19:40）**：本節與相鄰節（§9.10／§9.11）的程式、fixture、資料變更**全部沒有 commit**，整包在 `output/audit-0914/f18-candidate/`（`f18-tracked.patch`＋`untracked/`，gitignored）；原因是 F18b 讓「Ap-雙線同股」六次掃描各 +1～+2，依「不得放鬆基線」回退，出貨與否待定（§9.11 未定）。HEAD 上汐科維持「站標與停車點一起偏東北 330 m」的一致狀態。
 
 **一句話**：班表原始檔與密檔的汐科座標統一成站表 `data/tra.json` 的 OSM `railway=stop` 形心
 （25.06288／121.649372），機制是站表新增的 `stationCoordOverrides` 名單＋新腳本
@@ -604,10 +604,10 @@ boundaries 972／maxBoundaryJump 0.0748 m／protectedCount 4）、`verify_passin
    F9 的汐科修正會被靜默退回（該檔註解自己就寫著 2026-07-11 修過「汐科(偏0.4km)」）。
    `assertStationCoord` 守門人只在覆寫腳本跑到時才叫，而 `fetch_tra.py` 不在 `fetch-schedule` 鏈裡。
    ✅ **已於 §9.11（F18b）根治**：名單內的站跳過 TDX 覆寫，守門人 `npm run check-station-coord-overrides`（含正向對照）。
-2. **站標與車差 330 m 是使用者看得到的新落差**（修前是兩個錯抵消才貼合）。依「位置不用準，時間一定要準」
-   在裁示範圍內，但要不要這樣出貨請裁示。
+2. **站標與車差 330 m 是使用者看得到的新落差**（修前是兩個錯抵消才貼合）。依站牌時間以官方為準、位置容許近似的取捨，
+   這在可接受範圍內，但要不要這樣出貨尚待決定。
    ⚠️ **§9.11（F18b）把落差收到 1.6–7.5 m 了，但因為家族棘輪退步而整組回退** ⇒ 這一條**仍然成立**，
-   等裁示要不要收下那批（候選產物在 `output/stations/`，裝法見 `output/audit-0914/f18b-run.md` §7）。
+   待定要不要收下那批（候選產物在 `output/stations/`，裝法見 `output/audit-0914/f18b-run.md` §7）。
 3. `build_pass_obs.mjs` 與 `fetch_tra_schedule.py` 離線跑不了 ⇒ 「抓班表 → 覆寫」這一段**沒有端到端跑過**，
    要等有外網那一輪才算驗到底。
 4. `data/seg_distance_audit.json` 仍因汐科的 `d` 改變而過期（F9 留下的尾巴）。
@@ -617,7 +617,7 @@ boundaries 972／maxBoundaryJump 0.0748 m／protectedCount 4）、`verify_passin
 
 ### 9.11 F18b 汐科站位遷移：機制做好、距離達標、**實體層整組回退**（2026-09-14 深夜，同一分支；未併 main、未部署）
 
-> 🅿️ **封存（2026-09-14 19:40）**：本節與相鄰節（§9.10／§9.11）的程式、fixture、資料變更**全部沒有 commit**，整包在 `output/audit-0914/f18-candidate/`（`f18-tracked.patch`＋`untracked/`，gitignored）；原因是 F18b 讓「Ap-雙線同股」六次掃描各 +1～+2，依「不得放鬆基線」回退，出貨與否交使用者裁示（§9.11 待裁）。HEAD 上汐科維持「站標與停車點一起偏東北 330 m」的一致狀態。
+> 🅿️ **封存（2026-09-14 19:40）**：本節與相鄰節（§9.10／§9.11）的程式、fixture、資料變更**全部沒有 commit**，整包在 `output/audit-0914/f18-candidate/`（`f18-tracked.patch`＋`untracked/`，gitignored）；原因是 F18b 讓「Ap-雙線同股」六次掃描各 +1～+2，依「不得放鬆基線」回退，出貨與否待定（§9.11 未定）。HEAD 上汐科維持「站標與停車點一起偏東北 330 m」的一致狀態。
 
 **一句話**：新增 `scripts/relocate_physical_station_stops.mjs`（接在 F1 之後、F2 之前），
 把汐科**全部 360 個車次鍵**（官方停靠 188 ＋ 通過 172）的節點從初次派路挑錯的舊位置搬到 OSM 三個
@@ -662,7 +662,7 @@ boundaries 972／maxBoundaryJump 0.0748 m／protectedCount 4）、`verify_passin
 **回退驗證**：`rail-3d/physical/{network,dispatch,level-profiles}.json`、`scripts/fixtures/remaining-routes-0913.json`、
 `data/tra_track_sections.json`、`data/tra_run_profiles.json` **六個檔逐 byte 等於 HEAD**；回退後十道閘門複跑全 EXIT 0。
 `UPDATE_BASELINE=1` **沒有跑**。候選產物完整留在 `output/relocations/`、`output/stations/`，
-裁示要出貨的話兩行指令就裝得回去（`f18b-run.md` §7）。
+要出貨的話兩行指令就裝得回去（`f18b-run.md` §7）。
 
 **順帶根治 §9.10 風險 1（`fetch_tra.py` 的靜默退回）**：把那段抽成兩支可離線單測的函式
 （`load_station_coord_overrides()`＋`apply_station_coords()`），名單內的站**跳過 TDX 覆寫**、改用名單釘住的
@@ -707,7 +707,7 @@ A 名單內座標不變且等於 `assertStationCoord`；B 名單外 240 站照�
     控制組在 main 重產，逐條等於已提交版；快取 zip 三份 sha256 與檔內記錄相同。
   - 重跑 build_rail_levels：**G5b 3.46 → 3.23 km，逐 way 與 main 零差異**。
     G1 對第二裁判條目從 network 原始標記重算鄰接、重驗涵蓋並釘死名單；突變（起伏改 25 m／拿掉 arbiter）各自被抓，控制組只剩 G6f。
-- 🔴 **蘇澳港線（未解，待裁示）**：軌道中心線 DEM 在 80 m 內從 7 m 升到 17 m 再降回 5 m，南側約 40 m 是 33 m 的小山頂；
+- 🔴 **蘇澳港線（未解，待決）**：軌道中心線 DEM 在 80 m 內從 7 m 升到 17 m 再降回 5 m，南側約 40 m 是 33 m 的小山頂；
   國土測繪中心同一段判「一般平面」、前一段是蘇澳橋 ⇒ 實際是 20 m DTM 解析不到的路塹。
   求解器「平面不低於地表」＋縱坡 2.5% 只能把軌道抬過山肩再慢慢降，兩側尾段浮空 10.6–12.5 m。
   畫在真實高度會埋進地形（G6e 上限 0.1 km，現況 0.06 km），維持抬升則 G6f 6.62 km 超過 6.6。
@@ -718,7 +718,7 @@ A 名單內座標不變且等於 `assertStationCoord`；B 名單外 240 站照�
 
 ### 9.14 Codex 收尾：方向回歸與蘇澳增量裁剪（2026-09-14）
 
-使用者接續裁示：「你就直接做吧，我沒有需要你交接回去」。執行者直接完成，主工作樹未提交內容未動。
+後續改為由執行者直接完成，不另做交接，主工作樹未提交內容未動。
 
 - **B：`ccc51f6a`**。194095477／746106069 西正線補北上方向種子，F1→F2→F2 增量重跑，6 份計畫 12 段改走既有路徑；network 逐 byte 不變，全部計畫非 pathIds 欄位（官方時間、holds、車長）不變。1208 的 oldPath 1255→1263、blocked 不變；4234 的 oldPath 1533→1536，blocked 改成 path 20080 的 28 個對向資源。4193 afterPlans 只改第 26／27 格，完整前後與原因寫在兩份 fixture。
 - 14 天逐資源證明：4234（百福—七堵—八堵—暖暖）、1208（楊梅—埔心—中壢—內壢）共 6 段，所有資源均覆蓋、交集均 0。舊分支派車表每天重現 4234×231；4234 改回 20080 時每天在新 blocked 與 231 碰撞；1208 改回 1255 時每天在原 blocked 與 129 碰撞。對照以產品 motion、F3 與車身 footprint 計算，不靠 runtime hold。
@@ -730,12 +730,12 @@ A 名單內座標不變且等於 `assertStationCoord`；B 名單外 240 站照�
 - waysSha256：`a67dea3e64f7f492bc082264aec01425b6786a223984e95b0c711456f506f835` → `aa85288eec16663a7fa72f1f07ff8038980c2a0e6916e6db22422ca6e07ad866`，fixture附舊值／新值／理由／證據。
 - 整合以遠端字面sha `d5e3a11347ff83fcde4b35d425ffc5176804cac6` 為基準，正式站v0914c；先revert該撤回commit，再合併647a0aba與db019221。沿用原v0914d公開更新條目，四個捷運班表雜湊已隨B重產恢復，整合後manifest僅更新汐科geojson雜湊。後續僅經ship_web完整預檢與出貨。
 
-使用者補充的單軌清單已對照既有243站對真相表：海線五段已包含；花東鐵道局現行工程範圍104.5km，花蓮—干城另案，不能與112.6km混用。南迴中央—古莊雙軌僅占大武—枋野站間一部分，既有二值站對的「雙線」不代表整段每一個edge都雙線；本次未憑區域敘述新增第二股或改動方向資料。
+另一份單軌清單已對照既有243站對真相表：海線五段已包含；花東鐵道局現行工程範圍104.5km，花蓮—干城另案，不能與112.6km混用。南迴中央—古莊雙軌僅占大武—枋野站間一部分，既有二值站對的「雙線」不代表整段每一個edge都雙線；本次未憑區域敘述新增第二股或改動方向資料。
 
 
 ### 9.15 本輪追加：所有列車完整／推估編組
 
-使用者在預覽前追加「這次就開放所有列車都能顯示完整或是推估的車廂數」。因此停止前一份預覽預檢，重新納入車長改動；§9.14 的「車長未更動」只描述 A/B 修正階段。
+預覽前範圍追加：所有列車都顯示完整或推估的車廂數。因此停止前一份預覽預檢，重新納入車長改動；§9.14 的「車長未更動」只描述 A/B 修正階段。
 
 - 標準海風／山嵐 4 輛；推估區間 8、莒光 9、藍皮 5、鳴日 6、環島之星 7、林鐵 6（機車列車含機車），來源與信心列在 FORMATIONS.md。官方班表、BLOCK_CAP_SEC=120 與高度上限完全不變。
 - 本次刻意開放車長後，4 秒 production 不能與舊三節 production 的車身測量混為一談：完整產品對照既存 **long** 基線，歷史 **legacy-three** 探針另對照既存 **production** 基線；基線 JSON 一字未改，沒有提高數值，也不以短探針結果冒充產品。新增具名列車長度同樣包含在完整產品測量裡。

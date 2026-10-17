@@ -3,7 +3,7 @@
 //   buildFoundingSeal() → renderPassport() 的 stamps 組裝行最前面。
 //
 // 本腳本涵蓋 brief Step 5(三態+純函式)、Step 6(手機四寬度)、Step 4 暗色對比,
-// 並依協調者的追加要求把「只驗 .ph-founding 自己」擴大為「驗對整個護照的效果」:
+// 並把「只驗 .ph-founding 自己」擴大為「驗對整個護照的效果」:
 //   1. 桌面(#passport,真正被 patch 的容器)三態 + 全部可見後代逐一量測(溢出/裁切)
 //      + 對照組(founding:true vs founding:false)比對「除了徽章自己的高度位移外,
 //      其他元素不應該有非預期位移或新遮蔽」。
@@ -184,7 +184,7 @@ function __rlHitTest(rootSel, opts) {
       sig: __rlSig(el, root),
       rect: [rect.left, rect.top, rect.right, rect.bottom].map(v => Math.round(v * 10) / 10),
       overflowH, hitFails, ownText, inFounding, bodyDescendant, isRound,
-      position: csEl.position, // 給「窮舉定位元素兩兩相交」用(不手挑名單,見協調者 tripBanner 教訓)
+      position: csEl.position, // 給「窮舉定位元素兩兩相交」用(不手挑名單,見 #tripBanner 的教訓)
     });
   }
   return { rootRect: [rootRect.left, rootRect.top, rootRect.right, rootRect.bottom].map(v => Math.round(v*10)/10), report };
@@ -195,7 +195,7 @@ window.__rlHitTest = __rlHitTest;
 async function injectCollector(page) { await page.addScriptTag({ content: COLLECT_SRC }); }
 
 // 「非底色」像素檢查:computed style(opacity/visibility/display)照不到「DOM 都對、但視覺上
-// 跟背景無法分辨」這種情況(見協調者要求＋本專案既有教訓 panel-translucent-contract)。
+// 跟背景無法分辨」這種情況(見本專案既有教訓 panel-translucent-contract)。
 // 技法照抄 verify_translucent_contrast.mjs 已驗證過的做法(免原生 PNG 依賴):Playwright
 // 對元素截圖 → base64 丟進頁面內用 <canvas> decode → getImageData 讀真實渲染像素。
 // 回傳「16 階粗量化後的相異色數」與「亮度全距」——兩者都低代表這塊區域視覺上是一片死色,
@@ -435,7 +435,7 @@ const results_dir = path.join(ROOT, 'scratchpad'); // repo 的 scratchpad/ 已�
     ok(`G2.${w}.7(突變)founding:false 重繪同一面板 → .ph-founding 從 #ridePanel 消失(證明 G2.${w}.3 有牙)`,
       !badge3b, `count=${ride3b.report.filter(e => e.sig.includes('ph-founding')).length}`);
 
-    // ── 窮舉「定位元素」兩兩相交,不手挑名單(另一個 session 今天的 #tripBanner/.map-actions
+    // ── 窮舉「定位元素」兩兩相交,不手挑名單(先前另一條開發線的 #tripBanner/.map-actions
     // 教訓:手挑清單漏一個,54/54 全綠但兩顆鈕被壓住 2772px² 都測不到)。position≠static 的
     // 元素才可能脫離文件流互相重疊(sticky 的 <h3> 就是一個,不是假設性風險)。用控制組
     // (founding:true vs founding:false)差分,只有「這組相交在 founding:false 沒有、
@@ -473,7 +473,7 @@ const results_dir = path.join(ROOT, 'scratchpad'); // repo 的 scratchpad/ 已�
       // 正常(elementFromPoint 依然會命中,因為它量的是命中測試而非可見度),但視覺上跟
       // 背景無法分辨,這正是「computed style 抓不到、pixelStats 應該要抓到」的那種情況。
       // 只測一個寬度,因為這是驗證「檢查工具本身有沒有鑑別力」,與版面寬度無關。
-      // 注意(協調者提醒的 #tripBanner 教訓,不同用法但同一警覺):這裡用 opacity 是當一次性
+      // 注意(#tripBanner 的教訓,不同用法但同一警覺):這裡用 opacity 是當一次性
       // 「刻意破壞」的突變手段,不是拿它當可見性判準去篩選要不要測——兩者是不同的事,判準本身
       // (__rlVisibleDescendants)全程只認 display/visibility/rect 面積,見上方定義。但仍加一道
       // 讀回確認突變真的生效,防範任何我沒預期到的 re-render 把手動加的 inline style 蓋掉
@@ -621,21 +621,21 @@ const results_dir = path.join(ROOT, 'scratchpad'); // repo 的 scratchpad/ 已�
   ok('G4.0 契約掃描的原始碼錨點有效(plusRefresh 早退分支切片含 api/plus-status、plusRestore 本文含 p.active 賦值)',
     refreshSliceSane && restoreSliceSane,
     `refresh: start=${refreshStart} end=${refreshBranchEnd} 切片長=${apiStatusBranch.length} sane=${refreshSliceSane} ; restore: start=${restoreStart} end=${restoreEnd} 切片長=${restoreBody.length} sane=${restoreSliceSane}`);
-  ok('G4.1 /api/plus-status 分支(無 info 那條)沒有被加上 foundingFrom(brief 明確禁止,那裡沒 info 可傳)',
+  ok('G4.1 /api/plus-status 分支(無 info 那條)沒有被加上 foundingFrom(那裡沒 info 可傳,不准加)',
     refreshSliceSane && !/foundingFrom/.test(apiStatusBranch),
     !refreshSliceSane ? '切片無效(見 G4.0),這條不算通過——不是「乾淨」' : apiStatusBranch.includes('foundingFrom') ? '出現在不該出現的地方' : `乾淨(切片 ${apiStatusBranch.length} 字元)`);
   // plusRestore() 補齊第 3 個同形寫入點。用較嚴格的 regex(要求形狀與另兩處一致,
   // 不是隨便找到一個 `p.founding =` 就算數)——tighten 到「= p.active && foundingFrom(info)」。
   const restoreHasFounding = restoreSliceSane && /p\.founding\s*=\s*p\.active\s*&&\s*foundingFrom\(info\)/.test(restoreBody);
-  ok('G4.2 plusRestore() 現在也寫入 p.founding(裁示二補齊的第 3 個同形寫入點,形狀與 plusRefresh/plusPurchase 一致)',
-    restoreHasFounding, !restoreSliceSane ? '切片無效(見 G4.0),這條不算通過' : restoreHasFounding ? '有' : '沒有(裁示二應已補上,見 index.html plusRestore() 內)');
+  ok('G4.2 plusRestore() 現在也寫入 p.founding(補齊的第 3 個同形寫入點,形狀與 plusRefresh/plusPurchase 一致)',
+    restoreHasFounding, !restoreSliceSane ? '切片無效(見 G4.0),這條不算通過' : restoreHasFounding ? '有' : '沒有(此寫入點應已補上,見 index.html plusRestore() 內)');
 }
 
 // ═══════════════ Group 5:WebKit(創始徽章唯一的真實受眾——App 全部走 WKWebView)═══════════════
 // 前面 71 條全是 chromium。這個功能的判定(founding)只有 App 拿得到,全部受眾都在 App=WKWebView
 // =WebKit,chromium 全綠對這個功能的真實使用者等於沒驗到目標引擎——本專案有明確前例:WebKit
 // 算 flex 容器內在寬度時不認子項的 flex-basis、只認顯式 width,曾把一排按鈕壓成 14px、chromium
-// 全綠使用者截圖才發現。CSS 現況(index.html:1013-1019)風險具體且已核對:.pf-mark 有
+// 全綠，是看了截圖才發現。CSS 現況(index.html:1013-1019)風險具體且已核對:.pf-mark 有
 // flex:none+顯式 width:30px(安全);.pf-txt 是同一個 flex row 裡的 item,只有
 // `display:flex;flex-direction:column;line-height:1.35`,沒有顯式 width、沒有 flex 覆寫——
 // 形狀與踩過的坑一致,必須實測,不能用「應該沒事」帶過。
@@ -673,7 +673,7 @@ try {
     const visiblyDistinct = !!px && px.distinctColors >= 4 && px.lumRange >= 20;
     ok(`G5.${w}.3(webkit).ph-founding 實際渲染像素非底色`, visiblyDistinct, JSON.stringify(px));
 
-    // 直接量協調者點名的那個坑:.pf-txt 有沒有被 WebKit 已知的 flex-basis:auto 內在寬度算法
+    // 直接量那個已知的坑:.pf-txt 有沒有被 WebKit 已知的 flex-basis:auto 內在寬度算法
     // 縮到只剩 min-content(理論上限:CJK 換行幾乎不受限,崩壞可以窄到剩一個字)。
     // 第一版在這裡假設「健康情況=吃滿剩餘空間」算了個 expectedTxtW 直接比對,結果 360/375/414
     // 全 FAIL——但同一個 formula 拿去 chromium(已知沒有這個坑的引擎)當正向對照,一樣 FAIL

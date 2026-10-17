@@ -258,7 +258,7 @@ ok('G16b 回傳字串不自帶 .xfer-conn 外框(否則與容器疊成雙框)',
 // ⚠️ 這條驗的是「輸出恆在 00:00–23:59」這個最終不變量,不是
 // 呼叫端 `fmtHM(r.sec % 86400)` 那個 `% 86400` 運算子本身——fmtHM 內部已有等價 modulo,
 // 對任何 x,`fmtHM(x % 86400) === fmtHM(x)` 恆成立(模一次或模兩次結果相同,可證明的無操作),
-// 移除呼叫端那個 `% 86400` 不會改變任何輸出,黑箱測試分辨不出來,因此保留現狀不動它(選項a,
+// 移除呼叫端那個 `% 86400` 不會改變任何輸出,黑箱測試分辨不出來,因此保留現狀不動它(沿用既有寫法,
 // 與其餘 20 幾處呼叫端一致)。這條斷言真正防的是更根本的回歸——fmtHM 自己的內部 modulo 被拿掉。
 const AT_MIDNIGHT = S(24, 1);   // 營運日的隔日 00:01,秒值仍在同一天的軸上(>86400)
 const midRows = transferConnections('T-KRTC-R16', AT_MIDNIGHT, null).slice(0, 2);
@@ -271,11 +271,11 @@ ok('G17 跨午夜輸出恆在 00:00–23:59(不出現 2[4-9]:)',
    (crossMidnight.match(/\d\d:\d\d/g) || []).join(','));
 
 // G18 —— 同系統(未釘選,真實資料:台中 15:38 排除台鐵後前兩班都是高鐵):標題含系統名、
-// 不逐列標系統(headSys truthy 分支,畫面不變)。
+// 各列不另加系統小標(headSys truthy 分支,畫面不變)。
 const sameSysHtml = transferConnectionHtml(GID_TAICHUNG, S(15, 38), 'TRA');
 ok('G18 同系統:標題含系統名', /轉高鐵/.test(sameSysHtml),
    (sameSysHtml.match(/<span class="xfc-h">([^<]*)</) || [])[1]);
-ok('G18b 同系統:不逐列標系統(無 xfc-sys)', !/xfc-sys/.test(sameSysHtml));
+ok('G18b 同系統:各列不另加系統小標(無 xfc-sys)', !/xfc-sys/.test(sameSysHtml));
 
 // G19 —— 混系統(未釘選,真實資料:台中 06:02 前兩班是台鐵3147+高鐵0502):標題中性、
 // 兩列都有小標、且小標彼此不同(不是兩個一樣的標籤混充)。

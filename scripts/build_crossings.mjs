@@ -28,7 +28,7 @@ const SNAP_MAX_M = 30;      // OSM 節點離最近 tra.json 線形 ≤ 此距離
 const DEDUP_TRA_DM = 60;    // 對官方筆:同 lnId 且 |Δd|<此值(m) 視為同一平交道
 const DEDUP_TRA_GEOM_M = 40;// 對官方筆:raw 座標(任一線)在此半徑(m)內亦視為重複(防平行線 lnId 不一致漏抓)
 const CLUSTER_DM = 40;      // OSM 內部:同 lnId 且 |Δd|<此值(m) 聚類成一筆(雙軌常拆兩節點)
-// 2026-07-13 使用者裁決:平交道回歸純官方資料——台鐵官方現役 415 處與 dataset 帶座標筆數恰吻合
+// 平交道只採官方資料——台鐵官方現役 415 處與 dataset 帶座標筆數恰吻合
 // (無座標 386 筆=已裁撤/立體化),OSM 聯集反而混入非台鐵管理道口。OSM 邏輯保留,要重開加 --with-osm
 const WITH_OSM = process.argv.includes('--with-osm');
 
@@ -194,11 +194,11 @@ async function main() {
   for (const n of withPos) {
     const pt = [n.lat, n.lon];
     if (EXCLUDED_LINES.has(n.line)) {
-      // 2026-07-13 使用者裁決(修正前案):貨運支線(台中港線等)、已停用線(高雄港線/林口線等)
+      // 貨運支線(台中港線等)、已停用線(高雄港線/林口線等)
       // 不在本圖模擬路網上,底下沒有畫出的軌道,原始座標標點會變成一串浮在空地/道路上的記號,
-      // 看起來像明顯錯誤(使用者實測回報台中港站左邊那一串)。這些道口也無班次預測。故不上圖,
+      // 看起來像明顯錯誤(以台中港站一帶最明顯)。這些道口也無班次預測。故不上圖,
       // 僅記入 excluded 稽核清單。要重開就把這批改回 matched.push(noSched)。
-      excluded.push({ name: n.name, line: n.line, county: n.county, reason: '貨運/專用/已停用線,不在模擬路網(使用者裁決不上圖)' });
+      excluded.push({ name: n.name, line: n.line, county: n.county, reason: '貨運/專用/已停用線,不在模擬路網(不上圖)' });
       continue;
     }
     const candidates = LINE_MAP[n.line];

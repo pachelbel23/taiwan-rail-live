@@ -28,7 +28,7 @@ struct MetroWaitAttributes: ActivityAttributes {
         //    目前視圖把兩者當同一件事,但語意不可先合併掉。
         var pushed: Bool?
         // 🔴 tick:伺服器送出這一發的時刻(epoch 秒)。進站窗內伺服器每 30 秒推一發
-        //    (2026-09-23 使用者裁示「那就改30秒吧」),而北捷看板的 dataAt 不會每 30 秒都換
+        //    (與看板資料有沒有變無關),而北捷看板的 dataAt 不會每 30 秒都換
         //    ⇒ 車位要用 eta − tick 才會每發都往前挪(過期判定仍用 dataAt)。App 開卡時不寫(nil)。
         //    更早的 App 沒有這一欄:伺服器多送的鍵在合成的 Decodable 裡直接被略過,不影響解碼。
         var tick: Double?

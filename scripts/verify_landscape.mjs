@@ -553,9 +553,9 @@ async function landscapeSuite(browser, eng) {
     if (nc.foot !== 'missing' && (S.w <= 739) !== (nc.foot === 'none')) ncBad.push(`foot=${nc.foot}`);
     ok(`L3c ${eng}/${S.tag} 窄機收斂順序(899摘峰/739摘副標;班數一律不放)`, ncBad.length === 0, ncBad.join('、') || JSON.stringify(nc));
 
-    // L3d:頂列可讀底跟「面板半透明」開關走(2026-08-12 實機退回恆玻璃版:開關關著、衛星圖上
+    // L3d:頂列可讀底跟「面板半透明」開關走(2026-08-12 實機上頂列恆為玻璃版:開關關著、衛星圖上
     // 字看不清)。兩態都驗:預設(關)=實心 alpha≥.9 且無 blur;開=玻璃 alpha .2–.45+blur
-    // (使用者凍結值 .30/3px)。
+    // (規格凍結值 .30/3px)。
     // 🔴 可讀性改靠直接調文字顏色、不靠光暈 ⇒ 判準從「要有 halo」翻成
     //    「兩態都不准有 text-shadow」。這一條就是防它回來的棘輪:光暈是實作自己加的,
     //    原本的需求就是調字色。
@@ -771,7 +771,7 @@ async function landscapeSuite(browser, eng) {
       // 🔴 側欄必須讀得懂：整片面板被 opacity 淡掉（地圖整片透出來、字看不清）時，
       //    rect 完全沒變、命中測試照樣命中、相交掃描的 vis() 門檻（0.05）也照樣算它可見
       //    ⇒ 舊判準對「側欄變半透明」零鑑別力（獨立驗收的 G4 突變 374/374 全綠）。
-      //    這裡只管「有沒有被 opacity 淡掉」；使用者明示的半透明契約（背景 alpha .30 + blur 3px）
+      //    這裡只管「有沒有被 opacity 淡掉」；既定的半透明契約（背景 alpha .30 + blur 3px）
       //    走 background-color，交給 L10 的「與直向形態同值」相對判準，不在這裡寫死數字。
       const readable = await page.evaluate(() => {
         const el = activeSheetEl(); if (!el || el.hidden) return { err: 'no-sheet' };
@@ -1102,7 +1102,7 @@ async function landscapeSuite(browser, eng) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// F：0812 實機退回三修(build47)——更多抽屜撞動態島/實機字級膨脹/跟隨相機卡死
+// F：0812 實機三修(build47)——更多抽屜撞動態島/實機字級膨脹/跟隨相機卡死
 // ─────────────────────────────────────────────────────────────
 async function fix0812Suite(browser, eng) {
   const b = await boot(browser, { w: 852, h: 393, tag: '16橫' });
@@ -1221,7 +1221,7 @@ async function fix0812Suite(browser, eng) {
 // F5：旋轉版面延遲 → Leaflet 尺寸過期自癒（獨立套件：深夜也要跑得到，不掛在 F0 取車之下）
 // ─────────────────────────────────────────────────────────────
 async function sizeGuardSuite(browser, eng) {
-  // ── F5 版面尺寸過期自癒（2026-08-13 使用者實機回報「按隨機跟車後直橫都看不到軌道與車」的根因）──
+  // ── F5 版面尺寸過期自癒（2026-08-13 實機上隨機跟車後，直橫向的軌道與車全部消失，根因就是版面尺寸過期）──
   // iOS 轉向是**動畫**的：resize 事件送達時容器往往還是舊尺寸 ⇒ Leaflet 在那一幀把舊值寫進 _size
   // 後就再也不重讀（getSize 只在 _sizeChanged 為真時重量）⇒ 整套系統活在過期座標系：
   //   setView 用舊半尺寸算像素原點（車被瞄到實體螢幕外）、相機自癒的在場判定用同一個舊尺寸
@@ -1371,7 +1371,7 @@ async function portraitSuite(browser, eng) {
 //    共 8 顆 gtab），手機殼下桌面那組的 rect 是 0×0。第一版判準選到桌面那顆，於是對「頂列被淡出」
 //    這件事完全沒有牙（它根本不在 .topbar 裡、不吃 sheet-full 規則），還讓 tap 永遠逾時。
 // 🔴 2026-08-27 起手機殼（橫式也算手機殼：MQ 是 max-width:900 **或** max-height:500）把四顆群組
-//    分頁收成一顆 `#gtabOne`，點開才出選單。選擇器一律寫成「兩種形態都涵蓋」的複選，
+//    分頁合併成單一按鈕 `#gtabOne`，點開才出選單。選擇器一律寫成「兩種形態都涵蓋」的複選，
 //    只寫其中一種的話，另一種上線時 querySelector 會回 null ⇒ CHROME_PROBE 把它記成 null ⇒
 //    `degraded()` 因為基準也是 null 而整條**靜默跳過**：判準沒有變紅，只是不再檢查任何東西（心得 37d）。
 const GROUPSW_SEL = '.topbar .gtab-one, .topbar .grouptabs';
@@ -1454,7 +1454,7 @@ async function rotationSuite(browser, eng) {
       (railBase ? degraded(railBase, post).join(' ') : '無基準') || `對橫式常態逐一比過：${CHROME_SEL.map(s => s[0]).join('/')}`);
 
     // 側欄可讀性：相對於同一顆面板在直向底部 sheet 形態的值（不寫死數字——
-    // 使用者明示的半透明契約走 background alpha .30，寫死 ≥0.95 會把那個契約判成缺陷）
+    // 既定的半透明契約走 background alpha .30，寫死 ≥0.95 會把那個契約判成缺陷）
     ok(`L10 ${eng}/${sz} 側欄可讀性不低於直向形態`,
       !!post.__panel && !!pre.__panel && post.__panel.eff >= pre.__panel.eff - 0.01 && post.__panel.alpha >= pre.__panel.alpha - 0.01,
       JSON.stringify({ 直向: pre.__panel, 橫向: post.__panel }));
@@ -1571,7 +1571,7 @@ async function rotationSuite(browser, eng) {
 //    推出來（面板貼右且撐滿高＝側欄遮右，否則＝底部 sheet 遮下），完全不呼叫 mapInsets()／
 //    sheetIsSideRail()。判準與實作同源會一起瞎（心得 29）。
 // 🔴 不跟車：跟車時鏡頭跟著列車走，「台灣在哪」由列車決定，量了沒有意義。
-//    這一組量的是開機那個全島視角，也就是使用者截圖裡的那個狀態。
+//    這一組量的是開機那個全島視角，也就是缺陷發生時畫面上的那個狀態。
 // ─────────────────────────────────────────────────────────────
 // 🔴 相對判準：不問「台灣中心應該在哪個絕對座標」，只問「開面板前後，它在**看得到的那塊**裡的
 //    相對位置有沒有變」。這樣就不必為兩件事訂容差——(a) maxBounds 是平移硬牆不是台灣本身、
@@ -1883,8 +1883,8 @@ async function deviceSuite(browser, eng) {
     const { ctx, page } = b;
 
     // ── E：走使用者的實際操作序，不是直接改 class ──
-    // 🔴 2026-09-26 判準過期改寫(bisect:72e6b822 綠→a5473792 紅)：09-09 使用者要求「手機右側需要明確的
-    //    車頭鎖定開關。鎖定時仍可縮放、旋轉；解鎖後自由移動」(docs/rail-structures-head-lock-0909.md)
+    // 🔴 2026-09-26 判準過期改寫(bisect:72e6b822 綠→a5473792 紅)：09-09 起手機版規格改為右側放一顆
+    //    車頭鎖定開關，鎖住時縮放、旋轉照常，解鎖後地圖可任意平移(docs/rail-structures-head-lock-0909.md)
     //    ⇒ 手機的車頭鎖只由開關解除，拖曳地圖不再解鎖(index.html dragstart 的 !followHeadLocked() 閘)，
     //    鎖鈕也不再長成「回到列車」膠囊，改成 44×52 的「鎖定／自由」開關。舊操作序「拖曳→自動解鎖→膠囊」
     //    已不存在，改照新契約走：拖曳一次(先證明地圖真的收到拖曳、再驗沒有解鎖)→收合跟隨欄→按開關解鎖。
@@ -2322,12 +2322,12 @@ const matrix = await runEngineMatrix(async ({ engineUrl, check }) => {
 for (const [eng, B] of (QUICK ? [['chromium', chromium]] : [['chromium', chromium], ['webkit', webkit]])) {
   const browser = await B.launch();
   await landscapeSuite(browser, eng);
-  await fix0812Suite(browser, eng); // QUICK 也跑:0812 實機退回三修(更多撞島/字級膨脹/相機自癒)
+  await fix0812Suite(browser, eng); // QUICK 也跑:0812 實機三修(更多撞島/字級膨脹/相機自癒)
   await sizeGuardSuite(browser, eng); // QUICK 也跑:0813 旋轉版面延遲→尺寸過期自癒(F5/F5b)
   await rotationSuite(browser, eng); // QUICK 也跑：這組是獨立驗收抓到的真缺陷，突變測試一定要涵蓋
-  await centeringSuite(browser, eng); // QUICK 也跑：使用者親自指出的置中缺陷
+  await centeringSuite(browser, eng); // QUICK 也跑：置中缺陷
   await stickySuite(browser, eng);   // QUICK 也跑:natTop 機制(L4i 的守門人,深夜無車也跑得動)
-  await deviceSuite(browser, eng);    // QUICK 也跑：使用者橫放實機回報的三缺陷
+  await deviceSuite(browser, eng);    // QUICK 也跑：手機橫放實機上的三個缺陷
   await portraitCameraSuite(browser, eng); // QUICK 也跑：§04c-P 直式相機矩陣（m1/m6 這族突變的靶）
   await landV2Suite(browser, eng);         // QUICK 也跑：§04c v2 的三條新契約（觀察模式／字級三階／提示卡）
   if (!QUICK) { await portraitSuite(browser, eng); await zeroRegressionSuite(browser, eng); }

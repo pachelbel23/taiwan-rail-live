@@ -106,7 +106,7 @@ export function verifyAndroidWidgetParity({ log = true } = {}) {
     });
   }
   // iOS 藝廊每個看板都列 小／中／大;Android 選單一個 provider 只顯示一張 ⇒ 尺寸各自一個 provider
-  // (使用者 2026-09-02 裁示「種類要跟 iOS 一樣多」)。receiver 與 provider info 都要在,少一個
+  // (種類數量與 iOS 對齊)。receiver 與 provider info 都要在,少一個
   // 那一項就從選單消失而 build 照樣綠。
   for (const [name, info] of [
     ['MetroWidgetSmallProvider', 'metro_board_widget_small_info'],

@@ -80,7 +80,7 @@ const probe = () => {
 
   // 畫面：spy canvas fillText，收集這一幀真的寫出去的字
   // 只記字串的話,把「直」「普」畫回原本 15px 的小牌、或把形狀/反白拿掉,這支 gate 仍會全綠——
-  // 而使用者反映的正是「看不出來」。所以連**字級、字色、牌身填色、牌身路徑形狀**一起記:
+  // 而當初的問題正是兩種牌分辨不出來。所以連**字級、字色、牌身填色、牌身路徑形狀**一起記:
   // 尖頭牌是純多邊形(lineTo,無 arcTo),圓角牌是四個 arcTo(無 lineTo)。
   const drawn = [];
   const orig = ctx.fillText, oBegin = ctx.beginPath, oLineTo = ctx.lineTo, oArcTo = ctx.arcTo, oFill = ctx.fill;
@@ -163,7 +163,7 @@ check('C 控制組：其他捷運線的車牌仍是它自己的線代號（沒�
   out.otherLineTags.length > 0,
   `同幀畫出的他線車牌：${out.otherLineTags.join('、') || '(無)'}（候選 abbr：${out.otherAbbrs.join('、')}）`);
 
-// ── 看得出來嗎：字對了不代表使用者分得出來（2026-09-04 使用者回報「圖示太小、放字也沒用」）──
+// ── 看得出來嗎：字對了不代表分辨得出來（2026-09-04 發現牌面尺寸過小，就算標上文字也難以分辨）──
 // 下面三條各鎖一個辨識管道，任一個被改回去都要紅。
 const expHits = out.tymcHits.filter(h => h.kind === 'exp');
 const comHits = out.tymcHits.filter(h => h.kind === 'com');

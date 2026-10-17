@@ -131,7 +131,7 @@ const native = {
   '表定': ['Scheduled', '予定'], '實際約': ['Est. actual', '実到着見込'],
   '表定 {time}': ['Scheduled {time}', '予定 {time}'],
   '{station} 車應已到': ['Train should have arrived at {station}', '{station}に到着した見込み'],
-  // 等站卡進站軌道（B 方案）：站名改由站牌說，右下只寫「車應已到」；上一站那個時刻是表定開車。
+  // 等站卡進站軌道：站名改由站牌說，右下只寫「車應已到」；上一站那個時刻是表定開車。
   '車應已到': ['Should have arrived', '到着した見込み'],
   '{time} 開': ['dep. {time}', '{time}発'],
   '{time} 到': ['arr. {time}', '{time}着'],

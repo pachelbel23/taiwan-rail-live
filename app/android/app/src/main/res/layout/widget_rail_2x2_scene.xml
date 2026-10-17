@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 發車看板・小・背景「場景」（mockup 小卡 C）：街角平交道（wg_scene_small）＋小站名牌，下面一班車，
+<!-- 發車看板・小・背景「場景」（mockup 的場景小卡）：街角平交道（wg_scene_small）＋小站名牌，下面一班車，
      最底一行只放更新時間（160dp 寬放不下來源註腳，wr_note 收掉）。 -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/wr_root"

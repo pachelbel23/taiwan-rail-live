@@ -117,7 +117,7 @@ const iosHexes = [...dirFn.matchAll(/red: 0x([0-9A-Fa-f]{2}) \/ 255, green: 0x([
 check('iOS 方向色也與網站同值（暗色與好讀版另計）', iosHexes.includes(webVar('navy').toUpperCase())
   && iosHexes.includes(webVar('ok').toUpperCase()) && iosHexes.length === 6,
   `iOS 六個值 ${iosHexes.join(' ')}`);
-check('iOS 三角尺寸有跟著加大（使用者裁示「做明顯一點」）',
+check('iOS 三角尺寸有跟著加大（比先前更醒目）',
   /var side: CGFloat = 11/.test(kit)
   && !/RailHeadingMark\(heading: heading, side: [0-9]\b/.test(
     readFileSync(join(ROOT, 'app/ios/App/RailBoardWidget/RailBoardWidget.swift'), 'utf8')),

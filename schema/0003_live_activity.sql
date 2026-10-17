@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS la_bindings (
   stop_codes  TEXT NOT NULL,
   last_idx    INTEGER NOT NULL DEFAULT -1,
   -- last_obs_idx:最後一次【真的被觀測到】的索引(表定推算不寫這一欄)。單調閘門的地板綁它,
-  -- 不綁 last_idx——上游整批失效期間卡片仍靠表定往前推(使用者裁示:不能凍住),推過頭之後
+  -- 不綁 last_idx——上游整批失效期間卡片仍靠表定往前推(卡片進度不可停滯),推過頭之後
   -- 若地板還是 last_idx,觀測恢復時就【永遠】拉不回來,錯的站名會黏住。地板改成這一欄之後,
   -- 觀測可以回收表定推過頭的部分,但最低只回到上一次真的觀測到的那一站 ⇒ 觀測序列仍然單調不減。
   last_obs_idx INTEGER NOT NULL DEFAULT -1,

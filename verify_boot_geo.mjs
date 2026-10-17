@@ -183,7 +183,7 @@ async function run(engine, name) {
     await ctx.close();
   }
 
-  // 7) 定位壓過「上次視野」（使用者選的優先序）
+  // 7) 定位壓過「上次視野」（優先序：定位在上次視野之前）
   {
     const { ctx, page } = await newPage(browser, { seedLastView: { g: 'all', lat: KHH.lat, lon: KHH.lon, z: 13, sel: null },
                                                    seedGeo: { lat: TPE.lat, lon: TPE.lon, acc: 60, t: Date.now() } });

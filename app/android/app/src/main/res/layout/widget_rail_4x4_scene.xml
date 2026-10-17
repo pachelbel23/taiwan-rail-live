@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 發車看板・大・背景「場景」（C 小世界場景，mockup 定稿第 2 版）。
+<!-- 發車看板・大・背景「場景」（小世界場景，mockup 定稿第 2 版）。
      場景：高架月台（wg_scene_large，淺色白天／深色夜晚由 drawable-night 自動切）。
      centerCrop：卡片被拉寬拉窄都只裁左右、構圖中心不動；素材裁成這個尺寸最寬的比例（見
      app/scripts/build_widget_backgrounds_android.py）。左上角琺瑯站名牌讀得清楚，不管背後場景多花。

@@ -206,7 +206,7 @@
 
         <!-- 再下班／擁擠度／說明在 2×2 一律收掉（binder compact 分支），XML 預設就寫 gone：
              挑選器預覽不跑 binder，預設值要等於放上桌面的樣子，否則那三個會把車擠掉。 -->
-        <!-- A 車模（WidgetBackground.metroCar）。小卡與 iOS 相同：不加頭帶、只放車，停在左下、
+        <!-- 車模（WidgetBackground.metroCar）。小卡與 iOS 相同：不加頭帶、只放車，停在左下、
              車頭轉向右邊的分鐘數。寬度吃這一列剩下的空間（0dp＋weight），主角變寬（進站／暫無資料）
              時車等比縮小，不會壓到字；素色時 binder 收掉。scaleX=-1 以視圖中心鏡射，所以用 fitEnd
              才會落在左邊。 -->

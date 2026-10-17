@@ -74,7 +74,7 @@
             android:text="09:41"
             android:textColor="@color/wg_ink_faint"
             android:textSize="10sp" />
-        <!-- A 車模頭帶的代表車（WidgetBackground.metroCar）。素色時 binder 收掉車與頭帶底色；
+        <!-- 車模頭帶的代表車（WidgetBackground.metroCar）。素色時 binder 收掉車與頭帶底色；
              header 的負邊距＋等量內距互相抵銷，素色幾何與改版前相同。 -->
         <ImageView
             android:id="@+id/wb_car"

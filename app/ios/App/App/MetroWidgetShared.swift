@@ -22,7 +22,7 @@ struct MetroWidgetCatalog {
     let lastTrain: [String: String]
     /// "<sys>|<站名>" → 該站所有路線的色票(hex,去重、依線序)。
     /// 🔴 不可以只留第一條:台北車站同時是紅線與藍線,只留第一條會讓卡上畫紅點、
-    ///    底下卻列著藍線的班次(真機回饋 08-15)。顏色是識別,識別不了就不畫,不能亂指一條。
+    ///    底下卻列著藍線的班次。顏色是識別,識別不了就不畫,不能亂指一條。
     /// 只能在這裡(struct 本體)宣告,extension 放不了 stored property;
     /// 真正的查詢方法 `lineColorHexes` 在本檔下方的 extension。
     let lineColors: [String: [String]]
@@ -33,7 +33,7 @@ struct MetroWidgetCatalog {
     /// "<sys>|<站名>" → 站座標(自動選站的最近站計算用)。同站多線座標相同,取第一筆。
     let coords: [String: Coord]
     /// 每一站開得到的方向(目錄裡該站的 `dests`;轉乘站跨線合併、去重、保留線序),鍵 "sys|站名"。
-    /// 方向格的選單只列這一份,不再把全系統的終點攤平(使用者 2026-09-02 回報選得到跨系統／跨線的方向)。
+    /// 方向格的選單只列這一份,不再把全系統的終點攤平(攤平會選得到跨系統／跨線的方向)。
     let destsByStation: [String: [String]]
     /// "<sys>|<線 id>" → 該線色票。官方 `trains[].stn` 的字母前綴就是線 id(BL13 → BL),
     /// 用來把看板每一列對回它真正的路線色(見 MetroPalette.rowLine)。

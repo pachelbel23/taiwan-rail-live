@@ -4,7 +4,7 @@
 //   R3 「倒數塞不進那一段就整列忽略」要真的在作用(忽略數 >0),但不得把線清空(每線車數 >0)。
 //   R4 車不會跳段:同一台車 3 秒內不得前進超過一段。
 //   R5 位置不得落後官方:量「畫出來的位置」與「官方倒數算出來的位置」的距離。
-//      這是使用者說的「位置會落後」的直接量——落後是顯示層棘輪造成的,不是資料。
+//      這就是位置落後那個症狀的直接量——落後是顯示層棘輪造成的,不是資料。
 // 用法: node scripts/verify_peak_rules.mjs <秒數> <CTL html> <FIX html> [FIX 用的 trtc.json]
 import { chromium } from 'playwright';
 import fs from 'node:fs';

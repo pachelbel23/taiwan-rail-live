@@ -51,7 +51,7 @@ struct MetroWaitDisplay {
     let notice: String?
     /// 到站後那句說明（接上推播與沒接上是兩種話，不可只留一種）。
     let staleHint: String?
-    /// 進站軌道（B 方案：上一站 → 本站站名牌，車畫在軌道上）。nil ⇒ 退回原本的軌脊版面
+    /// 進站軌道（上一站 → 本站站名牌，車畫在軌道上）。nil ⇒ 退回原本的軌脊版面
     /// ——分鐘級系統（高捷／機捷）沒有秒級到站時刻推不出位置，以及解不出上一站的少數站
     /// （見 `MetroWidgetCatalog.waitHop`）。兩種都【不畫車】，不偽造位置。
     let trackB: TrackB?
@@ -193,7 +193,7 @@ struct MetroWaitDisplay {
                 // 🔴 剩餘秒數取【這一發推播的時刻】不取重繪時刻：系統會替同一份 ContentState 在不同時間
                 //    各算一張快照（淺／深色、切外觀），用 Date() 會讓同一次更新的車停在不同位置、甚至倒退
                 //    （09-23 模擬器實見：已畫到站牌的車，切回淺色後退到 0.83）。
-                //    取 tick 不取 dataAt：進站窗內伺服器每 30 秒推一發（2026-09-23 裁示「那就改30秒吧」），
+                //    取 tick 不取 dataAt：進站窗內伺服器每 30 秒推一發，
                 //    北捷看板的 dataAt 卻不一定每 30 秒換 ⇒ 用 dataAt 兩發之間車會停在原地。
                 //    舊伺服器不送 tick（nil）⇒ 退回 eta − dataAt（官方看板當下的倒數），與改版前一樣。
                 //    過期判定仍看 dataAt（上面的 expired），tick 只管車畫在哪。
@@ -296,7 +296,7 @@ struct MetroWaitLockView: View {
         .opacity(display.expired ? 0.62 : 1)
     }
 
-    /// B 方案：原本的站名列拿掉（站名改由軌道右端的站名牌說），線別併進主角列；
+    /// 進站軌道版面：原本的站名列拿掉（站名改由軌道右端的站名牌說），線別併進主角列；
     /// 更新時間移到軌道下方右側。
     private func trackLayout(_ track: MetroWaitDisplay.TrackB) -> some View {
         VStack(alignment: .leading, spacing: scale.pt(3)) {
@@ -431,7 +431,7 @@ struct MetroWaitThirdRow: View {
     }
 }
 
-// MARK: - 進站軌道（B 方案）
+// MARK: - 進站軌道
 
 /// 進站軌道：左端＝這班車的上一站，右端＝本站（琺瑯站名牌），正側面車模畫在軌道上、
 /// 車頭對齊目前位置；車頭到本站那段用路線色＝還沒走完的路。
@@ -510,7 +510,7 @@ struct MetroWaitTrack: View {
                     .frame(width: s(9), height: s(9))
                     .position(x: px, y: railC)
                 // 車：三節（領頭那節車頭朝右＝朝本站、中間一節平頭、最後一節鏡像）。
-                // 09-29 使用者：「高鐵現在兩節都是尖的頭尾看起來很奇怪」——兩節時頭尾兩個車鼻對在一起。
+                // 原本高鐵只畫兩節，頭尾兩個車鼻直接對在一起，視覺上不協調。
                 // 中間那節沒有另外的素材：取車圖不含車鼻的左半，再接一份鏡像，兩端都是平的。
                 if let nose {
                     let cw = carH * CGFloat(track.carAspect)
@@ -590,8 +590,8 @@ struct MetroWaitTrack: View {
     }
 }
 
-/// 琺瑯站名牌（色票同網站頂端的 `.plate`、小工具 C 方案同一組）：白瓷底＋深藍字，
-/// 下緣帶子用路線色＋線名。深色模式與動態島用同一塊白瓷壓暗一階（09-23 使用者裁示：網站那組深藍瓷
+/// 琺瑯站名牌（色票同網站頂端的 `.plate`、小工具場景背景同一組）：白瓷底＋深藍字，
+/// 下緣帶子用路線色＋線名。深色模式與動態島用同一塊白瓷壓暗一階（網站那組深藍瓷
 /// 放在黑灰卡片上跟原本的樣式不搭；壓暗是為了夜裡不刺眼）。
 struct MetroWaitPlate: View {
     let name: String
@@ -692,8 +692,8 @@ struct MetroWaitMiddleCar: View {
     }
 }
 
-/// 「結束」鈕：LiveActivityIntent 當場收卡不開 App（08-14 使用者回饋：非得回車站看板
-/// 才能關太難找）。鎖屏本來就能左滑清除，這顆給找不到滑的人。
+/// 「結束」鈕：LiveActivityIntent 當場收卡不開 App（08-14 起：原本得回車站看板
+/// 才關得掉，入口不好找）。鎖屏本來就能左滑清除，這顆給找不到滑的人。
 ///
 /// 🔴 為什麼單獨一個型別：LiveActivityIntent 需要 ActivityKit，算繪 harness 的裸
 ///    macOS 執行檔編不起來 ⇒ harness 用【同名替身】畫同一顆 RailEndButton（視覺完全相同，
@@ -898,7 +898,7 @@ struct MetroWaitActivityWidget: Widget {
                     HStack(spacing: 5) {
                         RailLineMark(name: d.lineLabel, color: d.color, fontSize: 11)
                         // 進站軌道版：站名已在軌道右端的站牌上，頂列只留線名（兩者並排時線名被截成
-                        // 「淡水信…」，09-23 使用者裁示留線名）。沒有站牌的舊版面照舊顯示站名。
+                        // 「淡水信…」）。沒有站牌的舊版面照舊顯示站名。
                         if d.trackB == nil {
                             Text(d.station).font(.system(size: 12, weight: .medium)).lineLimit(1)
                         }

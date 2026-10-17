@@ -113,7 +113,7 @@ public final class RailLiveActivityPlugin: CAPPlugin, CAPBridgedPlugin {
             // 車種代表色。Attributes 只在 request 當下定版,之後的 update 改不了它——
             // 但車種本來就不會中途變,這正是它該放在 Attributes 而不是 ContentState 的理由。
             color: call.getString("color"),
-            // 進站軌道（B 方案）車模 id；拿不到就是 nil,卡片退回舊版面(RailFollowDisplay.make
+            // 進站軌道的車模 id；拿不到就是 nil,卡片退回舊版面(RailFollowDisplay.make
             // 只在 sys 是 tra_sched／thsr_sched 且 carAspect 有值時才切版面)。
             carModel: call.getString("carModel")
         )

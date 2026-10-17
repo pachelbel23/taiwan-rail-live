@@ -529,7 +529,7 @@ export function deriveSecondArrivals(model, resolvedRows, vehicles, calibrations
 // 把 next2 的 eta2 裝飾進 legacy board 列（只增欄，不動既有欄位與列數）。
 // join 鍵＝正規化站名|終點|車號|官方到站秒。同鍵而 eta2 不同＝兩條線的列在
 // 這一輪完全不可分辨（同站同終點同車號同到站秒）⇒ 毒化該鍵、兩列都留白——
-// 寧可少顯示，不把 A 線的第二班貼到 B 線的列上（「有資訊就一定要對」）。
+// 寧可少顯示，不把 A 線的第二班貼到 B 線的列上（顯示出來的資訊必須正確）。
 export function applyNext2ToBoard(boardRows, next2) {
   if (!Array.isArray(boardRows) || !Array.isArray(next2) || !next2.length) return 0;
   const keyed = new Map();

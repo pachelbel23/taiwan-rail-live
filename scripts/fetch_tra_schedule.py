@@ -30,7 +30,7 @@
    未收錄，但同屬「110X」自強號系列命名慣例（比照已知的 110G/110H 皆為
    EMU3000 型自強號變體），本腳本依此慣例歸類為「自強」類，並在
    source_notes 註明這是慣例推斷、非官方文件逐字確認。
-4. 待上架站閘門（2026-09-26 使用者裁示，見 PENDING_STATION_CODES 上方說明）：
+4. 待上架站閘門（見 PENDING_STATION_CODES 上方說明）：
    官方車站清單查不到的站碼不再一律靜默丟掉——待上架站照丟但具名印出來，
    其他陌生站碼整輪失敗、不寫檔。
 """
@@ -475,7 +475,7 @@ def main():
                           f"{per_day_text(per_day)}" for code, per_day in unknown_skips)
         raise RuntimeError(
             f"逐日時刻表用到官方車站清單沒有（或座標不可用）、也不是待上架站的站碼：{detail}。"
-            "依 2026-09-26 裁示整輪失敗、不寫檔。先查清楚是新站、改碼還是官方清單出錯；"
+            "整輪失敗、不寫檔。先查清楚是新站、改碼還是官方清單出錯；"
             "是待上架新站就把站碼加進 PENDING_STATION_CODES（站名加進 fetch_tra.py 的 PENDING_STATIONS），"
             "不要為了讓重抓過而直接放行。")
 
@@ -519,7 +519,7 @@ def main():
         )
     if pending_skips:
         source_notes += (
-            " 丟棄的 stop 中含待上架站（依 2026-09-26 裁示，官方車站清單與 data/tra.json 站序都有這一站才收）："
+            " 丟棄的 stop 中含待上架站（官方車站清單與 data/tra.json 站序都有這一站才收）："
             + "；".join(f"站碼 {code} {per_day_text(per_day)}" for code, per_day in pending_skips) + "。"
         )
 

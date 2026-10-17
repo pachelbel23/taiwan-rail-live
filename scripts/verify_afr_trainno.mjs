@@ -89,7 +89,7 @@ for (const b of sp.branchLines) {
   expectOf.set('branch:' + b.id, new Set(roster.filter(t => t.stops.some(x => ss.has(x.name))).map(t => String(t.train))));
 }
 
-// ── 開頁:「台」分頁＝台鐵＋林鐵同框,正是使用者回報時的畫面,也是撞號真的會發生的組態 ──
+// ── 開頁:「台」分頁＝台鐵＋林鐵同框,正是出現症狀時的畫面,也是撞號真的會發生的組態 ──
 const browser = await chromium.launch();
 const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 }, locale: 'zh-TW' });
 // 語系釘 zh-TW:B 節比對的是中文列車名,跟隨機器語系跑會整段假紅(既有踩坑)。
@@ -112,7 +112,7 @@ await page.waitForFunction(() => state.trains.some(t => t.sys === 'afr_sched')
   && state.trains.some(t => t.sys === 'tra_sched') && state.special, null, { timeout: 30000 });
 await page.waitForTimeout(800);
 
-// 讀「地圖下方列車資訊卡」實際渲染出來的字(renderTrainCard 就是使用者截圖的那張卡)
+// 讀「地圖下方列車資訊卡」實際渲染出來的字(renderTrainCard 就是畫這張卡的函式)
 const card = async (no, sys) => page.evaluate(([no, sys]) => {
   const tr = state.trains.find(t => t.sys === sys && String(t.train) === no);
   if (!tr) return { missing: true };
@@ -242,7 +242,7 @@ else {
 console.log('\n═══ E. 探索面板「今日亮點」：特別列車／支線列也只能是台鐵的車 ═══');
 // 同一個缺陷的第二個消費端(2026-09-08 與 D 節同輪抓到):computeHighlights 也是直接對
 // state.trains 比車次／車型／站名。實測「台」分頁下它把林鐵 1/2 次標成「環島之星 萌旅號」,
-// 點下去跟到的就是阿里山林鐵——與使用者回報的收集章症狀一模一樣,只是入口不同。
+// 點下去跟到的就是阿里山林鐵——與收集章的症狀一模一樣,只是入口不同。
 const hi = await page.evaluate(() => {
   const o = computeHighlights(), m = x => ({ title: x.title, no: String(x.tr.train), sys: x.tr.sys });
   return { special: o.special.map(m), branches: o.branches.map(m) };
@@ -293,7 +293,7 @@ if (f.setup) {
     `F2 控制組：台鐵 ${f.traNo} 次完乘仍蓋得到支線章（實際：${JSON.stringify(f.traBranch)}）`);
 }
 
-console.log('\n═══ G. 今天沒有這一類的車時：說明卡＋下次開行日（2026-09-08 使用者要求）═══');
+console.log('\n═══ G. 今天沒有這一類的車時：說明卡＋下次開行日 ═══');
 // 點了要開出資訊／故事卡，並說明今天沒有開這班車。
 // 期望值一律由磁碟的 dates 索引自己算(與 index.html 的實作不同源);_schedStale 與窗尾兩個
 // 邊界另外用注入的方式逼出來——真實資料今天不會走到那兩條路,不逼就是零資訊。
@@ -420,7 +420,7 @@ else {
   if (gSynth) await synthOff(page);   // 還原:G4 的控制組要有車可搭
 }
 
-// G4(反向控制組):今天有車的章照舊直接跟車,卡不准出現——防「一律改成開卡」的假修法。
+// G4(反向控制組):今天有車的章仍直接進入跟車、不出卡片——防止改成每個章都先開卡的假修法。
 const g4Key = [...expectOf].find(([k, v]) => k.startsWith('named:') && v.size) || [...expectOf].find(([, v]) => v.size);
 if (!g4Key) ok(false, 'G4 今天算不出有候選的章,控制組無法成立');
 else {

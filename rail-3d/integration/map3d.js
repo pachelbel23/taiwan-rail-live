@@ -155,7 +155,7 @@ export async function createLiveMap({map,landscape=false,isCurrent=()=>true,onGe
   // 分界不看隧道種類：種類是整條連續隧道一個值，台北地下段一路連到南港的丘陵，整段會被算成
   // 山岳。改成逐點量「這一點的地表是不是山坡」——取樣點周圍 ±55 公尺十字的地形高差。
   // 實測台北地下段中位 0.6 公尺（p90 1.5），高鐵三義穿山脊那段 38～39 公尺；取 10 公尺為界，
-  // 台北只有 3% 受影響。2026-09-12 回報的「山丘表面的軌道印子」就是山脊那一段。
+  // 台北只有 3% 受影響。山坡表面露出軌道線的問題就出在山脊那一段。
   // 覆土深度仍是第二道：全台 42984 個取樣點 72.7% 淺於 30 公尺，30 公尺約十層樓，再深線就
   // 不像在腳下。建置期的地表值（display-profiles）比隨站出貨的 DEM 平均高 5.2 公尺（p90 11.8），
   // 所以淺覆土段要拿真正畫得出來的地形再判一次，深的直接用建置值判，省下逐點地形查詢。
@@ -323,7 +323,7 @@ export async function createLiveMap({map,landscape=false,isCurrent=()=>true,onGe
       if(m?.group){const poses=profile&&h!==null&&(!terrainHeights()||path.elevation||path.level)?formationPoses(path,profile.s,profile.direction*(v.formationFacing||1),m.model.parts,s=>railHeight(path,s)):null;m.group.visible=!!poses;
         if(poses){const displayScale=m.displayScale??1;
           // 「透視顯示」切到實體時,地下列車改用實色車體:仍留在地下圖層,與地面列車的前後關係不變,只是不再半透明。
-          // 地下軌道線照舊半透明(profile-lines 的 .32),所以還看得出這一段在地下——2026-09-10 裁示只讓列車變實色。
+          // 地下軌道線照舊半透明(profile-lines 的 .32),所以還看得出這一段在地下——只有列車改成實色。
           m.cars.forEach((car,k)=>{const part=m.model.parts[k],pose=poses[k],r=ml.MercatorCoordinate.fromLngLat(pose.coordinate).meterInMercatorCoordinateUnits()/unit;pose.underground=isUnderground(path,pose.s);
             const direction=profile.direction*(v.formationFacing||1)*(part.flip?-1:1),half=part.bodyLengthM/2;
             pose.light={night:nightAmount(globalThis.railIslandSunlight?.current),tunnel:[-half,0,half].map(d=>tunnelAmount(path,pose.s+d*direction))};car.children[0].userData.trainLight=pose.light;car.children[0].material=(pose.translucent=pose.underground&&inspection)?undergroundMaterial:material;car.children[0].layers.set(pose.underground?1:0);car.children[0].layers.enable(2);car.position.set(...world(pose.coordinate,pose.height));car.scale.set(r,r*displayScale,r);car.rotation.set(0,part.flip?pose.pitch:-pose.pitch,pose.angle+(part.flip?Math.PI:0),'ZYX');});

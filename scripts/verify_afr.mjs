@@ -275,7 +275,7 @@ const clash = sch.types.map(t => t.key).filter(k => traKeys.has(k));
 ok(clash.length === 0, `車種 key 不撞台鐵（${sch.types.map(t => t.key).join('/')}）`);
 ok(sch.trains.every(t => t.typeName && t.carName), '每個車次都有 typeName/carName（空值會讓列車畫不出來）');
 
-// 觀日列車獨立基準:日出表逐格抄自使用者提供的官方訂票系統截圖(afrts/afrch 同表),
+// 觀日列車獨立基準:日出表逐格抄自官方訂票系統截圖(afrts/afrch 同表),
 // 不是從 index.html 複製——實作內嵌表若轉錄有誤,期望值就對不上。
 // 校準點:2026-07-19 官方公告「04:20 開車/回程末班 06:10」,當旬(7月16~20)日出 05:32
 // → 去程=日出−72分、回程=日出+38分,四捨五入到 5 分(官方公告慣例粒度)。
@@ -401,7 +401,7 @@ for (const [engine, name] of [[chromium, 'chromium'], [webkit, 'webkit']]) {
   ok(r.offTrack.length === 0, `[${name}] 所有奔跑中列車都在軌道上（>50m 者：${r.offTrack.join(',') || '無'}）`);
 
   // ── 祝山線觀日列車（前端依官方日出表推算合成）──
-  // 期望值由本腳本自帶的日出表獨立算出:表值抄自使用者提供的官方訂票系統截圖(與 afrch 0000300 同表),
+  // 期望值由本腳本自帶的日出表獨立算出:表值抄自官方訂票系統截圖(與 afrch 0000300 同表),
   // 是對實作內嵌表的獨立轉錄——兩邊若有一邊抄錯,此處對不上。
   // 祝山線站座標取自 data/afr.json 本身(下方 ZS_FILE),不取執行期的 _track.stations:
   // 08-19 173bcf40「停靠中的列車不再被畫到自己那條線的外面」之後,前端會把離線形 20–300m 的站

@@ -129,7 +129,7 @@ const bores={};for(const e of Object.values(E))if(e.boreKind)bores[e.boreKind]=(
 if(!(bores.mountain>=220))failures.push(`G4 山岳隧道只有 ${bores.mountain||0} 條 way，地形分類可能整批失效`);
 if(!(bores.subsurface>=350))failures.push(`G4 都市地下段只有 ${bores.subsurface||0} 條 way`);
 notes.隧道分類 = bores;
-// 起伏 ≥20 m 卻判成都市地下的，只准是 A4 改判的那兩段：高出洞口 20 m 的取樣只占 1.8%（半屏山）與 3.6%（南港）。
+// 起伏 ≥20 m 卻判成都市地下的，只准是改判為都市地下的那兩段：高出洞口 20 m 的取樣只占 1.8%（半屏山）與 3.6%（南港）。
 // 名單釘死，門檻或 DEM 一動就會紅；新命中要先人工確認現地。
 const SHALLOW_HILL_EXPECTED=[
  // 高捷紅線
@@ -137,10 +137,10 @@ const SHALLOW_HILL_EXPECTED=[
  // 臺北臺鐵地下化
  '111449037','1551465830','1551465831','1551465832','194118009','194118010','194118011','194118012','194118014','194118015','194118017','194118018','194118019','194118020','194118021','194118022','194118023','194118024','194118025','194118028','194118029','194118030','194118031','194118032','194118035','194118036','194118037','194118038','19792761','23403470','365993922','365993923','381111235','391706270','51420790','542501098','542501099','542501100','574543348','574543350','615600482','615600483','615600484','615600485','615600486','633685393','633685394','633685395','633685396','710692152','710692153','871108521','871108523','871112936','871112937','871112938','871112939','871809212','871809213','871809214','87192065','877532232','877532233','877532239','877532240','877532241','f9-taipei-east-bridge-0914'];
 const shallowHill=Object.entries(E).filter(([,e])=>e.boreKind==='subsurface'&&e.reliefM>=20).map(([id])=>id).sort();
-if(JSON.stringify(shallowHill)!==JSON.stringify([...SHALLOW_HILL_EXPECTED].sort()))failures.push(`G4 起伏 ≥20 m 卻判都市地下的有 ${shallowHill.length} 條，與 A4 裁示名單 ${SHALLOW_HILL_EXPECTED.length} 條不符——新命中要先人工確認現地`);
+if(JSON.stringify(shallowHill)!==JSON.stringify([...SHALLOW_HILL_EXPECTED].sort()))failures.push(`G4 起伏 ≥20 m 卻判都市地下的有 ${shallowHill.length} 條，與預期名單 ${SHALLOW_HILL_EXPECTED.length} 條不符——新命中要先人工確認現地`);
 // 分類對了還要看畫面：改判之前這兩段在平面地圖浮在地面上 +8 公尺，交會淨距再把新左營的平面臺鐵頂高 3.7 公尺。
 const shallowFlatMax=Math.max(...SHALLOW_HILL_EXPECTED.map(id=>Math.max(...(E[id]?.flatOffsets||[Infinity]))));
-if(!(shallowFlatMax<0))failures.push(`G4 A4 改判的地下段在平面地圖最高 ${shallowFlatMax.toFixed(2)}m，沒有降到地面下`);
+if(!(shallowFlatMax<0))failures.push(`G4 改判為都市地下的段在平面地圖最高 ${shallowFlatMax.toFixed(2)}m，沒有降到地面下`);
 const XZY_AT=[120.3083,22.6887],XZY_TRA=['93484396','501182457','501190266','501190268','501190269','595516451','1061049301'];
 let xzyMax=-Infinity,xzyN=0;
 for(const id of XZY_TRA){const e=E[id],w=wayById.get(id);if(!e?.flatOffsets||!w){failures.push(`G4 新左營臺鐵 ${id} 不見了（來源重切了？）`);continue;}
@@ -324,7 +324,7 @@ notes.露天縱坡最陡 = Object.fromEntries(Object.entries(steepest).map(([s,{
 
 
 // ── G7 隧道要有證據：layer<0 不算 ──────────────────────────────────
-// 2026-09-12 回報兩處「平地上立著一個洞口」：縱貫線中洲–大湖與宜蘭線牡丹。兩處的來源標記
+// 有兩處平地上憑空出現隧道洞口：縱貫線中洲–大湖與宜蘭線牡丹。兩處的來源標記
 // 都只有 layer=-1／-2、沒有 tunnel=yes，兩端接的還都是橋——OSM 用 layer 記「有東西從上面跨過去」，
 // 被當成了隧道。症狀有兩個：洞口憑空出現，以及整段軌道被當成地下段而完全不畫（雙線只剩一條）。
 // structure-kind.js 檔頭早就寫明「layer 不能單獨作為結構的證據」，橋的方向照做了，隧道沒有。
@@ -373,9 +373,9 @@ notes.露天縱坡最陡 = Object.fromEntries(Object.entries(steepest).map(([s,{
   if(runs.length<300)failures.push(`G7 隧道連續段只有 ${runs.length} 段，分母異常縮水（2026-09-12 基準 338）`);
   if(ridingOnNeighbour<2)failures.push(`G7 只有 ${ridingOnNeighbour} 條隧道 way 是靠鄰居的標記留下來的，這條規則的作用面消失了（2026-09-12 基準 2）`);
   if(bad.length)failures.push(`G7 有 ${bad.length} 段隧道既無明示標記、DEM 也找不到山（${bad.slice(0,4).join('、')}）`);
-  // 具名回歸：2026-09-12 回報的兩處改判成平面，而同樣只有 layer=-2、但真的穿山的三貂嶺那段留著。
+  // 具名回歸：上述兩處改判成平面，而同樣只有 layer=-2、但真的穿山的三貂嶺那段留著。
   for(const id of ['213099735','193939712'])
-   if(E[id]?.kind!=='surface')failures.push(`G7 ${id}（2026-09-12 回報現場）應改判成平面，實際 ${E[id]?.kind}`);
+   if(E[id]?.kind!=='surface')failures.push(`G7 ${id}（中洲–大湖／牡丹那兩處假隧道之一）應改判成平面，實際 ${E[id]?.kind}`);
   for(const id of ['1181895950','1021846211'])
    if(E[id]?.kind!=='tunnel')failures.push(`G7 ${id}（只有 layer、但 DEM 有山）應維持隧道，實際 ${E[id]?.kind}`);
   // 正向對照：拿一條**確定在平地**的 way 餵同一個量法，它必須量到接近 0 的起伏。
@@ -393,4 +393,4 @@ notes.露天縱坡最陡 = Object.fromEntries(Object.entries(steepest).map(([s,{
 
 console.log(notes);
 if(failures.length){console.log(failures);process.exit(1);}
-console.log('橋隧種類與顯示高度：反向改判、橋面高度、洞口銜接、分類分母與 A4 改判、穿透門檻、露天縱坡、接縫、平面埋沒、平面浮空、隧道不畫與隧道證據皆通過');
+console.log('橋隧種類與顯示高度：反向改判、橋面高度、洞口銜接、分類分母與都市地下改判、穿透門檻、露天縱坡、接縫、平面埋沒、平面浮空、隧道不畫與隧道證據皆通過');

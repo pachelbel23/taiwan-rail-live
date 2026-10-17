@@ -359,7 +359,7 @@ function sourceAudit(source) {
     reducerImport: /import \{ reduceOfficialRosterSelfHealing \}/.test(source),
     crowdSelfHeal: /crowdLimit: TRTC_OFFICIAL_CROWD_LIMIT/.test(source),
     // 有倒數才畫的開關必須真的接到 reducer 上（只有常數存在不算接上）。
-    // 🔴 只驗接線不驗值：值是產品決定的（08-17 使用者訂正後為 false），寫死當下的值
+    // 🔴 只驗接線不驗值：值是產品決定的（08-17 起為 false），寫死當下的值
     // 會在下次翻面時讓整支集體假紅——本支就這樣紅過 17 項，而產品完全正常。
     officialOnly: /officialOnly: TRTC_OFFICIAL_ONLY/.test(source) &&
       /const TRTC_OFFICIAL_ONLY = (?:true|false);/.test(source),

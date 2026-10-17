@@ -31,7 +31,7 @@
   1. `worker.js:3868` 附近的 `if/else if` dispatch
   2. `worker.js:2387` 的 `API_POST_ALLOWED`（Set）—— 收 POST 必加
   3. `worker.js:2390` 的 `API_ENDPOINTS`（Set）—— 埋點用，路徑是 `pathname.slice(5)`（`/api/la/bind` → `la/bind`）
-- **不准動 `wrangler.jsonc` 的 `triggers.crons`**。第二條 cron `"15 4 * * *"` 是 owner 2026-07-29 刻意停用的，
+- **不准動 `wrangler.jsonc` 的 `triggers.crons`**。第二條 cron `"15 4 * * *"` 是刻意停用的，
   檔內註解明寫「agent 不得自行加回」。新的每分鐘工作掛進**既有**的 `event.cron === '* * * * *'` 分支。
 - **secret 不進 `wrangler.jsonc`**，一律 `wrangler secret put`；`vars` 只放非機密識別值。
 - **回歸底線**：`scripts/verify_live_activity.mjs` 既有 15 組案例必須全數維持通過。
@@ -1377,7 +1377,7 @@ async function laPushAll(env, ctx, baseUrl) {
 ```
 
 > **不要新增 cron 字串、不要動 `wrangler.jsonc` 的 `triggers.crons`。** `"* * * * *"` 已經註冊，
-> 掛進去就會跑；那個陣列裡第二條的停用是 owner 刻意的決定（檔內註解明寫 agent 不得自行加回）。
+> 掛進去就會跑；那個陣列裡第二條是刻意停用的（檔內註解明寫 agent 不得自行加回）。
 
 - [ ] **Step 6: 對真 APNs 冒煙測試一發**
 
@@ -1659,7 +1659,7 @@ git fetch origin && git log --oneline HEAD..origin/main    # 必須為空
 curl -sL "https://railisland.tw/api/la/bind" -o /tmp/_p.json -w "%{http_code}\n"   # 確認線上沒有你沒有的東西
 ```
 
-依專案慣例，功能批次要**先給預覽 URL 讓使用者親試、拿到明確 go** 才升正式站。
+依專案慣例，功能批次要**先給預覽 URL 實際試用、確認可以上線** 才升正式站。
 
 ---
 

@@ -16,7 +16,7 @@ python3 -m http.server 5253 --bind 127.0.0.1
 ## 視覺與實作
 
 - 沿用 EMU3000 既有三節模型（頭尾對稱雙駕駛室＋中間車）。manifest 本身就是完整三節編組，不會觸發 `createConsist` 給單一動力車補兩節藍皮客車的預設邏輯；沒有新增或改寫模型資產。
-- `rail-3d/garage-scenes/viaduct.js` 是第一個「場景原型＋參數」：`createScene(params)` 接受 `platformLength`／`pierHeight`／`pierSpacing`／`canopy`（`'modern'` 薄平頂／`'simple'` 單斜頂）／`backdrop`（`'coast'` 靠海／`'fields'` 水田）／`label`，未傳參數時等同 EMU3000 那組預設值。本頁 `main.js` 用預設值建場景；不同參數只在驗證腳本裡建立獨立實例測試，不影響這個頁面顯示的場景。
+- `rail-3d/garage-scenes/viaduct.js` 是第一個帶參數的場景原型：`createScene(params)` 接受 `platformLength`／`pierHeight`／`pierSpacing`／`canopy`（`'modern'` 薄平頂／`'simple'` 單斜頂）／`backdrop`（`'coast'` 靠海／`'fields'` 水田）／`label`，未傳參數時等同 EMU3000 那組預設值。本頁 `main.js` 用預設值建場景；不同參數只在驗證腳本裡建立獨立實例測試，不影響這個頁面顯示的場景。
 - 路徑模型比照南迴海岸：單一環線 `scene.path`（`path.sample(s)` 回 `{x,y,z,heading}`、`path.length`），沒有阿里山那種多支路折返 `journey`。車廂跟隨改用 `consist-3d.js` 的 `createTerrainFollower`（依前後轉向架的 3D 取樣建立車身座標基底），不是 `garage-model.js` 內建的平面 `train.follow()`；這個場景本身是平的，俯仰角固定為 0，是預期行為。
 - 高架橋面、月台、雨棚、站房、樹木與小屋皆為程式生成並以 `InstancedMesh` 合批；`backdrop`／`canopy` 參數切換的是實際材質與方塊數量（例如水田用 9 個色塊、海景另外多繪一片帶 shader 波浪的海面＋26 顆礫石），不是只換顏色的假參數化——驗證腳本的三角形計數證明了這點。
 - 「看月台」按鈕把 `distance` 設為 0：`viaduct.js` 的 `sample(0)` 正好落在前直線中點、面對月台，這是既有座標系本身的性質，不是另外指定的錨點。
@@ -44,6 +44,6 @@ python3 -m http.server 5253 --bind 127.0.0.1
 
 ## 參考
 
-- 使用者提供《收藏車庫：一車一景（場景系統）設計書》：以共用場景介面為方向；這是第一個實作「場景原型＋參數」的樣板，供沒有專屬場景的車款之後共用。
+- 依《收藏車庫：一車一景（場景系統）設計書》，以共用場景介面為方向；這是第一個帶參數的場景原型，供沒有專屬場景的車款之後共用。
 - [Blair Yu／EMU3000 原始攝影文章](https://blair-train.blogspot.com/2019/12/emu3000-tra-emu3000-type-electric.html)：`rail-3d/assets/blender-map-v1/manifest.json` 中 `emu3000` 條目列出的車型來源之一。
 - [Hitachi：台灣鐵路 EMU3000 設計資料](https://www.hitachi.com/rd/research/design/product/taiwan_tra/index.html)：同一 manifest 條目列出的官方設計與車輛資料來源。

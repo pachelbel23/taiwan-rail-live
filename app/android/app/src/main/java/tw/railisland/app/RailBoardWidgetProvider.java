@@ -258,7 +258,7 @@ public class RailBoardWidgetProvider extends AppWidgetProvider {
 
     /*
      * 三尺寸 × 三種背景各一張版面（WidgetBackground）。頭帶／場景比素色的標題列高，同樣大小少放幾列：
-     * 小卡 A／C 把「再下一班」讓給車模與場景（mockup），大卡場景 150dp（mockup「大卡少一列」）。
+     * 車模／場景背景的小卡把「再下一班」讓給車模與場景（mockup），大卡場景 150dp（mockup「大卡少一列」）。
      * 這裡的列數是「預設大小」（defaultSize）量出來的班數：桌面上的卡照實際高度重量（at），這個數只在量不出來時
      * 直接用，挑選器示範列也照它放。
      * 🔴 每一個 board(...) 呼叫都要保持「board(context, R.layout.X, snapshot, N, readable, compact)」

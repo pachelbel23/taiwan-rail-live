@@ -246,7 +246,7 @@ public final class RailWidgetConfigActivity extends AppCompatActivity {
     private void updateDestinations() {
         // 重建前記住現在選的目的站,新清單裡還有就選回去——restore() 在起站 setSelection 之後
         // 立刻選好目的站,但起站 spinner 的 listener 要到下一個 layout 才觸發、再重建一次清單,
-        // 沒有這一步那次重建會把目的站打回「全部目的地」(使用者 2026-09-02 回報只能刪掉重來)。
+        // 沒有這一步那次重建會把目的站打回「全部目的地」(症狀：目的站改不回來,得把小工具整個重加)。
         String keep = destinationSpinner.getAdapter() == null ? "" : selectedDestination();
         List<String> values = new ArrayList<>();
         values.add("");

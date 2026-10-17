@@ -127,7 +127,7 @@ function esc(s) {
     .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 // 原文連結白名單。escape 擋得住 HTML 注入但擋不住 javascript:,而活動資料是
-// 「讀官方公告產草稿 → 只看標題裁示」的管線,url 不會被逐條看過。
+// 「讀官方公告產草稿 → 只看標題判斷」的管線,url 不會被逐條看過。
 function safeUrl(u) { return /^https?:\/\//i.test(String(u || '')) ? String(u) : ''; }
 function md(d) { return d.slice(5).replace('-', '/'); }
 function whenText(days) {

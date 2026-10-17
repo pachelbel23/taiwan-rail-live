@@ -117,7 +117,7 @@ async function boot(browser, { width = 393, tier = 'std', query = '', scheme, na
 }
 
 // ── 群組切換器:兩種形態共用的解析與真觸控 ────────────────────────────────────
-// 🔴 2026-08-27 起手機殼把四顆群組分頁(全／台／高／捷)收成一顆 #gtabOne,點開才出選單。
+// 🔴 2026-08-27 起手機殼把四顆群組分頁(全／台／高／捷)合併成單一按鈕 #gtabOne,點開才出選單。
 //    腳本一律「解析出當下真的渲染出來的那一種」,不寫死是哪一種:寫死一種,另一種上線時
 //    querySelectorAll 會回空陣列,而「空陣列裡沒有東西溢出視窗」恆真 ⇒ 整批判準無聲假綠
 //    (心得 37d:覆蓋率本身要有具名斷言)。所以下面每一處用到它的地方都先驗「解析得到」。
@@ -207,7 +207,7 @@ async function sectionA(browser, engine) {
         const br = bar.getBoundingClientRect(), gr = bg.getBoundingClientRect();
         const area = (a, b) => Math.max(0, Math.min(a.right, b.right) - Math.max(a.left, b.left))
                              * Math.max(0, Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top));
-        // D4 排法B 之後徽章是頂列的子元素:此時「不重疊」要換成「完全裝得進頂列,且與同列的兄弟互不相疊」
+        // D4 徽章併進頂列的排法之後徽章是頂列的子元素:此時「不重疊」要換成「完全裝得進頂列,且與同列的兄弟互不相疊」
         const inBar = bar.contains(bg);
         const contained = gr.left >= br.left - 0.5 && gr.right <= br.right + 0.5
                        && gr.top >= br.top - 0.5 && gr.bottom <= br.bottom + 0.5;
@@ -235,7 +235,7 @@ async function sectionA(browser, engine) {
       ok(`A5 ${tag} 零 pageerror`, errs.length === 0, errs.slice(0, 1).join(''));
       // 正向對照:`相交=0` 在「其中一個根本沒渲染」時也會成立,先證明兩者都真的量得到
       ok(`A6 ${tag} 正向對照:頂列與時鐘徽章都量得到`, r.bothVisible);
-      // A7 涵蓋兩種排法:徽章是獨立卡 ⇒ 與頂列零相交;徽章併進頂列(D4 排法B) ⇒ 必須整塊裝得進頂列,
+      // A7 涵蓋兩種排法:徽章是獨立卡 ⇒ 與頂列零相交;徽章併進頂列(D4) ⇒ 必須整塊裝得進頂列,
       // 且與同一列的 logo／公告鈕／群組分頁全部零相交。兩側都寫死,少了任何一半都會讓另一種排法無條件通過。
       ok(`A7 ${tag} 時鐘徽章${r.badgeInBar ? '併入頂列:裝得進去且與同列控件互不相疊' : '獨立卡:與頂列不重疊'}`,
         r.badgeInBar ? (r.badgeContained && r.sibOverlap === 0 && r.sibN >= 2)
@@ -842,7 +842,7 @@ async function sectionH(browser, engine) {
   await s2.close();
 }
 
-// ── I 段:D4 排法B——頂列收成一排 + 狀態字樣搬進「更多 · 資料狀態」 ──────────────
+// ── I 段:D4 徽章併進頂列的排法——頂列收成一排 + 狀態字樣搬進「更多 · 資料狀態」 ──────────────
 // 頂列只留一層:狀態旗標以色點表示、列車數放到「更多 · 資料狀態」。
 // 🔴 收成色點是「拿掉資訊」,所以這一段的重點不是色點好不好看,而是**那些字樣真的有新家**,
 //    而且新家的值是徽章的鏡射(不是另寫一份判斷,兩份遲早分岔)。
@@ -1009,7 +1009,7 @@ async function sectionI(browser, engine) {
   await close();
 }
 
-// ── J 段:整合卡(設計 D1–D3)——跟車中開車站看板 ⇒ 同一張卡兩個分頁 ─────────────
+// ── J 段:整合卡(設計 D1–D3)——跟車中開車站看板 ⇒ 兩個分頁共用一張卡 ─────────────
 // 設計狀態機:D1 跟車·這班車／D2 跟車·這一站(跟車不斷)／D3 沒跟車(卡頭是站名、分頁列不出現)。
 // 🔴 這一段最容易壞的地方不是樣式,是 **DOM 搬遷的生命週期**:看板每次重繪都 `innerHTML = …`,
 //    搬進去的 #followPanel 會跟著被銷毀(實作第一版就是這樣炸的)。J5/J7 專門守這件事。
@@ -2052,7 +2052,7 @@ async function sectionP(browser, engine) {
   await close();
 }
 
-// ── Q 段:更多選單——四段分組 ＋「每一列前面不再有單字圓章」(2026-08-27 使用者指示)────
+// ── Q 段:更多選單——四段分組 ＋「每一列前面不再有單字圓章」(2026-08-27)────
 // 這一段本來驗的是設計 3d 的單字圓章(Q1「每一列都有一顆帶字的圓章」/ Q2 字不重複 /
 // Q10 章不撐高)。每一行前面的單字多餘,所以拿掉⇒
 // 契約整個反過來:圓章一顆都不准留。其餘幾條(標籤對齊、尾巴貼右、列高與命中、分組標題、
@@ -2835,7 +2835,7 @@ if (process.env.FS_STATIC_ONLY === '1') {
 await assertTarget();
 // SECTIONS=H,I 只跑指定段(突變測試用);不設就跑全部——預設永遠是「全跑」,不能靠環境變數才完整。
 
-// ── X:上緣堆疊不得互相重疊(2026-08-26 使用者實機回報「大字級時捷與隨機跟隨鈕疊在一起」)──
+// ── X:上緣堆疊不得互相重疊(2026-08-26 在實機上看到字級放大後「捷」鈕壓到隨機跟隨鈕)──
 // 病根是一整族寫死常數:上緣堆疊的規則是「頂列底 + 間距」,實作卻把它凍結成
 // 標準檔量到的數字(.map-actions 100、.alert-detail/#searchPanel/.trip-banner 56)。
 // 字級一放大,頂列實高 42→103→117,常數就被壓進頂列裡。
@@ -2896,7 +2896,7 @@ async function sectionX(browser, engine) {
   }
 }
 
-// ── Y 段:點地圖空白處要收掉車站看板(使用者要求;捷運與台鐵兩條分支各一套) ─────────────
+// ── Y 段:點地圖空白處要收掉車站看板(捷運與台鐵兩條分支各一套) ─────────────
 // 這一段驗的是「互動能力」不是版面幾何,所以只跑 393pt/std——換字級不會改變點擊路由。
 // 🔴 判準一律「真的用滑鼠點一次 + 量它造成的狀態改變」(#board.hidden 與 state.boardStation),
 //    不用 elementFromPoint 命中誰下結論:命中對祖先容器恆真,答不了「點下去會發生什麼」。
@@ -3119,8 +3119,8 @@ async function sectionZ(browser, engine) {
   }
 }
 
-// ── SP 段:資料狀態小卡——點時鐘徽章展開(2026-08-27 使用者要求)────────────────
-// 「點時鐘的時候要顯示現在班次是 Live、還是非即時,把上面的燈號資訊詳細顯示出來」。
+// ── SP 段:資料狀態小卡——點時鐘徽章展開 ────────────────
+// 點時鐘徽章會展開小卡:先說明目前的班次資料屬即時或非即時,再逐項展開徽章燈號背後的細節。
 // 🔴 三件都要成立才算過:真的點得下去 / 卡真的看得見 / 字真的是徽章那顆燈的字。
 //    - 只驗 hidden 旗標 ⇒ 卡被 .stage 的 z-index 封頂、或被 .topbar 的 pointer-events:none
 //      擋在白名單外,兩種都會全綠(memory modal-stacking-context、judgment 心得 24/33 各踩一次)。
@@ -3347,7 +3347,7 @@ const TB_POP = () => {
 };
 async function sectionTB(browser, engine) {
   // ── 桌面反向對照:寬螢幕不是手機殼,四顆分頁要在、收合鈕不能出現。
-  //    少了這一半,「乾脆全平台都收成一顆」也會全綠。
+  //    少了這一半,把全平台都做成單一按鈕的錯誤實作也會全綠。
   {
     // 🔴 desktop:true 與 U 段同一個根因(見 boot()):isMobile/hasTouch ⇒ any-pointer:coarse ⇒
     //    MOBILE_MQ 在 1400px 以下恆成立,所以原本這裡的 width:1280 拿到的是【觸控平板】的手機殼,
@@ -3373,7 +3373,7 @@ async function sectionTB(browser, engine) {
       const busy = await page.evaluate(TB_PROBE);
 
       // ①③:三個字級都只留一顆群組鈕
-      ok(`TB1 ${tag} 四顆群組分頁收成一顆(#gtabOne 在、四顆那列不渲染)`,
+      ok(`TB1 ${tag} 四顆群組分頁併成單一按鈕(#gtabOne 在、四顆那列不渲染)`,
         !!busy.one && !busy.tabsBox, `一顆=${!!busy.one} 四顆列=${!!busy.tabsBox}`);
       // ④:長方形文字牌回來、方形 logo 讓位
       ok(`TB4 ${tag} 左上是長方形軌島牌,方形 logo 不露臉`,

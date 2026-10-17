@@ -41,7 +41,7 @@ function expectedCounts(rides) {
 // fixture 的形狀必須源自 build 腳本的實況，不是源自「我希望旗標怎麼運作」（心得 29 的反面應用）。
 // 舊 fixture 注入的 { platform:'ios', build:'test' } 真實 build 從來不會產生——prepare-web 產的是
 // { satRetina, tiles }，而且兩個布林 global 一定會注入。用假形狀的代價是失真：
-// 假形狀等於 App 測試根本沒在測 App 設定。（followZoomCap 已於 2026-09-07 裁示移除。）
+// 假形狀等於 App 測試根本沒在測 App 設定。（followZoomCap 已於 2026-09-07 移除。）
 // 兩種受支援的產出模式都要能模擬：
 //   licensed = npm run sync:release（RAIL_INCLUDE_LICENSED_*=1）→ 三個 global 都在
 //   safe     = npm run sync（沒帶環境變數）→ 只有兩個布林，**沒有** RAIL_APP_CONFIG
@@ -673,7 +673,7 @@ try {
     /搭乘中/.test(btn.other.txt) && /\bbusy\b/.test(btn.other.cls),
     `搭這班「${btn.riding.txt}」／未上車「${btn.idle.txt}」／搭別班「${btn.other.txt}」`);
 
-  // ── I 路段收集與里程碑成就（三軸的「線」＋使用者指名的 100／500 次成就）──
+  // ── I 路段收集與里程碑成就（三軸的「線」＋100／500 次的成就門檻）──
   // 判準獨立：該有幾段、鍵長什麼樣，都由本腳本從 stops 名單自己算。
   const segRes = await hp.evaluate(([train, sys, toIdx, jumpAll]) => {
     localStorage.removeItem('trainmap-checkins-v1');
@@ -741,7 +741,7 @@ try {
   ok('I4 反方向搭同一段路併入同一筆（不分方向）',
     bidir.after === bidir.before && bidir.n === 2, `段數 ${bidir.before}→${bidir.after}，該段次數 ${bidir.n}`);
 
-  // 完乘率：分母＝每條線自己的最細區間數（使用者 07-26 拍板「每條線分開算」）
+  // 完乘率：分母＝每條線自己的最細區間數（各線獨立計算）
   const comp = await hp.evaluate(() => {
     const lines = lineCompletion();
     const net = lineNetwork();
@@ -781,7 +781,7 @@ try {
   ok('I8 25 座站解鎖「車站巡禮」、100 座解鎖「百站達成」',
     achRes.stn25.includes('stn25') && !achRes.stn25.includes('stn100') && achRes.stn100.includes('stn100'),
     `25座→[${achRes.stn25.join(',')}]　100座→[${achRes.stn100.join(',')}]`);
-  ok('I9 同一段路 100／500 次解鎖通勤成就（使用者指名的門檻）',
+  ok('I9 同一段路 100／500 次解鎖通勤成就',
     achRes.c100.includes('commute100') && !achRes.c100.includes('commute500') && achRes.c500.includes('commute500'),
     `100次→[${achRes.c100.filter(x => /commute/.test(x)).join(',')}]　500次→[${achRes.c500.filter(x => /commute/.test(x)).join(',')}]`);
   // 章面只印縮寫名，所以比對 title（完整說明）而不是可見文字；重點是「真的渲染成金章了」
@@ -1073,7 +1073,7 @@ try {
     cmMobOff.on === false && cmMobOff.barHidden && cmMobOff.tabBack,
     `collectMap=${cmMobOff.on}　狀態列隱藏=${cmMobOff.barHidden}　tabbar 回來=${cmMobOff.tabBack}`);
 
-  // ── L 護照分節收合（使用者 2026-07-26：「旅程護照現在佔太大塊了」）──
+  // ── L 護照分節收合（護照頁占去的版面過大，改成分節可收合）──
   // 判準刻意不同源（心得 29）：不讀 ppSecOpen()／localStorage 當「有沒有收起來」的證據
   //（那是實作自己的狀態，實作判斷錯就會一起錯成綠燈），一律量**實際渲染高度**與
   //  真的用滑鼠／手指點下去之後畫面變成怎樣——高度與命中都是外部性質。

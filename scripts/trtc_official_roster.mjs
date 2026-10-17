@@ -429,7 +429,7 @@ function officialVehicle(model, row, vehicleId, base, sourceRevision, nowEpoch) 
 // 一台車沒有出現在這一輪的倒數裡，不代表它停下來了——它只是暫時不是任何一站的「下一班」。
 // 它要**繼續往前跑**：到站時刻過了就過站，用這條線該段的實際行車秒推到現在的位置，
 // 到終點就收車。凍在原地才是錯的——後面每 90 秒一班真車就會疊在那個殘影上，
-// 那正是使用者看到的「連在一起的車」（實測正式站 180 台裡有 24 台的到站時刻早就過了，
+// 那正是畫面上車子連成一串的樣子（實測正式站 180 台裡有 24 台的到站時刻早就過了，
 // 中位 136 秒、最久 452 秒）。
 function coastForward(model, vehicle, nowEpoch) {
   const dest = Number(vehicle.dest), step = Number(vehicle.dir) === 2 ? 1 : -1;
@@ -455,7 +455,7 @@ function coastForward(model, vehicle, nowEpoch) {
   //   (2) Metro Core 直接吃這份 boardPos.vehicles，拿到 run=0 就只能把車釘在原地——2026-08-29
   //       對正式站量了 3 分鐘：Core 給兩條支線的座標逐輪一字不變（G_XBT 恆為
   //       24.97188,121.53058 與 24.97503,121.54292），而同一時刻 legacy 的位置是連續前進的
-  //       （floor 0.324→0.364→0.437→…→0.881）。使用者回報的「支線車子不會動」就是這個。
+  //       （floor 0.324→0.364→0.437→…→0.881）。支線上的車子不會動的症狀就是這個。
   // run 是可以從線形算回來的量，補在唯一的源頭上，兩條管線才拿到同一份幾何。
   // 🔴 只對一段式路線補：一般路線的 coasted 車 run 沿用既有值，行為一個字不動（不外溢到其他站）。
   return singleSegmentLine(model, vehicle.line)
@@ -486,7 +486,7 @@ function carriedVehicle(model, vehicle, sourceRevision, nowEpoch, numberContradi
       nowEpoch >= Number(timing.retireEpoch)) return null;
   // 🔴 退場地板（2026-08-17）：官方 timeline 半途中斷的車永遠等不到終點事件 ⇒ retireEpoch
   // 恆為 null ⇒ 上面那道退場檢查結構上永遠不成立，殘骸整天只進不出（實測早上 1.5 小時
-  // 累積 37 台原地不動的車，畫面上就是使用者看到的「重複的車」）。
+  // 累積 37 台原地不動的車，畫面上就是同一輛車重複出現的樣子）。
   //
   // 三道前提缺一不可，每一道都對應一個被實測打臉過的失效：
   //   (1) lineAlive：**這條線這一輪確實有官方列**。斷訊時整條線一起沉默，這時停滯是
@@ -533,7 +533,7 @@ export function reduceOfficialRoster({ model, rows, prior = null, day, nowEpoch,
   // 🔴 車停在站上，不該因此重新換身分。
   // 畫不畫由官方倒數決定,身分不由它決定。一台車暫時從所有站的倒數裡消失（過了站、
   // 又還不是下一站的「下一班」）只是不畫,身分要留著,再出現時用回同一個 vehicleId——
-  // 否則跟車會被中斷,也牴觸 08-14「從他早上一發車就認得他」。
+  // 否則跟車會被中斷,也違背身分要從早上發車起一路延續的規則。
   // 休眠車與在畫的車一起進配對候選池,唯一差別是它這一輪沒有被畫出來。
   const dormantVehicles = previousDormant(prior, normalizedDay);
   const matchPool = priorVehicles.concat(dormantVehicles);
@@ -558,7 +558,7 @@ export function reduceOfficialRoster({ model, rows, prior = null, day, nowEpoch,
       if (Number.isFinite(last) && epoch - last >= realignSec) realignLines.add(line);
     }
   }
-  // 外部指定的立即重排（2026-08-17 使用者要求的「迅速重置」）。與斷訊恢復共用同一條路徑：
+  // 外部指定的立即重排。與斷訊恢復共用同一條路徑：
   // 清掉這條線上官方沒報到的車、放行站間官方列生車＝完全照當下官方資料重建這條線。
   // 🔴 只認**這一輪真的有官方列**的線：對沒有官方列的線重排＝把整條線清空又補不回來，
   // 那正是永久廢棄的「缺訊就刪車」。冷啟動本來就整批接回，不需要也不應該再重排。
@@ -575,7 +575,7 @@ export function reduceOfficialRoster({ model, rows, prior = null, day, nowEpoch,
   // 亦即:這一輪的倒數沒報到的車就不畫。這條取代 08-14「缺訊只 hold」的沿用規則——
   // 那條當時是為了防止車子憑空消失,代價卻是半路失去倒數的車永遠留在原地當殘影
   // (實測正式站 180 台裡 27 台是殘影,其中 24 台的到站時刻早就過了,中位 136 秒),
-  // 後面的真車一班班疊上去就是使用者看到的「連在一起的車」。
+  // 後面的真車一班班疊上去,畫面上就成了連成一串的車。
   // 實作上與斷訊恢復共用同一條路徑:清掉沒被官方確認的車 + 放行站間官方列生車。
   // 仍然只作用在「這一輪真的有官方列」的線——整條線沉默時照舊 hold,那是傳輸問題不是車不在。
   if (officialOnly && !coldStart) for (const line of linesWithRows) realignLines.add(line);

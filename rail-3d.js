@@ -20,7 +20,7 @@
   if(params.get('tracks')!=='legacy')import('./rail-3d/physical/client.js').then(m=>m.loadPhysicalMotion()).then(m=>{m.formationLengthM=formationLengthM;window.railIslandPhysical=m;glTracks.sig='';}).catch(e=>console.error('實體股道',e));
   // 這一區的 ri-* 全是使用者在「觀看設定」裡按過的選擇(立體列車開關、編組、地形、車身大小、透視…),
   // 原本記在 sessionStorage,分頁一關(手機上就是把 app 滑掉)整組就沒了,下次開又回預設——
-  // 使用者 2026-09-18 回報的正是這件事。設定要跨次開啟活著,只能放 localStorage,
+  // 這正是實際踩到過的問題。設定要跨次開啟活著,只能放 localStorage,
   // 與 index.html 的 trainmap-* 同一套做法。舊 session 值不必搬:它本來就活不過這次關閉。
   // 網址參數(?scene=2d、?formation=…)仍然只是這一次的覆寫,照舊不落盤,分享連結才不會改到對方的設定。
   const read=(key,fallback)=>{try{return localStorage.getItem(key)||fallback;}catch{return fallback;}};

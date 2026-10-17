@@ -18,7 +18,7 @@ html[data-theme=dark] body :is(.board,.traincard,#nearCard,#xingCard,#xingHelp,.
   background:rgba(12,18,33,.80); border:1px solid rgba(146,180,235,.22); border-radius:14px;
   box-shadow:var(--shadow-navy); -webkit-backdrop-filter:blur(20px); backdrop-filter:blur(20px);
 }
-/* 2026-09-19 裁示 A：「面板半透明」在暗色也要有作用——開＝本體 .45＋08-27 凍結的 blur(3px)（原 .30 在「暗色＋衛星／手機」白字只剩 3.4–3.8，字色已到頂；.40 仍紅、.45 兩引擎全綠，使用者 09-19 裁示改 .45）；
+/* 「面板半透明」在暗色也要有作用——開＝本體 .45＋08-27 凍結的 blur(3px)（原 .30 在「暗色＋衛星／手機」白字只剩 3.4–3.8，字色已到頂；.40 仍紅、.45 兩引擎全綠，故取 .45）；
    關＝上面的 .80 玻璃。收到最小的跟隨小卡／列車 sheet 小段排除在外，退回 .80 玻璃（同亮色退回實色）。
    特異度 (1,2,2) 蓋過上面 (1,1,2)。 */
 html[data-theme=dark] body.panel-translucent :is(.board,.traincard:not(.tc-sheet.sheet-small),#nearCard,#xingCard,#xingHelp,.follow-panel:not(.fp-min),.freq-card) {

@@ -127,7 +127,7 @@ for(const path of paths){const center=list=>[list.reduce((v,c)=>v+c.coordinate[0
  const aSide=side(ca.coordinate,center(a.candidates),path.coordinates[0],path.coordinates[1]),bSide=side(cb.coordinate,center(b.candidates),path.coordinates.at(-2),path.coordinates.at(-1));
  const preference=(Math.max(0,-aSide)+Math.max(0,-bSide))*10+path.edgeIds.filter(id=>graph.edges.get(id).tags.service==='crossover').length*2;
 ```
-`preference` 只是附加在每條候選路徑上的一個**分數**（越低越好），依「這條路徑端點是否落在候選群集的慣用相對側」與「用了幾段渡線（crossover）」加權——**這個分數本身在 `build_physical_routes.mjs` 裡沒有被用來剔除或排序路徑**（`preference` 只是寫進 `record` 隨路徑一起輸出，第 49 行），實際挑哪條路徑是下游 `optimize_physical_dispatch.*`（C 項）依 `result.pairs[key]`（候選路徑 id 陣列）配合求解器目標函數決定。換句話說：**B 項只產生候選集合＋一個「非官方方向」的側偏好分數，真正拍板選哪一股是 C 項的事，而 C 項的挑選邏輯裡同樣沒有方向規則（見 C2）**。
+`preference` 只是附加在每條候選路徑上的一個**分數**（越低越好），依「這條路徑端點是否落在候選群集的慣用相對側」與「用了幾段渡線（crossover）」加權——**這個分數本身在 `build_physical_routes.mjs` 裡沒有被用來剔除或排序路徑**（`preference` 只是寫進 `record` 隨路徑一起輸出，第 49 行），實際挑哪條路徑是下游 `optimize_physical_dispatch.*`（C 項）依 `result.pairs[key]`（候選路徑 id 陣列）配合求解器目標函數決定。換句話說：**B 項只產生候選集合＋一個「非官方方向」的側偏好分數，真正決定選哪一股是 C 項的事，而 C 項的挑選邏輯裡同樣沒有方向規則（見 C2）**。
 
 ### B3. 站序方向如何進入候選集合
 

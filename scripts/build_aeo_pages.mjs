@@ -1221,7 +1221,7 @@ const traEntries = [...stations, ...secondBatch].flatMap(config => config.member
   return { key, id: String(item.stationId), name: item.name, city: traCity(item), page: config };
 }));
 
-// 中文索引的「全部台鐵車站」分組區塊（方案 A：依縣市，縣市內依站碼）。將來改成依路線分組，只要換掉這個函式。
+// 中文索引的「全部台鐵車站」分組區塊（依縣市分組，縣市內依站碼排序）。將來改成依路線分組，只要換掉這個函式。
 // 版面：上方一排縣市跳轉按鈕（純錨點，不用 JS），每個縣市一個 h3＋一排 .sibling-links 膠囊，每站一個連結。
 function traStationGroupsHtml() {
   const byCounty = new Map(TRA_COUNTY_ORDER.map(county => [county, []]));

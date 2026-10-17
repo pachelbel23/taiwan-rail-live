@@ -28,7 +28,7 @@ const originalMd5 = createHash('md5').update(original).digest('hex');
 const MUTATIONS = [
   {
     id: 'U1 誤點改讀 easedShift 的漸變值',
-    why: '整張卡的第一紅線:使用者長期裁示「官方值一律照抄」。liveDelaySec() 是給動畫用的\n'
+    why: '整張卡的第一紅線:誤點數字只能是官方原值、不得加工(這是規則,不是假設)。liveDelaySec() 是給動畫用的\n'
        + '     漸變量,它在兩個官方值之間平滑移動 ⇒ 送上去的是一個官方從來沒說過的數字。\n'
        + '     只有 C3 那一刻(官方剛從 7 跳到 20、eased 還在爬)分得出來——C1 是綠的,\n'
        + '     因為 live 剛啟用時 eased 會 snap 到官方值、兩者恰好相等。',
@@ -186,7 +186,7 @@ const MUTATIONS = [
   },
   {
     id: 'U16 payload 加一個倒數欄位',
-    why: '派工原話:「絕不做秒級倒數——沒有的精度不准造」。payload 是卡片文字的唯一原料,\n'
+    why: '規則:卡片不得出現秒級倒數,精度不得超出官方資料所給。payload 是卡片文字的唯一原料,\n'
        + '     這裡漏進去的話,卡上要不要印就只剩版面決定,而版面是會改的。',
     from: '    dest: cand.dest, schedSec: cand.schedEpoch, color: cand.color, key,',
     to: '    dest: cand.dest, schedSec: cand.schedEpoch, color: cand.color, key,\n'

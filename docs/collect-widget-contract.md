@@ -97,7 +97,7 @@ window.RAIL_NATIVE_COLLECTION = { sync: json => RailCollection.sync({ json }) };
 
 1. **尺寸**：iOS 有 systemSmall、systemMedium、accessoryRectangular、accessoryCircular；Android 有小、中兩款。
 2. **全台範圍**：整島框。
-3. **單一系統範圍**（放大到該系統，附近畫灰點）：
+3. **單一系統範圍**（地圖縮放到該系統範圍，周邊站點以灰點標示）：
    - 取該系統所有點的外框 `[minX, maxX] × [minY, maxY]`，寬 `w`、高 `h`；邊距 `pad = max(0.12 × max(w, h), 10)`，四邊各加 `pad`。
    - 視窗邊長 `S = max(w + 2·pad, h + 2·pad, 40)`（正規化單位下的正方形），以外框中心為中心；超出 0..1000 不必夾回。
    - 地圖框的位置與大小跟全台範圍相同（版面不跳），框內把視窗 `[cx − S/2, cx + S/2] × [cy − S/2, cy + S/2]` 等比放大填滿。

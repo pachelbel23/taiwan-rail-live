@@ -922,7 +922,7 @@ section(SECTIONS[11]);
     JSON.stringify({ body: refunded.body, doc: refunded.doc }));
 
   // 12-3 webhook：用 RevenueCat 實際送來的 Request body，重查 /purchases 後寫資格文件。
-  // sandbox 終身只認 sandbox UID allowlist 裡的帳號；下面的 webhook 正例都用兩個實測帳號都在名單內的設定。
+  // sandbox 的終身方案只對 sandbox UID allowlist 內的帳號生效；下面的 webhook 正例都用兩個實測帳號都在名單內的設定。
   const SANDBOX_LIFETIME_ENV = (over = {}) => LIFETIME_ENV({ REVENUECAT_SANDBOX_ALLOWED_UIDS: `${IOS_UID},${ANDROID_UID}`, ...over });
   const hook = async (file, uid, purchasesSandbox, env = SANDBOX_LIFETIME_ENV(), subscriptions = EMPTY_LIST) => {
     resetIo();

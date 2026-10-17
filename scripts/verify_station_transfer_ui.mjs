@@ -147,7 +147,7 @@ try {
         });
         ok(`${engineName} ${width} 具名台鐵案例可跟隨`, !!(picked && picked.sys === 'tra_sched'), JSON.stringify(picked));
 
-        // ── 落點 A：車站看板的站況區（回答「這站是什麼」）──
+        // ── 看板站況區（回答「這站是什麼」）──
         // 站物件一律取 app 自己的索引，不自組。轉乘查找的真正過濾器是
         // criteria.maxDistanceM 的座標閘門，餵一顆只有站名沒有座標的假物件，會結構性地永遠查無而假紅。
         const board = await page.evaluate(() => {
@@ -180,11 +180,11 @@ try {
         ok(`${engineName} ${width} A 可見、在站況區內、座標可命中`, board.visible && board.insideMeta && board.hittable, JSON.stringify(board));
         ok(`${engineName} ${width} A 無水平溢出`, board.docOverflow <= 1 && board.boardOverflow <= 1, JSON.stringify(board));
 
-        // ── 落點 B：跟隨卡的「下一站」（回答「要不要在這站下車換車」）──
+        // ── 跟隨卡的「下一站」那一列（回答「要不要在這站下車換車」）──
         // 要讓下一站正好是台北，得把時鐘撥到抵達台北前。直接寫 state.simSec 必須同時 clockAtNow=false，
         // 否則會亂蓋完乘章（專案鐵則）。
         // 兩張卡都要量。v0810b 只量了台鐵那張（`.fp-next` 本來就有 flex-wrap 所以永遠不溢出），
-        // 捷運那張 `.fc-next` 沒有 wrap、卡片又是固定 220px，整條標凸出卡片外——使用者截圖抓到的，
+        // 捷運那張 `.fc-next` 沒有 wrap、卡片又是固定 220px，整條標凸出卡片外——是看截圖才發現的，
         // 149/149 全綠卻一格都沒照到。溢出一律對「卡片的內距盒」量，不是對面板 rect（那不會被撐大）。
         const nextTag = await page.evaluate(() => {
           closeBoard();
@@ -229,10 +229,10 @@ try {
           }
           // 捷運跟隨卡：真的起跟一條北捷線，再用最長的那個站名（台北車站，四條轉乘）逼出最壞版面。
           // 下一站是誰由模擬時鐘決定，沒有辦法從外面指定，所以這裡直接餵 updateFreqCard——
-          // 它就是產生使用者那張截圖的同一條 render 路徑。
+          // 它就是產生當初那張截圖的同一條 render 路徑。
           // 捷運跟隨卡。要切到 mrt 系統（state.mode 從 sched 變 freq）才有 state.lines。
           // 下一站是誰由模擬時鐘決定、從外面控不了，而要驗的是最壞版面（台北車站＝四條轉乘），
-          // 所以直接設 freqFollow＋開卡再餵 updateFreqCard——它就是產生使用者那張溢出截圖的同一條 render 路徑。
+          // 所以直接設 freqFollow＋開卡再餵 updateFreqCard——它就是產生當初那張溢出截圖的同一條 render 路徑。
           // 用 applyFreqFollow 不行：k=0 的幽靈車當下不存在，updateFreqFollowCamera 會把卡收掉。
           loadSystem(state.systems.find(s => s.id === 'mrt'));
           const ln = (state.lines || []).find(l => l.id === 'BL');
@@ -265,7 +265,7 @@ try {
         ok(`${engineName} ${width} B 捷運卡：座標可實際命中`, !!(nextTag.fc && nextTag.fc.hittable), JSON.stringify(nextTag.fc));
         ok(`${engineName} ${width} B 兩張卡都不造成頁面橫向溢出`, nextTag.docOverflow <= 1, JSON.stringify({ docOverflow: nextTag.docOverflow }));
 
-        // 舊落點（資訊卡逐站停靠表）必須真的清乾淨——留著就是使用者抱怨的那份噪音。
+        // 舊落點（資訊卡逐站停靠表）必須真的清乾淨——留著就是造成畫面雜亂的那份噪音。
         // 上一段切去了 mrt 系統，這裡要切回台鐵並重新跟上，才點得開列車 sheet。
         await page.evaluate(() => {
           loadSystem(state.systems.find(s => s.id === 'tra_sched'));
@@ -284,7 +284,7 @@ try {
           legacy.rows > 0 && legacy.leftovers === 0, JSON.stringify(legacy));
         ok(`${engineName} ${width} 停靠表無水平溢出`, legacy.stopsOverflow <= 1, JSON.stringify(legacy));
 
-        // ── 落點 B 的第三個顯示實例：手機開了列車 sheet，body.train-open 會把整張跟隨小卡（連同 #fpXfer）
+        // ── 跟隨卡的「下一站」那一列的第三個顯示實例：手機開了列車 sheet，body.train-open 會把整張跟隨小卡（連同 #fpXfer）
         // 藏掉，sheet 自帶的遙測列必須接手顯示轉乘標，否則使用者的感受是「剛剛看到的提示不見了」。
         // 這正是上一輪漏掉 #fcXfer 的同一類缺口，所以這裡也用同一顆量測器、對「卡片內距盒」量溢出。
         const sheetTag = await page.evaluate(() => {
@@ -306,7 +306,7 @@ try {
           sheetTag.insideCard && sheetTag.apartFromSiblings && sheetTag.cardOverflow <= 1, JSON.stringify(sheetTag));
         ok(`${engineName} ${width} B sheet：座標可實際命中`, !!sheetTag.hittable, JSON.stringify(sheetTag));
         // 手機的具名覆蓋率斷言：三個顯示實例一個都不能少。分母縮水只印在 detail 等於沒 gate——
-        // 上一輪 149/149 全綠就是因為第二個實例從來沒被量到（使用者截圖才抓到）。
+        // 上一輪 149/149 全綠就是因為第二個實例從來沒被量到（看了截圖才發現）。
         ok(`${engineName} ${width} B 三個顯示實例都量到了（fpXfer＋fcXfer＋tcLiveXfer）`,
           nextTag.measuredTags.length === 2 && sheetTag.measured === true,
           `卡片量到:${nextTag.measuredTags.join('、') || '(空)'}｜sheet:${sheetTag.measured ? 'tcLiveXfer' : '(沒量到 ' + (sheetTag.why || '') + ')'}`);
@@ -379,7 +379,7 @@ try {
         });
         const wide = await page.evaluate(() => {
           const out = {};
-          // 落點 A
+          // 看板站況區
           window.__M.setView([25.0478, 121.5170], 15, { animate: false });
           const st = nearbyStationCandidates().find(({ st }) => st.sys === 'tra_sched' && ['臺北', '台北'].includes(st.name))?.st;
           out.station = st && st.name;
@@ -396,7 +396,7 @@ try {
             // 桌面看板不該讓這一列自己捲出去(側欄寬度固定,長清單要換行不是溢出)
             out.boardOverflow = document.getElementById('board').scrollWidth - document.getElementById('board').clientWidth;
           }
-          // 落點 B——兩張卡都要量，溢出對「卡片內距盒」量（面板 rect 不會被撐大，量它等於沒量）
+          // 跟隨卡的「下一站」那一列——兩張卡都要量，溢出對「卡片內距盒」量（面板 rect 不會被撐大，量它等於沒量）
           closeBoard();
           const padBox = card => {
             const r = card.getBoundingClientRect(), cs = getComputedStyle(card);

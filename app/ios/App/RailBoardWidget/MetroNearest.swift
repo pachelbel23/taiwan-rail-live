@@ -29,7 +29,7 @@ enum MetroNearest {
     /// 🔴 退快取那一路要回 `stale: true` 並【一路帶到卡面】。小工具一段時間沒被看到,
     ///    系統就不再供應定位(Apple 的 widget in-use 窗,見 isAuthorizedForWidgetUpdates
     ///    文件),此時卡上畫的是【上次】的位置而不是現在的;不標出來的話畫面與正常狀態
-    ///    一模一樣,使用者只會覺得「自動選站壞了」而無從分辨(2026-08-30 使用者回報)。
+    ///    一模一樣,使用者只會覺得「自動選站壞了」而無從分辨(2026-08-30 實機上發生過)。
     static func resolve(catalog: MetroWidgetCatalog) async
         -> (outcome: MetroNearestMath.Outcome, stale: Bool)? {
         if let fix = await OneShotLocation.shared.fix(),
@@ -42,7 +42,7 @@ enum MetroNearest {
             case .outOfRange:
                 // 🔴 確認人在範圍外就要【清掉】快取。留著的話下一輪定位失敗會退回舊站,
                 //    卡上繼續畫幾百公里外那一站的倒數——那比直說「範圍外」更隱蔽,
-                //    因為畫面看起來完全正常(2026-08-18 回報的同一個問題的另一半)。
+                //    因為畫面看起來完全正常(2026-08-18 出現的同一個問題的另一半)。
                 suite?.removeObject(forKey: cacheKey)
             }
             return (outcome, false)
@@ -70,7 +70,7 @@ enum MetroNearestMath {
     }
 
     /// 自動選站的服務範圍半徑。最近站在這之外時,那一站的倒數對使用者沒有意義
-    /// ——他不會走過去搭,而卡上照常畫著秒級倒數(2026-08-18 使用者回報)。
+    /// ——他不會走過去搭,而卡上照常畫著秒級倒數。
     ///
     /// 12,000 取自對目錄裡 trtc/krtc/tymc 三系統實算的天然斷點:
     ///   合理   桃園藝文特區 8.4km→環北、桃園車站 9.2km→體育大學、烏來 10.6km→新店

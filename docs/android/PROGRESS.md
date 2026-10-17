@@ -107,14 +107,14 @@
 
 #### 2026-08-04 負責人解除網路阻擋後重驗
 
-- 經核准讓 Gradle 使用正常的外部 cache／網路後，`gradle-8.14.3-all.zip` 已從 `services.gradle.org` 完整下載到 100%，wrapper 正常顯示 `Welcome to Gradle 8.14.3!`；先前的 `UnknownHostException` 已解除。
+- 讓 Gradle 使用正常的外部 cache／網路後，`gradle-8.14.3-all.zip` 已從 `services.gradle.org` 完整下載到 100%，wrapper 正常顯示 `Welcome to Gradle 8.14.3!`；先前的 `UnknownHostException` 已解除。
 - 同一次 `JAVA_HOME='/Applications/Android Studio.app/Contents/jbr/Contents/Home' ANDROID_HOME="$HOME/Library/Android/sdk" ./gradlew assembleDebug --console=plain` 最終 exit 1，新的關鍵錯誤是 `Unsupported class file major version 69`，發生在 Gradle build script semantic analysis、尚未進入 AGP／SDK platform 解析。
 - 環境唯讀盤點：Android Studio JBR 是 OpenJDK `25.0.2`，Homebrew 既有 OpenJDK 是 `26.0.2`；`/usr/libexec/java_home -V` 與系統／使用者 JDK 目錄搜尋均找不到 JDK 17／21／24。Gradle 8.14.3 啟動畫面只宣告 Java 24 支援，故目前兩個既有 runtime 都過新。
 - 依「不下載安裝新開發工具」與不得改 wrapper／降依賴規則停止；沒有再用 Java 26 重複同一個已知不相容錯誤。新阻擋是缺少相容 JDK（建議 JDK 21），不是網路、SDK license 或應用程式碼。APK 仍不存在，G = FAIL，APK 內容驗證 = 驗不了。
 
-#### 2026-08-05 使用者授權後續作業
+#### 2026-08-05 後續作業
 
-- 使用者明確授權安裝相容 JDK；執行 `brew install openjdk@21` exit 0，Homebrew 安裝 `openjdk@21 21.0.12` 至 `/usr/local/Cellar/openjdk@21/21.0.12`。
+- 安裝相容 JDK 的限制解除；執行 `brew install openjdk@21` exit 0，Homebrew 安裝 `openjdk@21 21.0.12` 至 `/usr/local/Cellar/openjdk@21/21.0.12`。
 - 直接執行 keg 內 Java，實測 `openjdk version "21.0.12"`。沒有執行 Homebrew 建議的 sudo 系統 symlink、沒有 `brew link`，也沒有修改 shell 設定；後續只在 Gradle 單次命令指定 `/usr/local/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home` 為 `JAVA_HOME`。
 - 以該 JDK 執行 `JAVA_HOME=… ANDROID_HOME="$HOME/Library/Android/sdk" ./gradlew assembleDebug --console=plain`：exit 0，關鍵輸出 `BUILD SUCCESSFUL in 3m 32s`、`245 actionable tasks: 245 executed`。
 - Gradle 依指定順序自動安裝缺少的 `Android SDK Platform 36 (revision 2)` 與 `Android SDK Build-Tools 35.0.0`，兩者 license 均已接受；沒有把 compileSdk 改成 37，也沒有手動執行 sdkmanager。

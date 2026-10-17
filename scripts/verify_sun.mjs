@@ -45,7 +45,7 @@ assert.equal(new Set([0,6,12,18].map(h=>at(h).sky['sky-color'])).size,4);
 console.log('PASS 晨東暮西、午夜在地平線下、四時段色彩');
 
 // ── 夜間鋪面（2026-09-09）────────────────────────────────────────────────────
-// 使用者回報「晚上道路都還是淺色的，幾乎看不清楚軌道跟車」。壓暗地面的是 landscape-hillshade
+// 症狀：夜裡道路仍是白天的淺色，軌道與列車對比不足。壓暗地面的是 landscape-hillshade
 // 的陰影色，而 map3d.js 把那層插在 'building' 之前——畫在它上面的道路、機場鋪面、底圖鐵道
 // 與 2D 建物因此整夜維持白天配色。這一組守的是「名單沒漏、白天不動、夜裡真的變暗」。
 const style = JSON.parse(fs.readFileSync('vendor/ofm-landscape.json', 'utf8'));

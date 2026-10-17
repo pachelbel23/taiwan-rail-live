@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // 強制更新閘門＋本版內建「更新了什麼」的判準(2026-08-22, 1.4.9 build 75 起)。
 // 背景:build 74 實踩「剛更新完的彈窗抓 iTunes lookup 的線上版 releaseNotes,裝了 1.4.9
-// 卻彈 1.4.8 的文」;同輪裁示加遠端最低版本閘門(fail-open)。
+// 卻彈 1.4.8 的文」;同輪加上遠端最低版本閘門(fail-open)。
 // 行為判準:cmpVer/appUpdateState/appGateShouldBlock 是純函式,從 index.html 抽出來真跑;
 // 源碼判準:彈窗餵內建文案不餵 lookup notes、閘門無關閉鈕、消費端壞值不短路閘門。
 import { readFileSync } from 'node:fs';

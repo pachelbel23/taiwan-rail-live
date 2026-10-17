@@ -2555,7 +2555,7 @@ Object.assign(window.RAIL_I18N_MESSAGES.ja, {
   "捷運工程叢書：電聯車實務，第 114 頁": "捷運工程叢書：電車実務、114ページ",
 });
 
-// 2026-09-19 i18n 複審修正(fix/i18n-review-fix)。依主對話指示,本檔既有區塊一律不動,
+// 2026-09-19 i18n 複審修正(fix/i18n-review-fix)。本檔既有區塊一律不動,
 // 修正既有譯文也寫在這裡:同一個鍵後面的 Object.assign 會蓋掉前面的(下面標「覆寫」的就是這種)。
 // 修正理由:英文單複數(t() 第三個參數已傳入數量)、拼接處的空白屬於樣板不屬於片段、日文逗號連句。
 Object.assign(window.RAIL_I18N_MESSAGES.en, {
@@ -3288,21 +3288,21 @@ Object.assign(window.RAIL_I18N_MESSAGES.en, {
 Object.assign(window.RAIL_I18N_MESSAGES.ja, {
   '用鍵盤往回移動時，我的最愛、車站看板等面板選到的項目不再被標題列蓋住；iPhone 英文介面選到長站名時，畫面不再能左右拖動': 'キーボードで前の項目に戻るとき、お気に入りや駅案内などのパネルで選んだ項目がタイトルバーに隠れないようにしました。iPhoneの英語表示で長い駅名を選んでも、画面が左右に動かないようにしました',
 });
-// 2026-09-25 高捷紅線與臺北臺鐵地下化改回地面下（裁示 A4）：第一層更新紀錄那條的 en/ja（第二層正本一律走 RAIL_I18N_CHANGELOG）。
+// 2026-09-25 高捷紅線與臺北臺鐵地下化改回地面下：第一層更新紀錄那條的 en/ja（第二層正本一律走 RAIL_I18N_CHANGELOG）。
 Object.assign(window.RAIL_I18N_MESSAGES.en, {
   '3D 地圖上臺北車站的臺鐵列車不再畫在車站屋頂上，高捷紅線地下段也不再浮在地面上；新左營臺鐵與高雄輕軌被頂高的地方回到原位': "On the 3D map, TRA trains at Taipei Main Station are no longer drawn on top of the station roof, and the Kaohsiung Metro Red Line's underground section no longer floats above ground; the spots where the TRA at Xinzuoying and the Kaohsiung Light Rail were pushed up are back at their proper height.",
 });
 Object.assign(window.RAIL_I18N_MESSAGES.ja, {
   '3D 地圖上臺北車站的臺鐵列車不再畫在車站屋頂上，高捷紅線地下段也不再浮在地面上；新左營臺鐵與高雄輕軌被頂高的地方回到原位': '3D地図で、台北駅の台鉄列車を駅の屋根の上に描かなくなり、高雄メトロ レッドラインの地下区間も地上に浮かなくなりました。新左営の台鉄と高雄ライトレールで持ち上がっていた箇所も元の高さに戻りました。',
 });
-// 2026-09-26 台鐵 10/3 改點的 14 班在 3D 沿用自己的股道（裁示 (b′)）：第一層更新紀錄那條的 en/ja（第二層正本一律走 RAIL_I18N_CHANGELOG）。
+// 2026-09-26 台鐵 10/3 改點的 14 班在 3D 沿用自己的股道：第一層更新紀錄那條的 en/ja（第二層正本一律走 RAIL_I18N_CHANGELOG）。
 Object.assign(window.RAIL_I18N_MESSAGES.en, {
   '台鐵 10/3 起有 14 班調整時刻，3D 地圖裡這些車照樣走原本的股道': '14 TRA trains get new times from Oct 3; on the 3D map they still run on their usual tracks.',
 });
 Object.assign(window.RAIL_I18N_MESSAGES.ja, {
   '台鐵 10/3 起有 14 班調整時刻，3D 地圖裡這些車照樣走原本的股道': '台鉄で10月3日から時刻が変わる14本も、3D地図ではこれまでと同じ線路を走ります',
 });
-// 2026-09-26 跟車卡「下一站」長站名換行顯示全名（裁示 (b)）：第一層更新紀錄那條的 en/ja（第二層正本一律走 RAIL_I18N_CHANGELOG）。
+// 2026-09-26 跟車卡「下一站」長站名換行顯示全名：第一層更新紀錄那條的 en/ja（第二層正本一律走 RAIL_I18N_CHANGELOG）。
 Object.assign(window.RAIL_I18N_MESSAGES.en, {
   '跟車卡的「下一站」遇到較長的站名（例如英文介面的長榮大學、科工館）會換行顯示全名，整張卡不再能左右拖動': 'On the follow card, long names under “Next stop” (such as Chang Jung Christian University or Science And Technology Museum in English) now wrap onto the next line in full, and the card no longer slides sideways.',
 });
@@ -3542,7 +3542,7 @@ Object.assign(window.RAIL_I18N_MESSAGES.ja, {
   '車站頁加上台鐵、高鐵時刻表：台北、板橋、台中等大站，列出兩週內每一班的開車時刻與行駛日': '駅ページに台鉄・高鉄の時刻表を追加：台北、板橋、台中などの主要駅で、2週間分の全列車の発車時刻と運転日を掲載',
   '車站頁加上台鐵、高鐵時刻表（中、英、日文）：台北、板橋、台中等 20 個大站，加上新開的高鐵苗栗、彰化、雲林站，依方向列出兩週內每一班的開車時刻與行駛日，每週更新；車站頁與捷運路線圖頁也換上軌島圖示，跟著地圖切換亮暗外觀': '駅ページに台鉄・高鉄の時刻表を追加（中国語・英語・日本語）：台北、板橋、台中など20の主要駅と、新設の高鉄苗栗・彰化・雲林駅で、方面別に2週間分の全列車の発車時刻と運転日を掲載（毎週更新）。駅ページと路線図ページにも軌島のアイコンを付け、地図のライト／ダーク表示に合わせて切り替わります',
 });
-// 2026-09-30 日文環島列車終點改短寫法（使用者裁示）。
+// 2026-09-30 日文環島列車終點改短寫法。
 Object.assign(window.RAIL_I18N_MESSAGES.en, {
   '日文介面：環島列車的終點改成簡短好懂的「台北（台湾一周）」': 'Japanese interface: the round-the-island train’s terminus now has a short, easy-to-read Japanese name',
   '日文介面與日文車站頁：環島列車的終點原本寫成很長的「台北サラウンドアイランド」，改成簡短好懂的「台北（台湾一周）」': 'Japanese interface and Japanese station pages: the round-the-island train’s terminus, previously a long katakana name, now has a short, easy-to-read Japanese name',

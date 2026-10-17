@@ -21,7 +21,7 @@ import android.graphics.Shader;
  *   視窗內其他系統的點畫成更淡一階的中性灰墊在下面，視窗外的點不畫。
  *
  * · 最底層是台灣輪廓（CollectionOutlineData.POLYGONS，與 iOS 同一份多邊形，座標公式與點【同一個】cx／cy、同一個視窗）：
- *   全台＝淡色陸地填色，畫得出點陣框（見 Bleed）；單一系統＝細線＋四邊淡出，只畫在點陣框內（放大後填色會變成柔邊方框、蓋掉其他系統的淡灰點）。
+ *   全台＝淡色陸地填色，畫得出點陣框（見 Bleed）；只看單一系統時＝細海岸線＋四邊淡出，只畫在點陣框內（放大後填色會變成柔邊方框、蓋掉其他系統的淡灰點）。
  *
  * 🔴 淺／深兩份 Bitmap：Bitmap 不會跟著系統深淺色切換（資源會，像素不會），所以兩份都畫，
  *    由版面的資源限定值決定露出哪一張（見 widget_collect_small.xml 與 values(-night)/dimens_collect.xml）。
@@ -212,7 +212,7 @@ final class CollectionMapRender {
 
     /**
      * 台灣輪廓。全台：陸地填色，不裁切（Bitmap 的出血區讓恆春半島南端與西岸畫得出去）。
-     * 單一系統：細線，只畫在點陣框內，四邊各淡出「框寬 × FADE_RATIO」（橫、縱各一道漸層遮罩相乘）。
+     * 只看單一系統時：細海岸線，只畫在點陣框內，四邊各淡出「框寬 × FADE_RATIO」（橫、縱各一道漸層遮罩相乘）。
      */
     private static void drawOutline(Canvas canvas, CollectionData.Figures f, Window win, int w, int h, float inset, boolean night, float density) {
         Path path = new Path();

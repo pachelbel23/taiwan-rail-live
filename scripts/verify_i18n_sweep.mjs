@@ -103,7 +103,7 @@ async function scanCjk(page, rootSelector, { pattern = HAN_KANA, includeHidden =
 }
 
 // 看板列被截字：任何一格 .dest 在最終畫面上 scrollWidth > clientWidth（被 ellipsis 截掉，或整段擠出框外）。
-// 2026-09-19 使用者回報「車站資訊的字有些都被切到了」：英文台鐵板約三成的列「往哪裡」整段看不到、
+// 2026-09-19 發現車站資訊裡的字被截斷：英文台鐵板約三成的列「往哪裡」整段看不到、
 // 捷運板把線名與車次擠成 0 寬。修法是一列塞不下就整板改兩行（data-wrap2），這裡驗它真的沒有截字。
 async function scanClipped(page, rootSelector = '#board') {
   return page.evaluate(sel => {

@@ -2,7 +2,7 @@
 // 台鐵誤點統計自我檢查(delaySelfHeal)一鍵驗收。跑法:node scripts/verify_delay_self_heal.mjs
 //
 // 背景:每日誤點 ingest(ingestDelayHistory)一天只有一發(15 1 * * *＝台北 09:15),第二發
-// (15 4 * * *)是 owner 刻意停用的。2026-09-08~09-12 連五天,那一發在第一個 TDX 呼叫(取 token)
+// (15 4 * * *)是刻意停用的。2026-09-08~09-12 連五天,那一發在第一個 TDX 呼叫(取 token)
 // 就吃 HTTP 429、整發拋例外;缺日自癒一發只補最舊 3 天,積欠超過 3 天時單靠每日那一發永遠追不上
 // (09-13 補完 09-06~09-08 就停,統計窗仍落後好幾天)。delaySelfHeal 掛在每分鐘 cron,問 blob
 // 迄日有沒有追上昨天,沒追上就當場補抓,讓積欠當天就能靠多發接力補完,不必空等到隔天。
@@ -625,7 +625,7 @@ try {
     const m = wcfg.match(/"crons"\s*:\s*(\[[^\]]*\])/);
     let cronsOk = false, cronsArr = null;
     try { cronsArr = m && JSON.parse(m[1]); cronsOk = Array.isArray(cronsArr) && JSON.stringify(cronsArr) === JSON.stringify(['* * * * *', '15 1 * * *']); } catch {}
-    ok('H7 wrangler.jsonc 的 crons 陣列逐字恰為 ["* * * * *","15 1 * * *"](owner 停用的第二發沒被加回來)',
+    ok('H7 wrangler.jsonc 的 crons 陣列逐字恰為 ["* * * * *","15 1 * * *"](已停用的第二發沒被加回來)',
       cronsOk, m ? m[1] : 'crons 找不到');
   }
 } finally {

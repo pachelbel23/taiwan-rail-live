@@ -1,7 +1,7 @@
 // 放空「跟車」= 立體列車近景 — Playwright 真引擎 + 本機靜態伺服器。
 //
-// 來源(2026-09-07 使用者):「放空模式,如果是跟車,直接是放大到可以看到實際上的列車 3D 模型在跑的」
-// 以及「之前新增的曲目都加入網站放空模式的輪播,但是不用讓他可以選擇」。
+// 預期行為:放空時的跟車視角,鏡頭要拉近到看得見列車 3D 模型實際在跑。
+// 放空模式(網站版)的曲庫包含所有新增曲目,但不提供選曲介面。
 //
 // 改動前的實況(本腳本的反向對照就是在釘這件事):放空跟車固定停在介面縮放 14,而 rail-3d 的三道門檻
 // 都用 MapLibre 原生刻度(= 介面 − ML_Z)⇒ 原生只有 13,render() 低於 13.8 直接不 capture、
@@ -126,7 +126,7 @@ ok('C3 網站 離開放空退回免費曲庫', desk.after.fromPool === 0 && desk
 ok('C3b 群車視角也吃得到(放空就有,不分視角)', hot.during.fromPool === hot.during.poolTotal, `pool=${hot.during.fromPool}`);
 ok('C4 控制組 App 放空不混入情境池(那是通行證的內容)', appRun.during.fromPool === 0 && appRun.during.n === appRun.during.freeTotal,
   `n=${appRun.during.n}/${appRun.during.freeTotal}`);
-ok('C5 網站沒有情境選擇入口(裁示:不用讓他可以選擇)', !desk.before.plBtn && !desk.before.plRow,
+ok('C5 網站沒有情境選擇入口(輪播自動進行,不提供選擇)', !desk.before.plBtn && !desk.before.plRow,
   `btn=${desk.before.plBtn} row=${desk.before.plRow}`);
 
 ok('Z 頁面零例外', errors.length === 0, errors.slice(0, 2).join(' | '));

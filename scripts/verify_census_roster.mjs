@@ -73,7 +73,7 @@ const badTl = V.filter(v => {
 });
 check(!badTl.length, 'timeline 時刻遞增且不換方向', badTl.length ? `${badTl.length} 台` : `多段車 ${V.filter(v => (v.timeline || []).length > 1).length} 台`);
 
-// 7. 同段可以有兩台（使用者明示：下一站看到兩個倒數就是有兩台），但不可疊在同一個點上。
+// 7. 同段可以有兩台（下一站若同時列出兩個倒數，就代表有兩台車），但不可疊在同一個點上。
 // 判準因此是「進度要分得開」而不是「一段只准一台」。
 const slots = new Map();
 for (const v of V) {

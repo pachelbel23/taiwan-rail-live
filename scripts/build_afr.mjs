@@ -474,7 +474,7 @@ async function main() {
   // ─────────────── 時刻表 densify ───────────────
   console.log('\n== 時刻表 densify');
   // 車種表:GeneralTrainTimetable 的 TrainInfo.TrainTypeName 十個車次全部是 null(已實測確認),
-  // 前端 typeName 篩選/繪製 gate 需要非空值,依「起訖站所屬路線」歸類(規格由協調者拍板):
+  // 前端 typeName 篩選/繪製 gate 需要非空值,依「起訖站所屬路線」歸類:
   const TRAIN_TYPE = {
     '1': { typeName: '阿里山號', color: '#B03A2E' }, '2': { typeName: '阿里山號', color: '#B03A2E' },
     '5': { typeName: '阿里山號', color: '#B03A2E' }, '8': { typeName: '阿里山號', color: '#B03A2E' },

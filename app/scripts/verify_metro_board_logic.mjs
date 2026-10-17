@@ -189,7 +189,7 @@ for (const [kind, sys, file] of [['trtc', 'trtc', 'trtc-live.json'],
 }
 
 // ── 🔴 逐列線色的來源:官方車號 join,不准用站別/終點猜 ──
-// 真機回饋(08-15):台北車站標頭畫紅點、底下卻列著藍線(板南線)的班次——站別取「第一條線」
+// 台北車站標頭畫紅點、底下卻列著藍線(板南線)的班次——站別取「第一條線」
 // 等於隨機指定,轉乘站必錯。正解是每一列各自對回它真正的路線:看板列的車號 join 官方
 // `trains[]`,取該車 `stn` 的字母前綴(BL10 → BL)。
 // 判準不同源:期望值直接從 fixture 的 board.no / trains.stn 用 regex 獨立算,不碰 Swift。
@@ -308,7 +308,7 @@ for (const [sys, file] of [['krtc', 'krtc-live.json'], ['tymc', 'tymc-live.json'
      JSON.stringify(g.rows.map(r => r.lineCode)));
 }
 
-// ── 🔴 「再下一班」合成列(2026-08-22 裁示:第二班寫「約N分」,推不出留白) ──
+// ── 🔴 「再下一班」合成列(2026-08-22 起:第二班寫「約N分」,推不出留白) ──
 // fixture 是凍結樣本＋只注入 eta2 三處的合成檔(檔名標明 -synth;負向案例 eta2≤eta
 // 只有合成造得出來——伺服端結構上不會送)。期望值全部從 fixture 原始欄位獨立算。
 {

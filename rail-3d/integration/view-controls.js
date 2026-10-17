@@ -39,7 +39,7 @@ export function mountViewControls({translate:t}) {
   document.addEventListener('keydown',e=>{if(e.key==='Escape'&&opened){e.preventDefault();close(true);}});
   document.addEventListener('pointerdown',e=>{if(opened&&!dock.contains(e.target)&&!toggle.contains(e.target))close();});
   function layout(){
-    // 側欄模式只有右側真的有卡片或跟車欄時才讓到它左邊（與 index.html 的 --rail-occupy 同一組狀態）；沒開卡片時留在右上工具列，否則 iPad 橫向會浮在畫面中間（09-25 回報）。
+    // 側欄模式只有右側真的有卡片或跟車欄時才讓到它左邊（與 index.html 的 --rail-occupy 同一組狀態）；沒開卡片時留在右上工具列，否則 iPad 橫向會浮在畫面中間。
     const railBusy=['sheet-open','train-open','follow-on'].some(c=>document.body.classList.contains(c));
     const mobile=document.body.classList.contains('mobile-shell'),stage=document.querySelector('.stage').getBoundingClientRect();dock.classList.toggle('view-mobile',mobile);toggle.classList.toggle('view-side-entry',mobile&&sheetIsSideRail()&&railBusy);
     const right=Math.min(innerWidth-16,stage.right-12),left=right-52;dock.style.right=(innerWidth-right)+'px';let top=Math.max(16,stage.top+16);

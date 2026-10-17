@@ -21,8 +21,8 @@ struct MetroBoardIntent: AppIntent, WidgetConfigurationIntent {
     ///    資料授權的條件,要改回數字之前先查授權。閘門與 CTA 程式碼保留,nil 時 decide() 一律放行。
     static let freeStationLimit: Int? = nil
 
-    /// 方向格的「不指定」哨兵。iOS 的單選 picker 選過一次就沒有內建的清除手勢——使用者
-    /// 2026-09-02 回報「選了方向就取消不了,只能刪掉小工具重來」。所以清單最上面放一個具名的
+    /// 方向格的「不指定」哨兵。iOS 的單選 picker 選過一次就沒有內建的清除手勢——方向一旦選定
+    /// 就無法取消,得把整張小工具刪掉再重新加入(2026-09-02 發現)。所以清單最上面放一個具名的
     /// 「不指定」選項,值走 ASCII 哨兵(與 MetroNearest.sentinel 同一種做法);讀的那一端一律經
     /// direction(_:) 正規化成 nil,畫面與過濾邏輯完全不認得這個字串。
     static let anyDirection = "any"
@@ -42,7 +42,7 @@ struct MetroBoardIntent: AppIntent, WidgetConfigurationIntent {
     @Parameter(title: "方向（可留空）", optionsProvider: MetroDirectionOptionsProvider())
     var dir: String?
 
-    // 2026-09-23 裁示:捷運卡只給「車模／素色」——現有三個場景都是台鐵題材,之後補捷運場景再開。
+    // 捷運卡只給「車模／素色」——現有三個場景都是台鐵題材,之後補捷運場景再開。
     // 🔴 String＋optionsProvider、不用 AppEnum、不給預設值：理由同 ConfigurationAppIntent.background
     //    （AppIntent.swift）——AppEnum 版選了素色仍永遠拿到車模；String 預設值會在設定畫面露出「model」。
     @Parameter(title: "背景（預設車模）", optionsProvider: RailMetroBackgroundOptionsProvider())
@@ -85,7 +85,7 @@ struct MetroStationOptionsProvider: DynamicOptionsProvider {
     func results() async throws -> ItemCollection<String> {
         let data = MetroWidgetCatalog.shared
         // 🔴 沒選系統、或系統值認不得時,照樣列出全部車站——不准回 .empty,
-        //    回空集合等於 iOS 把整張選單收掉,使用者看到的是「點下去選單打不開」。
+        //    回空集合等於 iOS 把整張選單收掉,欄位一點開選單就消失,看起來像選單壞了。
         //    (真機開選單第一拍 intent 可能就是 nil,出貨檔 AppIntent.swift:168-171 實測。)
         let systems = data.systems.filter { intent?.sys == nil || $0.id == intent?.sys }
         let use = systems.isEmpty ? data.systems : systems
@@ -107,8 +107,8 @@ struct MetroStationOptionsProvider: DynamicOptionsProvider {
 
 struct MetroDirectionOptionsProvider: DynamicOptionsProvider {
     // 綁【一個】依賴 \.$station(與車站 provider 綁 \.$sys 同形狀):方向只列「這一站開得到的」。
-    // 原本刻意不帶依賴、把三個系統的終點全部攤平——使用者 2026-09-02 回報「選了北捷的站,
-    // 方向卻選得到高雄／機捷、或不是這條線的站,選完看板永遠是空的」。清單本身就不該給出
+    // 原本刻意不帶依賴、把三個系統的終點全部攤平——站選了北捷,方向清單卻仍有高雄／機捷的
+    // 終點、或不在這條線上的站,選下去看板必定沒有資料。清單本身就不該給出
     // 一個保證是空看板的組合。
     // 🔴 只准讀 intent?.station(讀沒宣告的 sys 當場 fatalError,見 AppIntent.swift:196-198)。
     @IntentParameterDependency<MetroBoardIntent>(\.$station)

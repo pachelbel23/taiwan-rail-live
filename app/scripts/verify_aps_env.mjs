@@ -125,7 +125,7 @@ ok(`A2 aps-environment 的值＝${EXPECT}(development 的 token 只有 sandbox �
 ok('A3 佈建描述檔本身就允許 aps-environment(這是根因層:描述檔沒有 ⇒ 重新簽章時一定再被丟掉一次)',
    prof.found && prof.aps !== null, prof.found ? `${prof.name}:${prof.aps === null ? '(描述檔沒有這一項)' : prof.aps}` : '(找不到 embedded.mobileprovision)');
 
-// widget extension:B-I5 尚待裁示,這裡【不】要求它移除,只要求「若有就不可與 App 本體衝突」。
+// widget extension:尚未定案,這裡【不】要求它移除,只要求「若有就不可與 App 本體衝突」。
 const plugins = join(app, 'PlugIns');
 const appexes = existsSync(plugins) ? readdirSync(plugins).filter(n => n.endsWith('.appex')) : [];
 const conflicts = appexes.map(n => ({ n, aps: apsOf(signedEntitlements(join(plugins, n))) })).filter(x => x.aps !== null && x.aps !== appAps);

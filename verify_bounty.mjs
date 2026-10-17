@@ -77,7 +77,7 @@ const T4_FIXES = T4_LINE.shape.map((p, i, a) => {
 // key 字串（index.html:8777），所以真實後端傳回的 lnId 極可能就是這個中文 id 本身。
 // '南迴線'／39 點與 brief 自己舉的例子「枋寮→台東 南迴線 39 點」完全對上，
 // 這組數字很可能就是brief 作者當初想表達的那張卡，只是 lnId 縮寫沒對到真實資料。
-// 🔴🔴 2026-07-28 Task 1 審查糾正（協調者拍板）：上面那次修正只對了一半。card.sys 仍錯——
+// 🔴🔴 2026-07-28 Task 1 審查糾正：上面那次修正只對了一半。card.sys 仍錯——
 // 懸賞卡的鍵空間＝前端收集系統既有的鍵空間，segKey(sys,lnId,a,b) 產出的區間鍵長這樣
 // 'tra_sched|南迴線|加祿|枋寮'（實測 lineNetwork() 對 tra_sched|南迴線 印出的第一把 key 逐字元
 // 相同）——sys 桶代碼從來就是 SYS_DEFS id 本身（'tra_sched'/'thsr_sched'/'afr_sched'，沒有
@@ -185,7 +185,7 @@ const browser = await chromium.launch();
     '不是只影響一個獨立變數）', /接下這段/.test(a1.takeBtnText), a1.takeBtnText);
 
   // A3 端點名由前端從 lineNetwork() 算——判準：測試自己拿該線的站列取里程極值
-  // 🔴🔴 2026-07-28 更正（Task 1 審查／協調者拍板）：此處原本刻意餵 sys:'TRA'，理由寫著
+  // 🔴🔴 2026-07-28 更正（Task 1 審查）：此處原本刻意餵 sys:'TRA'，理由寫著
   // 「測伺服器→前端映射」——這個理由本身是錯的。實測 lineNetwork() 對 tra_sched|南迴線 吐出的
   // 第一把 key 逐字元等於 'tra_sched|南迴線|加祿|枋寮'：懸賞卡的鍵空間就是前端收集系統既有的
   // 鍵空間，伺服器從來不會傳 'TRA' 這種桶代碼給 card.sys，BOUNTY_SYS_MAP 是憑空想像出來的映射層
@@ -554,7 +554,7 @@ const browser = await chromium.launch();
   });
   await page.waitForTimeout(300);
 
-  // 🔴 規格覆審 2026-07-28：使用者實測回饋「應該也要能讓使用者繼續使用裝置」，推翻規格 §5 之一
+  // 🔴 規格覆審 2026-07-28：錄製中不該擋住手機的其他操作，因此推翻規格 §5 之一
   // 的黑幕全接管設計（完整取捨判斷寫在 index.html #recordScreen 旁的註解）。預設不再自動開
   // 黑幕/詳細面板——按「開始錄製」後回到地圖，常駐列(#recordBar)顯示。#recordScreen 仍在
   // body 層(全螢幕接管時要跳出 .stage 的 z-index 封頂)，只是預設保持隱藏。
@@ -766,8 +766,8 @@ const browser = await chromium.launch();
 }
 
 // ── R 組：錄製＝地圖常駐狀態（2026-07-28 規格覆審）───────────────────────
-// 使用者實測回饋原文：「懸賞板太不起眼...請做成相對應的紅色按鈕。錄製途中可以顯示地圖與
-// 列車嗎？不要都是黑畫面。應該也要能讓使用者繼續使用裝置才對。」這組專驗這三件事裡「地圖
+// 需求有三件事：懸賞入口要夠醒目（做成紅色按鈕）、錄製進行中畫面上仍看得到地圖與列車（不能整片黑）、
+// 錄製時裝置仍可繼續操作。這組專驗這三件事裡「地圖
 // 常駐＋可操作」的核心承諾——C 組驗的是「畫面切換對不對」，這組驗的是「地圖本身是活的」。
 {
   const { ctx, page } = await open(browser, {
@@ -1358,7 +1358,7 @@ async function measureRecCompact(page) {
     body ? `(函式長度 ${body.length}，未呼叫 showToast)` : '(找不到 bountyTickQualityHint，比對失敗)');
 }
 
-// E12–E14：手機 360／375／414／768（使用者明定鐵則）＋至少一次 WebKit。
+// E12–E14：手機 360／375／414／768（手機驗收的固定寬度）＋至少一次 WebKit。
 // 「驗按鈕不是驗它在哪，是驗點它會發生什麼」（心得 33）：不只 elementFromPoint 命中，
 // 還要真觸控 tap 之後讀狀態確認 _nagOff 真的被設起來，並確認沒有蓋住既有的停止鈕。
 async function checkQualityHintMobile(browserInst, width, height) {
@@ -2407,8 +2407,8 @@ for (const w of [375, 390]) {
   await ctx.close();
 }
 
-// 🔴 P10（使用者實測回饋 2026-07-28）：「懸賞板太不起眼，連我自己都差點沒找到，請做成
-// 相對應的紅色按鈕。」判準不是「是某個顏色」（色票改名字就假過），是①真的紅——比對
+// 🔴 P10（2026-07-28）：懸賞入口要夠醒目，做成紅色按鈕。
+// 判準不是「是某個顏色」（色票改名字就假過），是①真的紅——比對
 // CSS 變數 --red 的瀏覽器實際解析值，不是自己複誦一個 RGB 字面量；②與旁邊「收集地圖」鈕
 // 的顏色真的不同（同一顆 .pl-map 基底，只有 .pl-bounty 覆寫，兩者不同色才證明覆寫生效）。
 // 🔴 showCorrectMapBtn（buildCorrectSection() 裡「校正貢獻」節自己的收集地圖鈕）要

@@ -227,7 +227,7 @@ for (const engine of ENGINES) {
     ok(E('G5b 單字查詢不觸發車種比對'), one.stockRows.length === 0, `車型列 ${one.stockRows.length}`);
   }
 
-  // G6 車種：區間車／莒光也要查得到（使用者說的「區間車除外」是指不必再細分，不是不能查）
+  // G6 車種：區間車／莒光也要查得到（區間車只是不必再細分車種，並不是不能查）
   {
     for (const q of ['區間車', '莒光']) {
       const exp = expectHits(q);

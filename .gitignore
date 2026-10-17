@@ -28,7 +28,7 @@ app/release-policy.json
 app/MUSIC_LICENSE_CHECKLIST.md
 
 # 送審草稿——含 Plus 付費功能清單、訂閱條款與 RevenueCat 設定步驟。repo 公開，
-# 這些等於把還沒上線、價格也還沒拍板的收費規劃攤在外面，故比照上面留本機。
+# 這些等於把還沒上線、價格也還沒訂下來的收費規劃攤在外面，故比照上面留本機。
 # 註：_config.yml 的 exclude: [app] 只擋「備援站把它們當靜態檔發布」，
 #     完全不擋 GitHub 檔案瀏覽器上被讀——那道防線對這件事無效。
 # 本機若被 merge 清掉，用 git show 從歷史取回（檔案仍在歷史裡，例如：
@@ -108,9 +108,9 @@ tmp/
 # Firestore 模擬器的除錯 log（跑 verify_firestore_rules 時產生）
 firestore-debug.log
 # superpowers 的規格書與施工計畫：純內部流程產物，不是給訪客也不是給貢獻者看的。
-# 它們會逐字引用送北捷的企劃書承諾、付費層邊界裁示、未上線旗標與成本數字——
+# 它們會逐字引用送北捷的企劃書承諾、付費層的劃分界線、未上線旗標與成本數字——
 # 這個 repo 是 public，進了版控就是永久公開（push 後不可改寫）。
-# 2026-08-02 使用者裁示不進版控；SDD 的帳本與任務簡報本來就在 gitignored 的 .superpowers/。
+# 因此這個目錄刻意不進版控；SDD 的帳本與任務簡報本來就在 gitignored 的 .superpowers/。
 docs/superpowers/
 
 # ── 內部工作文件（2026-08-26 一次補齊）─────────────────────────────────────

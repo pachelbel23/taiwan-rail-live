@@ -152,7 +152,7 @@ final class RailWidgetRender {
             || snapshot.scheduleNote != null && !snapshot.scheduleNote.endsWith(" 當日班表");
     }
 
-    /** A 車模頭帶：下一班（排序後第一列）的車種代表車；沒有班次就收掉車、頭帶照留。 */
+    /** 車模頭帶：下一班（排序後第一列）的車種代表車；沒有班次就收掉車、頭帶照留。 */
     private static void bindCar(RemoteViews root, List<RailWidgetData.Row> rows) {
         if (rows.isEmpty()) {
             root.setViewVisibility(R.id.wr_car, View.GONE);
@@ -164,7 +164,7 @@ final class RailWidgetRender {
     }
 
     /**
-     * C 場景的琺瑯站名牌：站名＋下緣鄰站帶。直達模式（有目的站）帶子改寫「往 目的站」；
+     * 場景背景的琺瑯站名牌：站名＋下緣鄰站帶。直達模式（有目的站）帶子改寫「往 目的站」；
      * 鄰站缺一側就把那一側設成 INVISIBLE（另一側仍靠在自己那邊），兩側都沒有整條帶子收掉。
      */
     private static void bindPlate(Context context, RemoteViews root, int layout, RailWidgetData.Snapshot snapshot,
@@ -228,8 +228,8 @@ final class RailWidgetRender {
         catch (IllegalArgumentException ignored) { color = context.getColor(R.color.wg_navy); }
         out.setInt(R.id.wrr_mark, "setColorFilter", color);
         // 方向三角（與 iOS RailHeadingMark 對等）。沒有方向就整顆收起來,不畫猜的三角;
-        // 🔴 各列獨立、不連成線——不准加貫穿列的線、不准把相鄰兩顆三角對齊成軌跡（iOS 側裁示：
-        //    它取代的軌脊圓點正是因為「連成一條線」才被讀成連續車站）。
+        // 🔴 各列獨立、不連成線——不准加貫穿列的線、不准把相鄰兩顆三角對齊成軌跡（iOS 側同一條規則：
+        //    它取代的軌脊圓點就是因為串成一條線,才被誤讀成連續的車站）。
         // 顏色不獨立表意:三角本身是形狀差異（尖端朝上／朝下）,另有 contentDescription 唸出來。
         if (row.heading == null) {
             out.setViewVisibility(R.id.wrr_heading, View.GONE);

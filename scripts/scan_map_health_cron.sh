@@ -1,6 +1,6 @@
 #!/bin/bash
-# 地圖動畫定時巡檢（2026-08-17 使用者要求：「需要有一個定時掃過的機制，確認地圖上的動畫
-# 是否正常，若有問題才能及時重置」）。由 launchd 每小時叫一次，見
+# 地圖動畫定時巡檢：定期檢查動畫有沒有失常，有異常就告警，讓人決定是否重置。
+# 由 launchd 每小時叫一次，見
 # ~/Library/LaunchAgents/com.sirius.railisland.mapscan.plist
 #
 # 刻意只告警不自動重置：重置＝清掉 D1 的 official_roster_v4 讓它冷啟動，那會把全線的

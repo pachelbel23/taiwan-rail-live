@@ -102,22 +102,22 @@
     --paper:#FFFDF6;            /* 卡片底（兩種暖白已合併，#FFF8EC 廢止） */
     --paper-tr:rgba(255,253,246,.97);
     --panel-glass:rgba(255,253,246,.30);
-    /* 🔴 2026-08-27 裁示:「調亮色到 55 不錯 暗色不動」。
+    /* 🔴 只調亮色面板底的透明度(.55),暗色不動。
        亮色主題的**面板本體**單獨拉到 .55——衛星底圖那組情境,`.30` 兩個主題都被空照吃掉
        (亮色最糟 2.07、暗色 1.62),而空照同一張圖裡有亮有暗 ⇒ 深字被暗處吃、亮字被亮處吃,
        單靠字色沒有一個方向能同時贏(實景對照:衛星底圖做法對照.png)。
        刻意**不動 `--panel-glass`**:那顆還被頂列可讀底帶／看板分頁列／橫式停靠站名牌吃著,
-       使用者核可的畫面裡那些都還是 .30,一起改就變成「核可的畫面 ≠ 出貨的畫面」。
-       暗色主題那顆照裁示不動(見下方 --panel-body-glass 的暗色值)。 */
+       那些地方現在都還是 .30,連它們一起改,出貨的畫面就會跟先前驗過的畫面不同。
+       暗色主題那顆不動(見下方 --panel-body-glass 的暗色值)。 */
     --panel-body-glass:rgba(255,253,246,.55);
     /* 面板標題列(看板 h3／平交道與附近車站 xc-head／列車 sheet tc-head)的玻璃底。
-       2026-08-27 裁示:「半透明面板的上方沒有變成半透明的…看起來很奇怪。」標題列原本是實色,
+       面板本體是半透明、頂端標題列卻不透,上下兩截不一致。標題列原本是實色,
        因為它 sticky、內容會從底下捲過去。改半透明之後自己帶一層 blur(6px),捲過去的內容糊掉、
        不會與標題字打架。alpha 比面板的 .30 高:白字壓在navy 上要撐得住,量得到的數字見
        verify_translucent_contrast。 */
     --navy-glass:rgba(42,74,115,.80);
     --panel-head-glass:rgba(255,253,246,.78);
-    /* 2026-08-27 起不再用於文字外圈(裁示:可讀性用字色不用光暈)。只剩「路線/車種識別色點」的
+    /* 2026-08-27 起不再用於文字外圈(文字可讀性改由字色處理,不靠光暈)。只剩「路線/車種識別色點」的
        1.5px 實心外環在用——那是分界線不是光暈,色點的顏色由資料決定,沒有環會直接消失在同色路網上。 */
     --glass-halo:rgba(255,253,246,.95);
     --bg-page:#EFE6D2;          /* 頁面底 */
@@ -166,7 +166,7 @@
     color-scheme:dark;
     --paper:#141D31; --paper-tr:rgba(20,29,49,.97); --panel-glass:rgba(20,29,49,.30);
     --navy-glass:rgba(127,166,224,.80); --panel-head-glass:rgba(20,29,49,.78);
-    --panel-body-glass:rgba(20,29,49,.30);   /* 實際生效的暗色值在 night-theme.css(09-19 裁示改 .45) */
+    --panel-body-glass:rgba(20,29,49,.30);   /* 實際生效的暗色值在 night-theme.css(09-19 起改 .45) */
     --glass-halo:rgba(8,13,24,.95);
     --spark-line:#8FB4EC; --spark-fill:rgba(143,180,236,.18); --spark-cursor:#FF7B67;
     --spark-axis:#A5B4CE; --spark-halo:#0B1220;
@@ -241,7 +241,7 @@
     text-align: center;
   }
   html[data-theme=dark] .plate { box-shadow: 0 0 0 1.5px var(--plate-frame), 0 5px 14px rgba(0,0,0,.5); }
-  /* 切分頁時牌子不可變寬變窄(v0727c 使用者回報「切到捷運牌子變大」)。牌寬吃內容最寬者,
+  /* 切分頁時牌子不可變寬變窄(v0727c 的症狀:換到捷運分頁時牌子被撐大)。牌寬吃內容最寬者,
      而最寬的通常是 .plate-sub:四顆分頁 199~225px、群內只勾林鐵時的 ALISHAN FOREST RAILWAY
      到 249.9px(WebKit 最寬,比 Chromium 多約 7px),故取 252 一次蓋住全部。
      ⚠️ 只套 header 的牌:手機頂列迷你牌 .tb-plate 也帶 .plate,套下去會把短標籤擠出畫面。
@@ -274,7 +274,7 @@
   }
   .plate-arrow { width: 52px; height: 9px; display: block; margin: 0 6px; color: #fff8ec; }
   .header-mid { display: flex; flex-direction: column; gap: 8px; flex: 1 1 420px; min-width: 0; }
-  /* min-height:導言長短不一會多折一行、把整張地圖上下推(v0727c 使用者回報「按鈕下方文字行數不同也會跳」)。
+  /* min-height:導言長短不一會多折一行、把整張地圖上下推(v0727c 的症狀:各分頁導言行數不同,按鈕位置跟著跳)。
      四顆分頁的導言在 901–1680px 之間最多折三行(12px × 1.55 × 3 ≈ 56px),一律先留滿三行的位子。
      同一個值也吃掉首屏 CLS 的殘量(#lead 靜態預置文案與 boot 換上的文案長短不同)。 */
   header #lead { margin: 0; color: var(--faint); font-size: calc(12px * var(--uis)); line-height: 1.55; min-height: 56px; max-width: 640px; text-wrap: pretty; }
@@ -687,7 +687,7 @@
   .mpl-soon-head { margin-left: 14px; }
   .mpl-soon-head b { font-size: 10.5px; font-weight: 800; letter-spacing: 1px; color: var(--faint); }
   .mpl-lone-head hr, .mpl-soon-head hr { flex: 1; height: 1px; margin: 0; border: 0; background: var(--line-faint); }
-  /* 準備中:降級但看得見(使用者裁示)。不可點,但仍留在它本來的家族底下。 */
+  /* 準備中:降一級顯示、不隱藏。不可點,但仍留在它本來的家族底下。 */
   .mpl-row.soon { min-height: 32px; padding: 5px 0; opacity: .5; pointer-events: none; border-bottom: 0; cursor: default; }
   .mpl-row.soon .mpl-dot { width: 12px; height: 2px; border: 0; border-radius: 2px; background: var(--faint); }
   .mpl-row.soon .mpl-txt b { font-size: 12.5px; font-weight: 700; }
@@ -849,8 +849,8 @@
   body.collect-map .controls, body.collect-map .tabbar,
   body.collect-map .badge, body.collect-map .map-actions { display: none; }
   /* 錄製「詳細面板」全螢幕接管時比照 body.collect-map 收掉會說謊的 UI(理由同上)。
-     🔴 2026-07-28 規格覆審：這條原本綁的是 body.recording(整段錄製期間)，使用者回饋
-     「應該也要能讓使用者繼續使用裝置」之後，錄製期預設是地圖可見可操作(見 #recordBar)，
+     🔴 2026-07-28 規格覆審：這條原本綁的是 body.recording(整段錄製期間)，但錄製期間裝置本來就該能照常使用，
+     所以錄製期預設是地圖可見可操作(見 #recordBar)，
      這條規則收窄成只在「詳細面板」真的整片接管畫面時才生效——面板的黑幕本來就物理蓋住
      這些控件，這裡純粹是不讓它們留在可 focus/可被螢幕報讀器唸到的地方(不說謊)。
      .record-bar 同理收掉：黑幕蓋住它是物理事實，這裡只是讓它別留在 DOM 焦點順序裡。 */
@@ -1145,7 +1145,7 @@
     margin-top: 7px; padding-top: 7px; border-top: 1.5px dashed var(--line-dash);
   }
   .follow-panel .fp-next .lbl { font-size: calc(11px * var(--uis)); color: var(--faint); font-weight: 800; letter-spacing: 2px; flex: none; }
-  /* 站名放不下就換行、顯示全名(2026-09-26 裁示,捷運 .fc-next .stn 本來就會換行)。原本 nowrap:英文「Chang Jung
+  /* 站名放不下就換行、顯示全名(捷運 .fc-next .stn 本來就會換行)。原本 nowrap:英文「Chang Jung
      Christian University」比卡寬還寬,.follow-panel 的 overflow-y:auto 讓 x 軸也變成可捲,整張卡能左右拖、左邊被切掉
      (修前 WebKit 手機 87px、桌面 69px)。overflow-wrap:anywhere 讓沒有空白的長字也折得下;放空三行條另外維持單行。
      守門人:verify_select_overflow.mjs 的 fpNext 格。 */
@@ -1262,19 +1262,19 @@
   .traincard .tc-st:hover { background: var(--bg-stage); }
   .traincard .tc-st .n { flex: 1; min-width: 0; }
   /* 到/開兩欄:表頭列與資料列是各自獨立的 flex row,欄寬吃內容的話,表頭「到」(單字寬)
-     會懸在兩個時刻欄中間(2026-08-12 使用者回報)。兩種列都給同一個固定寬＋右對齊,
+     會懸在兩個時刻欄中間。兩種列都給同一個固定寬＋右對齊,
      欄位才會跨列對齊;36px 蓋得住 tabular-nums 的「00:00」。 */
   .traincard .tc-st > span:not(.n) { flex: none; width: 36px; text-align: right; }
   .traincard .tc-st.hd > span:not(.n) { letter-spacing: 0; } /* 尾字的 letter-spacing 會讓右緣縮 1px,拿掉才對得齊 */
   /* 轉乘標。落點只有兩處:車站看板的站況區(回答「這站是什麼」),與跟隨/搭乘卡的下一站
      (回答「要不要在這站下車換車」——唯一會改變行動的時刻)。v0810 之前掛在資訊卡的逐站停靠表每一列,
-     使用者回報「不顯眼、不知何時會需要用到」:轉乘是車站的屬性不是某班車某一站的屬性,
+     缺點是轉乘資訊埋在長表裡,難以察覺、也看不出何時派得上用場:轉乘是車站的屬性不是某班車某一站的屬性,
      擺在那份桌面預設收合的清單裡等於同一件事重複四十次,埋兩層又是噪音。
      兩張卡都很窄(跟隨 240px、捷運 220px,扣內距只剩 214/194),而路線名可以長到「轉 高鐵、西部幹線
      （山線）、淡水信義線、機場捷運」——所以標**內部可換行**、外面的列也要 flex-wrap，讓它擠不下時
-     自己掉到下一行，而不是撐破卡片(v0810b 使用者截圖抓到捷運卡整條凸出去)。
+     自己掉到下一行，而不是撐破卡片(v0810b 的症狀:捷運卡被整條撐出邊界)。
      刻意**不收成「+N」再靠點擊展開**：那等於把資訊藏在一個沒有回饋的紅框後面，
-     手機叫不出 title、使用者也試不出點下去會怎樣——正是「不知道何時會用到」的翻版。全列出來。 */
+     手機叫不出 title、使用者也試不出點下去會怎樣——跟資訊埋在表裡看不到是同一種毛病。全列出來。 */
   .xfer-tag {
     flex: 0 1 auto; min-width: 0; max-width: 100%;
     font-size: calc(11px * var(--uis)); font-weight: 800; color: var(--red); white-space: normal; overflow-wrap: anywhere;
@@ -1283,7 +1283,7 @@
   /* 轉乘接續。落點在 .xfer-tag 那一列的下方(跟隨卡/捷運卡/手機列車卡),共用那一區的字級變數。 */
   /* v0901 窄卡排版:容器寬度不是這一塊能決定的(桌面 240 / 全畫面 300 / 手機與放空 176),
      所以斷點吃 container query 而不是裝置——放空模式與手機 sheet 也會落到窄支。
-     欄位優先序:車次與「剩 N 分」永不壓縮、永不換行(那是使用者要的兩個數字),
+     欄位優先序:車次與「剩 N 分」永不壓縮、永不換行(那是乘客最在意的兩個數字),
      只有 .xfc-d(時刻＋往哪)吃 ellipsis。 */
   .xfer-conn { container-type: inline-size; margin-top: 7px;
     border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; }
@@ -1309,7 +1309,7 @@
   .xfer-conn .xfc-sys { grid-area: sys; font-size: calc(11px * var(--uis));
     font-weight: 800; color: var(--faint); white-space: nowrap;
     min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-  /* 車次與「剩 N 分」是上面那段寫的「使用者要的兩個數字」＝主文,掛 --ui(1／1.25／1.5);
+  /* 車次與「剩 N 分」就是上面那段寫的乘客最在意的兩個數字＝主文,掛 --ui(1／1.25／1.5);
      同一塊裡的系統小標、時刻＋往哪、註腳仍是次要說明,留在 --uis。實測 176／240 兩種窄卡
      換倍率後零溢出,只有 300 寬支特大檔的 .xfc-d 多吃一點省略號——那一欄本來就被指定吃 ellipsis。 */
   .xfer-conn .xfc-no { grid-area: no; font-size: calc(15px * var(--ui)); font-weight: 800;
@@ -1336,7 +1336,7 @@
     background: var(--paper); border: 1px solid var(--line); border-radius: var(--r-pill); cursor: pointer; }
   .xfer-conn .xfc-f { display: block; font-size: calc(10px * var(--uis)); line-height: 1.45;
     color: var(--faint); margin-top: 4px; }
-  /* 展開/收合(使用者 2026-09-11:「資訊卡需要整理一下,轉乘要能夠收起來,否則太長了」)。
+  /* 展開/收合(目的是壓低整張卡的高度)。
      三個顯示實例裡最高的就是這一塊:手機 375 實測 145px,佔整張跟隨卡 486px 的 30%。
      收合**不是把答案藏起來**——標題那行下面仍印出最近一班(釘選時就是釘的那一班)的車次與
      「剩 N 分」,展開才列第二班、取消釘選鈕與註腳。整條標題列都是觸控目標,不是只有箭頭;
@@ -1348,7 +1348,7 @@
   .xfer-conn .xfc-tr .xfc-h { flex: 1; min-width: 0; }
   .xfer-conn .xfc-cv { flex: none; color: var(--faint);
     font-size: calc(10px * var(--uis)); line-height: 1.35; }
-  /* 收合態那一行答案與 .xfc-no/.xfc-left 同級(「使用者要的數字」),所以掛 --ui 不是 --uis。 */
+  /* 收合態那一行答案與 .xfc-no/.xfc-left 同級(同樣是乘客最在意的數字),所以掛 --ui 不是 --uis。 */
   .xfer-conn .xfc-sum { display: block; margin-top: 2px; font-size: calc(13px * var(--ui));
     font-weight: 800; color: var(--ink-strong); font-variant-numeric: tabular-nums;
     overflow-wrap: anywhere; }
@@ -1494,7 +1494,7 @@
   .seal[data-ach], .achv-chip[data-ach] { cursor: help; }
   /* ── 車站章(.stn-seal):打卡收集用,比 .seal 小一號因為量大(全網約 600 座) ──
      三態(設計書第 2 節):跟完=灰藍虛線不旋轉 / 搭過=實線單圈不旋轉 / 到訪=雙圈+歪斜(手蓋的章一定是歪的)。
-     站等升級走 .t0(特等站,金);次數直接標數字不做疊印濃度(使用者 07-25 明示)。 */
+     站等升級走 .t0(特等站,金);次數直接標數字,不做疊印濃度。 */
   .stn-seal {
     width: calc(50px * var(--uit)); height: calc(50px * var(--uit));
     border-radius: 50%; border: 2px solid var(--red); color: var(--red);
@@ -1528,7 +1528,7 @@
   }
   .ph-sec .pl-map:hover { opacity: .86; }
   /* 懸賞板入口改成懸賞既有的紅(#bountyBriefGo/.bt-take 那組 --red/--red-deep,不自創新色)：
-     使用者實測回饋「太不起眼,連自己都差點沒找到」。只疊色彩與字重,幾何(min-height/padding)
+     原本太不起眼、不容易發現。只疊色彩與字重,幾何(min-height/padding)
      完全沿用上面 .pl-map 共用規則不重複定義——不能動 verify_checkin.mjs L10 的護照高度預算。 */
   .ph-sec .pl-map.pl-bounty { background: var(--red); border: 1px solid var(--red-deep); color: #fffdf6; font-weight: 900; }
   /* 「校正貢獻」節專屬收窄(只動這個新節,不動 .ph-sec 共用規則,其餘七節間距不受影響):
@@ -1835,8 +1835,8 @@
     opacity: 0; transform: translateY(-10px); transition: opacity .4s ease, transform .4s ease;
   }
   .toast.show { opacity: 1; transform: none; }
-  /* ── 角落小提示 ── 使用者裁示(2026-08-18):內部對帳類的訊息(例:位置依官方校正)不要用
-     置中大卡擋住整個畫面,收到角落小字即可。刻意獨立成一個容器:原本的 .toasts 是置中欄,
+  /* ── 角落小提示 ── 內部對帳類的訊息(例:位置依官方校正)改走角落小字,不用
+     置中大卡,以免擋住整個畫面。刻意獨立成一個容器:原本的 .toasts 是置中欄,
      在裡面翻轉定位會跟它的 flex 置中打架。 */
   .toasts.corner {
     top: auto; bottom: 14px; left: 12px;
@@ -1897,7 +1897,7 @@
   body.idle .controls, body.idle .maplibregl-control-container, body.idle #randBtn, body.idle #nearBtn, body.idle #fsFab, body.idle .tabbar { opacity: 0; pointer-events: none; }
   /* 唯一的出口不跟著淡光:放空時控制列只剩「離開放空」＋「視角」兩顆,idle 只降到看得見、且保持可按。
      原本跟其他家具一起 opacity:0 + pointer-events:none ⇒ 第一下觸控只是喚回控制列、按不到鈕,要按兩下
-     (使用者回報「安卓有時候進放空後連退出的按鈕都會不見按不到」,2026-08-31)。 */
+     (症狀:Android 進放空模式後,退出鈕有時消失、按不到)。 */
   body.idle.ambient .controls { opacity: .5; pointer-events: auto; }
   body.idle .stage, body.idle * { cursor: none; }
   #overlay { position: absolute; inset: 0; pointer-events: none; z-index: 500; }
@@ -2202,7 +2202,7 @@
     backdrop-filter: blur(3px) saturate(1.08);
     /* 背後換成地圖之後,原本的土灰兩級（次要/更淡）與三級分隔線疊在路網上會糊掉——只在面板子樹內
        各升一階,不動全域變數(頁面其他地方的背景仍是實色紙面,不需要加深)。 */
-    /* 🔴 2026-08-27 裁示「用字色不要用光暈」之後,次要兩級再壓深一階(原 #463C2C／#5F5440)。
+    /* 🔴 2026-08-27 光暈整組拿掉、可讀性改由字色負責之後,次要兩級再壓深一階(原 #463C2C／#5F5440)。
        為什麼壓深一定有效:面板底是 alpha .30 的**淺**紙面,所以合成後的底色再暗也不會低於
        0.30×紙面亮度——亮色主題的底有地板,字越深、最壞情況越好。暗色主題沒有這條地板(見下方
        反向那組),那邊改亮到頂也吃不到同樣的保障,量得到的殘差見交付說明。 */
@@ -2227,15 +2227,15 @@
        方向色是 :root 上的 var() 轉指、在根節點就解析掉了,要在子樹內重新轉指才會跟著走。 */
     --navy: #0F243D;
     --dir-north: var(--navy); --dir-south: var(--ok);
-    /* 🔴 2026-08-27 使用者裁示:「面板變成半透明的時候要維持文字的易讀性,可以直接改文字的顏色,
-       不要加光暈來做。」原本這裡給整個面板子樹鋪 text-shadow 外圈(--glass-halo),整組拿掉——
+    /* 🔴 2026-08-27 起:面板半透明時,文字易讀性改靠調整字色維持,
+       不另加光暈。原本這裡給整個面板子樹鋪 text-shadow 外圈(--glass-halo),整組拿掉——
        連帶那兩條配套規則(button 不繼承要明確接回、自帶底色的元件要豁免)也一併廢除,
        沒有外圈就沒有東西要接、要豁免。可讀性改由上面那幾條「只在半透明子樹內壓深一階」的字色扛。
-       (07-30 的原始指示本來就是「文字要調顏色」,外圈是實作時自己加的,現在改回去。) */
+       (原本的規格就只調字色,外圈光暈是實作時額外加的,現在改回。) */
   }
-  /* 🔴 2026-08-27 裁示:標題列也要半透明。它們 sticky、面板內容會從底下捲過去,所以各自帶一層
+  /* 🔴 2026-08-27 起標題列同樣做成半透明。它們 sticky、面板內容會從底下捲過去,所以各自帶一層
      blur(6px)——捲過去的字糊成色塊,不會與標題字混在一起。面板本體的 .30/blur(3px) 一格不動
-     (使用者凍結值),這是標題列自己的值。 */
+     (固定值),這是標題列自己的值。 */
   body.panel-translucent .board h3,
   body.panel-translucent .xing-card .xc-head,
   body.panel-translucent #nearCard .xc-head {
@@ -2263,9 +2263,9 @@
      而它是「這段跑多快」的主要載體。色相不變,只加濃度。 */
   /* 另外給曲線一層自己的淡底板:線色是固定的深藍/淺藍,壓在衛星影像的深色區塊上實測只有 1.6:1
      ——那是「這段跑多快」唯一的載體,不能靠加粗救。底板只蓋曲線那 46px 高的方塊,面板整體的
-     透明度與模糊值不動(使用者指定),地圖仍透得出來。 */
+     透明度與模糊值不動,地圖仍透得出來。 */
   body.panel-translucent { --spark-fill: rgba(42,74,115,.34); --spark-w: 1.9; --spark-plate: rgba(255,253,246,.72); }
-  /* 暗色＋衛星影像是全部情境裡曲線最糟的一張(使用者實機截圖):原本的 #8FB4EC 疊在透上來的
+  /* 暗色＋衛星影像是全部情境裡曲線最糟的一張(實機截圖):原本的 #8FB4EC 疊在透上來的
      綠灰照片上實測只有 5.52(七個情境最低)。線色提亮一階＋圖表底板加深到 .80 ⇒ 6.26。
      註:「只把底板加深」量出來幾乎沒用(5.60)——最糟的那 5% 像素是線壓在自己的半透明填色上,
      加深底板會把填色一起加深,兩者一起變暗、差距不變。 */
@@ -2507,7 +2507,7 @@
   .board .ev-note { flex: 1 1 7em; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .board .ev-tag { flex: none; padding: 0 5px; border-radius: 4px; background: var(--line-faint); font-size: calc(10.5px * var(--uis)); }
   .board .ev-go { flex: none; margin-left: auto; color: var(--faint); }
-  /* 設計 3e:今日之最四格。1.5px 邊框卡而不是實色底——實色底會跟看板列的虛線分隔打架(設計原話)。
+  /* 設計 3e:今日之最四格。1.5px 邊框卡而不是實色底——實色底會跟看板列的虛線分隔打架。
      兩欄用 flex-wrap + flex:1 1 46%,不用 grid-template-columns:字級放大到特大時允許它掉成一欄,
      不會被固定兩欄壓成擠不下的窄格。整格是觸控目標,下限沿用 44/52/60 那組(--uit)。 */
   #explorePanel .hl-grid { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 2px; }
@@ -2532,7 +2532,7 @@
   .board .klrt-board-row { flex-wrap: wrap; row-gap: 1px; }
   .board .klrt-board-row > b { flex: 1 1 0%; }
   .board .klrt-board-row > .dest { order: 1; flex: 1 0 100%; padding-left: 16px; white-space: normal; overflow-wrap: anywhere; }
-  /* 外語一列塞不下(2026-09-19 回報「車站資訊的字有些都被切到了」):英文的車種、線名常比中文長一倍，
+  /* 外語一列塞不下(2026-09-19 發現車站資訊裡部分文字被裁切):英文的車種、線名常比中文長一倍，
      實測 402px 寬英文台鐵板約三成的列「往哪裡」整個被擠到框外，捷運板把線名與車次擠成 0 寬
      (日文少數幾站，中文只有台北車站的機捷那格)。boardAlignColumns 在單行版量到任何一格 .dest 被截，
      就替那個容器掛 data-wrap2：.dest 改排到下一行、從主標底下開始、拿整列寬；主標吃掉第一行剩下的寬，
@@ -2573,8 +2573,8 @@
   #board .row:not(.off) .min { border-radius: 3px;
     background: color-mix(in srgb, var(--navy) 8%, transparent); }
   /* 特大 ×1.5 的那一列只剩 車次·時刻·倒數 三格(設計 6b),而官方板在最後一分鐘會把「3 分」
-     換成「即將進站／列車進站」——四個字擠掉同一列的車次與時刻。使用者裁示:「如果特大字的
-     時候需要精簡,就精簡後面進站那邊」⇒ 特大時改用 data-soon 裡的短字。
+     換成「即將進站／列車進站」——四個字擠掉同一列的車次與時刻。取捨是:空間不夠時
+     只縮進站那一欄、車次與時刻不動 ⇒ 特大時改用 data-soon 裡的短字。
      手法比照上面 lateTag 的 attr() 換字樣(不動 DOM ⇒ 標準/大字級的零變化對照守得住),
      短字是 boardAlignColumns 用 t() 產生後寫進屬性的(lateTag 的 data-full 也是同一招),
      所以英日(Due／まもなく、Arriving／到着中)一樣吃得到。 */
@@ -2592,7 +2592,7 @@
     background: none; border: 0; color: var(--on-navy); opacity: .8; cursor: pointer; line-height: 1;
   }
   /* ×(U+00D7)的字形只佔 em 框約一半:17px 字級墨跡僅 8.3px,挨著 ☆15px(墨跡 14.5px)顯得特別小
-     (使用者指正「關閉圖示本身就比星星小」)。兩鈕鎖同一字型棧再放大 × 到 28px:
+     (實際看起來關閉鈕比星星還小)。兩鈕鎖同一字型棧再放大 × 到 28px:
      - 不鎖字型時 chromium 的 × 走 SF(有此字元)、☆ fallback PingFang(SF 無 U+2606),
        兩顆字型不同導致怎麼調都對不齊;鎖 PingFang 後兩引擎墨跡度量幾乎一致(實測 ☆ 皆 14.6×14.5)。
      - ✕✖╳ 等替代字元在 WebKit 落到別的 fallback(墨跡崩到 7px),跨引擎不可靠,不用。
@@ -2612,7 +2612,7 @@
   .board h3 :focus-visible { outline-color: currentColor; opacity: 1; }
   /* 捷運等車卡入口(Task 6):h3 內另起一行(不像 close/star 用絕對定位插槽——
      .board 桌面寬 360px(v0901 前為 280),硬塞第三顆同款圖示鈕仍會擠壓長站名),故不影響 h3 padding-right。
-     08-14 真機回饋「按鈕不明顯、不知道用途」——待機態改滿寬金底 CTA,追蹤中反轉成描邊。 */
+     08-14 真機上看不出這是按鈕、也不清楚用途——待機態改滿寬金底 CTA,追蹤中反轉成描邊。 */
   .board .board-wait {
     display: block; margin: 6px 0 2px; padding: 6px 12px;
     /* 🔴 不可以寫成 `font: 800 12.5px/1.5 inherit` 的簡寫:`inherit` 是 CSS-wide 關鍵字,
@@ -3472,7 +3472,7 @@
   .tabbar {
     position: fixed; left: 0; right: 0; bottom: 0; z-index: 1100;
     display: none; align-items: flex-start;
-    /* v0721f 使用者回饋:下方留白收斂——內容區 58→52(鈕44+上4+下2+框1.5),safe-area 折讓 6px(max 保護無瀏海=0);--tabbar-clear 必須同式 */
+    /* v0721f:下方留白收斂——內容區 58→52(鈕44+上4+下2+框1.5),safe-area 折讓 6px(max 保護無瀏海=0);--tabbar-clear 必須同式 */
     height: calc(52px * var(--uit) + max(var(--sa-b) - 6px, 0px));
     padding: 4px 4px calc(2px + max(var(--sa-b) - 6px, 0px));
     background: var(--paper); border-top: 1.5px solid var(--line);
@@ -3551,19 +3551,19 @@
      不再補一條同義的 display:none(補了也是死碼)。既有那幾列的 inline style 不動,它們照樣有效。 */
   :is(.more-sheet, .view-panel) .ms-row.ms-stat .ms-tail b { color: var(--ink); font-weight: 800; }
   .more-sheet .ms-sec { padding: 9px 14px 3px; font-size: calc(11px * var(--uis)); font-weight: 800; letter-spacing: 3px; color: var(--faint); border-bottom: 1px dashed var(--line-faint); }
-  /* 🔴 單字圓章(設計 3d 的 <i class="ms-ic">)2026-08-27 依使用者指示整組拿掉:「每一行前面都有
-     一個字,那個有點多餘」。連帶拆掉的是它撐出來的三條配套規則——圓章本體、`.ms-ic + span`
+  /* 🔴 單字圓章(設計 3d 的 <i class="ms-ic">)2026-08-27 整組拿掉,理由是每列開頭多一個字屬冗餘裝飾。
+     連帶拆掉的是它撐出來的三條配套規則——圓章本體、`.ms-ic + span`
      的 flex:1(沒有第三個子項之後,.ms-row 的 space-between 自己就把標籤靠左、尾巴靠右)、
      以及讀數列為了跟圓章對齊而補的等寬縮排(見下)。 */
   /* (原本這裡有一條 .ms-stat 的等寬縮排,用來讓讀數列的標籤對齊帶圓章的動作列;圓章拿掉之後
      兩種列的標籤起點本來就一樣,縮排會反過來讓讀數列凸出去,故一併移除。判準 Q4 仍守著對齊。) */
   :is(.more-sheet, .view-panel) .ms-row.warnrow { background: var(--warn-bg); color: var(--warn-ink); font-weight: 800; }
-  /* 評分列不用 emoji(2026-08-12 使用者裁決:更多選單不放 emoji),改品牌紅粗體強調 */
+  /* 評分列不用 emoji(更多選單不放 emoji),改品牌紅粗體強調 */
   :is(.more-sheet, .view-panel) .ms-row .rate-cta { color: var(--red); font-weight: 800; }
   .more-sheet .ms-note { margin: 10px 14px 0; font-size: calc(10.5px * var(--uis)); color: var(--faint); flex: none; }
   .more-scrim { position: fixed; inset: 0; z-index: 1105; background: rgba(30,44,64,.26); display: none; }
-  /* ── 資料狀態小卡(點時鐘徽章開,2026-08-27 使用者要求)──────────────────────────
-     頂列把 LIVE／看板校正／REPLAY／尖峰／車數 全收成 7px 色點之後(D4 排法B),那些字樣與
+  /* ── 資料狀態小卡(點時鐘徽章開,2026-08-27 新增)──────────────────────────
+     頂列把 LIVE／看板校正／REPLAY／尖峰／車數 全收成 7px 色點之後(D4 頂列單排版),那些字樣與
      每顆燈 title 裡的「為什麼」在**觸控裝置上完全沒有入口**——手機沒有 hover。「更多 →
      資料狀態」看得到值,但看不到原因,而且要繞三步。點徽章直接開這張是最短的路。
      🔴 放 body 層不放 .stage:.stage 會把 z-index 封頂(見 memory modal-stacking-context)。
@@ -3703,14 +3703,14 @@
     /* 🔴 徽章也要在白名單裡:頂列本體 pointer-events:none(它是整條橫帶,不能吃掉地圖拖曳),
        漏掉徽章的話「點時鐘看資料狀態」在手機殼下完全點不到(桌面沒有這條所以看不出來)。 */
     .topbar .tb-plate, .topbar .grouptabs, .topbar .alert-chip, .topbar .badge, .topbar .gtab-one { pointer-events: auto; }
-    /* ══ 設計 D4 排法B(2026-08-22 使用者拍板):頂列收成一排 42px,省 56px 全給地圖 ══
+    /* ══ 設計 D4 頂列單排版(2026-08-22 起):頂列收成一排 42px,省 56px 全給地圖 ══
        一排的組成:[logo 方牌 42] [時鐘膠囊(時鐘＋狀態色點)] ──auto── [公告 36 圓] [群組 4×36 圓]
        徽章本體由 placeBadge() 搬進頂列(手機一律搬,live 除外),這裡只管樣式。 */
     body.fs .topbar { align-items: center; flex-wrap: wrap; }
     /* 🔴 大字檔一排塞不下:393pt 特大實測 膠囊118 + logo57 + 公告49 + 四顆214 + 間距 = 482 > 393。
-       解法選「換行」而不是「縮小圓鈕」——設計對照表的觸控目標 44/52/60 是硬需求,為了排成一排
+       解法是讓頂列拆成兩排,而不縮小圓鈕——設計對照表的觸控目標 44/52/60 是硬需求,為了排成一排
        把它縮回去等於用大字模式的使用者去換版面。
-       🔴 換行**哪一組下去**由使用者 2026-08-26 裁示:四顆群組是主要導航,留在第一排;
+       🔴 換行**哪一組下去**:四顆群組屬於主要導航,固定留在第一排;
           降到第二排的是公告鈕,並靠右與右緣工具欄(隨機跟隨/附近車站)同一條基準線。
        (這本來是設計 D7「大字模式」該回答的題目,那幾頁目前讀不到:TURN 3/4 與中段檔仍被 256KiB 截斷。) */
     /* 🔴 兩排的分法不用 flex 換行,改用 grid 明寫格位——flex 這裡有兩個坑:(a) 想把四顆頁籤留在
@@ -3719,13 +3719,13 @@
        四顆頁籤自己被擠到第二排、公告鈕再被擠到第三排,頂列一路長到 176px(近半個畫面)。
        grid 兩列固定:第一排 [logo ‥ 四顆頁籤],第二排 [時鐘膠囊 ‥ 公告鈕]。時鐘讓到第二排是
        幾何逼出來的——第一排要放得下四顆設計尺寸的頁籤,就容不下 128px 的膠囊(360pt 全寬才 340)。
-       公告鈕靠右 ⇒ 與右緣工具欄(隨機跟隨/附近車站)同一條基準線,即使用者要的「對齊」。 */
-    /* 🔴 2026-08-27 使用者連下三個裁示,推翻上面 08-26 那段「時鐘讓到第二排」與 D4 的方形 logo:
-         ①「時鐘徽章現在在大跟特大設定 會跑到第二排 我希望無論如何都收在第一排」
-         ②「或者是 你把那四顆鈕收成一顆 點擊會打開就好」(在 2×2 與收合兩案之間選了收合)
-         ③ 標準字級也收成一顆(長方形牌 96px vs 方形 logo 42px,標準檔 360pt 單排差 27px;
+       公告鈕靠右 ⇒ 與右緣工具欄(隨機跟隨/附近車站)同一條基準線,版面要的就是這種對齊。 */
+    /* 🔴 2026-08-27 連續三項改動,推翻上面 08-26 那段「時鐘讓到第二排」與 D4 的方形 logo:
+         ① 大字與特大字級下時鐘徽章會掉到第二排;改成任何字級都留在第一排
+         ② 四顆群組鈕改成單一按鈕,點擊後才展開
+         ③ 標準字級也併成單一按鈕(長方形牌 96px vs 方形 logo 42px,標準檔 360pt 單排差 27px;
             讓牌收寬會讓「軌島」兩字直排 ⇒ 不能用,量到的是 39~62px 寬 × 58px 高)
-       所以**三個字級一致**:四顆頁籤在手機殼一律收成一顆 #gtabOne,頂列維持單排,
+       所以**三個字級一致**:四顆頁籤在手機殼一律併成單一按鈕 #gtabOne,頂列維持單排,
        [軌島牌][時鐘膠囊][公告][一顆] 排得進同一排。D4「頂列收成一排、省下來全給地圖」
        的原意因此在三個字級都成立(標準 42／大 49.5／特大 57.1px)。
        ⇒ 刻意**不寫任何 grid 覆蓋**:大/特大沿用同一套 flex 單排規則,少一套會漂移的版面。
@@ -3741,8 +3741,8 @@
       width: calc(42px * var(--uit)); height: calc(42px * var(--uit));
       flex: none; display: block; border-radius: 9px; box-shadow: var(--shadow-1);
     }
-    /* 🔴 2026-08-27 使用者改裁示,推翻 D4 的「方形 logo 取代文字牌」:
-         「左上的logo 我希望要維持以前的款式 就是長方形而非正方形的」。
+    /* 🔴 2026-08-27 改回舊款,推翻 D4 的「方形 logo 取代文字牌」:
+         左上角沿用舊款的長方形牌,不改成正方形。
        所以反過來——文字版軌島牌(含起訖站帶)回來,42×42 的方形 logo 圖讓位。
        兩者的 DOM 都留著(方形那顆只是 display:none),要換回去改這一條就好。 */
     body.fs .topbar .tb-logo { display: none; }
@@ -3755,8 +3755,8 @@
       background: var(--paper); border: 1.5px solid var(--line); box-shadow: var(--shadow-1);
     }
     body.fs .topbar .badge .clock { font-size: calc(16px * var(--ui)); font-weight: 900; }
-    /* 🔴 2026-08-27 使用者裁示,推翻 08-22 的「狀態全部收成色點」:
-         「現在已經把右邊四個按鈕縮小的狀況下,時間按鈕其實可以直接寫詳細資訊了。」
+    /* 🔴 2026-08-27 改版,推翻 08-22 起狀態字樣一律收成色點的做法:
+         右邊四顆鈕縮小後騰出了橫向空間,狀態字樣可以直接放進時間膠囊。
        ⇒ 手機殼的狀態改回**寫字**(沿用桌面那組已經在用的樣式:LIVE 綠、看板校正 藍、重播 紅牌、
          尖峰 琥珀牌),只把字級收小一階,#count 仍留在卡裡不進膠囊(它是會逐秒變動的長字串)。
        🔴 只有在真的排不下的組合才退回色點——見下方 .badge.st-dot,由 fitBadgeDetail() 量完才掛。
@@ -3890,9 +3890,9 @@
        就是要,英文把它逼出來了。退讓順序不變:先讓 plate-foot 的起訖站名(省略號),再由 fitBadgeDetail()
        把狀態旗標降成色點,標題自己是最後一道——它有 nowrap,**永遠不准折成直排的「軌島」**
        (實測會把整條頂列從 ~50px 撐到 66px),裝不下時收成省略號,不再被 .stage 的 overflow 硬切。 */
-    /* 🔴 2026-08-27 使用者裁示:「左上角的軌島招牌大小請跟著時間資訊那顆一起變大變小」。
+    /* 🔴 2026-08-27 起:招牌的字級倍率與時間徽章連動,字級改變時兩者同步縮放。
        原本這裡把牌的三個字級倍率**退回 1**(寫死 14／9.5／6px),理由是「把省下的寬度讓給四顆分頁」
-       ——四顆已經收成一顆,那個理由不成立了,整組取消,牌回去吃 base 的 calc(14px * var(--ui))。
+       ——四顆已併成單一按鈕,那個理由不成立了,整組取消,牌回去吃 base 的 calc(14px * var(--ui))。
        留著 flex:0 1 auto 與 plate-foot 的省略:那是「擠的時候先讓品牌標示」的退路,不是尺寸凍結。 */
     /* 公告警示鈕與四顆短標都固定 36px；透明 ::after 仍補足 44px 觸控熱區。
        v6 在 360dp＋有公告時三者總寬超過可用寬，最右「捷」會被裁掉；固定幾何後不再讓字級／
@@ -3983,7 +3983,7 @@
     }
     /* 手機:工具全部住在 tab bar「更多」sheet;帶收成速度膠囊(見下) */
     .tabbar { display: flex; }
-    /* 版權列:一條單行貼齊底緣(2026-08-29 使用者實機回報)。
+    /* 版權列:一條單行貼齊底緣。
        原本是「右下角換行、每個來源都留可見命中框」,在 CARTO 底圖(字串短)看起來沒事;
        換衛星底圖後字串變成 '臺灣輪廓：內政部, Tiles © Esri — Source: Esri, Maxar,
        Earthstar Geographics',在 360–414dp 折成三行(系統字級放大是四行)、高 37.5px,直接壓住
@@ -4001,7 +4001,7 @@
     .maplibregl-ctrl-attrib::-webkit-scrollbar { width: 0; height: 0; }
     /* 左下的跟車卡(#followPanel)與捷運跟隨小卡(#freqCard)底緣落在這條的同一高度帶
        (兩者都是 left:8 / bottom:tabbar-clear+2 / 寬 176),所以它們在場時把左側 216px 讓回去。
-       用 :has() 只在真的有卡時才縮——沒卡就整條用滿,那才是「一條平的貼齊下方」。
+       用 :has() 只在真的有卡時才縮——沒卡就整條用滿,版權列貼著畫面下緣呈單一橫條。
        舊瀏覽器不支援 :has() 的話退回整條:結果是重疊,不是壞掉。 */
     body:has(#followPanel:not([hidden])) .maplibregl-ctrl-attrib,
     body:has(#freqCard:not([hidden])) .maplibregl-ctrl-attrib {
@@ -4017,7 +4017,7 @@
     .maplibregl-ctrl-bottom-right { bottom: 58px; }
     /* 公告橫幅在手機整個退場(2026-07-30):入口改成頂列的 .alert-chip(見上面那條規則)。
        橫幅原本是 top:100 的整寬橫條,常駐時會蓋住搜尋面板的輸入框、也會撞上被底部 sheet 推高的
-       跟隨小卡(使用者實機回報,兩張截圖各一);更貴的是它拖著一整條讓位鏈——站名牌、平交道提示、
+       跟隨小卡(兩種情況實機上都出現過,各有截圖);更貴的是它拖著一整條讓位鏈——站名牌、平交道提示、
        平交道卡、地圖動作列全部要為它下移 38~42px,每多一個頂部元件就多一條規則。
        收成頂列鈕之後這條鏈整條拆除,手機頂部幾何回到單一基準(頂列 8~48 → 徽章列 58 → 動作列 100
        → 站名牌 141 → 平交道卡 191),不再有「有沒有公告」這個變數。
@@ -4063,8 +4063,8 @@
     .xing-card .xc-foot { padding: 6px 10px 8px; font-size: calc(10px * var(--uis)); }
     .xing-card .xc-empty { padding: 12px 10px; font-size: calc(11.5px * var(--uis)); }
     /* 站名牌(手機直式):收成置中的小膠囊,不再是整寬橫條。
-       🔴 2026-08-27 使用者裁示:「現在火車到站時 站牌顯示太大了,很干擾而且會擋住後面的資訊,
-          請依照現在做的樣式去更改這個站牌顯示。」實測改前 特大/393 是 377×97、站名字級 39px,
+       🔴 2026-08-27 起:列車到站時的站牌縮小,避免它佔據畫面、遮住後方資訊。
+          版型改照現成的橫式樣式。實測改前 特大/393 是 377×97、站名字級 39px,
           整條橫跨螢幕壓在地圖上。改後尺寸與字級都比照橫式那一版(早就是小膠囊)與頂列的膠囊語彙。
        置中而不是靠左:與時鐘膠囊、速度膠囊共用同一條中線;寬度吃 max-content,站名多長就多寬。 */
     .dwell-plate {
@@ -4086,8 +4086,8 @@
     }
     /* 面板家族:手機一律變底部 sheet(圓上角+抓把)。
        ── sheet 三段高與安全區夾限(2026-07-30)──
-       高度 = min(該段的百分比, 從安全區頂緣到 sheet 底緣的可用高)。第二項是使用者回報的
-       「iPhone Air 上面會超過」的修法:sheet 底邊釘在 tab bar 上方、高度原本寫死 88%,螢幕越高
+       高度 = min(該段的百分比, 從安全區頂緣到 sheet 底緣的可用高)。第二項是用來修
+       iPhone Air 上緣超出螢幕的問題:sheet 底邊釘在 tab bar 上方、高度原本寫死 88%,螢幕越高
        剩下的 12% 越不夠讓開瀏海——420×912 算出頂緣 43px,正好落在動態島底下,標題列被吃掉。
        用 min() 夾住而不是把 88% 調小:沒有瀏海的機型 env=0,兩項算出來一樣,不平白損失可視面積。
        🔧 `--sheet-safe-top` 全檔沒有定義,只在這三處被 var() 引用 ⇒ 產品行為永遠走 fallback 的
@@ -4100,7 +4100,7 @@
       border-radius: 14px 14px 10px 10px;
     }
     .board::before { content: ""; display: block; width: 38px; height: 4px; border-radius: 3px; background: rgba(255,253,246,.55); position: absolute; top: 5px; left: 50%; transform: translateX(-50%); z-index: 3; }
-    /* ══ 設計 D1–D3 整合卡:跟車中打開車站看板 ⇒ 同一張卡兩個分頁 ══
+    /* ══ 設計 D1–D3 整合卡:跟車中打開車站看板 ⇒ 兩個分頁共用一張卡 ══
        🔴 刻意不新造 sheet:#board 已經有三段高／sticky h3／☆×／讓位／SHEET_PANEL_IDS 一整套,
           再造一個殼等於把那些契約全部重寫一遍。這裡只在它 render 完之後插入分頁列,
           並把 #followPanel 搬進槽裡(比照 msFlowSlot 把 #flowWrap 搬進抽屜再搬回的既有做法)。 */
@@ -4174,7 +4174,7 @@
        而且日誌還空著時憑空留 88px 白。這一頁全部走同一個捲軸,高度交給內容。 */
     body.fs .board .uni-slot .tc-events #tcEvents { height: auto; overflow: visible; }
     .board h3 { border-radius: 13px 13px 0 0; padding-top: 12px; }
-    /* 🔴 觸控目標(使用者 2026-08-26 回報「再小的字體設定時,關掉的 X 太小了,容易點不到」):
+    /* 🔴 觸控目標(症狀:字級設到最小時,✕ 鈕的命中框偏小、不易點中):
        ✕/☆/🔔 的命中框原本是 22×22,而且**不隨字級放大**(寬高寫死 px,只有字形吃 --ui)——
        在 40px 高的標題列裡垂直、水平都不到 44。桌面有游標,維持原樣;
        手機是整條 377px 的抽屜列,沒有理由只給 22px ⇒ 三顆一律撐成 44×44。
@@ -4193,7 +4193,7 @@
     .board :is(.close, .board-star, .board-notify):focus-visible { outline-offset: -5px; }
     .board h3 { padding-right: 94px; }
     .board.has-notify h3 { padding-right: 138px; }
-    /* ── 附近車站卡:併入 sheet 家族(2026-07-25 裁決)──
+    /* ── 附近車站卡:併入 sheet 家族(2026-07-25 起)──
        它原本吃 .xing-card 的上錨幾何(頂緣 152、高 462),把地圖中心埋在卡內 274px,藍點必然看不到。
        改成與 .board 同一組底部 sheet 幾何;三段高/讓位/重新取景靠 SHEET_PANEL_IDS 走同一套機制。
        用 id 選擇器蓋 .xing-card 那條鏈(id 特異度天然勝出,不受規則先後影響);其餘三張 .xing-card
@@ -4286,7 +4286,7 @@
     .notify-dialog { width: 100%; max-height: calc(100dvh - 82px - var(--sa-b)); align-self: end; border-radius: 16px 16px 10px 10px; }
     .notify-field { grid-template-columns: 96px minmax(0, 1fr); }
     /* 手機資訊卡整體縮小:卡寬與字級圖示全面降一級;底部讓開速度膠囊 */
-    /* 貼底小卡讓開 tab bar:原 60px 無 env,瀏海機(env≈34)tab bar 高 92px 會蓋住小卡下緣(真機回報病灶)。
+    /* 貼底小卡讓開 tab bar:原 60px 無 env,瀏海機(env≈34)tab bar 高 92px 會蓋住小卡下緣(真機上出現過的病灶)。
        改 var+2px:非瀏海機 env=0 仍為 60px(零變化),瀏海機 60+env 抬到 tab bar 上緣。 */
     /* 卡寬跟著字級走(設計檔小卡家族:x1.25 是 250、x1.5 是 300,基準 200 ⇒ 寬度本來就吃倍率)。
        不跟著放大的話,字變大而框不變,長車種名會被擠成一條又高又窄的柱子。 */
@@ -4400,7 +4400,7 @@
     /* 全畫面:tab bar 疊在地圖上,底欄元素上移讓開 */
     body.fs .maplibregl-ctrl-bottom-right { bottom: calc(var(--tabbar-clear) + 6px); } /* =原 64+env */
     body.fs .follow-panel, body.fs .freq-card { width: calc(176px * var(--ui)); }
-    /* 版權字放**最下角**、膠囊疊在它上方(v0819a 使用者裁決:原本把版權抬到膠囊上方,那行字看起來像浮在畫面中間)。
+    /* 版權字放**最下角**、膠囊疊在它上方(v0819a:原本把版權抬到膠囊上方,結果那行字漂在畫面中段)。
        仍然是垂直分離——膠囊置中、版權右對齊,窄寬(≤414)兩者水平必然重疊(實測 360/375/414 都疊),
        所以只能靠上下錯開,不能靠左右讓位。這裡刻意**不另寫規則**,直接讓上面那條 body.fs 的
        tabbar-clear+6px 生效(與放空態同高),順序改由膠囊上抬達成,見下方 .controls 那條。
@@ -4462,7 +4462,7 @@
     body:not(.ambient):not(.cexp).cfaint .controls #todOut { display: none; }
     /* ── 展開態(cexp):完整帶貼底整寬,三列格線 ──
        ① 播放 ＋ 速度軌　② 時刻尺（整列可拖）＋「現在」　③ 音樂
-       2026-07-25 裁決:原本第 2 列是「時刻讀數｜現在｜放空模式」,那個位置讓給時刻尺;
+       2026-07-25 起:原本第 2 列是「時刻讀數｜現在｜放空模式」,那個位置讓給時刻尺;
        放空／視角／分隔線一併收進「更多」抽屜(抽屜早有 data-proxy 列,功能不損失)。 */
     body.cexp .controls {
       left: 8px; right: 8px; bottom: 8px; transform: none;
@@ -4482,7 +4482,7 @@
     body.cexp .controls #musicCtl { grid-area: 3 / 1 / 4 / 4; }
     body.cexp .controls .speedrail { width: auto; flex: 1; }
     /* 時刻尺:收合膠囊(slim/faint)只留讀數——尺與指針在那個高度塞不下也沒手指空間;
-       展開帶(cexp)才長成整列可拖的尺。原本手機整個不啟用(2026-07-25 早上裁決),同日下午改為只在展開帶啟用。 */
+       展開帶(cexp)才長成整列可拖的尺。原本手機整個不啟用(2026-07-25 早上),同日下午改為只在展開帶啟用。 */
     .timerail { width: auto; height: auto; }
     body:not(.cexp) .timerail .tr-tape, body:not(.cexp) .timerail .tr-needle, body:not(.cexp) .tr-delta { display: none; }
     /* 讀數的觸控熱區:收合態沒有尺可拖,還原成 ≥44px(v0718i);展開帶必須收成讀數本身大小,
@@ -4516,7 +4516,7 @@
     body.ambient .follow-panel .fp-head .spd b { font-size: calc(15px * var(--ui)); }
     /* 三行條維持單行:放不下的長站名以省略號收尾,不撐寬卡片(修前 WebKit 101px 可拖,見 .fp-next .stn 基底那條) */
     body.ambient .follow-panel .fp-next .stn { font-size: calc(14px * var(--ui)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    /* ── 右緣工具欄(§04c-P 裁決,直式與橫式共用同一個元件):⇄ 換一班/隨機跟隨 → ◎ 附近車站 →
+    /* ── 右緣工具欄(§04c-P,直式與橫式共用同一個元件):⇄ 換一班/隨機跟隨 → ◎ 附近車站 →
        🔒跟隨鎖,44×44 垂直一疊、icon-only、右錨。原本兩顆帶字膠囊橫躺地圖中上方＋鎖鈕孤懸右緣
        中段=「四個東西三種尺寸三條基準線」(§04c D2/D3);收成一欄後只剩一條右緣基準線,寬度不再
        跟著字數浮動。跟隨鎖由 placeControlRail() 從地圖控制角搬進來(桌面搬回去)。
@@ -4525,10 +4525,10 @@
       display: flex; flex-direction: column; align-items: flex-end; gap: 8px;
       position: absolute; right: calc(10px + var(--sa-r, 0px)); top: calc(100px + var(--sa-t)); z-index: 620;
     }
-    /* 🔴 上面那個 100 是照【標準檔】頂列實高凍結的常數(頂列底 50 ＋ 50 的留白帶)。排法B 之後
+    /* 🔴 上面那個 100 是照【標準檔】頂列實高凍結的常數(頂列底 50 ＋ 50 的留白帶)。D4 頂列單排版之後
        時鐘徽章已經是頂列的一部分,頂列會隨字級長高(實測 42→103→117),常數就被壓進頂列裡:
        大 相交 468px²、特大 1103px²,而且兩個引擎都中——被蓋住的固定是 DOM 最後那顆「捷」,
-       正是使用者 2026-08-26 回報的那個。改成從量到的頂列實高推,留白帶維持 50 不變 ⇒
+       與先前看到的症狀吻合。改成從量到的頂列實高推,留白帶維持 50 不變 ⇒
        標準檔算出來仍是 8+42+50=100,幾何一格不動;只掛 html[data-fs],沒選字級的人完全不受影響。
        🔴 量「高度」不量「底緣座標」:安全區在 Capacitor 是開機後才注入且不觸發任何事件,
        量底緣會留下對不上的舊值(見 memory top-stack-hardcoded-offsets 形狀一)。 */
@@ -4597,7 +4597,7 @@
     body.fs .board, body.fs #nearCard, body.fs #searchPanel, body.fs .traincard.tc-sheet,
     body.fs .board.sheet-small, body.fs #nearCard.sheet-small,
     body.fs .traincard.tc-sheet.sheet-small {
-      top: calc(8px + var(--sa-t)); /* v3(08-27 裁示):上錨到頂——「可以擋住右上角那些按鈕沒關係,不然捲軸太短空間太小」 */
+      top: calc(8px + var(--sa-t)); /* v3(08-27):上錨到頂,右上角那些按鈕被蓋住可以接受,換取較長的捲動空間 */
       bottom: calc(var(--tabbar-clear) + 8px);
       left: auto; right: calc(8px + var(--sa-r));
       width: var(--rail-w); max-width: none;
@@ -4616,8 +4616,8 @@
     }
     /* 釘住了就是固定段,焦點進來不讓位(為什麼見 .board h3 下面那條 scroll-margin) */
     body.fs .board > .uni-tabs, body.fs .board > .uni-tabs * { scroll-margin-top: 0; }
-    /* 🔴 半透明時比照 08-27 裁示「標題列半透明＋blur(6px)」(見 body.panel-translucent .board h3 那條):
-       sticky 層下捲過的字要糊成色塊;只給玻璃不給 blur 就是字疊字(08-27 真機橫式回報的那鍋粥)。 */
+    /* 🔴 半透明時比照「標題列半透明＋blur(6px)」(見 body.panel-translucent .board h3 那條):
+       sticky 層下捲過的字要糊成色塊;只給玻璃不給 blur 就是字疊字(橫式真機上實際出現過)。 */
     body.fs.panel-translucent .board .uni-tabs {
       background: var(--panel-glass);
       -webkit-backdrop-filter: blur(6px) saturate(1.08);
@@ -4635,9 +4635,9 @@
     body.fs .traincard.tc-sheet.sheet-small .tc-sparkwrap,
     body.fs .traincard.tc-sheet.sheet-small .tc-stops { display: block; }
 
-    /* ── 跟車卡在橫式=右側欄(§04c v3,2026-08-27 使用者裁示)────────────────────────
+    /* ── 跟車卡在橫式=右側欄(§04c v3,2026-08-27)────────────────────────
        v2(08-26)廢除左欄的理由是「同一份資訊在卡的『這班車』分頁裡已經有了」——但那一頁只在
-       看板開著時存在;跟車而沒開站板時整份跟車資訊無處可去(真機回報「點跟車沒看到資訊卡」)。
+       看板開著時存在;跟車而沒開站板時整份跟車資訊無處可去(真機上開啟跟車後,資訊卡沒有出現)。
        v3 讓 #followPanel 自己就是右側欄:與看板側欄同一幾何、同樣上錨到頂;點卡仍走既有的
        openTrainSheet 展開完整資料。搬進看板槽裡時 .uni-slot 那條(position:static,特異性較高)
        接管,這裡的幾何整組失效;[hidden] 的 display:none !important 照樣蓋過一切。 */
@@ -4658,7 +4658,7 @@
        同時免掉直式 sheet-open 那條 bottom:46%!important 打進來的幾何衝突(上錨+46%底=壓扁)。
        關掉 sheet 由 updateSheetOpenClass 摘 class,側欄自己回來——與 train-open 隱藏同族先例。 */
     body.fs.sheet-open .follow-panel { display: none; }
-    /* 「我上車了」不再釘底(08-27 真機回報:釘底=永遠浮在其他文字上擋字。側欄已上錨到頂、
+    /* 「我上車了」不再釘底(08-27 真機上看到:釘底=永遠浮在其他文字上擋字。側欄已上錨到頂、
        捲動空間變大,讓它照 DOM 順序隨內容流動即可)。 */
     /* 捷運跟車卡維持左下小卡(§04c 只重排台鐵/高鐵跟隨欄):沿用限高與 sheet-open 底錨 */
     body.fs.sheet-open .freq-card { bottom: calc(var(--tabbar-clear) + 2px) !important; }
@@ -4666,7 +4666,7 @@
       max-height: calc(100dvh - var(--tabbar-clear) - 64px - var(--sa-t));
       overflow-y: auto;
     }
-    /* §04c v2「改·第 8 條」站名牌雙錨點(2026-08-26 使用者裁示「照設計做」):
+    /* §04c v2「改·第 8 條」站名牌雙錨點(2026-08-26 起以設計稿為準):
        卡開著 ⇒ 併進卡頭當一列(下面 .dp-docked);卡沒開 ⇒ 仍是露出地圖置中的獨立牌。
        兩條路徑**共用同一顆 #dwellPlate**(設計明寫「只換錨點」),搬家由 dockDwellPlate() 做。
        🔴 原本這裡是「側欄一開就把牌整個淡出」,理由是中線帶只剩 73~133px 物理放不下——
@@ -4706,7 +4706,7 @@
     /* ── 觀察模式(＝既有放空模式)的橫式形態(§04c v2 新增,17f)────────────────
        設計:只留頂列,其餘 HUD 淡出至 0(180ms)、DOM 保留。頂列留著的理由是「觀察模式最常被問的
        就是現在幾點、幾班在跑」,而手機殼那條把頂列 display:none ⇒ 橫式反轉回來。
-       🔴 與設計的一處刻意差異(2026-08-26 使用者裁示):**速度膠囊不淡出**。膠囊裡就是離開放空
+       🔴 與設計的一處刻意差異:**速度膠囊不淡出**。膠囊裡就是離開放空
           模式的那顆鈕;設計靠「點畫面任一處全部復原」把它叫回來,而本專案沒有那套復原狀態機,
           全淡掉等於把人關在模式裡出不去。膠囊留著當出口,其餘照設計。 */
     body.fs.ambient .topbar { display: flex; }
@@ -4739,15 +4739,15 @@
        工具堆還停在 56 ⇒ 隨機跟隨鈕整顆疊進頂列(實測 rand y56–100 vs 頂列 8–127)。
        同一個公式:標準檔算出來仍是 8+42+6=56,幾何一格不動。 */
     html[data-fs] body.fs .map-actions { top: calc(8px + var(--sa-t) + var(--tb-h, 42px) + 6px); }
-    /* v3(08-27 裁示):側欄開著時工具堆不再左移讓位——「可以擋住右上角那些按鈕沒關係,
-       不然捲軸太短空間太小」。側欄在上層,被蓋住期間本來就點不到,關卡即回。
+    /* v3(08-27):側欄開著時工具堆不再左移讓位——右上角那些按鈕被蓋住可以接受,
+       換取較長的捲動空間。側欄在上層,被蓋住期間本來就點不到,關卡即回。
        (被蓋住≠消失:z 序 board/follow-panel 650 > map-actions 620。) */
-    /* §04c 契約7 退役(2026-08-27 真機回報「上面多了一個半透明沒有特別用處的區塊」):
+    /* §04c 契約7 退役(2026-08-27 真機上看到頂端多出一塊半透明、沒有用途的區塊):
        原設計「頂列整條帶當可讀底」從未真正成立——徽章自己的紙面 pill(body.fs .badge 特異性較高)
        一直都在,軌島牌與群組圓鈕也各自帶底,帶只剩中段一條空玻璃=雙重底。拆掉帶的底、描邊與
        圓角,回到與直式一致的「各元件自帶底」;盒幾何(零垂直 padding、padding-left 8)不動。 */
     body.fs .topbar { padding: 0 0 0 8px; align-items: center; }
-    /* 🔴 2026-08-27 裁示:外圈(halo)整組拿掉,可讀性靠字色——同面板家族那條註解。 */
+    /* 🔴 2026-08-27 起外圈(halo)整組拿掉,可讀性改由字色負責——同面板家族那條註解。 */
     /* mock 右上幾何:公告 26 圓鈕、短標 44×28/gap 6；工具堆維持 44×44/gap 8，三者共用右錨。
        三個固定盒都吃 --ui:字級放大時字撐大了盒子不跟著長,字會被自己的框切掉(設計檔 TURN 10/12
        明寫「圖示、觸控目標一起放大」)。 */
@@ -4773,7 +4773,7 @@
        就是要,英文把它逼出來了。退讓順序不變:先讓 plate-foot 的起訖站名(省略號),再由 fitBadgeDetail()
        把狀態旗標降成色點,標題自己是最後一道——它有 nowrap,**永遠不准折成直排的「軌島」**
        (實測會把整條頂列從 ~50px 撐到 66px),裝不下時收成省略號,不再被 .stage 的 overflow 硬切。 */
-    /* 「更多」抽屜橫放收斂(2026-08-12 實機退回:left/right 0 的全寬底抽屜直接壓進動態島):
+    /* 「更多」抽屜橫放收斂(2026-08-12 實機上發現:left/right 0 的全寬底抽屜直接壓進動態島):
        左右各讓出安全區(--sa-l/--sa-r=env 別名,橫放時動態島就在其中一側)、限寬置中成對話框形,
        高度收斂留出頂列。列高/字級沿用手機值(48px 觸控目標;字太大的真因是 text-size-adjust,見 html)。 */
     body.fs .more-sheet {
@@ -4790,10 +4790,10 @@
        跟隨小卡、跟隨鎖、側欄。地圖本身**刻意不讓**——它該滿版鋪到螢幕邊緣,被島遮住一角無妨,
        不能讀的是文字與按鈕。變數為 0 時下列每一條都退化成原值,直向與桌面逐值不變。 */
     body.fs .topbar { left: calc(10px + var(--sa-l)); right: calc(10px + var(--sa-r)); }
-    /* v4(08-27 真機 905 回饋):「放橫的時候右邊按鈕沒有靠到邊 浮在中間」⇒ 右緣的 sa-r 讓位
+    /* v4(08-27 真機 905):橫放時右側按鈕離邊緣一段距離、飄在中段 ⇒ 右緣的 sa-r 讓位
        拿掉,頂列右群(分組鈕/公告)與工具堆貼實體邊(兩者右緣對齊是 L3e 契約,必須同步動);
        左緣照舊讓 sa-l(軌島牌壓到動態島才真的不能讀)。
-       v5(08-27 裁示「應該改成一排橫的在右上方的按鈕而不是直的」):貼邊後直欄跨進島帶
+       v5(08-27):右上方按鈕組由直排改成橫排——貼邊後直欄跨進島帶
        (島在橫放時位於單側垂直中央,y≈170–230)——402pt 高裡直欄不是壓島就是頂到下緣,
        結構性無解;改成橫排收進頂帶(y≈56–100,橫放的頂帶沒有島),兩種持法都乾淨。
        row-reverse 保住直欄的兩個契約:DOM 首顆(隨機跟隨)貼右上角=直欄時代的「最上顆」;
@@ -4803,7 +4803,7 @@
     /* 標籤 chip 直欄錨在鈕左緣外側——橫排會壓到左鄰的鈕,改錨鈕的下緣外側(y≈104 起,離島帶還遠)。
        右對齊鈕右緣不置中:角落顆置中會讓 chip 探出視窗右緣被裁;向左展開的下方只有地圖。 */
     body.fs .map-actions .mt-tip { right: 0; left: auto; top: calc(100% + 8px); transform: none; }
-    /* 🔴 橫式一律單排(使用者 2026-08-26 裁示):直式大/特大要拆兩排是因為 360–430pt 放不下,
+    /* 🔴 橫式不分字級都排成一排:直式大/特大要拆兩排是因為 360–430pt 放不下,
        橫放的可用寬有 830+px,logo57＋膠囊128＋四顆214＋公告49＋間距 = 約 470,一排綽綽有餘;
        而橫放的高只有 440,兩排頂列會吃掉 27% 的畫面高。所以這裡把直式那個 grid 兩排版整個退回
        單排 flex,並把被 grid 版清掉的兩個 auto 邊界接回來(它們才是 flex 版的左右分群機制)。 */
@@ -4817,7 +4817,7 @@
     body.fs .freq-card { left: calc(8px + var(--sa-l)); }
     body.fs .controls { left: calc(12px + var(--sa-l)); right: calc(12px + var(--sa-r)); }
 
-    /* ── 停靠站名牌:直向那套「左右各 8px 整寬」在矮視窗吃掉 98% 寬(使用者回報「站牌太大」)──
+    /* ── 停靠站名牌:直向那套「左右各 8px 整寬」在矮視窗吃掉 98% 寬──
        改成寬度隨內容(站名最長四字)並整體降一級字。停靠時地圖仍是主角。
        🔴 縮窄之後不能還放左上角:矮視窗把跟隨小卡頂到 y127(placeFsOverlays 的讓位),
           原本 836px 寬的整寬版是「兩側都露出來」才看得到,縮到 129px 就整個躲進小卡後面
@@ -4855,7 +4855,7 @@
        只在 sheet 開著時讓(側欄不在時它們該用回全寬),train-open 是「列車」sheet 的旗標、
        它不在 SHEET_PANEL_IDS 裡所以 body.sheet-open 涵蓋不到,要另外列。
        (#dwellPlate 曾是驗收實際抓到的那個:停靠站名牌整寬 8px→8px,一停站就壓在側欄下;
-        08-11 使用者回報「站牌太大」後它改成左錨窄版,結構上已在左半邊,不再需要也不再吃這條
+        08-11 站牌改版後它改成左錨窄版,結構上已在左半邊,不再需要也不再吃這條
         ——`right` 對「left+width 都設了」的盒子是無效宣告,留著只會誤導。) */
     body.fs.sheet-open .alert-detail, body.fs.train-open .alert-detail,
     body.fs.sheet-open .alert-banner, body.fs.train-open .alert-banner,
@@ -4865,7 +4865,7 @@
       right: calc(var(--rail-w) + 16px + var(--sa-r));
     }
     body.fs.sheet-open .alert-detail, body.fs.train-open .alert-detail { width: auto; left: 8px; }
-    /* 🔴 平交道卡／台糖卡／落釘卡改坐側欄槽位(09-26 使用者裁示方案 A)。
+    /* 🔴 平交道卡／台糖卡／落釘卡改坐側欄槽位(09-26 起)。
        手機殼那條 .xing-card(top:191、max-height:100%-313)是照直式寫的:動作列底下開槽、底部留給跟隨卡。
        橫式只有 375–430 高,同一條式子算出來卡只剩 62–117px,卡頭就吃掉 42–56px(特大字級卡頭比卡還高)⇒
        修前 844×390 平交道卡五列只看得到一列、落釘卡一列都沒有,667×375 三張全是零列。
@@ -4874,7 +4874,7 @@
        下緣停在版權列之上,不是 sheet 家族的 tabbar-clear+8:這三張不在 SHEET_PANEL_IDS,body.sheet-open
        不會成立、版權列不淡出,要讓出它那一行(10px×行高 1.25,跟著 --uis)再留 6px。
        只挑這三個 id:#pinHint(一行提示條)與 #nearCard(本來就在 sheet 家族)也掛 .xing-card,寫成 class 會一起拉走。
-       代價是裁示時就列出來的:蓋住右上角的公告鈕、全▾、觀看、隨機(同 08-27 v3「可以擋住右上角那些按鈕」);
+       代價是採用時就已知的:蓋住右上角的公告鈕、全▾、觀看、隨機(同 08-27 v3 的取捨:右上角按鈕被蓋住可以接受);
        跟車中右側是跟車欄,卡疊在它上半。上面那條 sheet-open／train-open 讓位碰不到這三張——
        開 sheet 或列車 sheet 都走 soloPanel,會先把它們關掉。
        卡坐進側欄就算側欄的一份,--rail-occupy 跟著算(契約8「中線=[左界, 側欄左緣−8] 的中點」):
@@ -4956,13 +4956,13 @@
     body:not(.mobile-shell) .more-sheet .grab { display: none; } /* 拖曳把手是觸控隱喻,桌面不需要 */
     /* 列高:手機 48px 是觸控目標下限,桌面滑鼠不需要那麼高——收緊讓整份設定一屏看完 */
     body:not(.mobile-shell) :is(.more-sheet, .view-panel) .ms-row { min-height: 40px; padding: 8px 14px; font-size: calc(13px * var(--ui)); }
-    /* 「資料狀態」是手機限定:那些字樣只在手機被收成色點(設計 D4 排法B),桌面頂列徽章本來就寫著全文,
+    /* 「資料狀態」是手機限定:那些字樣只在手機被收成色點(設計 D4 頂列單排版),桌面頂列徽章本來就寫著全文,
        再列一次是純重複。DOM 留著、只在桌面藏起來——旗標/版面回到手機就自己回來。 */
     body:not(.mobile-shell) .more-sheet #msSecStat,
     body:not(.mobile-shell) :is(.more-sheet, .view-panel) .ms-row.ms-stat { display: none; }
     body:not(.mobile-shell) .more-sheet .ms-sec { padding: 7px 14px 2px; }
     body:not(.mobile-shell) #toolsFab { display: inline-flex !important; } /* 桌面重新啟用抽屜開關(手機仍由 tab bar「更多」負責) */
-    /* 偏好類設定收進抽屜(2026-07-25 使用者拍板):站介紹/方向/平交道/省電/外觀/軌道 帶上不再常駐。
+    /* 偏好類設定收進抽屜(2026-07-25):站介紹/方向/平交道/省電/外觀/軌道 帶上不再常駐。
        元素留在 DOM,抽屜列照樣靠 btn.click() 代理它們。
        刻意用 CSS 而非 inline display——syncMoreSheet 以 btn.style.display==='none' 判斷
        「功能未開放就連抽屜列一起藏」,改 inline 會把抽屜裡的列也藏掉。 */
@@ -5205,7 +5205,7 @@
     <!-- 地圖頂浮動列(手機 fs 專屬;桌面/放空不顯示):左=軌島迷你牌(資訊),右=全/台/高/捷短標(動作)。
          topTabs 四顆為 CLS 靜態預置佔位,boot 的 renderSystemsBar→renderTopTabs 以同幾何重建(cls-static-placeholder) -->
     <div class="topbar" id="topbar">
-      <!-- 設計 D4 排法B:牌換成 42x42 的 logo 方牌(整個 logo 縮小,不是只留字)。
+      <!-- 設計 D4 頂列單排版:牌換成 42x42 的 logo 方牌(整個 logo 縮小,不是只留字)。
            favicon-192.png 本來就是那塊琺瑯牌(含島形＋軌島＋起訖站帶),所以文字版的牌可以整個讓位。 -->
       <img class="tb-logo" src="favicon-192.png" alt="軌島" width="42" height="42" decoding="async">
       <div class="plate tb-plate">
@@ -5216,12 +5216,12 @@
         </div>
       </div>
       <!-- 公告警示鈕(手機 fs 專屬):有營運通阻公告時才出現,點一下開詳情。2026-07-30 取代原本 top:100 的
-           整寬橫幅——橫幅常駐會蓋住搜尋面板的輸入框、也會撞上被底部 sheet 推高的跟隨小卡(使用者實機回報),
+           整寬橫幅——橫幅常駐會蓋住搜尋面板的輸入框、也會撞上被底部 sheet 推高的跟隨小卡(實機上出現過),
            而且它拖著一整條讓位鏈(站名牌/平交道提示/平交道卡/地圖動作列各自下移 38~42px)。收進頂列後不佔
            版面,那條鏈整條拆掉。margin-left:auto 讓它吃掉軌島牌與頁籤之間的空白、緊貼頁籤左側,窄機
            (360pt)才不會把頁籤擠出畫面。 -->
       <button class="alert-chip" id="alertChip" hidden aria-label="營運通阻公告，點開看詳情" title="營運通阻公告"><span class="ac-ico" aria-hidden="true">⚠</span><span class="ac-n" id="alertChipN"></span></button>
-      <!-- 手機殼專用的「收合成一顆」鈕(2026-08-27 使用者裁示:「你把那四顆鈕收成一顆 點擊會打開就好」)。
+      <!-- 手機殼專用的單一群組鈕(2026-08-27 新增:原本的四顆群組鈕併進這一顆,點擊後才展開)。
            三個字級都用它,桌面則維持 header 上的四顆分頁。
            為什麼另做一顆而不是把 #topTabs 收起來:renderTopTabs 每次換群組都會 innerHTML 重建那四顆,
            把收合狀態塞進去等於每次重建都要重做;這顆獨立、只由 renderTopTabs 更新它的字。
@@ -6314,15 +6314,15 @@
 <!-- 🔴🔴 2026-07-28 規格覆審：推翻規格 §5 之一「錄製模式是專用的極簡畫面，不是一邊看動畫一邊錄」。
      原始規格給了四個理由：①省電（OLED 黑底再省一層——但 2026-07-28 審查糾正 B3 已經指出這裡
      從來只停畫面不停模擬，黑幕底下整套 rAF/clearRect/列車推算照常在跑，這個好處現況根本沒兌現，
-     等於黑幕付了電費卻什麼都沒買到）②使用者本來也不會盯著看（實測推翻：真人回饋「錄製途中可以
-     顯示地圖與列車嗎？不要都是黑畫面。應該也要能讓使用者繼續使用裝置才對」——理由②本身就是被
+     等於黑幕付了電費卻什麼都沒買到）②使用者本來也不會盯著看（實測推翻：錄製途中其實需要看得到
+     地圖與列車、不該整片黑畫面，裝置也要能照常使用——理由②本身就是被
      推翻的那一條）③視覺上明確標示正在錄製，符合隱私透明 ④讓懸賞長得像行程記錄器而不是另一種
-     打卡。②被使用者實測推翻、①現況沒兌現，只剩③④——這兩個用「常駐紅色狀態列」（#recordBar，
+     打卡。②被實測推翻、①現況沒兌現，只剩③④——這兩個用「常駐紅色狀態列」（#recordBar，
      比照 body.collect-map 的 #collectBar 先例）一樣達成，不需要犧牲「地圖仍可見可操作」。
      改法：預設狀態變成「地圖照跑＋常駐狀態列」，這片黑底大字畫面降級成使用者主動點「詳細」才
      開的**選用面板**（看大字/進度條/完整品質說明時才需要），不再是錄製一開始就接管的畫面。
-     🔴 定位不變的部分：使用者已明確把這次的範圍限定在「App 內能離開錄製畫面（回地圖、開看板、
-     跟別的車、看護照），不是切到別的 App／鎖螢幕還要錄」——錄製全程仍要求 App 前景＋螢幕亮著
+     🔴 定位不變的部分：這次只處理 App 內切換畫面時錄製不中斷（回地圖、開看板、
+     跟別的車、看護照），不處理切到其他 App 或鎖定螢幕的情況——錄製全程仍要求 App 前景＋螢幕亮著
      （Wake Lock 邏輯完全不動），定位權限仍是 When-in-use，不引入任何背景／鎖屏取樣，隱私架構
      與已送審的資料揭露一個字都不用改。
      掛 body 層與其他浮層同理（.stage 會封頂 z-index，全螢幕接管必須跳出去才蓋得住 tabbar）。
@@ -6398,7 +6398,7 @@
     <div class="takeout-actions"><button class="cancel" id="metroWaitPickerCancel" type="button">取消</button></div>
   </section>
 </div>
-<!-- 台鐵等站卡:選一班特定的車。與捷運那張最大的差別是【不選時長】——追蹤窗由這班車的
+<!-- 台鐵等站卡:追蹤的是某一個車次。與捷運那張最大的差別是【不選時長】——追蹤窗由這班車的
      實際約到站時刻推出來(原生與伺服器同一條算式),使用者不必也不該去猜要追多久。 -->
 <div class="takeout-modal tra-wait-picker" id="traWaitPicker" hidden>
   <section class="takeout-dialog metro-wait-picker-dialog" role="dialog" aria-modal="true" aria-labelledby="traWaitPickerTitle">
@@ -6436,7 +6436,7 @@
   <div class="sp-head"><b>資料狀態</b><button class="sp-close" id="statPopClose" type="button" aria-label="關閉">✕</button></div>
   <div class="sp-rows" id="statPopRows"></div>
 </div>
-<!-- 群組選單:手機殼把四顆頁籤收成一顆,點它開這張。內容由 renderGtabPop() 依 TAB_GROUPS 生成。
+<!-- 群組選單:手機殼把四顆頁籤併成單一按鈕,點它開這張。內容由 renderGtabPop() 依 TAB_GROUPS 生成。
      🔴 同 #statPop 放 body 層(見 memory modal-stacking-context:.stage 會把 z-index 封頂)。 -->
 <div class="gtab-pop" id="gtabPop" hidden role="dialog" aria-label="切換群組">
   <div class="gp-rows" id="gtabPopRows"></div>
@@ -6450,7 +6450,7 @@
     <!-- 議題3:四段分組(地圖顯示/資訊/觀看模式/分享與資料);列本身原封只重排,被旗標隱藏的列(recBtn/accountBtn/locateBtn)按性質歸段 -->
     <!-- 使用說明:刻意排在所有分組之前(第一次找不到功能的人第一眼就看到);桌面走同一個 sheet(#toolsFab) -->
     <button class="ms-row" data-act="help" data-close="1"><span>使用說明</span><span class="chev">›</span></button>
-    <!-- 通行證:原本掛在「分享與資料」段最後(第 41 列、要捲 2100px),使用者回報「找不到怎麼付費」。
+    <!-- 通行證:原本掛在「分享與資料」段最後(第 41 列、要捲 2100px),付費入口難以找到。
          尾巴那格由 syncMoreSheet() 依 plusIsActive() 換字:未持證=看方案,已持證=已啟用(不對已付費的人推銷) -->
     <button class="ms-row" data-proxy="plusBtn" data-close="1" style="display:none"><span>軌島通行證</span><span class="ms-tail"><b id="msPassVal">看方案</b><span class="chev">›</span></span></button>
     <button class="ms-row" data-act="musicpl" data-close="1"><span>配樂情境</span><span class="chev">›</span></button>
@@ -6482,9 +6482,9 @@
     <!-- 縣市快速移動(Batch B):#citySel 縣市下拉的手機新家;點列展開 17 縣市 chip,點 chip 飛過去並關 sheet -->
     <button class="ms-row" data-act="cities"><span>縣市快速移動</span><span class="chev">›</span></button>
     <div class="ms-cities" id="msCities" hidden></div>
-    <!-- 資料狀態(設計 D4 排法B 的代價償還):頂列徽章把 LIVE／看板校正／REPLAY／尖峰 收成色點、
-         班次數整個收起來之後,那些字樣需要一個看得到全文的家。使用者 2026-08-22 裁示「全部收成色點,
-         列車數也進更多」。🔴 這幾列的值一律**從徽章元素本身讀**(syncMoreDataStatus),不重算一份判斷——
+    <!-- 資料狀態(補償 D4 頂列單排版的代價):頂列徽章把 LIVE／看板校正／REPLAY／尖峰 收成色點、
+         班次數整個收起來之後,那些字樣與列車數需要一個看得到全文的家。
+         🔴 這幾列的值一律**從徽章元素本身讀**(syncMoreDataStatus),不重算一份判斷——
          徽章由既有程式維護,複製一份判斷邏輯遲早會跟它分岔。 -->
     <div class="ms-sec" id="msSecStat">資料狀態</div>
     <div class="ms-row ms-stat" id="msStatLive" hidden><span>即時資料</span><span class="ms-tail"><b id="msStatLiveVal"></b></span></div>
@@ -6594,14 +6594,14 @@
 //         v0816c，本批內容與它們都不同 ⇒ 推一個誰都沒用過的號。
 // v0818e：官方名冊只要有一台車資料不全就整包被擋掉(環狀線 Y 的線形沒帶站間行駛秒),
 // 全網因此停在舊快照——改用官方自己給的 dep→arr 補回來;另外官方訂正到站時刻時,
-// 畫面改成約五秒收斂到新位置並跳一則「官方訂正位置」通知(使用者裁示)。
+// 畫面改成約五秒收斂到新位置並跳一則「官方訂正位置」通知。
 // v0818h：併入 origin/main 的文湖線收車修正(v0818g)後,版號往前推一號避開撞號。
 // v0818f：高鐵跑段改四相位「加速→巡航→惰行→煞車」——舊的三相位梯形只能把時刻表餘裕
 // 平均攤成偏低的巡航速度(中段偏慢、末端沒有滑行、靠尾段硬跑追回到站時刻);惰行深度依
-// 使用者親試回饋調到 c=0.54／ρ=0.45(巡航中位 208→223、56 段頂到 300 線速);另外高鐵表定
+// 實際試用後調到 c=0.54／ρ=0.45(巡航中位 208→223、56 段頂到 300 線速);另外高鐵表定
 // 只到分,照分秒整放行等於每站比真車早開最多一分鐘,離站改取那一分的中點(+30 秒)。
 // 兩項都不動到離站時刻,台鐵/捷運剖面逐點零變化(對照組 20114 段全等)。
-// v0818l：高鐵速度剖面改用車上實測值——使用者 08-18 晚在 0846 北上讀車廂時速表
+// v0818l：高鐵速度剖面改用車上實測值——08-18 晚在 0846 北上車廂讀時速表所得
 //         (280/295/300/285,再 60 秒掉到 195、兩分鐘後進桃園)。煞車率由推估的 2.7 改為
 //         實測 1.5、加速度改為實測 1.42,惰行 c 0.54→0.45;巡航中位 223→250 km/h。
 //         逐段對照四個實測點,平均誤差 43.5→10.5 km/h(桃園–板橋 實測 212 / 模型 213)。
@@ -6645,7 +6645,7 @@
     // v0823e：補回 63e38b2 那顆合併整檔取 main 時丟掉的 App 線內容——跟車鎖屏與衛星高解析
     //         兩個通行證入口、方案面板與說明中心的捷運小工具條目、說明中心 metrowidget／metrowait
     //         兩節,以及 App 前景持續定位與所在地鏡頭跟隨(v0821d 那批的 index.html 那一半)。
-    // v0826a：版面試作(字級三階/頂列排法B/看板組標題/站內回報)與出貨線 1.4.10 血脈合流,
+    // v0826a：版面試作(字級三階/D4 頂列單排版/看板組標題/站內回報)與出貨線 1.4.10 血脈合流,
     //         並帶上 origin/main 至 7932b2e 的全部更新。
 // v0828c：網站預設重新開啟 Metro Core；?metrocore=0 保留緊急退路。Core 發布前新增 trajectory
 //         內部跨站閘門，五秒內跨半站的候選留在已發布位置重新銜接，不送到 client。
@@ -6654,7 +6654,7 @@
 // v0828g：補齊營運公告控制項與「分享畫面」的英文、日文標籤。
 // v0828h：動態島三種展開卡統一使用 22pt 圓角安全內距，避免各語言內容被邊緣裁切。
 // v0828i：字級設定的目前值與詳細面板補齊英文、日文即時切換。
-// v0828l：捷運車站資訊頁的緊湊排法從 Android 擴到 iOS（網站維持舊排法）。
+// v0828l：捷運車站資訊頁的緊湊排法從 Android 擴到 iOS（網站不變）。
 // v0828p：東部幹線急彎依官方核定速限行駛（宜蘭線新馬 R306、北迴線和仁 R804）。
 // v0829f：Android 1.5.0 (16) 出貨——多語線併入 origin/main(709ce37)，帶上信義東延段、開機並行下載與 8/29 公告。
 // v0829g：iOS 1.5.1 (81)——把網站 v0829f 的擁擠度逐車對照併進 App 線（取代原本「沒車號就退回同終點」
@@ -6676,18 +6676,18 @@
 // v0831a：修「搭 122 次卻整趟顯示 132 次」(網友回報)。真因不是認錯車——是「跟隨一班還沒發車
 //         的車就把全域時鐘撥到它發車前」這個時光機在【搭乘中】也照撥,撥完 clockAtNow=false
 //         讓每一條重錨路徑都失效,偏移固定不變,於是晚 2 小時 06 分發車的 132 次一路黏在使用者
-//         真實位置上。四道修法:搭乘中不撥鐘／卡自己標「非即時」可點回／手機時鐘卡補「回到現在」／
-//         跟隨卡改夾高度不再蓋掉時鐘膠囊。
+//         真實位置上。四道修法:搭乘期間不切換時間／卡片上自行註明「非即時」、可點一下回到現在／手機時鐘卡加上「回到現在」／
+//         跟隨卡限制高度、不再蓋住時鐘膠囊。
 // v0831b：併入 Android 線 5dacec9——登入失敗的紅字原本只畫在「已登入」分支,所有登入失敗
 //         一律靜默(iOS 同一份檔案,同樣中招)。同輪照 Android 線訂正日文時態。
                         //    ⇒ 本線讓號跳 c。v0831a 出過 IPA 未上傳。跨分支撞號見心得16
 // v0831b：挑入 iOS 線 8c2595c——修「搭 122 次卻整趟顯示 132 次」(網友回報)。真因不是認錯車,
 //         是「跟隨一班還沒發車的車就把全域時鐘撥到它發車前」這個時光機在【搭乘中】也照撥,
 //         撥完 clockAtNow=false 讓每一條重錨路徑都失效,偏移固定不變,於是晚 2 小時 06 分發車
-//         的 132 次一路黏在使用者真實位置上。四道修法:搭乘中不撥鐘／卡自己標「非即時」可點回／
-//         手機時鐘卡補「回到現在」／跟隨卡改夾高度不再蓋掉時鐘膠囊。
+//         的 132 次一路黏在使用者真實位置上。四道修法:搭乘期間不切換時間／卡片上自行註明「非即時」、可點一下回到現在／
+//         手機時鐘卡加上「回到現在」／跟隨卡限制高度、不再蓋住時鐘膠囊。
 //         🔴 對方那顆用 v0831a,而 v0830n 兩條線都用過(撞號),故本線跳到 v0831b。
-// v0831d：網站補上 App 線那五件——搭乘中不撥鐘／跟隨卡自陳「非即時」可點回／手機的「現在」
+// v0831d：網站補上 App 線那五件——搭乘期間不切換時間／跟隨卡自陳「非即時」可點回／手機的「現在」
 //         鈕在時鐘被撥走時現身／跟隨卡抬不動就夾高度不再蓋掉時鐘／登入失敗紅字補進未登入畫面。
 //         第三件在網站上刻意與 App 線不同做法:網站沒有資料狀態小卡(那是 App 線的元件),
 //         退路改用站台帶既有的「現在」鈕,只在 body.clock-off 時放出來。
@@ -6711,9 +6711,9 @@
 //         工具只在 document.modelContext.registerTool 存在時註冊；不新增後端，也不碰個人資料。
 // v0902e：把 App 出貨線(ship-main)併回來——小工具七種尺寸／方向可取消／捷運大卡(Android)、v0901h 的好讀版開車時刻、
 //         看板誤點標放大——並帶上跟車配樂選單(feat/music-scoring)。e 換號前逐 ref＋逐樹掃過無人佔用。
-// v0903b：刪除錄影功能殘留（程式碼、i18n、法律文件與支援頁；使用者 09-02／09-03 裁示）。執行路徑零變更。
+// v0903b：刪除錄影功能殘留（程式碼、i18n、法律文件與支援頁）。執行路徑零變更。
 // v0903e：L2 退場埋點——OpenFreeMap 健康判定失敗(ofmWatch 的 fail)時打一發 /api/basemap-fallback,Worker 寫一筆
-//         USAGE(blob1='ofmfail')。使用者 09-03 裁示「先量頻率」。地圖行為零變更;守門人:scripts/verify_ofm_fallback_beacon.mjs。
+//         USAGE(blob1='ofmfail')。這一版只埋點量測發生頻率。地圖行為零變更;守門人:scripts/verify_ofm_fallback_beacon.mjs。
 // v0903g：把 claude/map-stadia-revert-xvjirk(上面 v0903e 那段的退場埋點＋check-basemap 守門人重寫:網站 OFM 失效只提示不掛 raster)
 //         併回 main。e 與 f 都撞號(e 另有 5122754e、f 是 371e4105 車聲圖層),改取 g(逐 ref＋逐樹掃過無人佔用)。地圖行為零變更。
 // v0903h：新增 AEO 靜態內容層、robots/sitemap、首頁結構化資料與 20 個常查車站頁；地圖行為零變更。
@@ -6798,7 +6798,7 @@
 // v0920e：環狀線實際退回班表時明示「班表推估」與時間誤差，官方車輛恢復後自動撤除。
 // v0922a：機捷接上台灣設計展疏運班表(TDX 09-22 版):假日 A12–A21 區間加班車、南延直達車改到 A13、
 //         深夜山鼻以南改點;建置端補區間車折返站、SP3 增開車不再被切成兩台、直達車不再被回推假起點。
-// v0923b：捷運等車卡伺服器推播在進站前 250 秒內每輪都推（等車卡 B 進站軌道的車位靠它前進）。
+// v0923b：捷運等車卡伺服器推播在進站前 250 秒內每輪都推（等車卡進站軌道上的車位靠它前進）。
 // v0923c：打卡／路段次數接上帳號雲端同步並依帳號分區(issue #72:電腦登入「通勤的證明」「老通勤族」是 0)。
 // v0923d：更新紀錄補 Android 台鐵發車看板班數跟著卡片高度走（網頁本身無變動；原生改動隨 Android 1.6.11 (62) 出貨）。
 // v0923e：更新紀錄補 Android 16 捷運等車通知進站軌道（隨 Android 1.6.11 出貨）。
@@ -6842,7 +6842,7 @@
 // v0925h：淡海輕軌假日去程（往崁頂／往淡水漁人碼頭）改回停新市一路——新市一路那兩筆假日去程記錄混了兩線班次，
 //         建置照舊不拿來串接，串完再以 fillFrom 從兩筆聯集補回官方時刻（不內插）；verify_metro_times 加「經過
 //         新市一路的班次都要停」（2026-09-25 網友回報）。
-//         另：EMU3000 車種介紹改「多數班次有騰雲座艙（特仕車編組除外）」（2026-09-25 裁示①，官方無逐班派車資料，不逐班標）。
+//         另：EMU3000 車種介紹改「多數班次有騰雲座艙（特仕車編組除外）」（官方無逐班派車資料，不逐班標）。
 // v0925j：跟車小卡與底圖地名四個小修正——手機第一次跟車時，工具列提示不再替沒有說明的「觀看」鈕掛空框
 //         （空框對齊到工具列中線，蓋住「車頭鎖定：開啟」最後一個字）；底圖地名跟 2 公里內、此刻已畫出站名的同名車站
 //         重複時不畫（glPlaceDedupSync，只改 place 圖層 filter，跟 station-layer 的遮罩條件共存：被蓋回就重疊、被包進
@@ -6862,7 +6862,7 @@
 //         4～5.5 公尺；改成具名路段在上方時淨距全由下方讓出（build_rail_levels 層位初值、lib/flat_rail_grade 平面地圖）。
 //         level-profiles.json 完整重算後用 scripts/splice_zuoying_flat_profiles_0925.mjs 只換進左營周邊 43 筆，蘇澳
 //         09-14 保留的高程解不動。verify_rail_grounding 加「站區離地不超過 1 公尺」與「北側高架仍是橋」兩條
-//         （2026-09-25 裁示「左營改平面」）。
+//         （左營站區的高程改採貼地平面）。
 // v0925n：跟車小卡切語言時，準點列（近 30 天平均誤點…準點…%）也照原句重寫——它帶數字插值，畫面上的句子反查
 //         不回原文；v0925j 只重寫了車次／車種／起訖，這行一直停在上一個語言（09-25 正式站實測；本機沒有誤點統計
 //         API，這行根本不出現，所以本機驗不到）。更新紀錄 followcard0925 兩層都補上「準點率」。
@@ -6878,7 +6878,7 @@
 //         的 +8 m：平面地圖浮在地面上，交會淨距再把新左營臺鐵、高雄車站地下段、輕軌愛河之心／凱旋、南港高鐵頂高。
 //         改成高出洞口 20 m 的取樣要占整段 5% 以上（MOUNTAIN_SHARE；全國只翻這兩段，下一段是 10%）。level-profiles.json
 //         完整重算後用 scripts/splice_mountain_share_profiles_0925.mjs 只換進高雄、臺北兩框 270 筆，蘇澳保留解不動；
-//         verify_rail_structure_heights G4 山岳分母改 ≥220，加改判名單與平面高度具名斷言（2026-09-25 裁示 A4）。
+//         verify_rail_structure_heights G4 山岳分母改 ≥220，加改判名單與平面高度具名斷言。
 //         同批出貨：台鐵班表窗重抓（9/26～10/9，寶可夢列車 10/3 起的車次才認得出來）、v0925p 面板修正、出貨閘門改空埠。
 // v0926c：台鐵 10/3 起改點（ODS 逐日檔一路到 11/23 都是新版）的 14 班，在 3D 沿用自己在派車表裡的股道。plan-binding
 //         對同鍵改點（406、1136、1192 等 10 班，起訖時刻不變）回 basis:'retimed'：站序、停靠型態相同、原計畫不帶待避
@@ -6886,8 +6886,8 @@
 //         計畫並回報 sourceKey——借 1128／1120 的路徑會在汐止、鶯歌走回 09-13 修掉的舊股道。沿用自己的計畫時一併帶上
 //         templateEligible:false（藍皮 5898／5899）。閘門：verify_remaining_station_routes 由閘門自己用車次、站序、停靠
 //         型態認名冊的改點版（rosterOf），不拿產品回報的鍵對名冊；受保護模板與藍皮改數不重複的鍵／車次；
-//         verify_tra_plan_binding 補正反案例（2026-09-26 裁示 (b′)）。
-// v0926d：跟車卡「下一站」長站名改成換行顯示全名（2026-09-26 裁示 (b)）。原本 nowrap，英文「Chang Jung Christian
+//         verify_tra_plan_binding 補正反案例。
+// v0926d：跟車卡「下一站」長站名改成換行顯示全名。原本 nowrap，英文「Chang Jung Christian
 //         University」「Science And Technology Museum」比卡寬還寬，.follow-panel 的 overflow-y:auto 讓整張卡能左右拖：
 //         修前 WebKit 手機 87px、桌面 69px、放空 101px，Chromium 69／54／84px，日文 Chromium 手機 6px。放空三行條維持單行
 //         加省略號。守門人：verify_select_overflow.mjs 加 fpNext 格（兩個引擎，突變改回 nowrap 必須紅）。
@@ -6903,13 +6903,13 @@
 //         讓位:App 附近車站卡的「蓋章」鈕往回走不再停在卡頭下(1–3 拍)。車庫改給內容 scroll-margin-top(頂列實高由
 //         ResizeObserver 量 border-box),不再用容器 scroll-padding-top——捲在下面時焦點進頂列的鈕,內容跳 201–390px。
 //         守門:verify_board_scroll_pad 補 B／J／P／S／W 各格與突變對照。
-// v0926g：3D 綁定略過派車表沒有的台鐵中途站（2026-10 起的平鎮臨時站 1105，評估選項 C1）：通過站直接略過，停靠站把前後兩段
-//         併回原本那一段，車走派車表原本的股道、不在平鎮停（C2 另案）；2D 照官方站序。plan-binding 回傳綁定用的站序與它們在
+// v0926g：3D 綁定略過派車表沒有的台鐵中途站（2026-10 起的平鎮臨時站 1105，先做略過版）：通過站直接略過，停靠站把前後兩段
+//         併回原本那一段，車走派車表原本的股道、不在平鎮停（停靠版另案）；2D 照官方站序。plan-binding 回傳綁定用的站序與它們在
 //         原班表的位置，motion 照它建行車紀錄：併段中間全是通過站就沿用同一條跑段剖面、段長取各小段相加，跨了跑段退回等速。
 //         assignSchedShapePathsFor 把原本那一段的 maxPathM 按示意長分給各小段當 physKm，併段剖面才不短於實體股道（09-19 不留容差）。
 //         閘門：verify_remaining_station_routes 名冊比對改用閘門自算的站集；verify_phys_speed_cap 併段整段量、G3 加併段剖面長下限。
 //         現行資料沒有派車表以外的站：逐班綁定、剖面欄位、逐秒 3D 位置新舊全同，畫面沒有變化。
-// v0926h：空白鍵全站一致只做播放／暫停（2026-09-26 裁示「空白鍵的功能還是改回一致比較好」）。修前兩引擎 × 五寬度：今日動態列
+// v0926h：空白鍵全站一致只做播放／暫停。修前兩引擎 × 五寬度：今日動態列
 //         按空白鍵展開、行程分享列拿那站分享並關面板（播放都不動），資料狀態徽章與捷運膠囊按一下同時開卡又切播放，頁面上按住連切
 //         5 次，× 上按完焦點被 blur 回頁面。修後列、徽章、膠囊只接 Enter；全域 keydown 擋預設動作、連發不切、不 blur，keyup 也擋
 //         （Firefox 沒裝、沒驗）。焦點框：手機標題列 ×／☆／🔔（44×44 貼齊面板右上，暗色全寬同）往內 5px、改用字色（紅框疊藏青
@@ -6937,11 +6937,11 @@
 //         兩截剖面長下限取股道表 via（產生器與畫車端同一個 locate 投影），守住點速 ≤ 剖面速度。防追撞：前車停在那種站上＝壓在
 //         主線上，交給 blockParkedBlocks（blockDwellOnLine）；同一段有那種站時 2D 車距≠立體車距，取小者（blockSep3d）。同向待避
 //         不選實體股道表沒有的站。完整納入情境 10/27：停平鎮 126 班停留 0 位移、離站最遠 24.891 m＝投影誤差上限、點速 > 剖面速度
-//         0／2,225,939；不經／通過平鎮 687＋92 班逐秒與 C1 相同；全日互穿重放 14 PASS、事件與 C1 逐筆相同。守門：
+//         0／2,225,939；不經／通過平鎮 687＋92 班逐秒與略過版相同；全日互穿重放 14 PASS、事件與略過版逐筆相同。守門：
 //         verify_tra_plan_binding 合成陌生停靠站＋待避守衛、verify_phys_speed_cap G3 逐截／G6、verify_physical_no_overlap G10／G11，
 //         各附對照組與逐層突變。
 // v0926l：手機橫式（高 ≤ 500）的平交道卡、落釘卡、台糖卡沿用直式手機殼的位置（top 191、max-height 100%−313），844×390 只剩 73px、
-//         卡頭吃掉 42–56px：平交道卡五列只看得到一列、落釘卡零列，667×375 三張全是零列。改坐右側欄槽位（09-26 使用者裁示方案 A，
+//         卡頭吃掉 42–56px：平交道卡五列只看得到一列、落釘卡零列，667×375 三張全是零列。改坐右側欄槽位（09-26 起，
 //         跟車站看板同一格）：寬 --rail-w、上緣接頂列、下緣停在版權列之上、右緣讓瀏海；卡開著時 --rail-occupy 跟著算（契約 8：
 //         速度膠囊與特大字級提示卡往左讓）。修後兩引擎 844／667／932 × 標準、特大：平交道卡、落釘卡 5/5 列，台糖卡標準字級全文不用捲；
 //         平板（高 > 500）與直式逐值同修前。守門：verify_board_scroll_pad 補 L／N 各格、verify_landscape L2b 改驗槽位＋互斥，各附突變。
@@ -6976,7 +6976,7 @@
 // v0929k：日文高雄輕軌改用高捷官方路線名「ライトレール環状線」（路線圖頁與 App 字典）；日文導言補「列車ごと」、倒數改「カウントダウン」。
 //         v0929j 已被台南重播分支佔用（c163c640，未併 main），跳號避免撞號。
 // v0930a：SEO 階段 B 第一批（台鐵／高鐵車站時刻頁中英日 69 頁、環狀線假日末班加註、站上「無公開逐班時刻」說法改寫成資料來源沒有）。
-// v0930c：日文的環島列車終點改成「台北（台湾一周）」（使用者 09-30 裁示）。v0930b 已被跟車卡分支 fix/issue73-capsule-align 佔用，跳號。
+// v0930c：日文的環島列車終點改成「台北（台湾一周）」。v0930b 已被跟車卡分支 fix/issue73-capsule-align 佔用，跳號。
 // v0930e：Issue #73 複驗——收合的跟車膠囊裡車次與時速改為置中，跟圓點、「結束」同一條中線（rail-3d.css；守門：verify_issue_73_follow_head C4）。
 //         本分支原本佔 v0930b，併 main 時 v0930c 已上 main、v0930d 留給台南重播分支，改用 v0930e 讓版號維持遞增。
 // v0930h：捷運官方倒數獨立保留、新北輕軌逐車銜接與 20 秒更新；保留主線跟車膠囊、日文與全台車站頁修正。
@@ -7045,7 +7045,7 @@ const I18N_ATTR_SOURCE = new WeakMap();
 // 本次開站以來 t() 實際產出過的外語整句 → 繁中原文。開機時直接把 t() 結果寫進 DOM 的地方
 // (setupPlusEntry 的「軌島通行證」、view-controls 的「其他設定」、accountBtnSlot 的「帳號同步」…)
 // 留下的是外語文字節點，i18nTranslateTree 拿它查字典查不到，下次換語言就整段卡在上一個語言
-// (2026-09-19 使用者回報：選了英文，通行證那列、「其他設定」、帳號同步仍是日文)。
+// (症狀：切到英文後，通行證那列、「其他設定」、帳號同步仍顯示日文)。
 // 只收不帶 {變數} 的整句：插值句反推不回原文，那種一律由產生它的函式在 i18nRefreshDynamic 重畫。
 // 2026-09-19 複審修正(實測英文切回中文):一個譯文可能對到好幾個原文——「旅」「票」「通行證」英文都是 Pass、
 // 平交道圖示「平」的英文是「×」——同一張表後寫的蓋前面的,關閉鈕的「×」被認成「平」、通行證鈕被認成「旅」。
@@ -7482,18 +7482,18 @@ const METRO_CORE_QUERY_MODE = (() => {
   } catch (e) {}
   return null;
 })();
-// 2026-08-13 起預設開啟（使用者親試預覽後裁示上線）：北捷畫車依官方即時名冊，班表只是備案。
+// 2026-08-13 起預設開啟（試用預覽版確認後上線）：北捷畫車依官方即時名冊，班表只是備案。
 // 保留 ?officialroster=0 當逃生口——要退回班表路徑不必回滾部署，加個參數即可對照。
 // 🔴 這個函式會被 verify_official_roster_frontend 抽出來丟進 VM 單獨執行——
 //    不可引用任何模組層常數（引用了會 ReferenceError，驗收器直接中止）。預設值寫死在這裡。
-// 🔴 2026-08-17 09:20 使用者指示：「你直接把台北捷運的列車顯示換成班表,不要都空的,
-//    然後發公告通知現在所有車輛位置都是班表並非實際位置,車站倒數時間則與月台倒數相同。
-//    我們把位置邏輯弄好之前就是先這樣跑」⇒ 當天上午起官方名冊【預設關閉】,北捷回班表推演。
-// 🔴 2026-08-17 16:3x 使用者曾裁示「先切換」(逐車名冊改預設開),但當晚 19:0x 前提被推翻:
-//    我當時報給他的代價是「只有環狀線會間歇疊車」,實測後發現文湖線與松山新店線也會,
+// 🔴 2026-08-17 起北捷列車改以班表顯示,免得畫面上一台車都沒有;並配一則公告:
+//    目前畫的車位是班表推算的,不代表列車實際所在;車站倒數照月台顯示的倒數。
+//    位置邏輯修好前維持這樣 ⇒ 當天上午起官方名冊【預設關閉】,北捷回班表推演。
+// 🔴 2026-08-17 16:3x 曾一度改成逐車名冊預設開,但當晚 19:0x 前提被推翻:
+//    當時評估的代價是只有環狀線會間歇疊車,實測後發現文湖線與松山新店線也會,
 //    而且抓到可指認的機制——防倒退把前車 hold 在原地,後車照官方資料前進就追上疊在一起
 //    (現場:G hw:312 是 census-hold/no-backward、hw:334 正常前進,兩台同在 from=1→to=2)。
-//    ⇒ 使用者改裁示「只出看板修正,位置維持班表」,逐車名冊【維持預設關閉】,
+//    ⇒ 改為只套用看板修正、位置仍照班表,逐車名冊【維持預設關閉】,
 //    疊車根因另案追。要切回官方即時位置的前提是那個機制修好並驗過。
 //    測試入口:`?census=1`(逐車清單)或 `?officialroster=1`(舊帳本),不必重新部署。
 function trtcOfficialRosterEnabled(search) {
@@ -7501,13 +7501,13 @@ function trtcOfficialRosterEnabled(search) {
     const q = new URLSearchParams(search == null ? location.search : search);
     // 🔴 這裡刻意把 census 的判斷抄一份而不呼叫 trtcCensusRosterEnabled——本函式會被
     //    verify_official_roster_frontend 單獨抽進 VM 跑,引用外部符號會 ReferenceError。
-    // 🔴 2026-08-18 使用者裁示改為【預設開啟】:北捷位置回到官方即時,班表只在斷訊時當備案。
+    // 🔴 2026-08-18 改為【預設開啟】:北捷位置改回依官方即時資料,班表只在斷訊時當備案。
     //    同批已修掉三個把它擋回去的東西:文湖線改由官方每站倒數定位(不再吃 CarWeight 慢
     //    96-265 秒的站碼)、作廢會讓車照舊計畫飄走的 no-backward hold、補上跨車順序與最小間距。
     //    `?officialroster=0` / `?census=0` 是逃生口——單一使用者要退回班表不必等部署。
     //    全站退回班表則是改這裡的預設值再部署(晨間觀察若出現疊車或消失就這樣退)。
-    // 🔴 2026-08-18 17:1x 使用者裁示「先把正式站回歸到官方班表」——實測「官方訂正位置」
-    //    每十幾秒跳一次(環狀線 16 台車兩分鐘觸發 1099 次,是其他線的 150-340 倍),
+    // 🔴 2026-08-18 17:1x 正式站先退回班表——實測「官方訂正位置」
+    //    每十幾秒就跳一次(環狀線 16 台車兩分鐘觸發 1099 次,是其他線的 150-340 倍),
     //    位置模型本身會造出 100-500m 的落差。退回班表推估,根因修好再開。
     if (q.get('officialroster') === '0' || q.get('census') === '0') return false;
     return true;
@@ -7536,7 +7536,7 @@ const TRTC_PURE_SCHEDULE_POSITION = !OFFICIAL_ROSTER_ENABLED;
 // metroShiftSec 與 trtcBoardPosition 是透過 metroLiveOn 間接問到的(它們各自有早退)，
 // trtcHeadwayPosition 則兩者都沒有，是唯一要自己問的一條。
 function trtcPureSchedule(ln) { return TRTC_PURE_SCHEDULE_POSITION && isTrtcBoardLine(ln); }
-// 🔴 2026-08-14 最終裁示：一台車取得官方倒數並分配 ID 後，沿已知每站時間跑到終點。
+// 🔴 2026-08-14 起的規則（不是假設）：一台車取得官方倒數並分配 ID 後，沿已知每站時間跑到終點。
 // 沒有資料齡、600 秒或「太久沒消息」的退場判定；到已知 dest 才收車。
 // 續推時每一段的節奏：優先用這台車自己相鄰兩筆官方到站的間隔（含停站），
 // 沒有 history 才退回 run＋停站常數。停站時間夾在 [15s, 半個週期]，避免 run 與 span
@@ -7588,18 +7588,18 @@ window.__ENGINE = ENGINE; // 驗證腳本用的把手
 // any-pointer 可避免 iPad 接上觸控板後因主要 pointer 變 fine 而整頁換殼。
 // 🔴 CSS 殼斷點與開機 inline script，三處必須逐字同式。
 const MOBILE_MQ = '(max-width: 900px), (max-height: 500px), (any-pointer: coarse) and (max-width: 1400px)';
-// 手機直式窄畫面或原生 App:地圖框住台灣時上下左右各留約「一個台灣」的空間(使用者要求),不頂邊透氣。
+// 手機直式窄畫面或原生 App:地圖框住台灣時上下左右各留約台灣本身大小的空間,不頂邊透氣。
 // 桌機寬螢幕本就有大片水平邊距(台灣直式、螢幕橫式),維持原樣免得台灣被縮太小。原生 App(任何裝置)一律給邊距。
 function railWantsTaiwanMargin() {
   try { if (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) return true; } catch (e) {}
   return !!(window.matchMedia && window.matchMedia(MOBILE_MQ).matches);
 }
 // 手機/App 全台同框「初始開場視野」的邊距係數(外接框外擴比例;桌機不吃、見呼叫點)。
-// 使用者說「一開始的大小沒問題」→ 維持 0.55(台灣約佔手機寬 44%、四周有些空)。
+// 開場視野的大小維持 0.55(台灣約佔手機寬 44%、四周有些空)。
 // 注意:這只管「開場框多大」;能不能平移由 ROAM_PAD、能不能縮小由 ZOOM_OUT_LEVELS 管。
 const TW_MOBILE_MARGIN = 0.55;
-// 「移動跟縮小就卡住」的修法=兩個互相獨立的旋鈕(原本錯把兩者綁成同一個「活動範圍」→放大範圍會順帶
-// 把 minZoom 拉到看見整個東亞、台灣變一小點,正是最早抱怨的「全世界」感):
+// 平移與縮小被鎖住的修法=兩個互相獨立的旋鈕(原本錯把兩者綁成同一個「活動範圍」→放大範圍會順帶
+// 把 minZoom 拉到看見整個東亞、台灣變一小點,畫面像在看整個世界,就是這個耦合造成的):
 //  ROAM_PAD        平移硬牆(maxBounds)外擴倍數,管「能平移多遠」。台灣框(pad 0.1)比手機視野還小,
 //                  viscosity 1.0 下平移被鎖死;放大到 2 倍≈台灣海峽/華南沿岸/琉球/巴士海峽,平移就鬆開。
 //  ZOOM_OUT_LEVELS 從開場全台同框視野「還能再往外縮幾級」,管「最多看到多少」。手機縮 1 級=台灣仍是主角、
@@ -7611,10 +7611,10 @@ const state = {
   lines: [], visible: new Set(), trains: [], schedStations: [], types: [],
   stationTransfers: null, stationTransferAnchors: [], stationTransferGroups: new Map(), stationTransferBySystemName: new Map(),
   transferDepartures: null, // 轉乘接續:轉乘群當日對向班次表(data/transfer_departures.json),缺檔或版本不符仍為 null,功能靜默消失
-  xferPin: null, // 轉乘接續:釘選中的那一班 { g, n, sys, sec, fromKey } | null(點一列只剩那一班,2026-09-01 裁示;
+  xferPin: null, // 轉乘接續:釘選中的那一班 { g, n, sys, sec, fromKey } | null(點一列即釘住該班,清單中其餘各班收起;
   // g=所屬轉乘群 groupId——3 小時視窗大於高鐵全線行駛時間,同一班車常同時是多個群的候選,
   // 不綁 g 會讓釘選跨群外溢,見 2026-09-01 修復輪1 Finding A)
-  playing: true, speedMult: 1, hour: 8, simSec: 8 * 3600, // 開機即 1× 真實時刻(2026-07-11 使用者裁決,舊示意預設 50×)
+  playing: true, speedMult: 1, hour: 8, simSec: 8 * 3600, // 開機即 1× 真實時刻(2026-07-11 起,舊示意預設 50×)
   dpr: 1, powerSave: false, t0: 0, elapsed: 0, ready: false, // powerSave:省電模式(相機置中+繪製統一降 30fps,手機預設開),見 tick 節流
 
   followTrain: null, followId: null, _routePts: null, _routeGlPts: null,
@@ -7954,7 +7954,7 @@ function createMaplibreEngine(containerId, view) {
 function createEngine(containerId, view) { return createMaplibreEngine(containerId, view); }
 // ==== ENGINE ADAPTER END ====
 
-// A 版固定夜間 100%、日間 70%；只保存開關，與日夜光影各自獨立。
+// 列車光暈強度固定為夜間 100%、日間 70%；只保存開關，與日夜光影各自獨立。
 const TRAIN_HALO_PREF_KEY = 'trainmap-train-halo';
 let trainHaloEnabled = true, trainHaloStyle = null;
 try { trainHaloEnabled = localStorage.getItem(TRAIN_HALO_PREF_KEY) !== '0'; } catch (e) {}
@@ -8492,7 +8492,7 @@ function ensureCum(ln) {
   for (let i = 1; i < sh.length; i++)
     c[i] = c[i - 1] + haversineKm({ lat: sh[i - 1][0], lon: sh[i - 1][1] }, { lat: sh[i][0], lon: sh[i][1] });
   ln.cum = c;
-  // 🔴 2026-08-19 使用者回報:「大安站有奇怪的堆疊」「這邊的棕線應該是南北向的才對啊」。
+  // 🔴 症狀(2026-08-19):大安站附近車輛堆疊,棕線的走向也不對。
   // 文湖線大安的站點座標(25.033311,121.542370)其實是淡水信義線那座月台,離文湖線自己的線形
   // 123 公尺遠;而「停在站上」的車回傳的正是站點座標 ⇒ 車被畫到信義路上,看起來像棕線在大安
   // 變成東西向,兩台停站的車還一起擠在那個線外的點上。全網 40 個站有這個毛病(捷運 22:大安
@@ -8728,26 +8728,26 @@ function trtcCensusResolve(stn, nextName, destName) {
   }
   return scored[0];
 }
-// 🔴 文湖線(BR)的車直接來自官方每站倒數,完全不經過 CarWeightBR(2026-08-18 使用者裁示:
-// 「car weight 直接丟掉也沒有關係啊,我們要的就是車子是對的,就算編號是我們給的也沒關係,
-//  因為每站都有倒數時間 不會跟丟」「有倒數才有車」)。
+// 🔴 文湖線(BR)的車直接來自官方每站倒數,完全不經過 CarWeightBR(2026-08-18 起的規則:
+// 車的編號可以自行指派,不必依賴 CarWeight 的車廂編號;重點是畫出來的車位置正確,
+//  官方倒數涵蓋每一站,車不會因為對不上編號而被丟掉;唯有收到倒數的車才會畫出來)。
 //
 // 改之前的實況(正式站 worker 自己的診斷 cd.brSeg,連三輪相同):
 //   derived 25 台(官方倒數切出來) / matched 12 台(配得上車廂編號) / unaligned 13 台(整台丟掉)
 //   而畫面上畫的是另一份 cwRows 29 台的 CarWeightBR 清單,其中只有 26/32 拿得到新鮮位置,
-//   剩下 5–6 台用落後 134–314 秒的站碼定位——正是裁示點名不准的事。
+//   剩下 5–6 台用落後 134–314 秒的站碼定位——正是這次改版要避免的情形。
 // 量測佐證:原始倒數資料齡 中位 17 秒、p90 22 秒;每輪每方向 23/24 站都有回報(缺的只有該方向
 // 的終點站本身,因為到終點那一段前方沒有站可報)。
 //
 // 切法與伺服器端 segmentVehiclesFromCountdowns 同一套(scripts/trtc_board_ledger.mjs):
 // 每站取最早的一筆倒數 → 依行進方向排開 → 倒數不再遞增、或「快到物理上跑不到」就切一台。
-// 使用者對這個模型的描述即為其自我修正機制:「前一台離站就會出現在下一站的倒數,
-// 然後這站倒數就是下一輛」——同區段兩台同向車在前車離站前結構上看不見,誤差上限一個站間車程。
+// 這個模型會自我修正:前車一出站,倒數就移到下一站,
+// 這一站的倒數接著就屬於後面那輛——同區段兩台同向車在前車離站前結構上看不見,誤差上限一個站間車程。
 const TRTC_BR_FROM_COUNTDOWN = true;      // 出事就把這行改 false,回到 CarWeightBR 路徑
 // 🔴 2026-08-18 傍晚:同一套推廣到環狀線(Y)。BR 與 Y 是全系統唯二沒有官方車號的線,
 // 也正是伺服器端配不到觀測、只能長時間續推的兩條——實測觀測齡 p90 BR 1095s／Y 435s
 // (最遠一台走了 13 站沒被官方看見),而有車號的 BL/G/R/O 中位是 0 秒。
-// 長時間純推估累積出來的誤差,會在官方下一次看到那台車時一次現形 ⇒ 就是使用者看到的
+// 長時間純推估累積出來的誤差,會在官方下一次看到那台車時一次現形 ⇒ 就是畫面上那則
 // 「官方訂正位置」狂跳(環狀線一條線佔全部觸發的 79-96%)。
 // Y 的倒數列結構與 BR 完全相同:21 個(站,方向)各恰好一筆、零車號 ⇒ 沿用同一條路徑。
 const TRTC_CD_LINES = ['BR', 'Y'];
@@ -8869,7 +8869,7 @@ function _trtcBrSharedIdx(ln, names) {
 // 而同一批取樣裡我們自己的 payload 年齡在 2.2～30.5 秒之間跳。
 // 舊碼直接拿它當到站時刻去算停站秒(nowEpoch > eta + dwell),展開就是「這份 payload 幾秒前抓的
 // > 停站秒」——payload 舊就把車往前推一站、下一輪抓到新的又退回來,整批進站中的車一起前後跳,
-// 前車一退、跟在後面的車就撞上去(使用者回報「還是會有推到疊在一起,通常是前車位置不對」)。
+// 前車一退、跟在後面的車就撞上去(現象:兩台車重疊,多半是前一台的位置有誤)。
 // 真正的到站時刻是「第一次看到它進站中」的那個 eta;進站中期間 eta 只會往前刷 ⇒ 取最小值。
 // 回到正倒數(下一班進場)就丟掉重來;掛太久代表中間換了班車而我們沒看到正倒數,也重新起算。
 const _trtcCdArrived = new Map();
@@ -8953,7 +8953,7 @@ function trtcBrVehiclesFromBoard(lineId, board, nowEpoch, day) {
     if (Number.isFinite(obsAt) && nowEpoch - obsAt > TRTC_CD_MAX_DATA_AGE_SEC) {
       dropped++; observed.push({ i, d, eta, at: obsAt, accepted: false, reason: 'stale' }); continue;
     }
-    // 🔴 裁示:時間一旦推到前一站之前,就直接忽略這個倒數(見 trtcCountdownFitsSegment)。
+    // 🔴 規則:時間一旦推到前一站之前,就直接忽略這個倒數(見 trtcCountdownFitsSegment)。
     const st = Math.sign(d - i);
     if (!trtcCountdownFitsSegment(ln, i - st, i, eta - nowEpoch)) {
       dropped++; observed.push({ i, d, eta, at: obsAt, accepted: false, reason: 'segment-time' }); continue;
@@ -9003,9 +9003,9 @@ function trtcBrVehiclesFromBoard(lineId, board, nowEpoch, day) {
           officialNo: null, source: 'board-seg', observedEpoch, timeline });
         return;
       }
-      // 🔴 使用者裁示(2026-08-19)：「到站倒數結束變成進站中,這輛車就交給這站的停站時間跟
-      // 下一站的倒數去領;如果下一站已經有另一輛車在倒數中,那這輛車依然是依照停站時間到就
-      // 推出去,下一站那輛車到站之後,就可以用倒數時間領這邊推出去的車子了。」
+      // 🔴 2026-08-19 起的規則：進站中的車先靠本站的停站秒數計時、時間到就出站，下一段改以下一站的倒數定速;
+      // 下一站若已經有別輛車在倒數,這輛照樣憑停站秒數到點就推出站,
+      // 等那輛到站以後,下一站的倒數才輪到接手這輛推出來的車。
       // 官方那一列的倒數過期＝車已經到站了,過了停站秒數它就該發車。舊碼沒有這一步,過期的列
       // 會把車永遠釘在站上——實測環狀線中原站兩個方向各一台,倒數 -19→-44 秒一路「在站」不動,
       // 而停靠 25 秒的資料從頭到尾沒被用到。推到線外就是到終點,收車。
@@ -9079,10 +9079,10 @@ function trtcBrVehiclesFromBoard(lineId, board, nowEpoch, day) {
 }
 // 🔴 文湖線(BR)的身分與存續:出生只認官方證據,存續只認官方時刻的延續。
 //
-// 2026-08-18 使用者裁示:「不要我們自己用自己的判斷去生出車子」——所以這裡沒有任何
+// 2026-08-18 起的規則:不憑空造車——所以這裡沒有任何
 // 「這裡應該要有一台車」的推定路徑。車只從官方倒數出生(上面 cutInto,含官方自己報的第二班)。
-// 另一條裁示:「終點車我們用前一站的時間繼續往下推」「兩列車在同個路段發生的時候如果不是在
-// 起點站,那麼前一站就會有可以續推的資料」——這兩種車都**曾經有過官方倒數**,只是這一輪暫時
+// 另有兩種情形:進終點站那段的車沿用上一站的時間軸繼續推進;同一路段上有兩班車且不在
+// 起點站時,後車也能從上一站取得可續推的資料——這兩種車都**曾經有過官方倒數**,只是這一輪暫時
 // 看不到(進終點站前方沒有站可報;跟在前車後面時該站的最早倒數是前車的)。它們不是新生的車,
 // 是既有的車缺訊 ⇒ 從最後一次官方觀測往下推,到官方講的終點站才收車。
 // 2026-08-20 再補生命週期上限：缺一兩輪仍沿官方時刻續推；單車連續 45 秒沒再被官方看到就退場。
@@ -9201,7 +9201,7 @@ function trtcCensusRestampBr(lineId, list, nowEpoch, day, fromCountdown) {
       .map(v => ({ v, p: _trtcBrAlong(v, nowEpoch) })).sort((a, b) => a.p - b.p);
     // 已經到達官方終點的舊車先退場,不得再參加對位——否則它可能被配到另一台官方車身上,
     // 繼承那台的 dest 而永遠不收車(Codex 複審 2026-08-18 指出:收車判斷只在 coast(),
-    // 一旦 DP 配到就整個跳過)。這是裁示「到終點站車子就拿掉」的守門。
+    // 一旦 DP 配到就整個跳過)。這是維持抵達終點站即收車這條規則的守門。
     const oldAll = [...prior.entries()].filter(([, r]) => r.dir === dir
         && !(Number(r.to) === Number(r.dest) && nowEpoch >= Number(r.arrEpoch)))
       .map(([id, r]) => ({ id, r, p: r.p })).sort((a, b) => a.p - b.p);
@@ -9568,10 +9568,10 @@ let _trtcCensusPrior = new Map();
 // 每個車號另記「目前這一趟」；只有舊趟已經實際走完才准換方向並開新 trip ID。
 const _trtcCensusTrips = new Map();
 // ── CarWeight 漏掉、但官方倒數看得到的車 ──────────────────────────────────────
-// 🔴 使用者裁示(2026-08-19):「car weight 沒有的車子但是倒數有 那我們一樣要做出來」。
+// 🔴 2026-08-19 起的規則:官方倒數看得到的車,即使 CarWeight 名單缺這台,也照樣建出來。
 // 逐車清單(CarWeight)會【整趟】漏掉車:2026-08-19 14:5x 對正式站實測,車號 437(往蘆洲)
 // 連續 17/17 輪不在 CarWeight,而官方看板一路報它的倒數(伺服器 ledger 自己標 evidence:'board')
-// ⇒ 地圖上整趟不存在,使用者在頂溪看到「往蘆洲少一台」而看板寫著 0:21 進站。
+// ⇒ 地圖上整趟不存在,頂溪站可見往蘆洲方向少了一台,而看板寫著 0:21 進站。
 // 高運量的看板列本來就帶官方車號 ⇒ 同一個車號在各站的倒數列依 eta 排序就是它的 path。
 // 合成一筆與 CarWeight 同形狀的逐車列餵進 trtcCensusVehicles,建車／往回推段／到終點收車
 // 全部沿用同一套規則,不另立第二套模型。
@@ -9601,7 +9601,7 @@ function _trtcCdOnlyResolve(rows, head) {
     const d = names.indexOf(dn); if (d < 0 || d === i) continue;
     const step = Math.sign(d - i);
     const p = i - step;
-    // 後方沒有站 ⇒ 這是起點站的「下一班」公告,不是一台在跑的車(2026-08-18 裁示)。
+    // 後方沒有站 ⇒ 這是起點站的「下一班」公告,不是一台在跑的車。
     if (p < 0 || p >= names.length) continue;
     // 同名站會撞線(民權西路在 R 與 O 各一顆站碼):要求這條線能解釋它其餘的倒數列
     // 都落在行進方向上,分數最高者勝。共線段兩條線同分時取任一條——那一段是同一條實體軌道。
@@ -9711,7 +9711,7 @@ function trtcCensusVehicles(trains, nowEpoch, day) {
     const head = pi < path.length ? path[pi] : null;
     let step = null, nextIdx = head ? arr.indexOf(_trtcCensusNorm(head.name)) : -1;
     if (nextIdx >= 0 && nextIdx !== hit.i) step = Math.sign(nextIdx - hit.i);
-    // 倒數還有後面幾站時,方向直接從倒數的先後順序看得出來——這才是「用倒數來修」的第一順位,
+    // 倒數還有後面幾站時,方向直接從倒數的先後順序看得出來——這才是以倒數修正方向的第一順位,
     // 比 dest、比 dir 都可靠(它就是官方對這台車連續幾站的觀測)。
     if (step == null) {
       for (let j = pi + 1; j < path.length; j++) {
@@ -9719,7 +9719,7 @@ function trtcCensusVehicles(trains, nowEpoch, day) {
         if (k >= 0 && k !== hit.i) { step = Math.sign(k - hit.i); break; }
       }
     }
-    // 🔴 2026-08-19 使用者裁示:「方向確實可以用倒數來修」。CarWeight 的站碼剛好等於倒數那一站時
+    // 🔴 2026-08-19 起:方向可以由倒數校正。CarWeight 的站碼剛好等於倒數那一站時
     // (車就停在該站/剛進站),上面推不出方向,舊碼直接退回 t.dir——而 t.dir 在終點站折返時會落後
     // (這個函式自己上面的註解就寫了這件事)。方向一反,下面的回推就一路推到線外把整台車丟掉:
     // 實測車號 307 停在新店(stn=G02、dest=松山),dir=1 推出「往新店」的反方向 ⇒ 官方看板還有
@@ -9749,13 +9749,13 @@ function trtcCensusVehicles(trains, nowEpoch, day) {
     // 過去的到站時刻是正確資訊，續推會據此把車往前推到該在的位置。
     let arrEpoch = Number.isFinite(firstEta) && !terminal ? firstEta
       : (Number.isFinite(at) ? at + run : nowEpoch + run);
-    // 🔴 使用者裁示:「倒數塞不進區段就忽略」(2026-08-18)＋「全部整個,連其他的捷運,請都套用
-    // 相同的規則,只要有逐站倒數的都能用」(2026-08-19)。倒數名冊那條路徑(BR/Y)早就有
+    // 🔴 規則(2026-08-18 起;2026-08-19 擴及所有有逐站倒數的捷運線):倒數放不進所屬區段時,整筆略過。
+    // 倒數名冊那條路徑(BR/Y)早就有
     // trtcCountdownFitsSegment,逐車名冊(BL/R/G/O)一直沒有 ⇒ 倒數塞不進這一段的車被畫在段頭,
     // 貼著剛到站的另一台(實測綠線車號306 倒數 309 秒、該段只需 138+25 秒,被畫在南京三民出站處,
     // 與剛到站的 307 相距 208 公尺)。
     // 逐車路徑不可照 BR 那樣「整列忽略」——這一列就是一台有車號的實體車,忽略等於讓它消失,
-    // 違反「車子有官方數據就是在」。改成照秒數往回推算它真正在哪一段:每往回一段就扣掉
+    // 違反官方給得出數據的車一律算在線上這條原則。改成照秒數往回推算它真正在哪一段:每往回一段就扣掉
     // 「該段行駛秒＋該站停靠秒」,扣到塞得進去為止。
     const walked = [];
     let atLineHead = false;
@@ -9770,12 +9770,12 @@ function trtcCensusVehicles(trains, nowEpoch, day) {
       to = from; from = prev;
     }
     if (walked.length) run = trtcCensusRun(ln, from, to);
-    // 🔴 使用者裁示(2026-08-18):「倒數塞不進區段就整列忽略」「起點列是發車倒數,未發車不畫」。
+    // 🔴 規則(2026-08-18 起):倒數放不進所屬區段時整列略過;起點列給的是發車倒數,尚未發車就不畫。
     // 一路回推到線頭仍塞不進 ⇒ 這台車根本還沒發車,不該畫。實測中和新蘆線車號 410 停在起點站,
     // 站 1 的倒數 256 秒而那一段只要 90 秒,舊碼用「發車 = 到站 − 行駛秒」把它畫成一台在月台上
-    // 罰站 159 秒的車(2026-08-19 使用者:「只要出現車子卡住停住疊在一起,那絕對不是我給的規則
-    // 有問題,要從你的規則去找」)。文湖線那條路徑早就有這條規則,逐車名冊這條漏了。
-    // 🔴 2026-08-19 使用者裁示:「起點站要免除推超過前站的規則」。一路回推到線頭仍塞不進,代表
+    // 罰站 159 秒的車(2026-08-19 的檢討:卡住、疊車的根因在實作端自加的規則,不在判準本身)。
+    // 文湖線那條路徑早就有倒數放不進區段就忽略的判斷,逐車名冊這條漏了。
+    // 🔴 2026-08-19 起的例外:起點站不受往前推過前一站的限制。一路回推到線頭仍塞不進,代表
     // 這台車就停在起點站等發車——它是官方逐車清單裡有車號的實體車(不是「下一班」那種無車號的
     // 起點列),丟掉就變成「看板有倒數、畫面沒車」(實測車號 449 停在蘆洲、看板還有 287 秒到徐匯
     // 中學,整台不見)。留在線頭那一段即可:depEpoch = arrEpoch - run 還在未來 ⇒ 位置函式會把它
@@ -9786,7 +9786,7 @@ function trtcCensusVehicles(trains, nowEpoch, day) {
     // 官方沒給終點（文湖線全部、高運量約一成）就用行進方向上的線末站——語意也對。
     const di0 = arr.indexOf(_trtcCensusNorm(t.dest));
     const di = di0 >= 0 ? di0 : (step > 0 ? arr.length - 1 : 0);
-    // 已經開到終點站：繪製端的契約是「到 dest 就收車」（使用者裁示），但官方逐車清單仍說
+    // 已經開到終點站：繪製端的契約是「到 dest 就收車」，但官方逐車清單仍說
     // 這台車在——它只是停在終點站等著折返。改標成「停在終點站」而不是讓它整台消失。
     if (!terminal && to === di && arrEpoch <= nowEpoch + 1) { from = to; terminal = true; run = 0; }
     // 停在端點的車，方向必須指向線內：端點繪製會算 next = from + step，指向線外就得到
@@ -9818,16 +9818,16 @@ function trtcCensusVehicles(trains, nowEpoch, day) {
     // 只准前進。兩個位置來源的新鮮度差很大（CarWeight 的 stn 實測落後 96–265 秒、
     // TrackInfo 的 path 約 25 秒），同一台車在有／沒有 path 之間切換時會在兩者間跳，
     // 往回跳就是倒退。落到上一輪後面就維持上一輪，等官方資料自己追上。
-    // 🔴 2026-08-18 使用者裁示:「真實資訊一回來,就是要用真實的資訊去判斷車子在哪,
-    // 跑過頭的就慢下來等 不到退。」⇒ 建車層**永遠採用官方最新一輪**,不得因為「比上一輪落後」
+    // 🔴 2026-08-18 起的規則:官方資料一回來,就以它判定車的位置;
+    // 跑過頭的車放慢等待、不往回退。⇒ 建車層**永遠採用官方最新一輪**,不得因為「比上一輪落後」
     // 而拒收。原本這裡有一道 no-backward hold(整包 {...prev} 沿用上一輪、含舊 timeline),
     // 它有三個致命性質,已永久作廢,不准以任何形式復活(改名/只對某些線/包裝成平滑處理都不行):
     //   1. 被 hold 的車不是停住,是**照舊 timeline 繼續往前跑**(畫位置時 timeline 優先於
     //      arrEpoch,那個被 bump 的 arrEpoch 根本沒被讀到),離真值愈來愈遠;舊計畫跑完再接
-    //      coast 用固定班表秒續推。方向與裁示相反(裁示要「停下來等」)。
+    //      coast 用固定班表秒續推。方向與這條規則相反(規則要的是停下來等)。
     //   2. 門檻釘在 prev.to 而 prev 每輪又換成自己 ⇒ 無輪數上限、無時間上限,可永久卡住。
     //   3. 它為了消一個**視覺抖動**(位置來源在新舊之間切換造成的假倒退)而拒收官方資料,
-    //      違反 08-14「車子有官方數據就是在」。
+    //      違反 08-14 起的原則:官方給得出數據的車一律算在線上。
     // 「不倒退」這件事本來就由顯示層 trtcOfficialDisplayPosition 負責(progress <= prior 就凍座標),
     // 那才是正確的層:它凍的是**畫面位置**,不是**資料**,官方修訂照樣被吸收。建車層再擋一次
     // 純屬重複,而且是把資料一起凍掉的那種重複。
@@ -9859,9 +9859,9 @@ function trtcCensusVehicles(trains, nowEpoch, day) {
         from, to, run, arrEpoch, terminal, officialNo: sys === 'hw' ? no : null,
         source: 'census', observedEpoch: nowEpoch, timeline };
     }
-    // 🔴 使用者裁示:「到終點站車子就拿掉」「車子到站就要放掉,你不放掉當然都撞在一起了,
-    // 那我給你到站的停站時間還有什麼意義」(2026-08-19)。上面 `to === di` 那一行的舊註解
-    // 明寫著把裁示改成「標成停在終點站而不是讓它整台消失」——那個改動就是現在的病灶:
+    // 🔴 2026-08-19 起的規則:車一到終點站就收掉,不可留在站上——不收車,後面的車進站必然與它疊在一起,
+    // 提供停站秒數也就失去意義。上面 `to === di` 那一行的舊註解
+    // 明寫著把這條規則改成標成停在終點站、而不是讓它整台消失——那個改動就是現在的病灶:
     // 車釘在終點站不走(實測松山 131 秒、淡水 84 秒、象山 58 秒、新店 14 秒),後面那台進站
     // 就跟它疊在一起(七組疊車裡有五組的其中一台正是這種車)。停住與疊車是同一個 bug 兩面。
     // 到站後只留我們資料裡的停站秒數(看得到它進站),然後放掉;回程要出現時,官方會用回程
@@ -10015,7 +10015,7 @@ function trtcOfficialDeparturePosition(ln, vehicle, now, origin, departureEpoch)
   const step = Number(vehicle && vehicle.dir) === 2 ? 1 : -1;
   const next = origin + step, A = ln.stations[origin], B = ln.stations[next];
   if (!A || !B) return null;
-  // 🔴 裁示:「車站沒有到站倒數的車子就是不存在」。起點列給的是**發車**倒數不是到站倒數,
+  // 🔴 規則:一台車是否存在,以車站有沒有給到站倒數為準,沒有就視為不存在。起點列給的是**發車**倒數不是到站倒數,
   // 還沒發車的那一筆是「下一班」公告,不是一台在線上的車。舊碼把它畫成停在起點月台的車,
   // 於是真的進站的那台一到就變成同站兩台(實測每一輪都抓得到,例:七張 823 秒後才發車那筆)。
   // 發車時刻一到就照常畫,所以車不會少,只是不提早出現。
@@ -10041,12 +10041,12 @@ function trtcOfficialTimelinePosition(ln, vehicle, now) {
       from: Number(item.from), to: Number(item.to), depEpoch: Number(item.depEpoch), arrEpoch: Number(item.arrEpoch) }))
     .sort((a, b) => a.depEpoch - b.depEpoch || a.arrEpoch - b.arrEpoch);
   if (!moving.length) return { handled: false, pos: null };
-  // 🔴 使用者規則 R6:「平常過站,就是秒數到就出發」「到站後用停站秒數加進去判斷,時間到之後由
-  // 下一站的倒數接手出發」。官方每站的倒數各自獨立,timeline 每一段的 depEpoch 原本一律是
+  // 🔴 規則 R6:平常過站,秒數一到就出發;到站後先把停站秒數算進判斷,停站時間到了就出站,
+  // 下一段改以下一站的倒數定速。官方每站的倒數各自獨立,timeline 每一段的 depEpoch 原本一律是
   //「該站倒數 − 我們算的行駛秒」,段與段之間沒有任何東西接起來 ⇒ 上一段到站到這一段發車之間
   // 會開一個洞(實測環狀線一台車 4->5 段的洞有 126 秒,車就停在站上罰站);洞的另一面是只停
   // 12 秒就彈出去(比我們資料裡的停靠秒還短)。發車時刻一律改由「上一段到站 + 該站停靠秒」決定,
-  // arrEpoch 維持官方值不動 ⇒ 照停站秒發車、再用梯形速度準時到下一站。
+  // arrEpoch 維持官方值不動 ⇒ 照停站秒發車、再用梯形速度曲線在官方到站時刻抵達下一站。
   // 放在這裡是因為 census 與 board-seg 兩條產車路徑都走這個函式 ⇒ 每條線每一站一致套用。
   for (let i = 1; i < moving.length; i++) {
     const prev = moving[i - 1], cur = moving[i];
@@ -10083,17 +10083,17 @@ function trtcOfficialTimelinePosition(ln, vehicle, now) {
     last.from, last.to, last.arrEpoch - last.depEpoch, last.arrEpoch) };
 }
 const _trtcCdDropped = new Map(); // 診斷用:每條線這一輪忽略了幾列倒數
-// 🔴 使用者裁示(2026-08-18):「不要用下一站的時間去生車子出來」。
+// 🔴 規則(2026-08-18 起):車只能由它自己那一站的倒數生出,不得借下一站的時間另生一台。
 // 每一站的倒數對應的是「進這一站的那一段」。倒數若大於那一段的行駛秒(再加上退回去那一站的
 // 官方停靠秒),代表這台車根本還沒進這一段——它還在更後面,而更近的那一站會用自己的倒數把它
 // 生出來;在這裡再生一台就是同一台車被複製成兩台,畫面上就是同區段兩台。
 // (先做過「往回退去畫」的版本,實測少 6 台假停站但疊車 1 對→3 對:位置更誠實、畫面更糟,
 //  因為退回去正好壓在後面那台身上。所以是「不生」,不是「退著畫」。)
 function trtcOfficialDwellAt(ln, i) {
-  // 🔴 2026-08-19 使用者:「確認往前推的每段路程、停靠時間,都是依照官方那份資料在跑。」
+  // 🔴 2026-08-19 的查核項目:往前推的每段行駛時間與停靠時間,是否都取自官方資料。
   // 查出來是沒有:資料檔每一站本來就帶 `dwell`(臺北捷運公司「相鄰兩站間之行駛時間及停靠站
   // 時間」,2025-06-03 生效),但這裡讀的是 `ln.dwellSec[i]` 這個從來不存在的陣列 ⇒ 九條線
-  // 每一站的停靠秒實際上都是常數 25。使用者的規則「停的時間依照我們的資料,二十幾~四十幾秒」
+  // 每一站的停靠秒實際上都是常數 25。停站秒數本應取自資料檔(各站約 20 多至 40 多秒),這條規則
   // 從頭到尾沒有真的套用過。改讀 stations[i].dwell;dwellSec 保留當第二來源,都沒有才用常數。
   const st = ln && Array.isArray(ln.stations) ? ln.stations[i] : null;
   const d = st ? Number(st.dwell) : NaN;
@@ -10123,7 +10123,7 @@ function trtcOfficialVehiclePosition(ln, vehicle, nowEpoch) {
   // 🔴 小碧潭與新北投兩條支線只有兩站,於是看板每一列的「前一站」都掉出線外
   // (北投 0→-1、小碧潭 1→2) ⇒ 帳本一律判成起點列 run=0,推進成 from≠to 之後 run 仍是 0。
   // 舊碼在這裡整台回 null＝那台車一發車就消失,畫面上永遠只剩下一台停在起點的,
-  // 看起來就是「車一直停在站上不會動」(2026-08-17 使用者回報)。
+  // 於是看起來車子一直卡在站上(2026-08-17 的現象)。
   // run 不是官方值、是我們自己推的區間秒,而線形資料本來就有(七張↔小碧潭 203 秒),
   // 缺了就用它補回來;補不到才放棄。其他線一律 run>0,不受這條影響。
   const segRun = run > 0 ? run : (() => {
@@ -10181,7 +10181,7 @@ function trtcOfficialDisplaySet(key, rec, ln, vehicle, now) {
 // 續推持續超過這麼久才算「長時間斷訊」，回歸時才允許倒退／跳動（見 trtcOfficialDisplayPosition）。
 // 官方看板正常是 15～60 秒一輪，這裡取 5 分鐘：短暫缺幾輪的偏差本來就小，不值得讓畫面跳。
 const TRTC_OFFICIAL_RESYNC_MIN_COAST_SEC = 300;
-// 使用者裁示第 4 條「跑慢的就追上去」。前進上限原本恰好等於實際站間速度 ⇒ 落後官方的車
+// 契約第 4 條:落後的車要追上去。前進上限原本恰好等於實際站間速度 ⇒ 落後官方的車
 // 與官方同速前進、差距永遠不收斂（2026-08-18 早尖峰實測 BR 有車恆定落後 877m／654m，
 // 連續取樣 4 次一公尺都沒縮）。追趕時允許到兩倍站間速度：`shown` 仍取 min(官方位置, 上限)
 // 所以絕不會超過官方位置，只是在落後時收斂得回去；兩倍是「看得出在追、但不像瞬移」的量級
@@ -10194,8 +10194,8 @@ const TRTC_OFFICIAL_CATCHUP_FACTOR = 2;
 //   ⇒ 那些跳動是真修正,不是雜訊,不該被當抖動吸收掉。
 // 兩倍速追一整段要 60-100 秒,而站牌倒數常常只剩 45-60 秒 ⇒ 車還沒追到就該進站,
 // 我們畫的到站時間就偏晚(08-18 早上七筆未準時到站,全部是「車還沒到、差 344-436m」)。
-// 這違反 08-07 裁示「站牌時間完全照官方,車依那個時間到站」。
-// 🔴 只往前接,絕不往後:契約第 3 條「跑過頭的停下來等、絕不倒退」由上面的凍結分支處理,
+// 這違反 08-07 起的規則:車的到站時刻必須與站牌顯示的官方時間一致。
+// 🔴 只往前接,絕不往後:契約第 3 條(跑過頭就停下來等、不得倒退)由上面的凍結分支處理,
 // 這裡走不到(那條分支先 return)。150m ≈ 逐秒雜訊 95 分位的 10 倍,兩者不會混淆。
 const TRTC_OFFICIAL_SNAP_FORWARD_M = 150;
 // 位置被官方訂正的累計(逐台一次),與斷訊恢復分開:那個是「我們推估了很久」,
@@ -10207,15 +10207,15 @@ function trtcOfficialCorrectTick(nowEpoch) {
   const count = r.count, maxM = Math.round(r.maxM);
   r.notifiedAt = r.at; r.count = 0; r.maxM = 0;
   if (!count) return null;
-  // 🔴 2026-08-18 兩處改動,都來自使用者:
+  // 🔴 2026-08-18 兩處改動:
   // (1) 文案:原本寫「官方訂正位置／北捷剛更新了…」是錯的因果。觸發條件是
   //     behindM =(官方位置 - 我們畫的位置)為正 ⇒ 方向是**我們落後**官方 ≥150 公尺要往前追,
-  //     不是官方倒退訂正。使用者:「官方的時間不會一直跳,是我們認錯車的問題」——他是對的。
-  // (2) 樣式:「太煩人了,請放成一個角落的小通知,不要擋整個畫面」⇒ 改走 corner 容器、不換行。
+  //     不是官方倒退訂正。官方時間不會頻繁跳動,問題出在我們認錯了車。
+  // (2) 樣式:通知太干擾,改成角落的小通知、不擋住整個畫面 ⇒ 改走 corner 容器、不換行。
   // ⚠️ 底下那個「我們會落後最多 1184 公尺」的問題**沒有修好**,只是不再誤報成官方在訂正;
   //    要修的是認車,不是這則通知。
   // 🔴 2026-08-18 23:5x 拿掉這則通知(事件與計數保留給驗收腳本)。
-  // 使用者:「現在仍然一直在跳出位置校正 每十幾秒」。查了它實際在數什麼:每一輪官方輪詢後,
+  // 現象:位置校正通知每十幾秒就跳一次。查了它實際在數什麼:每一輪官方輪詢後,
   // 有幾台車被重新定位到我們畫的位置前方 >=150 公尺。全網 110 台、每 15 秒一輪,
   // 有兩三台被往前挪是資料的常態擾動——**一個每十幾秒就成立的條件不是異常,不該做成通知**。
   // 真正要修的是「我們為什麼會落後」(顯示層那個只准前進+兩倍速追趕的棘輪),不是這則通知;
@@ -10225,7 +10225,7 @@ function trtcOfficialCorrectTick(nowEpoch) {
 // 斷訊回歸事件（由 trtcOfficialDisplayPosition 記錄、UI 每秒 tick 消費後跳訊息）。
 // 刻意不在位置函式裡直接呼叫 showToast——那會讓純函式驗收得連 DOM 一起搬進沙盒。
 const _trtcOfficialResync = { at: 0, outageSec: 0, count: 0, notifiedAt: 0, removedFor: 0 };
-// 使用者要求：允許倒退／跳動，但一定要跳訊息說明為什麼。
+// 規則：位置可以倒退或跳動，前提是同時跳訊息交代原因。
 // 等 2 秒才發：一輪資料回來時整批車會在同一個 tick 內各自回歸，馬上發會先報一台、
 // 數字還在長；靜置 2 秒代表這波回歸收完了，一次報完整的台數。
 const TRTC_RESYNC_TOAST_SETTLE_SEC = 2;
@@ -10235,7 +10235,7 @@ function trtcOfficialResyncTick(nowEpoch) {
   const mins = Math.max(1, Math.round(r.outageSec / 60)), count = r.count;
   r.notifiedAt = r.at; r.outageSec = 0; r.count = 0;
   // 除了「跳位置」，2026-08-15 起還會**少車**：訊號回來時以官方名單為準，中斷期間推估出來、
-  // 官方回報後對不上任何一班的車會被移除（使用者裁示）。少車比跳位置更容易被當成當機，
+  // 官方回報後對不上任何一班的車會被移除。少車比跳位置更容易被當成當機，
   // 所以同一則訊息就要講明。每次恢復只講一次——後端的恢復記錄會續帶十分鐘，不綁住就每輪都重報。
   const rec = state.trtcOfficialRoster && state.trtcOfficialRoster.recovery;
   const removed = rec && Number(rec.removed) > 0 && Number(rec.atEpoch) !== Number(r.removedFor)
@@ -10365,7 +10365,7 @@ function trtcOfficialArrivalTarget(ln, vehicle, raw) {
   if (!Number.isInteger(to) || !ln.stations[to] || !Number.isFinite(arrEpoch)) return null;
   return { progress: step * to, arrEpoch, station: to, step };
 }
-// 停站:剛到站的車依「該站的官方停靠秒」停一下再開(使用者:「停的時間依照我們的資料,二十幾~四十幾秒」)。
+// 停站:剛到站的車依「該站的官方停靠秒」停一下再開(各站約 20 多至 40 多秒)。
 // 但不能停到來不及準時到下一站——先留下這一段的行駛秒,倒數太緊就立刻開走。
 function trtcOfficialDwellUntil(ln, vehicle, prior, plan) {
   const arrivedAt = prior && prior.arrivedAt != null && Number.isFinite(prior.arrivedAt) ? prior.arrivedAt : null;
@@ -10412,7 +10412,7 @@ function trtcOfficialDisplayPosition(ln, vehicle, nowEpoch) {
   }
   // 同一畫格會被地圖 renderer 與跟隨資訊各讀一次；第二個讀者必須拿到同一個顯示位置。
   if (now === prior.epoch) return prior.pos;
-  // 🔴 長時間斷訊回歸（2026-08-15 使用者裁示）：續推位置是我們自己的推估，不是官方事實。
+  // 🔴 長時間斷訊回歸（2026-08-15 起）：續推位置是我們自己的推估，不是官方事實。
   // 上一幀還在續推、這一幀官方時間軸已經回來，且續推已經持續夠久 ⇒ 直接改採官方位置並重設
   // 基準，**允許倒退、允許跳動**，不受「不倒退」護欄約束；同時記下事件讓 UI 跳訊息說明原因。
   // 不這樣做的話，斷訊期間被推過頭的車會被護欄永久凍在錯的位置上直到退場（33 分鐘斷訊實例）。
@@ -10453,17 +10453,17 @@ function trtcOfficialDisplayPosition(ln, vehicle, nowEpoch) {
     _trtcOfficialCorrect.count = (Number(_trtcOfficialCorrect.count) || 0) + 1;
     _trtcOfficialCorrect.maxM = Math.max(Number(_trtcOfficialCorrect.maxM) || 0, behindM);
   }
-  // 🔴 2026-08-18 深夜 使用者定義的行進模型(逐字):「前一站到站後,我們讓他停的時間依照我們的
-  // 資料,二十幾~四十幾秒,然後車子啟動,同時,下一站出現倒數之後…讓他以那一段路程應有的秒速前進…
-  // 所以我們能夠讓車子在離站之後,準時到下一站,中間應該不會需要跳動。」
+  // 🔴 2026-08-18 深夜起的行進模型:車到站後依資料檔的停站秒數(各站約 20 多至 40 多秒)停靠,
+  // 之後啟動;一旦下一站出現倒數,就以該區間應有的車速行進,
+  // 於是離站後能準時抵達下一站,途中不需要跳動。
   // 舊碼不是這樣做的:它每一輪都拿倒數往回推「現在應該在哪」(depEpoch = arrEpoch - run),
   // 於是官方倒數只要修訂 Δ 秒,整個時間窗就平移 Δ,畫面位置當場跳 Δ/段(實測跳幅中位 124m、
   // P90 322m)。為了擋這種跳,上面又疊了只准前進的棘輪+兩倍速追趕+落後 150m 直接接上,
-  // 結果車被凍在官方後面(實測板南線一台落後 1029 公尺連續 111 秒)——那個落差就是使用者
-  // 看到的「一直在校正」。跳動與校正是同一個 bug 的兩面。
+  // 結果車被凍在官方後面(實測板南線一台落後 1029 公尺連續 111 秒)——持續跳出校正通知的原因
+  // 就是這個落差。跳動與校正是同一個 bug 的兩面。
   // 改成:目標=官方倒數指定的下一站,期限=它給的到站時刻,每一格只重算「還剩多少路÷還剩多少秒」。
-  // ⇒ 倒數被修訂時只改速度,位置永遠連續;而且一定準時到站(這正是 08-07 裁示「站牌時間完全
-  //   照官方,車依那個時間到站」)。位置只會往前:目標在後面(跑過頭)就停下來等,絕不倒退。
+  // ⇒ 倒數被修訂時只改速度,位置永遠連續;而且一定準時到站(這正是 08-07 起的規則:車的到站時刻
+  //   與站牌顯示的官方時間一致)。位置只會往前:目標在後面(跑過頭)就停下來等,絕不倒退。
   let plan = trtcOfficialArrivalTarget(ln, vehicle, raw);
   // 到站狀態:用「上一格 latch 到的那一站」當基準,不要拿浮點進度去跟目標比大小——
   // 前進上限會讓進度停在離站心 0.01 段的地方,浮點比較會判成「官方目標還在前面」而永遠不出發。
@@ -10471,8 +10471,8 @@ function trtcOfficialDisplayPosition(ln, vehicle, nowEpoch) {
     && Number.isInteger(prior.arrivedStation) ? prior.arrivedStation : null;
   const officialAhead = !!(plan && (atSt == null
     ? plan.progress > prior.progress + 1e-9 : plan.progress > step * atSt + 1e-9));
-  // 🔴 使用者裁示(2026-08-19)：「到站後用停站秒數加進去判斷,時間到之後由下一站的倒數接手出發;
-  // 如果是同路段第二輛,就先用秒數推出發,等前面那輛離開相同路段再去用倒數秒數校正位置。」
+  // 🔴 2026-08-19 起的規則：到站後先把停站秒數算進判斷,停站時間到了就出站,下一段改以下一站的倒數定速;
+  // 同路段的後車則先依秒數推進,前車離開該段後,再用倒數校正它的位置。
   // 官方每站每方向只給一筆倒數 ⇒ 前面有車擋著時,後面這台整段路都拿不到屬於自己的倒數;倒數
   // 一過期,顯示層就把車貼到站上、再也沒有下一個目標 ⇒ 車停在站上不動(實測 166–201 秒)。
   // 這個「自己開出去」的決定必須**存下來**:只在當下這一格推的話,車一離站到站狀態就不成立,
@@ -10488,15 +10488,15 @@ function trtcOfficialDisplayPosition(ln, vehicle, nowEpoch) {
   }
   // 官方給的目標比我們前面 ⇒ 交還給倒數(它會把自走推出來的位置校正回官方時刻)。
   if (dr && (!plan || dr.progress > plan.progress)) plan = dr;
-  // 🔴 使用者裁示(2026-08-19 08:10):「到站後用停站秒數加進去判斷,時間到之後由下一站的倒數接手
-  // 出發;如果是同路段第二輛,就先用秒數推出發,等前面那輛離開相同路段再去用倒數秒數校正位置。」
+  // 🔴 2026-08-19 起的規則(同上):停站秒數先納入判斷,停站時間到了就出站,下一段改以下一站的倒數定速;
+  // 同路段的後車先依秒數推進,前車離開該段後,才用倒數校正位置。
   // 為什麼需要這條:官方那一列的到站時刻**會被一直往後改**——實測文湖線一台車的倒數是
   // -42→-37→-32→-26(往上爬),代表 arrEpoch 每輪都被挪到「大約 30 秒前」。而停站結束時刻是
   // 用 arrEpoch + 停站秒 算的 ⇒ 發車時刻跟著一路後退,車就被釘在站上(實測停住 190 秒)。
   // 這與昨晚那個 bug 同病:把錨點掛在一個會被改的值上。
   // 修法:到站時刻用我們自己 latch 住的那一刻(prior.arrivedAt),停站秒一到就**自己用該段的
   // 行駛秒推出發**,不等官方換列;官方換列後 plan 自然回到官方倒數,位置就被校正回去。
-  // 🔴 位置只由使用者的三條規則決定,沒有別的判準(2026-08-19 全線掃描後定版):
+  // 🔴 位置只由下列三條規則決定,沒有別的判準(2026-08-19 全線掃描後定版):
   //   R6 到站後停「該站的停靠秒」,停滿就發車——不看官方換不換列,也不設任何額外閘門。
   //   R7 每一格從「現在畫到哪」重新算速度,朝官方到站時刻前進 ⇒ 倒數被修訂時只改速度,
   //      位置永遠連續。(直接用 raw 會倒退:raw 的發車時刻是 arrEpoch − 行駛秒,倒數改 Δ 秒
@@ -10568,7 +10568,7 @@ function trtcOfficialVehicleInfo(ln, vehicle, nowEpoch) {
   return { pos, ln, vehicle, loop: false, nextName: next ? next.name : '', termName: term ? term.name : '',
     nextSec: trtcServiceSec(arrAt), officialNo: String(vehicle.officialNo || ''), done: false };
 }
-// 🔴 2026-08-18 使用者裁示契約 5/6:「不會有超車的情況,兩列車之間也不能黏在一起」。
+// 🔴 2026-08-18 起的契約 5/6:車與車之間禁止超車,也禁止相互貼合。
 // 在此之前**整份程式沒有任何一行在管兩台車的相對關係**——每台各自算各自的,兩台各自單調前進
 // 照樣可以靠到重疊(單車不變量推不出跨車保序)。這是疊車的直接根因。
 // 間距用公尺定義再換算成站序單位:每個區間長度不同(47-172 秒不等),用固定的站序差會讓長區間
@@ -10605,7 +10605,7 @@ function trtcOfficialRenderItems(ln, boardPos, nowEpoch, enabled) {
 // 🔴 只往後夾、且絕不低於這台車上一格已經畫到的位置(契約 3「不到退」)——已經重疊的情況
 // 凍後車、等前車自己分離,不把後車往回拉(往回拉會變成畫面倒退,那是另一個使用者看得到的缺陷)。
 function trtcOfficialSeparate(ln, items, nowEpoch) {
-  // 🔴 2026-08-19 使用者裁示:「前面不對的東西都要拿掉。」拆掉最小間距夾——後車被夾到「上一格
+  // 🔴 2026-08-19 起:先前加進來的不正確機制一律移除。拆掉最小間距夾——後車被夾到「上一格
   // 自己畫到的位置」時就整台凍在原地等前車走,而前車若也被凍住,整串就一起卡死。疊車是名冊算
   // 錯的徵狀,不該在畫面上壓;壓了只是把一個看得見的錯換成另一個看得見的錯。
   return items;
@@ -10774,7 +10774,7 @@ function freqTrainInfoAt(ln, tr, t) {
 const PERF_DEFAULT = { a: 1.5, b: 2.5, v: 110 };
 // 高鐵另掛惰行參數。滑得越深越緩 ⇒ 解出的巡航越快;ρ 是【下限】,解出的巡航會超過 300 時
 // buildProfile 自己把 ρ 收回來,不會畫出超速的車。
-// 🔴 2026-08-18 晚:使用者在 0846 北上車上讀車廂時速表,連續回報四點——
+// 🔴 2026-08-18 晚:在 0846 北上車上讀車廂時速表,連續記下四個點——
 // 18:45=280、18:46=295、19:08=300、19:15=285,接著 19:16=195、19:18 到桃園。
 // 由此得到三個【實測】值,取代原本用 700T 阻力硬推的估值:
 //   (1) 煞車率:285→195 花 60 秒 ⇒ b≈1.50。原本用 2.7 是煞太硬,因此拖到太晚才開始減速。
@@ -10782,11 +10782,11 @@ const PERF_DEFAULT = { a: 1.5, b: 2.5, v: 110 };
 //       兩者都取自【60 秒差值】,不必假設發車時刻,比用單點回推可靠。
 //   (3) 減速從站前約 7.5 km／3.2 分鐘開始(19:14 起煞、19:18 進桃園)。
 // 兩個都放軟 ⇒ 加減速段吃掉更多時間,解出的巡航跟著升:全網中位 223→250。
-// 【逐段對照實測】(他報的「桃園→台北」其實是桃園→板橋,中間停板橋):
+// 【逐段對照實測】(實測記錄寫的桃園→台北,實際是桃園→板橋,中間停板橋):
 //   台中→苗栗 實測 300 / 改前 247 / 改後 276
 //   苗栗→新竹 實測 295 / 改前 256 / 改後 300
 //   新竹→桃園 實測 285 / 改前 223 / 改後 290
-//   桃園→板橋 實測 205→212(他明講「沒有在變快了」) / 改前 185 / 改後 213
+//   桃園→板橋 實測 205→212(車速已不再明顯上升) / 改前 185 / 改後 213
 // 平均誤差 43.5 → 10.5 km/h。注意 a、b 取自同一趟,不是完全的樣本外驗證;
 // 但逐段巡航值是給定 (a,b,c,ρ) 後解出來的,沒有逐段去湊。
 // aAlt/bAlt:排點最緊的段用這麼軟的加減速趕不上表定(需要 304–356 km/h 的巡航),
@@ -10877,7 +10877,7 @@ function runSpeedZones(s, k0, k1, segKm, cls, vTopK, runL) {
   return out && out.sort((p, q) => p.d0 - q.d0);
 }
 // 把彎道換成 buildObsProfile 吃的節點:彎道兩端各一個折點,彎道區間的割線恰好等於速限。
-// 跑段的 L 與 T 完全不動(端點到離站時刻不變,符合「位置不用準、時間一定要準」),
+// 跑段的 L 與 T 完全不動(端點到離站時刻不變,符合時間必須準、位置可以放寬的原則),
 // 只是把時間在【彎道所在的那一個區間內】重新分配——彎道慢下來省不掉的時間,由同一區間
 // 內彎道以外的部分吸收,不會波及整個跑段。
 //
@@ -10924,7 +10924,7 @@ function zoneNatural(nat, L, T, d0, d1) {
 }
 // keepObs=true:彎道端點上的實測折點留著當彎道節點(校正不損失,但可用的時間窗較窄);
 // keepObs=false:把端點折點也讓出來換取減速空間。呼叫端先試 true,守不住速限才退 false
-// ——速度不超過上限是硬要求,比模型精度重要(使用者 2026-07-29 裁示)。
+// ——限速是硬約束,為了守住它可以犧牲對實測折點的貼合度。
 function speedZoneKnots(L, T, zones, vTopK, basePts, minGrow, nat, keepObs) {
   const vTop = vTopK / 3.6;
   let ks = [[0, 0], [T, L]];
@@ -11063,7 +11063,7 @@ function buildObsProfile(Lkm, T, pts, vTopK, zones) {   // pts:[{t:段內秒, d:
   xs.push(T); ys.push(L);
   // 節點對軌道幾何複驗:build 端的閘門用官方里程,這裡的距離來自軌道投影,兩者不同源(刻意的兩道獨立防線)。
   // 與真停靠站相鄰的區間含起停,平均速度上限更嚴;超速代表該節點與本線幾何不相容 → 丟節點不丟整段。
-  // 門檻綁該車種極速(2026-07-29,使用者裁定「速度不能超過上限,比模型精度重要」)。
+  // 門檻綁該車種極速:限速是硬約束,貼合度可以讓步。
   // 原本硬編 135＝最快車種的極速,對柴聯自強(110)、區間車(120)形同不設防,留下的節點
   // 本身就要求車子跑不到的速度(246 次:29 秒衝 127.5),插值再怎麼夾都壓不下去。
   // 代價:少數跑段的節點被清到剩兩端 → 退回梯形。那不是正確性損失,梯形恆不超速
@@ -11631,7 +11631,7 @@ function overtakeRunBuildable(tr, j, dep) {
   };
   return can(a, j, s[j].arrSec - s[a].depSec) && can(j, b, s[b].arrSec - dep);
 }
-// 待避站要有空股（2026-09-29 使用者裁示「改排到有空股的站」）：待避車那個方向要有一股超越車不走、待避期間也沒有
+// 待避站要有空股：待避車那個方向要有一股超越車不走、待避期間也沒有
 // 別班佔著，否則立體地圖上超越車直接穿過停著的待避車（10/3 預排 14 筆有 12 筆兩車同一股）。tracks＝
 // data/tra_overtake_tracks.json 的 stations（scripts/build_tra_overtake_tracks.mjs 用立體地圖換股的同一支程式離線算）：
 // 每一站每一種動線（前站>後站|s 停靠或起訖／p 通過）派車表用過哪幾條路線、通過車可停哪幾股、每一股會被哪幾條路線擋住。
@@ -12084,7 +12084,7 @@ function updateBlockHolds() {
   const groups = new Map();
   for (const tr of state.trains) {
     // 🔴 這裡曾經加上「走實體股道的車就跳過」(0f5bb774 v0907n)，因為那一版另有一套橫移避讓
-    // (rail-3d/integration/passing-avoidance.js)接手。那套在 06dd0034 v0908f 依裁示整個移除了
+    // (rail-3d/integration/passing-avoidance.js)接手。那套在 06dd0034 v0908f 整個移除了
     // (車廂必須沿指派股道走、不准整列橫移)，短路卻留在原地 ⇒ 台鐵 918 班全部 has()=true
     // ⇒ issue #17 的防追撞在台鐵上變成 100% 死碼。實測 05:00–23:55 每 5 分抽樣 228 個時點，
     // 同向在途車身互相穿透 9 對(七堵→八堵 278/6652 車頭距 0.39 公尺、車身重疊 60 公尺)，
@@ -12239,7 +12239,7 @@ function updateBlockHolds() {
     // 並排偏移的配對:在同一份排序上取「連續且貼近」的車列。用 arr 的鄰接而不是 barrier 鏈——
     // 停站中的車也要參與(月台待避的當下正是兩顆標記重疊的那一刻)。
     // 號誌沿車列交替(相鄰兩台才分得開),但**相位不能綁沿線順序**:待避時後車會超過停站中的前車,
-    // 順序一翻整組號誌就跟著對調,兩台同時換邊 ⇒ 使用者看到同一台車被兩班自強超越時「左閃右閃」。
+    // 順序一翻整組號誌就跟著對調,兩台同時換邊 ⇒ 同一台車被兩班自強超越時,標記會在左右兩側來回切換。
     // 改成用身分定相位,優先序:
     //   ① 車列裡「恰好一台」停站中 ⇒ 它靠行進方向的右邊(＝正在讓的那班固定靠右,經過的走左邊)
     //   ② 否則沿用上一幀的號誌 ⇒ 讓位結束、大家都在跑之後不會突然對調
@@ -12260,18 +12260,18 @@ function updateBlockHolds() {
           const k = arr.slice(i, j).findIndex(it => _blockSideSign.has(it.key));
           if (k >= 0) flip = _blockSideSign.get(arr[i + k].key) * nat(k);
         }
-        // 讓的那班整台退出軌道線靠右、過的那班留在線上完全不動(2026-07-29 使用者裁示)。
+        // 讓的那班整台退出軌道線靠右、過的那班留在線上完全不動。
         // 理由比「待避」更硬:不管是正式待避還是區間車靠站停、快車從主線通過,**停著的那班本來就
         // 不在通過列車走的那條軌道上**;而通過的那班是真的在線上跑,不該被推離它的位置。
         // 只在「兩台一列且恰好一台停站」時這樣畫——三台以上時還在線上的那幾台會互相疊,仍用左右交替。
         const solo = (j - i === 2) && dw.length === 1;
-        // 角色一旦定了就閂住,直到這一對散開為止(2026-07-29 使用者:「避讓的車只要讓開,
-        // 就不應該在通過的車離開前回到軌道」)。沒有這道閂,通過的那班只要也在同一站停下,
+        // 角色一旦定了就閂住,直到這一對散開為止(讓位的那班退出軌道後,通過的那班尚未離開,
+        // 它就不可回線)。沒有這道閂,通過的那班只要也在同一站停下,
         // 判定就從「讓位」退回「對稱」、讓位那班往軌道走回一半——對方明明還貼在旁邊
         // (實測 1124 讓 1122:對方一停,位移 35.6→23.2px,兩台距離仍是 0)。
         // 閂也要蓋過「角色對調」:同一對車會接力(A 停、B 過;下一站換 B 停、A 過),而對調發生時
         // 兩台往往還貼在一起(實測 105/1121 距離 0~1px 就換手:105 從 30.2px 滑回 9.2px、
-        // 1121 反而移出去 21.1px)——那正是使用者說的互相搶位子。所以只要這一對還在同一個車列裡,
+        // 1121 反而移出去 21.1px)——這就是兩顆牌位置互相擠換的症狀。所以只要這一對還在同一個車列裡,
         // 就沿用已定案的分配,不重新判誰在讓誰;等他們散開(車列不再成立)自然清掉。
         // 只閂「讓位」這種不對稱分配;對稱的兩台仍走原本的相位邏輯(_blockSideSign)。
         let keep = null;
@@ -12473,7 +12473,7 @@ function assignSchedShapePathsFor(trains, lines) {
 // 載入一組 sched 系統(1=單一,2=台鐵+高鐵同框):合併列車/軌道/車站/車種,各打系統標記,
 // 逐系統貼軌(不跨系統),再啟動各自的 LIVE/公告輪詢。共用於 loadSystem 與 loadSchedGroup。
 // 同一座實體站在官方班表裡掛兩個名字時,把停靠紀錄併回同一個名字。
-// 2026-08-31 使用者裁示:「台北車站的火車就都併在一起,不要多環島那一個,太多了」。
+// 結論:臺北站與環島之星繞回來的那個終點算同一座站,不拆成兩個點。
 //
 // 實例:臺北(站碼 1000)與臺北-環島(站碼 1001)。後者是環島之星繞完一圈的終點——同一班車
 // 第 0 站叫「臺北」、第 23 站叫「臺北-環島」,兩點實測相距 74 公尺,所以地圖上是兩顆點、
@@ -13065,7 +13065,7 @@ function freqTrainInfo(ln, t) {
 }
 // 平移硬牆「一律開」,跟車時也不解牆。歷史:原本跟車會 setMaxBounds(null) 解牆,讓最邊緣的車
 // (墾丁/花蓮/北端…)在最小 zoom 也能置中。但這與圖磚層 bounds(框外不載圖磚)直接打架:解牆後
-// 使用者跟車時一拖就把台灣拖出畫面,框外沒有圖磚→整片空白像壞掉(使用者實測回報)。且最小 zoom
+// 使用者跟車時一拖就把台灣拖出畫面,框外沒有圖磚→整片空白像壞掉。且最小 zoom
 // 本就顯示全台、跟隨的車一定在畫面內,不需要真的把邊緣車鉗到正中央;高 zoom 跟車時 viewport 遠小於
 // 台灣框、置中不會被 clamp(已 Playwright 驗:z13 setView 精準置中、跟車 recenterTo 無打架)。
 // 故硬牆恆開:自由探索與跟車都鎖台灣,永遠不會拖到框外空白。此函式保留為「確保硬牆開啟」的冪等點,
@@ -13167,7 +13167,7 @@ function updateFreqCard(info) {
   const f = state.freqFollow; if (!f) return;
   const ln = info.ln || f.ln; if (!ln) return;
   document.getElementById('fcDot').style.background = ln.color;
-  // 車次(使用者 2026-09-08:「如果有對到,我希望在列車資訊卡的上方有欄位顯示車次」)。
+  // 車次欄:對得到官方車號才出現,位置在資訊卡頂端。
   // 🔴 只認官方車號:北捷 roster 的 officialNo(＝TrackInfo.TrainNumber)與 Core 的 publicLabel,
   //    兩條路徑都在各自的 *VehicleInfo() 裡填成同名欄位。文湖線 BR 與環狀線 Y 官方沒有這一欄、
   //    機捷/中捷/淡海/安坑/三鶯根本不走官方名冊 ⇒ 一律留空,整欄收起來,不畫「BR」那種路線牌
@@ -13498,7 +13498,7 @@ function metroLineColor(color) {
 // ==== GL TRACKS (M1a) ====
 // MapLibre 引擎下軌道線、捷運站點圓與跟隨高亮改由 GL 層畫;canvas 只留列車/站名/站等圖示/收集亮段/平交道。
 // 資料 data/track_lines.geojson(71 個 LineString,property 見 build_track_geojson.mjs)與 data/track_stations.geojson(607 點);
-// 樣式 data/track_style_layers.json(states × themes)。四條裁示(計畫 D1–D4):auto+dark 只壓班表軌道、GL 站點圓只畫捷運/輕軌線、
+// 樣式 data/track_style_layers.json(states × themes)。四條規則(計畫 D1–D4):auto+dark 只壓班表軌道、GL 站點圓只畫捷運/輕軌線、
 // casing/色線依 sortKey 階級交錯。跟隨高亮若留在 canvas、pitch>0 時地平線後的投影會翻面、連成跨畫面長直線；
 // 改用獨立 GeoJSON source 給 MapLibre 原生裁切。每幀 glTracksSync 用簽名比對，狀態沒變就不碰 GL。
 const glTracks = { ready: false, style: null, lines: null, stations: null, ranks: [], sig: '', followPts: null, followColor: '', followSig: '' };
@@ -13634,7 +13634,7 @@ window.__glTracks = glTracks; // 守門人把手(verify_gl_tracks.mjs)
 // ==== GL TRACKS END ====
 
 // ==== 底圖地名去重 ====
-// 底圖(OFM)的地名點常跟我們畫的站名同名:竹北站旁就是「竹北市」的地名點,疊成「竹北竹北」(09-25 回報)。
+// 底圖(OFM)的地名點常跟我們畫的站名同名:竹北站旁就是「竹北市」的地名點,疊成「竹北竹北」。
 // 09-25 普查全台 607 站:去掉市鄉鎮區里村後跟站名相同的底圖地名,1 公里內 184 組、2 公里內 219 組——車站多半
 // 以所在鄉鎮命名。站名是 canvas 畫的、地名是 MapLibre 畫的,兩邊的碰撞避讓互相看不到,只能在底圖這邊擋:
 // 替底圖 place 圖層的 filter 加一條「名字等於 2 公里內某站的站名(可帶市鄉鎮區里村、臺台互通),而且這一級縮放
@@ -13645,7 +13645,7 @@ window.__glTracks = glTracks; // 守門人把手(verify_gl_tracks.mjs)
 // 不是就表示別人剛寫過,拿它(先剝掉我們舊的那一條)再疊一次。setFilter 會讓整個底圖來源重排,
 // 只在「畫哪些站」變了或別人寫過時才寫。
 // 09-29 起機場標籤也在內(source-layer aerodrome_label,地景與淺色街圖的 airport 圖層,飛機圖示加名字):文湖線
-// 「松山機場」站旁就是底圖的「臺北松山機場」,疊成重影(09-29 回報)。機場名稱常冠城市、站名不冠,所以機場圖層另外
+// 「松山機場」站旁就是底圖的「臺北松山機場」,疊成重影。機場名稱常冠城市、站名不冠,所以機場圖層另外
 // 認「名字以站名結尾」,只限站名本身以「機場」結尾的站。09-29 普查 OFM 全台有 iata 的機場標籤(airport 圖層只畫這些):
 // 2 公里內有同名或只差城市前綴的車站,只有松山(544 公尺)與高雄國際機場(908 公尺)兩組。桃園機捷「機場第二航廈站」
 // 離「臺灣桃園國際機場」191 公尺但名字不同,清泉崗 3 公里內沒有車站,都不在此列。
@@ -13792,7 +13792,7 @@ function drawSched(w, h, paintDecoTrains) {
     if (state.collectMap) drawCollectSegs(w, h); // 灰底線鋪完才描亮段,順序反了會被灰線蓋掉
   }
   // 跟隨路線高亮:奶白外描+加粗實線(取代模糊光暈),描在軌道上、車站與列車下
-  // 「隱藏」模式不畫——使用者要的是純流星畫面,跟隨路線也不留
+  // 「隱藏」模式不畫——這個模式就是純流星畫面,跟隨路線也不留
   if (!glTracksActive() && state.followTrain && state.trackStyle !== 'hidden' && state._routePts && state._routePts.length > 1) {
     ctx.beginPath();
     for (let i = 0; i < state._routePts.length; i++) {
@@ -14165,7 +14165,7 @@ function drawTag(p, label, bg, fg) {
 }
 
 // 機捷車牌:直達＝兩側尖頭實心(沿用高鐵牌的「快車」語彙)、普通＝圓角白底線色框,兩者都比一般
-// 車牌放大一級(牌高 15→19、字 10→12)。使用者 2026-09-04 回報:只把「直」「普」塞進原本 15px
+// 車牌放大一級(牌高 15→19、字 10→12)。起因:只把「直」「普」塞進原本 15px
 // 的牌,字太小根本讀不出來 ⇒ 改成**三個管道同時分辨**(形狀、實心/空心、字),離遠了或全色盲
 // 也還剩兩個管道。
 // 🔴 刻意**不**改成官方的「直達紫／普通藍」(官網列車介紹頁原文確有此分色,但沒有公開色碼):
@@ -14333,9 +14333,9 @@ function blockSideShift(tr, pos, cp, big) {
     // 兩顆牌會疊到的距離,由「實際量到的牌寬」推得而不是手打的常數;且必須是一對車共用的值——
     // 各用各的牌寬,「270」(窄)會比「2138」(寬)早歸零,同一對就變成一台偏一台不偏(實測 8/17 對)
     const near = (tagW(tr) + tagW(info.other)) / 2;
-    // 讓開了就不准在通過的車離開前回到軌道(2026-07-29 使用者回報「互相搶奪位子」)。
+    // 讓位的那班在對方離開之前不可回到軌道線(症狀:兩顆牌糾纏著一起移動)。
     // 原本 w=(near−距離)/near 綁**當下距離**線性漸變:通過的車走多遠、讓位的就回來多少,
-    // 兩顆牌保持等距一起移動＝看起來在搶位子(實測 3138 讓 198:通過的車才走 4px,
+    // 兩顆牌保持等距一起移動＝看起來像在爭位(實測 3138 讓 198:通過的車才走 4px,
     // 讓位的已從 31.3px 回落到 28.6px,一路陪著走回線上)。改成全有全無——
     // 會疊到就整台讓開,直到「就算回到線上也不會疊」(距離 ≥ 兩個半寬之和)才鬆手。
     // 離開的門檻比進入多一條縫,免得距離卡在臨界值時反覆進出。
@@ -14498,8 +14498,8 @@ function isHSR(tr) { return tr && tr.sys === 'thsr_sched'; }
 // 點擊/hover 的列車命中測試(用 drawSched 每幀重建的螢幕座標快取)。
 //
 // 為什麼不是「半徑內取最近」:兩台車部分重疊時,下層那台露出來的牌邊**離自己的中心比較遠**、
-// 卻離上層那台的中心比較近 ⇒ 點在看得見的下層牌上,跟到的是上層那台。使用者 2026-08-13 回報的
-// 就是這件事。改成「先看點有沒有落在**實際畫出來的那塊牌**裡」,看得到就點得到。
+// 卻離上層那台的中心比較近 ⇒ 點在看得見的下層牌上,跟到的是上層那台。這就是要修掉的誤判。
+// 所以改成「先看點有沒有落在**實際畫出來的那塊牌**裡」,看得到就點得到。
 // 半徑退路保留:框都沒中時維持原本 16px 取最近的語意,所以沒有疊車的情況行為完全不變。
 // (捷運示意層的 freqTrainsAt 早就是這個形狀,這裡是把台鐵/高鐵補齊到同一套。)
 const TRAIN_HIT_R = 16; // px:框都沒中時的容錯半徑(維持舊語意)
@@ -15236,7 +15236,7 @@ function queryMaybeAutoOpen(c) {
   if (state._queryAutoOpened || !window.matchMedia(MOBILE_MQ).matches) return;
   if (state.ambient || activeSheetEl()) return;                       // 放空不打擾;已有 sheet 不疊
   const hw = document.getElementById('howtoWrap'); if (hw && !hw.hidden) return; // 第一次開 App 只給教學卡
-  if (!(c && c.accuracy > 0 && c.accuracy <= QUERY_GEO_ACC_MAX_M)) return; // 精度差的點可能在任何地方;沒有精度、或精度 0(Android 未知精度回 0.0)都不開(09-06 裁示)
+  if (!(c && c.accuracy > 0 && c.accuracy <= QUERY_GEO_ACC_MAX_M)) return; // 精度差的點可能在任何地方;沒有精度、或精度 0(Android 未知精度回 0.0)都不開
   const ans = queryAnswerStations();
   if (ans.src !== 'geo' || !(ans.m <= QUERY_AUTO_OPEN_M)) return;     // 「在站附近」
   const key = queryStationKey(ans.stations[0].st);
@@ -15284,7 +15284,7 @@ function onLocateFail(err) {
 }
 async function onLocated(lat, lon, accM) {
   // 立刻停掉所有會搶相機的模式(跟車/捷運跟車/隨機巡航/放空),否則 flyTo 會被下一幀的鏡頭拉回。
-  // 使用者要的是「不管是否正在跟隨車輛,都立刻移到我的位置」。clearFollow 內部已一併清捷運跟車。
+  // 不論當下有沒有在跟車,定位成功就立刻把視角移到所在位置。clearFollow 內部已一併清捷運跟車。
   setAmbient(false); setAutoTour(false); clearFollow();
   state.geoFollow = true; state._userMoved = false;
   showMeMarker(lat, lon, accM);
@@ -15768,7 +15768,7 @@ function userDataMerge(remote) {
 // userDataMigrateAccountPartition() 的陌生人防護：這台裝置若「還記著別的帳號」
 // （ACCOUNT_LAST_UID_KEY），新登入的帳號一律從空白分區開始，訪客資料不會自動併入。
 // 那道防護只做了「不自動併」這一半，另一半——本人要怎麼把自己的東西拿回來——一直沒有出口。
-// 2026-09-01 兩位 Android 使用者回報「完乘紀錄整個不見、旅程護照空的、累積里程 0」正是這個
+// 2026-09-01 兩位 Android 使用者回報的症狀:登入後完乘紀錄全部消失、旅程護照一片空白、累積里程歸零,正是這個
 // 缺口：四個 collection 都還好好躺在匿名分區裡（`trainmap-user-data-v1`），只是登入之後的畫面
 // 永遠讀不到它們；旅程護照的章、趟數與里程全部由 rides 現算，所以一份讀不到就長成三個症狀。
 // 判斷「併進來會多幾筆」直接拿 userDataMergeEnvelopes() 的結果去比，不另寫一套規則——另寫的
@@ -16129,7 +16129,7 @@ function accountRender() {
     `<div class="account-login"><button type="button" data-login="google">${escHtml(t('使用 Google 登入'))}</button>${window.RAIL_APPLE_LOGIN === true ? `<button class="apple" type="button" data-login="apple">${escHtml(t('使用 Apple 登入'))}</button>` : ''}</div>` +
     // 🔴 2026-08-30:登入失敗的紅字原本只寫在下面「已登入」那一支,而登入失敗必然發生在【未登入】
     // 狀態 ⇒ accountSignIn 的 catch 設好了 a.actionError、accountRender() 也跑了,畫面卻一個字都沒變。
-    // 這正是多位使用者說的「點下去是直接沒有任何反應,沒有登入失敗」;Apple 之所以「有反應」
+    // 這正是多位使用者回報的症狀:點下去毫無反應、連登入失敗的提示都沒有;Apple 之所以「有反應」
     // 只是因為它會跳出瀏覽器視窗,那本身就是看得見的動靜,與錯誤有沒有顯示無關。
     // (與 Android 線 5dacec9／iOS 線 bc066ee 同一段,三線一致。)
     (a.actionError ? `<div class="account-error">${escHtml(a.actionError)}</div>` : '') +
@@ -16401,7 +16401,7 @@ async function accountSignIn(providerName, legacy) {
   let stuckTimer = 0;
   try {
     if (window.RAIL_NATIVE_AUTH) {
-      // 🔴 2026-08-30:多位 Android 使用者回報「點 Google 登入完全沒反應,連錯誤訊息都沒有」。
+      // 🔴 2026-08-30:多位 Android 使用者回報點 Google 登入毫無動靜,連錯誤提示也不出現。
       // 根因在 Credential Manager 那條路徑不保證回覆(見 native-bridge.mjs signIn 的長註解),
       // PluginCall 永遠不 resolve/reject ⇒ 下面這個 await 永遠不回,連 catch 的紅字都輪不到。
       // 刻意【不自動退路】:正常流程的 promise 本來就要等使用者選完帳號才 settle,任何逾時都
@@ -16423,7 +16423,7 @@ async function accountSignIn(providerName, legacy) {
   } catch (e) {
     const msg = e && e.message ? e.message : String(e);
     // 🔴 2026-09-01:Credential Manager 還有第二種死法——【明確 reject】,而不是 8/30 那個靜默卡住。
-    //    使用者回報的原文:"Your device doesn't support credential manager"(裝置上沒有任何
+    //    實際收到的錯誤原文:"Your device doesn't support credential manager"(裝置上沒有任何
     //    Credential Manager provider,實務上就是沒有 Google Play services 的機型)。
     //    這條路徑與逾時那條【互斥】:錯誤當場回來 ⇒ 上面那支 15 秒計時器根本還沒燒完就被 finally
     //    清掉 ⇒ 使用者看得到紅字、卻【永遠等不到那顆能救他的退路按鈕】,結果是一條死路。
@@ -16470,7 +16470,7 @@ function accountForgetIdentity() {
   if (state.plus) { state.plus.active = false; state.plus.entitlementEnvironment = ''; state.plus.founding = false; state.plus.pkgMonthly = null; state.plus.pkgAnnual = null; state.plus.mgmtUrl = ''; state.plus.adapter = null; state.plus.afterUnlock = null; state.plus.cloudSyncReady = false; state.plus.cloudSyncPromise = null; state.plus.cloudSyncConfirmedAt = null; state.plus.pkgLifetime = null; state.plus.pkgLifetimeUpgrade = null; state.plus.ownership = 'unknown'; state.plus.everPaid = false; state.plus.subRenewing = false; state.plus.subStore = ''; state.plus.subManageUrl = ''; }
   musicReconcileMode();   // 資格變了就把配樂模式對齊(付費池 ⇄ 免費隨機)
   // 🔴 2026-08-16:身分沒了＝這台裝置的資格沒了,小工具那顆旗標必須跟著收回。漏了這一行就是
-  //    使用者回報的「登出後還是可以選擇最近的站、還是可以放好多站」——App 這側已經歸零,
+  //    登出後自動選站與多站閘門仍然開著的症狀——App 這側已經歸零,
   //    App Group／SharedPreferences 那側卻停在 true(見 metroWidgetSyncPlus 上方說明)。
   metroWidgetSyncPlus(false);
   // ↑ cloudSyncPromise 也要清(最終複審 Minor 2):它是「同一時間只准一發握手在飛」的去重槽,
@@ -16705,7 +16705,7 @@ function accountEnsureInit() {
 // #accountBtn(工具列)與 .ms-row[data-proxy="accountBtn"](「更多」抽屜列)是同一個槽位的兩個入口
 // ——抽屜列的點擊是 btn.click() 轉發過去的,所以只要換掉這顆鈕的 onclick,兩邊行為必然一致。
 // 2026-09-10 起這個槽位只有【帳號】一種身分:通行證拆成 #plusBtn 獨立入口(見 setupPlusEntry)。
-// 拆的原因是使用者回報「找不到怎麼付費」——兩種身分合用一格時,只要這台裝置登入過,槽位就永久
+// 拆的原因是付費入口會被藏起來——兩種身分合用一格時,只要這台裝置登入過,槽位就永久
 // 翻成帳號,通行證三個字整個消失,最可能付費的回頭客反而是唯一沒有入口的人。
 // 標籤仍走 t():HTML 的預設字是繁中字面,不經過這裡就不會跟著語言切換。
 function accountBtnSlot() {
@@ -16870,7 +16870,7 @@ function plusConfig() { return window.RAIL_REVENUECAT_CONFIG || {}; }
 // 創始會員＝在創始價期間開始訂閱過的人。判定用訂閱起始時刻,不是當下時刻。
 // originalPurchaseDate 是這個 entitlement「第一次」被購買的日期,斷訂後再訂也不會變,
 // 故意不用會隨每次續訂/重新訂閱更新的 latestPurchaseDate。
-// 創始價視窗＝「上線錨點時刻」起算固定 30 天(裁示 2026-08-03)。上線錨點由
+// 創始價視窗＝「上線錨點時刻」起算固定 30 天。上線錨點由
 // revenuecat-config.js 的 foundingLaunchAt 提供,發版流程按下發版當下才決定填入——程式碼
 // 本身不留猜的日期,App 發版閘門(app/scripts/verify-release.mjs)會擋下未設定/無法解析/
 // 早於本次 build 日期的值,不讓猜的日期溜上線。
@@ -17180,7 +17180,7 @@ function plusApplyCustomerInfo(info) {
 //    MULTI_STATION_NEEDS_PASS = false),這顆旗標在新版小工具裡不再擋任何東西;同步照推,
 //    閘門哪天改回來時不必重接。舊版 App 跑的是它自己打包的這份 JS,不受這裡影響。
 //
-// 🔴 2026-08-16 使用者實機回報「登出後還是可以選擇最近的站,也可以同時放好多個小工具」的根因就在
+// 🔴 登出後自動選站與多站兩道閘門仍然開著,這個症狀的根因就在
 //    這裡:這支原本【只有一個呼叫端】(plusApplyCustomerInfo),而原本這一行上面那句註解卻寫著「所有
 //    資格路徑的匯流點,掛一處即全覆蓋」——那句話從寫下的那一刻就是錯的。真正會寫 state.plus.active
 //    的有八處,其中七處沒推:登出(accountForgetIdentity)、auth 解出 null、冷啟動就是訪客、
@@ -17192,7 +17192,7 @@ function plusApplyCustomerInfo(info) {
 //    scripts/verify_metro_widget_plus_sync.mjs——它量的是 setPlus 的呼叫序列,不是原始碼字面。
 // 🔴 2026-08-30 二度落地:上面這批修法在 2026-08-22 的合併 63e38b2「整檔取 main 那一側」時
 //    連同它的守門腳本一起被吃掉(見 app/scripts/verify_no_ship_regression.mjs 開頭的事故說明),
-//    Android 1.5.0(16/19) 與 iOS 1.5.1(82) 三顆出貨顆全中,使用者 08-30 再報一次。
+//    Android 1.5.0(16/19) 與 iOS 1.5.1(82) 三顆出貨顆全中,08-30 同一個症狀再度出現。
 //    這次同時把「每個明確答案函式內都要有一發」寫成 verify-release.mjs 的出貨閘門,不再只靠人記得。
 let metroWidgetPlusPushed = null; // 上一次真的送出去的值;null＝這個 session 還沒推過
 function metroWidgetSyncPlus(active) {
@@ -17223,7 +17223,7 @@ function plusState() {
   return state.plus;
 }
 // 通行證的常設入口:工具列 #plusBtn ＋「更多」抽屜的代理列。與帳號槽位無關——不管有沒有登入、
-// 有沒有足跡,只要這個平台有通行證面就恆在。2026-09-10 使用者回報「找不到怎麼付費」的根因就是
+// 有沒有足跡,只要這個平台有通行證面就恆在。付費入口被藏起來的根因就是
 // 它以前沒有自己的家,得跟帳號共用一格(見 accountBtnSlot),登入過的人就再也看不到通行證三個字。
 // 比照 recBtn/locateBtn 的教訓:PLUS_ENABLED 關著時鈕與抽屜列一起移除,不留「點了靜默無反應」的死列。
 function setupPlusEntry() {
@@ -17254,7 +17254,7 @@ async function plusOpen(source, onGranted) {
   if (!PLUS_ENABLED) return; // 止血旗標關閉時整張面板不可達:入口鈕都撤掉了,但深連結與既有呼叫點仍摸得到這支,故在此再擋一次
   const p = plusState();
   if (typeof onGranted === 'function') p.afterUnlock = onGranted;
-  // 🔴 2026-09-10 裁示:未登入不再擋在面板外面。這裡原本有一道登入牆——「有購買通道(App)且
+  // 🔴 未登入不再擋在面板外面。這裡原本有一道登入牆——「有購買通道(App)且
   // 還沒登入」就不開面板、直接跳帳號視窗加一句 toast,於是 App 使用者想知道通行證是什麼、
   // 包含哪些功能,得先交出一個帳號;而網站(無購買通道)那半從來都是直接開面板。同一個產品
   // 兩種相反的待遇,擋的又正好是最前面那一步。現在兩個平台一律先開面板,登入延後到「要看
@@ -17388,7 +17388,7 @@ function plusRender() {
     const loginCta = (state.account && state.account.user) ? '' :
       `<button class="plus-restore" type="button" data-plus="login">${escHtml(t('已經在 App 訂閱了？登入以同步'))}</button>`;
     // 2026-09-10:網站訪客走到這一步以前是死路——寫著「請在 App 內訂閱」,而整個網站零個商店連結,
-    // 想付錢的人無路可走(使用者回報「找不到怎麼付費」的第二半)。兩家都列是因為網站不知道對方拿什麼裝置,
+    // 想付錢的人無路可走(付費入口被藏起來的第二半)。兩家都列是因為網站不知道對方拿什麼裝置,
     // UA 猜錯會把 Android 使用者送去 App Store。只在網站畫:原生殼走到這條分支代表商店設定有問題,
     // 那時候該修的是設定,不是叫使用者再去下載一次自己正在用的 App。
     const storeCta = IS_NATIVE_APP ? '' :
@@ -18162,7 +18162,7 @@ function tickCore(now) {
     const ftr = state.followTrain;
     // 自動輪車(計時到就換、到終點就接下一班)只屬於放空——那是螢幕保護,本來就要一直有新畫面。
     // 使用者自己按「隨機跟隨」是「幫我挑一班」,挑到就陪他跑完:中途不換車、到終點也不接下一班
-    // (2026-07-28 使用者要求)。要換車按「換一班」,結束按小卡 ×。
+    // (要換車按「換一班」,結束按小卡 ×)。
     const rotate = state.ambient;
     // 捷運幽靈車跟隨中(freqFollow 有值、無 followTrain)不算「沒目標」,否則每幀都會誤判成該換車
     if ((!ftr && !state.freqFollow) ||
@@ -18446,7 +18446,7 @@ const SYS_DEFS = [
   { id: 'krtc', label: '高雄捷運', url: './data/krtc.json', speed: 36, mode: 'freq', times: './data/krtc_times.json' },
   { id: 'tmrt', label: '台中捷運', url: './data/tmrt.json', speed: 32, mode: 'freq', times: './data/tmrt_times.json' },
 ];
-// 2026-07-27 v0727c：桌面與 App 分頁統一成四顆「全／台／高／捷」（使用者定案）。
+// 2026-07-27 v0727c：桌面與 App 分頁統一成四顆「全／台／高／捷」。
 // 舊制「台＝全台同框、鐵＝國家鐵路」與並列的「高」層級不對等（台被讀成台鐵、鐵又疑似涵蓋高），
 // 現制＝「全」含全部，底下 台（台鐵系）／高（高鐵）／捷（捷運輕軌）三個互斥子集，一層巢狀關係。
 // tab:true 的四個就是兩處頁籤列（桌面 #systems、手機地圖頂列 #topTabs）渲染的群組，順序即畫面順序。
@@ -18458,7 +18458,7 @@ const GROUPS = [
   { id: 'all', label: '全台同框', short: '全', tab: true, mode: 'all', members: [],
     plate: { plateL: '基隆', plateR: '高雄', sub: 'ALL LINES · TAIWAN',
       lead: '全台鐵道一次看 — 台鐵、高鐵、阿里山林鐵與各捷運／輕軌皆依當日時刻表同一時間軸運行（台鐵套即時誤點；主要捷運營運時段依官方到站看板校正）。' } },
-  // 「台」＝台鐵系：各支線本來就在 tra_sched 裡，阿里山林鐵同屬台鐵系故一起收（使用者明示）
+  // 「台」＝台鐵系：各支線本來就在 tra_sched 裡，阿里山林鐵同屬台鐵系故一起收
   { id: 'tra', label: '台鐵', short: '台', tab: true, mode: 'sched', members: ['tra_sched', 'afr_sched'],
     plate: { plateL: '基隆', plateR: '枋寮', sub: 'TAIWAN RAILWAY · TRA',
       lead: '台鐵環島幹線與各支線依當日真實時刻表運行（回到現在時刻自動套用即時誤點），阿里山林鐵同框（依官方公告時刻表，無即時資訊）— 點列車跟隨、點車站看班次。' } },
@@ -18759,7 +18759,7 @@ function renderTopTabs(cur) {
     b.onclick = () => selectGroup(g, true);
     box.appendChild(b);
   });
-  // 手機殼把四顆收成一顆,那顆要跟著顯示目前在哪一群(它跟四顆是同一份資料,不另存狀態)
+  // 手機殼把四顆併成單一群組鈕,那顆要跟著顯示目前在哪一群(它跟四顆是同一份資料,不另存狀態)
   const one = document.getElementById('gtabOneTx'), oneBtn = document.getElementById('gtabOne');
   const cg = TAB_GROUPS.find(g => g.id === act);
   if (one && cg) one.textContent = t(cg.short);
@@ -19062,7 +19062,7 @@ function setFollow(tr, isAuto, noJump, opts) {
   // 下面兩個分支都是刻意撥時鐘(時光機),所以必須同時離開「跟著現在」的狀態:clockDriftGuard 每秒
   // 會把「還貼著現在」的時鐘拉回真實時刻,而它刻意不走 setSimSec(那會清掉 clockAtNow),所以也不會
   // 被 followTimeJumped 攔。撥了時鐘卻沒清旗標 ⇒ 1 秒內時鐘跳回現在,而完乘資格快照 followStartEff
-  // 已經記在發車前(合格) ⇒ 搜尋一班今天已經跑完的車,當場就蓋章並彈成就(2026-07-30 使用者回報)。
+  // 已經記在發車前(合格) ⇒ 搜尋一班今天已經跑完的車,當場就蓋章並彈成就(實際出現過這個症狀)。
   // 順帶修掉同一個真因的另一半:搜尋還沒發車的車,時鐘也會被拉回現在＝時光機根本沒生效。
   // fromStart 分支原本是靠 setSpeed(30) 順手把旗標清掉才沒中,不要依賴那個副作用。
   if (opts.fromStart) {
@@ -19111,7 +19111,7 @@ function setFollow(tr, isAuto, noJump, opts) {
   uniResetCollapse(); // tapTrain 帶 collapsed:false——收合中選了新的車要看得到卡
   uniPrimed = false;  // 換車了:詳細那一段要重新備妥
   syncUniCard();
-  // 列車 sheet 不自動彈出(2026-07-21 使用者裁決:預設收小卡、想看再點開)——展開入口只有點跟隨小卡(手機 fs)。
+  // 列車 sheet 不自動彈出,平時只露小卡,要看才展開——展開入口只有點跟隨小卡(手機 fs)。
 }
 // fromStart 重播强制拉高的速度只還原一次;抵達或取消跟隨時呼叫
 function restoreFollowSpeed() {
@@ -19518,7 +19518,7 @@ function pickBreathCity() {
 }
 // 呼吸錨點=該都會「軌道站點質心最近的車站」。CITY_BBOX 是整個直轄市行政區,幾何中心會落在山上
 // (台中中心在頭汴坑山區、高雄在旗美山區,離任何軌道都遠)——拉近段(z13+)視窗內零軌道,整片素色
-// 「什麼都沒有」(2026-07-18 使用者回報)。錨在真實車站:拉近到 z15 街廓時畫面必有站名+路網+列車進出。
+// 空空如也。錨在真實車站:拉近到 z15 街廓時畫面必有站名+路網+列車進出。
 function breathAnchorFor(id) {
   const b = CITY_BBOX[id], pts = [];
   const inBox = s => s && s.lat >= b[0] && s.lat <= b[2] && s.lon >= b[1] && s.lon <= b[3];
@@ -19542,7 +19542,7 @@ function breathAnchorFor(id) {
 }
 function pickBreathScene() {
   // 組不出有內容的畫面就取消(回 null,caller 落回一般熱區幕):錨點算不出=視窗內會沒有軌道。
-  // 這比硬上一個空鏡頭好——空鏡頭看起來像壞掉(使用者原話「太醜了」)。底圖由真實圖磚提供,不再依賴海陸輪廓。
+  // 這比硬上一個空鏡頭好——空鏡頭看起來像壞掉(觀感很差)。底圖由真實圖磚提供,不再依賴海陸輪廓。
   const id = pickBreathCity(), a = breathAnchorFor(id);
   if (!a) return null;
   // 錨點固定、零漂移;地圖固定 z13,hotCruise 的 sc.breath 分支逐幀用 CSS scale 沿正弦放大縮小
@@ -19794,7 +19794,7 @@ document.addEventListener('gesturechange', e => e.preventDefault());
 function camBlocked() { return !!state._theater || document.hidden; }
 
 // ── 劇場模式:放空久無互動→相機凍結在全島視角(零增量圖磚)。模擬/列車/音樂/完乘全照常,只是相機不再跟、不再換幕。 ──
-// 2026-07-28 改版(使用者裁決):不再切離線海陸向量層——那個畫面像斷線壞掉。改成「保留真底圖 + 跳到全島視角 + 相機凍結」,
+// 2026-07-28 改版:不再切離線海陸向量層——那個畫面像斷線壞掉。改成「保留真底圖 + 跳到全島視角 + 相機凍結」,
 // 車輛照常在上面跑。省磚原理從「卸掉圖磚層」換成「相機不動就不會有新圖磚」:全島視角是最低 zoom 的固定一屏
 // (數十張),且 Stadia 回 max-age=21600(6 小時),第二次進場之後幾乎全走瀏覽器快取。
 function enterTheater() {
@@ -19858,7 +19858,7 @@ function setAmbient(on) {
   if (on) applyFollowHeading(0, { immediate: true }); // 放空導演恒正北，不帶跟車 heading-up
   document.body.classList.toggle('ambient', on); // 供 CSS 做放空專屬版面(手機迷你化)
   // 出口保命:膠囊的 cexp/cfaint 若被帶進放空,body.cexp 那條會把「離開放空」與「視角」兩顆
-  // 一起 display:none,而放空版 .controls 是 width:max-content ⇒ 收成一顆點不到的空膠囊。
+  // 一起 display:none,而放空版 .controls 是 width:max-content ⇒ 只剩一顆點不到的空膠囊。
   // _fsCapsuleSync 的註解本來就寫「進出 fs / 尺寸變 / 放空切換時同步」,但手機殼的 setFs(false)
   // 會早退、setAmbient 也只在需要換 fs 時才呼叫它 ⇒ 手機的放空切換從來沒同步過。這裡補上:
   // 進場時 body.ambient 已為 true ⇒ capsule() 為 false ⇒ 走清除分支;離場時回到 slim,兩個方向都對。
@@ -19970,7 +19970,7 @@ function musicPath(f) { return (!musicIsApp() || musicBundledSet().has(f)) ? MUS
 function musicSrc(f) { return encodeURI(musicPath(f)); }
 // 原生佇列:相對路徑保持原樣交給 Swift 併進 bundle;絕對網址必須先編碼,URL(string:) 不吃空白。
 function musicNativeSrc(f) { const p = musicPath(f); return p.startsWith('http') ? encodeURI(p) : p; }
-// 顯示名一律取【歌單名】而非檔名(使用者 2026-08-27 裁示:不顯示每條曲目名;新曲庫裡 Moonlake
+// 顯示名一律取【歌單名】而非檔名(不逐曲顯示曲名;新曲庫裡 Moonlake
 // 整組都叫 Untitled-N,印檔名在鎖定畫面上只會更糟)。
 function musicLabel(f) {
   const s = String(f);
@@ -20007,7 +20007,7 @@ function musicPoolById(id) { return (window.MUSIC_DATA.pools || []).find(p => p.
 function musicShippedPools() { return (window.MUSIC_DATA.pools || []).filter(p => p.tracks && p.tracks.length); }
 
 // ── 網站放空模式的曲庫:免費 57 首 + 已上架的情境池,全部混在一起隨機 ──────────────
-// 使用者裁示(2026-09-07):「之前新增的曲目都加入網站放空模式的輪播,但是不用讓他可以選擇」。
+// 放空輪播的曲庫(網站端)包含新增的全部曲目;這批曲目只進輪播,沒有手動挑選的入口。
 // 只在【網站】生效:App 的情境池是通行證的內容,資格由 musicEffectiveMode 管,這裡不繞過它
 // (網站本來就沒有購買通道——正式站 revenuecat-config 沒有 webApiKey,選單入口 setupMusicPlUi
 //  也早就整個移除,所以網站不存在「可以選」這件事,不必也不該加 UI)。
@@ -20217,7 +20217,7 @@ function mplPoolOfCur() {
   const src = m && m.list && m.list[m.idx];
   return src ? (musicShippedPools().find(p => p.tracks.some(x => x.src === src)) || null) : null;
 }
-// 🔴 曲名不能用 musicLabel():那支是【鎖定畫面】用的,付費曲一律回池的中文名(2026-08-10 裁示),
+// 🔴 曲名不能用 musicLabel():那支是【鎖定畫面】用的,付費曲一律回池的中文名,
 //    拿來當曲名會讓「現在播放」的第一行與第二行印出同一個詞。曲名就是檔名。
 function mplTrackName(src) {
   const name = decodeURIComponent(String(src || '')).split('/').pop().replace(/\.[^.]+$/, '');
@@ -20252,7 +20252,7 @@ function musicPlRow(mode, zh, desc, slot, cls) {
     + '<span class="mpl-slot">' + mplEsc(slot || '') + '</span>'
     + '</button>';
 }
-// 還沒上架的池:降級成單行、不可點,但仍留在它本來的家族底下(使用者裁示:降級但看得見)。
+// 還沒上架的池:降級成單行、不可點,但仍留在它本來的家族底下。
 // 補滿之後這一段自然縮短、池升回正常列,版面不必重畫。
 function mplSoonRow(p) {
   return '<div class="mpl-row sub soon"><span class="mpl-dot"></span>'
@@ -20665,7 +20665,7 @@ function initMusic() {
   // 鈕面與抽屜那一列的開關讀的是同一個「實際在播嗎」(MS_STATE.musicBtn),但抽屜只有 syncMoreSheet 會重畫,
   // 而它是在 btn.click() 之後同步跑一次就結束。播放狀態卻是非同步落定的(自動播放被擋、淡出 800ms 後才
   // pause、App 走原生 bridge 要等事件),於是那一列會停在上一個狀態,直到使用者去點別的列(例如正上方的
-  // 省電模式)才被順手重畫——使用者回報的「音樂開著開關顯示關、而且跟省電模式聯動」就是這個。
+  // 省電模式)才被順手重畫——音樂明明開著、開關卻顯示成關,而且像跟省電模式連動,就是這個症狀。
   const syncMusicUI = () => { updateMusicBtn(); mplNowSync(); if (state._syncMoreSheet) state._syncMoreSheet(); };
   audio.addEventListener('playing', syncMusicUI);
   audio.addEventListener('pause', syncMusicUI);
@@ -20705,7 +20705,7 @@ function musicPrefetchNext() {
   // 同一首不重設 src:重設會讓瀏覽器重新發請求,清單只有一首時尤其會變成反覆重抓。
   if (_musicPrefetch.getAttribute('src') !== src) { _musicPrefetch.setAttribute('src', src); _musicPrefetch.load(); }
 }
-// 鎖定畫面/控制中心的曲目資訊:封面一律用軌島 icon（2026-08-10 使用者裁示），曲名=檔名去副檔名。
+// 鎖定畫面/控制中心的曲目資訊:封面一律用軌島 icon，曲名=檔名去副檔名。
 // 只設 metadata、不碰 setActionHandler——播放/暫停控制維持 WKWebView 自動接線，接手了反而會壞。
 function musicSetMeta() {
   try {
@@ -21154,7 +21154,7 @@ function transferMetaHtml(st) {
   return `<div class="xfer"><span class="k">${escHtml(t('可轉乘'))}</span>${escHtml(routes.map(transferRouteLabel).join(t('、')))}</div>`;
 }
 // 跟隨/搭乘卡「下一站」後面的小標。**列完整清單**,不收成「+N」——收起來就得靠點擊或 title 展開,
-// 而手機叫不出 title、紅框又沒有任何點擊回饋,使用者只會覺得「這東西點不動也看不懂」(v0810b 回報)。
+// 而手機叫不出 title、紅框又沒有任何點擊回饋,使用者只會覺得這個標籤點了沒反應,也看不出意思。
 // 卡片窄由 CSS 換行吸收,不由這裡截字。沒有轉乘就整顆收起來:標有框線與內距,留空殼會多一個空框。
 function setTransferTag(id, routes) {
   const el = document.getElementById(id);
@@ -21216,8 +21216,8 @@ const XFER_SYS_CATALOG = { TRA: 'tra_sched', THSR: 'thsr_sched', AFR: 'afr_sched
 // 同一個約定)。🔴 只寫「剩 N 分」,不寫「來得及/來不及」:站內步行時間沒有任何資料源,
 // 猜太短會害使用者錯過車。
 // 轉乘接續的展開/收合狀態。🔴 存在 DOM 之外:這一塊每分鐘(「剩 N 分」變動)就被 setTransferConn
-// 整段 innerHTML 重畫一次,狀態掛在元素身上會被下一次重畫洗掉。預設收合——使用者 2026-09-11
-// 說的是「否則太長了」,指的是現況,所以預設就要短;展開過一次就記住(比照 trainmap-routes-open)。
+// 整段 innerHTML 重畫一次,狀態掛在元素身上會被下一次重畫洗掉。預設收合——
+// 展開後內容太長,所以預設就要短;展開過一次就記住(比照 trainmap-routes-open)。
 let xferOpen = (() => { try { return localStorage.getItem('trainmap-xfer-open') === '1'; } catch (e) { return false; } })();
 function setXferOpen(on) {
   xferOpen = !!on;
@@ -21235,7 +21235,7 @@ function transferConnectionHtml(groupId, atSec, fromSys) {
   // 標題能指名單一系統的條件:非釘選 且 入選各列同系統。混系統(捷運卡的常態——fromSys=null
   // 時常常一班台鐵一班高鐵)或釘選態一律用中性標題,改成每一列前面加系統小標——否則「轉高鐵」
   // 標題底下第二列其實是台鐵,卻沒有任何系統標示,使用者分不出哪一列是哪家。
-  // (使用者裁示 2026-09-01:逐列標系統,標題混系統時改中性;兩列同系統時維持原標題不變。)
+  // (各列自帶系統小標;標題只在入選各列同屬一個系統時才指名該系統。)
   const headSys = (!pinned && show.every(r => r.sys === show[0].sys)) ? show[0].sys : null;
   const head = pinned
     ? `<span class="xfc-h">${escHtml(t('你的接續班次'))}</span>`
@@ -21260,8 +21260,8 @@ function transferConnectionHtml(groupId, atSec, fromSys) {
   const body = show.map(r =>
     `<button class="xfc-row" type="button" data-xn="${escHtml(r.n)}" data-xs="${escHtml(r.sys)}" data-xd="${r.sec}" data-xk="${escHtml(xferRowKey(r))}"${pinned ? ' aria-pressed="true"' : ''}>`
     + (headSys ? '' : `<span class="xfc-sys">${escHtml(xfcSysName(r.sys))}</span>`)
-    // 🔴 車次欄只放官方公告的車次,沒有就整欄消失(使用者裁示:不准拿線代號 BR｜Y 或我們
-    // 自己合成的內部編號頂替)。捷運改在時刻後面標官方車種——機捷的直達車/普通車是 TDX
+    // 🔴 車次欄只放官方公告的車次,沒有就整欄消失(線代號 BR｜Y、我們
+    // 自己合成的內部編號都不能頂替)。捷運改在時刻後面標官方車種——機捷的直達車/普通車是 TDX
     // TrainType 原值,與看板 renderFreqBoard、跟車卡 fcDir 同一種寫法。台鐵/高鐵有車次,
     // 車種(自強號/區間車)已由車次表達,不重複標,那一列的輸出與本批之前逐字相同。
     + (r.n ? `<span class="xfc-no">${escHtml(r.n)}</span>` : '')
@@ -21312,8 +21312,8 @@ function refreshXferConns() {
   for (const [id, a] of xferConnArgs) setTransferConn(id, a[0], a[1], a[2]);
 }
 // 轉乘釘選。高鐵是對號座,轉高鐵的人多半已經有票——他不是在「選一班」,是在輸入一個他早就
-// 知道的事實,其餘班次對他是雜訊,甚至會讓他以為趕得上一班他根本上不去的車。釘選後只剩那一班
-// (2026-09-01 裁示)。g 一定要傳:釘選只在它自己那一群裡有效(修復輪1 Finding A),
+// 知道的事實,其餘班次對他是雜訊,甚至會讓他以為趕得上一班他根本上不去的車。釘選後同群只保留被釘住的那一班。
+// g 一定要傳:釘選只在它自己那一群裡有效(修復輪1 Finding A),
 // 刻意不在 setFollow/換車時清掉——同一個轉乘群可能在跟隨不同班車時再度出現,清掉反而更糟。
 function xferFollowKey(tr) { return tr ? String(tr.sys || '') + '#' + String(tr.train || '') : ''; }
 function syncXferPinToLiveActivity() {
@@ -21547,7 +21547,7 @@ function liveActivityAllowed() {
 // formations.js)——但那是 async,laPayload/laBind/xferHandoffPlan 都得保持同步。用一個
 // 極簡快取墊著:第一次問某班車回 null(卡片這一發沒有車型,不畫車圖版即可,不痛),
 // 背景把 import 解出來之後寫進快取,下一發(≤10 秒後,或下一次 cron)自然就有。
-// 🔴 09-29 使用者回報「換追下一班車不會馬上顯示」:開卡那一發幾乎都是 null ⇒ iOS 要等下一發才換成
+// 🔴 換追下一班車後,卡片上的車圖晚了一拍才出現:開卡那一發幾乎都是 null ⇒ iOS 要等下一發才換成
 //    有車的版面、Android 鎖屏後一直沒車。改成有原生殼就在開機時先把 formations.js(約 10KB、無相依)
 //    載好,之後同步算,開卡那一發就有車型;模組還沒載完的極短窗口才退回上面的「下一發補上」。
 let _laFormationFor = null;
@@ -22616,7 +22616,7 @@ function unlockedAchievements(rides) {
 }
 // 收集通知:完乘的當下彈出「完乘達成→新蓋的章→解鎖的成就」,間隔 700ms 依序出現
 // 手機:把暫態通知(收集/工具吐司、平交道說明)塞進「頂列控件之下、跟隨資訊卡之上」的空檔,
-// 免得蓋住左上時鐘或左下列車資訊卡(使用者回報「省電/釘的說明跟列車資訊疊在一起」)。
+// 免得蓋住左上時鐘或左下列車資訊卡(曾出現省電/釘選的說明壓在列車資訊卡上)。
 // 全用即時 getBoundingClientRect,螢幕/卡片大小不同都自動避讓;桌機清掉 inline 覆寫,維持原本頂端置中。
 // 角落小提示的桌面落點:左下角會壓到底部常駐控件列(.controls)。用它實際渲染的 rect 讓開,
 // 不寫死高度——控件列會因為換行/多一顆按鈕而變高(站台帶寬度預算那份記過)。
@@ -22736,7 +22736,7 @@ async function fetchLatestAppVersion() {
   // iOS:每次開機都問一次 Apple,跟 Android 的 Play Core 一樣即時。原本 12 小時內直接走 localStorage
   // 快取,再疊 WKWebView 的 HTTP 快取與 Apple CDN(cache-control max-age≈2.3h;裸 URL 會回舊版號,
   // memory itunes-lookup-cdn-cache)⇒ 新版上架後 iPhone 最壞要隔十幾個小時才提示、Android 卻當場——
-  // 2026-09-22 使用者看到的「只有安卓會提示」就是這三層快取疊出來的。時間戳＋no-store 穿過後兩層,
+  // 版本提示只有安卓會跳的現象,就是這三層快取疊出來的。時間戳＋no-store 穿過後兩層,
   // 快取降級為離線／查詢失敗時 12 小時內的退路。
   const c = appverRead(APPVER_KEYS.cache);
   const fallback = (c && c.at && Date.now() - c.at < APPVER_TTL && c.v) ? { v: c.v, notes: c.notes, url: c.url } : null;
@@ -23064,7 +23064,7 @@ function dexMatcher(cat, id) { const e = dexEntry(cat, id); return e && e.match;
 // 🔴 系統閘門與 specialOf() 同一條(data/tra_special_trains.json 是台鐵專屬):「台」分頁把台鐵與
 //    林鐵載進同一個 state.trains,不擋的話環島之星的 trainNos ['1','2'] 會撈到林鐵的 1/2 次,
 //    而環島之星並非天天開——今日名冊沒有台鐵 1/2 時林鐵那兩班就是僅有的候選,點下去 100%
-//    跑成阿里山林鐵(2026-09-08 使用者回報;issue#23 當時只補了 specialOf,漏掉這個消費端)。
+//    跑成阿里山林鐵(issue#23 當時只補了 specialOf,漏掉這個消費端)。
 //    擋在候選池而不是三個分支各補一次:garage 的 launch 也靠這支判「今天有沒有車可搭」。
 function dexCandidates(cat, id) {
   const m = dexMatcher(cat, id);
@@ -23091,7 +23091,7 @@ function dexDayLabel(day) {
 }
 // 今天沒有這一類班次時的說明卡:先講什麼時候有,再講這是什麼車。
 // 🔴 故事一律取自 state.special,不讀 el.dataset.tip——還沒收藏的章 tip 是「還沒搭過——點我去搭一班」,
-//    而這條路正是「點了也搭不到」的那條,照抄就是騙人。使用者 09-08 要的就是這張卡出現故事。
+//    而這條路正是「點了也搭不到」的那條,照抄就是騙人。這張卡本來就是要把故事講出來。
 function dexMissHtml(cat, id, name) {
   const e = dexEntry(cat, id), rd = dexRunDates(cat, id);
   let when = '';
@@ -23108,7 +23108,7 @@ function dexMissHtml(cat, id, name) {
 }
 // 點收集章:隨機挑一班該類的車(避開上次那班→每點必換),從發車跟一趟;完成過的章一樣能點來再看一班。
 // 今天沒有這一類的車時不是丟一句吐司就沒了——開說明卡告訴他這是什麼車、下次什麼時候開
-// (使用者 2026-09-08:「點下去應該要資訊/故事卡出現，然後提示今天沒有這班車」)。
+// (卡上並說明今天沒有這類班次)。
 function followDexStamp(cat, id, el) {
   const cands = dexCandidates(cat, id);
   if (!cands.length) {
@@ -23184,7 +23184,7 @@ function buildRideSortSeg(mode, id) {
 // ── 護照共用 builder(Batch B:桌面 #passport 與護照 sheet #ridePanel 單一事實來源) ──
 // 章名折行:4 字以上折行塞進圓章(仿 mock「藍皮/解憂號」)。
 // 圓章是固定大小的圓,章名卻長短差很多——「EMU3000 新自強號」「灣仔內(大順鼎山)」在固定 10px
-// 兩行版面下會被裁掉(使用者 2026-07-29 回報)。**裁切線是圓弧不是方框**(border-radius:50% +
+// 兩行版面下會被裁掉。**裁切線是圓弧不是方框**(border-radius:50% +
 // overflow:hidden),所以越靠上下兩端的行可用寬越窄,「塞得進 45px 方框」根本不是判準:逐行算它
 // 在圓內那個高度的弦長才準。做法是從最大字級往下試,第一個「每一行都在圓內」的組合就用它;
 // 先試兩行(＝既有版面,本來就放得下的短名一個像素都不變),兩行要縮到 SEAL_FS_MIN 以下才改三行。
@@ -23462,7 +23462,7 @@ function checkinJudge(st) {
 function checkinEntry(st) { return loadCheckins().st[checkinKey(st)] || null; }
 // 寫一筆站章(手動打卡與搭乘模式共用)。status: visit(人到月台)/pass(搭車經過),只升不降。
 // opts.dayOnce 同日只記一次——手動打卡要(防站在月台連按刷數字),搭乘模式不要
-//   (通勤一天來回兩趟本來就是兩次,那正是使用者要的「次數」)。
+//   (通勤一天來回兩趟本來就是兩次,那正是「次數」該反映的)。
 // opts.count=false 只升級狀態不加次數:下車站在沿途已被記過一次,驗到本人在場時只該升級不該再計一次。
 function writeCheckin(st, status, opts) {
   const o = opts || {}, c = loadCheckins(), k = checkinKey(st), today = todayStr(activeTz());
@@ -23569,7 +23569,7 @@ function widgetCheckinDecide(loc) {
   else if (!hits.length && scored.length) doCheckin(scored[0].st); // 一座都不到:doCheckin 走既有的「還差幾公尺」提示,不寫章
 }
 // ── 路段收集與完乘率(設計書 §2 三軸的「線」) ────────────────────────────────
-// 分母=每條線各自算(2026-07-26 使用者拍板)。一條線的「最細區間」=它自己的站列依沿線
+// 分母=每條線各自算。一條線的「最細區間」=它自己的站列依沿線
 // 里程 d 排序後的相鄰兩站——不是列車的停靠區間,那會隨車種變動(自強跳站的「臺北–板橋」
 // 不是一個實體區間)。
 // 記錄時把一段停靠區間 [dA,dB] 攤成所有中點落在其中的最細區間,一次解掉兩件事:
@@ -24114,7 +24114,7 @@ async function fetchBountyMe() {
 // 🔴 為什麼不讓伺服器算：把 seg_key 排成一條路需要里程順序，而里程順序住在 lineNetwork()
 // （ln.stations 依 d 排序）。把線網拓樸複製一份進 worker 等於製造第二個真相源，改點時兩邊會不同步。
 // 伺服器管帳（哪些單位開著、各值多少），這裡管敘事（這張卡叫什麼名字）。
-// 🔴🔴 2026-07-28 Task 1 審查糾正（協調者拍板，鍵空間裁定）：card.sys 不是計畫 B 的桶代碼
+// 🔴🔴 2026-07-28 Task 1 審查糾正（鍵空間）：card.sys 不是計畫 B 的桶代碼
 // (TRA/THSR/metro)，是 lineNetwork() 內部 sys id 本身——實測證據：segKey(sys,lnId,a,b)
 // （index.html:8816 附近）產出的區間鍵長這樣 'tra_sched|南迴線|加祿|枋寮'，逐字元對上
 // lineNetwork() 的鍵。懸賞卡的鍵空間＝前端收集系統既有的鍵空間，伺服器從來不會傳
@@ -24962,8 +24962,8 @@ function bountyTickQualityHint(r, T) {
   r._weakSince = 0;
   if (r.quality !== 'none') hint.hidden = true;
 }
-// 出發前說明卡（規格 §5 之四）。使用者 2026-07-27 指定：「在使用者開始驗證旅程的時候就要先有
-// 告知如何設定，以及有可能不過這件事情。」
+// 出發前說明卡（規格 §5 之四）。旅程驗證開始前先交代怎麼設定,
+// 並預告這趟可能無法通過驗證。
 // 這張卡是第 7 節「把檢查往前移」的一半——七種品質失敗有五種可以在動手前或當下就講，
 // 判準一項都不用放寬，只是把說出口的時機從隔天提早到還能補救的時候。
 // 🔴 地下段那一句要用真資料。規格 §13 的既有判斷是「不預先查證哪些段收得到，讓實測缺口自己
@@ -25099,7 +25099,7 @@ function stationTierMap() {
   return m;
 }
 // ── 護照分節收合 ───────────────────────────────────────────────────────────
-// 使用者 2026-07-26:「旅程護照現在佔太大塊了」。量到桌面展開 1178px(1.3 個視窗)、
+// 旅程護照太長:量到桌面展開 1178px(1.3 個視窗)、
 // 手機 sheet 用 388px 的窗捲 2570px(3 個視窗)。主因是**沒有上限的那兩節**:車站收集
 // 與完乘記錄會隨著使用一直長(明星 5／車種 8／支線 6／成就 21 都封頂)。
 // 預設值刻意採「內容超過門檻才自動收起」而不是一律收起——新手資料少時全部攤開,
@@ -25283,7 +25283,7 @@ function buildLineBars() {
 }
 // 護照的「校正貢獻」節(規格 §8)。
 // 🔴 顯示兩個數字不是一個:「校正 12 段（其中 9 段已採用）」。只顯示前者會讓使用者不知道自己
-// 的資料其實常常不能用、失去改善機會;只顯示後者則是把 unusable 的付出當成沒發生,正好違反拍板。
+// 的資料其實常常不能用、失去改善機會;只顯示後者則是把 unusable 的付出當成沒發生。
 // 兩個並列時,差距本身就是一個不帶懲罰的改善提示。
 // 🔴 首位校正者只顯示給自己,不顯示別人的暱稱:顯示他人自填暱稱＝UGC,會觸發 Apple Guideline 1.2
 // (比照事故回報「只給結構化選項、絕不開自由文字」的既有決策)。
@@ -25725,7 +25725,7 @@ function ensurePunctualData() {
   if (state.trains.some(tr => tr.sys === 'tra_sched')) ensureDelayStats();
 }
 // 每日之最(探索面板 best 四項)的地圖識別快取:tr→emoji,供 drawSched 加繪金環+徽章。
-// 地圖識別只畫金色光環(徽章 emoji 曾疊在牌角,12px 下🛑成一顆紅點,使用者裁定全部拿掉)。
+// 地圖識別只畫金色光環(徽章 emoji 曾疊在牌角,12px 下🛑成一顆紅點,所以全部拿掉)。
 // 換系統/時刻表時由 applySchedSystems 作廢(= null),drawSched 每幀 lazy init 重建一次。
 function buildFeatured() {
   state._featured = new Set(computeHighlights().best.map(h => h.tr));
@@ -25778,7 +25778,7 @@ function guideRow(n, i) {
     `<b>${escHtml(name)}</b><span class="dest">${escHtml(t('無固定車次'))} · ${escHtml(i18nContentData('namedTrains', n, 'tags', 0) || t('觀光列車'))}</span>` +
     `<span class="gchip">${escHtml(t('圖鑑'))}</span></div>`;
 }
-// 設計 3e:今日之最改成四格「1.5px 邊框卡」(設計原話:不用實色底,免得跟看板列的虛線分隔打架)。
+// 設計 3e:今日之最改成四格「1.5px 邊框卡」(邊框卡以描邊取代實色填底,避免與看板列的虛線分隔互相干擾)。
 // 整格是 <button>,`data-no`/`data-sys` 與 hlRow 同款 ⇒ 直接沿用面板既有的點擊處理常式(點了就跟隨)。
 // 狀態(行駛中/重播/幾點發)不佔版面,放進 title——四格是「今天最」的排行,不是即時看板;
 // 同一批車的即時狀態在下面「特別列車出沒中」每列右側都看得到。
@@ -26413,7 +26413,7 @@ function closeDelayHist() {
 // 又擠得回去,整張卡跟著一跳一跳。textContent 仍是完整的「寶可夢 2183」(與其他位置同一串)。
 function setFollowTitle(tr) {
   // 車次前面的字(寶可夢的「寶可夢」、環島車的「虛構」)疊成車次上方的小字:手機小卡 176px 擠不下
-  // 「前綴＋車次＋時速＋×」,× 會被擠到第二行(09-25 回報虛構 8888)。整格字仍等於 trainDisplayNo(tr),
+  // 「前綴＋車次＋時速＋×」,× 會被擠到第二行(例:虛構 8888)。整格字仍等於 trainDisplayNo(tr),
   // tickCore 每秒拿它比對。
   const el = document.getElementById('fpTrain'), full = trainDisplayNo(tr), no = String(tr.train);
   const head = full !== no && full.endsWith(no) ? full.slice(0, -no.length) : '';
@@ -26504,7 +26504,7 @@ function updateFollowPanel(tr) {
   const nx = document.getElementById('fpNext'), eta = document.getElementById('fpEta');
   const dlMin = Math.round(liveDelaySec(tr) / 60);
   // 這班車「現在」真實誤點:即時名單 30 分內才可信;sys gate 防高鐵撞號(比照 renderDelayRow)。
-  // 回看過去時動畫不套校正(dlMin 歸零),但仍標示真實世界的目前誤點,與今日看板一致(使用者回報)。
+  // 回看過去時動畫不套校正(dlMin 歸零),但仍標示真實世界的目前誤點,與今日看板一致。
   const lv = state.live;
   const realDl = (tr.sys === 'tra_sched' && lv && lv.map && Date.now() - lv.at < 1800e3) ? (lv.map.get(String(tr.train)) || 0) : 0;
   const info = nextStopInfo(tr, effTLive(tr));
@@ -26708,13 +26708,13 @@ function showSearchMiss(q) {
 // 露出來的地圖某一軸低於這個尺寸就放棄那一軸的讓位(沒地圖可看時硬移只是亂跳)。
 // §04c 起降到 64:設計明定 88% 大段只剩 ~100px 露出時「仍以該區中心為準」,原 160 會把它整個關掉。
 const MIN_MAP_STRIP = 64;
-// ── 版面尺寸守衛:地圖引擎的尺寸快取會過期(2026-08-13 使用者實機旋轉回報,已重現) ─────────────
+// ── 版面尺寸守衛:地圖引擎的尺寸快取會過期(2026-08-13 實機旋轉後重現) ─────────────
 // iOS 轉向是**動畫**的:resize 事件送達時容器往往還是舊尺寸,引擎在那一幀把舊值記下來
 // 後就不會自己重讀(要外部呼叫 resize 才重量)。
 // 於是整個系統活在過期座標系裡,而且三個症狀同一個根:
-//   (1) setView 用**舊的半尺寸**算像素原點 ⇒ 相機把車瞄到實體螢幕外(使用者:按了隨機跟車看不到車);
+//   (1) setView 用**舊的半尺寸**算像素原點 ⇒ 相機把車瞄到實體螢幕外(症狀:按了隨機跟車卻看不到車);
 //   (2) 相機自癒的「車在不在露出矩形內」用同一個舊尺寸 ⇒ 判定為在場 ⇒ 永不開火(診斷條 rs 恆 0);
-//   (3) reproject 用它配畫布緩衝區 ⇒ 軌道與車牌畫進已經不覆蓋螢幕的那塊(使用者:軌道也看不到)。
+//   (3) reproject 用它配畫布緩衝區 ⇒ 軌道與車牌畫進已經不覆蓋螢幕的那塊(症狀:軌道也看不到)。
 // 對策沿用自癒的哲學——量結果不猜時序:每 200ms 比對引擎回報的尺寸與容器實測尺寸,不一致就重量。
 // invalidateSize 會發 move/resize,既有接線(M.on('move zoom resize', reproject))自動重投影配畫布。
 function syncMapSizeIfStale() {
@@ -27865,21 +27865,21 @@ const TRTC_MOTION_MIN_RATE = .25;
 const TRTC_MOTION_MAX_RATE = 2;
 const TRTC_MOTION_PROFILE = { minRate: TRTC_MOTION_MIN_RATE, maxRate: TRTC_MOTION_MAX_RATE };
 // 台鐵側:兩個方向都鉗。
-// 🔴 2026-09-07 使用者裁示:「還是有很多火車誤點就停在原地等嗎?這樣不對啦,我們至少要讓他
-//    慢速前進再抓下一站的到站時間。」⇒ minRate 由 0 改成 .25(與捷運同值)。
+// 🔴 誤點加大的期間,列車不可整台定格,要朝下一站持續往前爬
+//    ⇒ minRate 由 0 改成 .25(與捷運同值)。
 //    minRate=0 的意思是 rise=adv*(1-0)=adv ⇒ 誤點每加大一秒就把有效時間往回推一秒,
 //    列車在畫面上【完全靜止】直到誤點追上(TDX 只在過站時更新 delay,一次 +2 分就站著不動兩分鐘)。
 //    改成 .25 之後 rise=adv*.75,有效時間仍以 .25× 前進 ⇒ 誤點加大期間列車以標稱速度的四分之一
 //    往前爬,而不是定格;下一站到站時刻本來就是「表定＋誤點」逐幀重算(nextStopInfo(tr, effTLive(tr))),
 //    所以爬行期間它會自己跟著新的誤點更新。位置恆不倒退這條不變(rise≥0 且 cur 只往 target 走)。
-//    ≥5 分的大跳增仍然一步到位(snapRise,09-05 裁示),那條沒動。
+//    ≥5 分的大跳增仍然一步到位(snapRise,09-05 起),那條沒動。
 // 下降側(誤點被釋放)維持 maxRate=2:改動前它走 τ=1s 的指數收斂,而且吃的是真實時間 dt 不是
 // 模擬時間 adv,於是連暫停(adv=0)都照樣移動,600 秒的誤點會在 3 秒多內畫完,換算數萬 km/h。
 // 死區的判別式用 cur===0(見下方該行註解):只在 target===0 時觸發,走到精確 0 才刪 entry。
 // 閘門在 verify_tra_motion 的 F(上升側恰 .75×adv)與 G3／G4。
 const TRA_MOTION_MIN_RATE = .25; // 誤點加大時,有效時間仍以 .25× 前進 ⇒ 畫面上是慢速前進不是定格
 const TRA_MOTION_MAX_RATE = 2;   // 有效時間最多以 2× 前進 ⇒ 追回誤點時畫面最多跑標稱速度的 2 倍
-// snapRise:上升(誤點加大)一次 ≥ 這麼多秒就不凍結,一步跳回真實位置(2026-09-05 使用者裁示「5 分」)。
+// snapRise:上升(誤點加大)一次 ≥ 這麼多秒就不凍結,一步跳回真實位置(門檻 5 分)。
 // 凍結是給每 75 秒 +1 分那種抖動用的(看起來像臨停);但 TDX 只在過站時更新 delay,列車在區間被扣
 // 幾十分鐘要到下一站才一次 +N(09-05 屏東線實測 +53/+37/+35),首見就帶 70 分的車也是同一條路
 // (122/180 從潮州冒出來)——舊行為＝畫面在真實位置前方原地停 N 分鐘,跟隨卡的到站時刻一秒一秒往後滑。
@@ -28170,7 +28170,7 @@ function updateLiveBadge() {
   }
   if (on) {
     // fresh=校正中綠 LIVE;非 fresh(高倍速投射/資料稍舊)灰化改「非即時」,不誤稱即時。
-    // 🔴 字樣是「非即時」不是「推估」(2026-08-27 使用者指定):「推估」聽起來像另一種資料,
+    // 🔴 字樣是「非即時」不是「推估」:「推估」聽起來像另一種資料,
     //    而它其實只是**這份即時資料現在不即時了**——講的是新鮮度,不是方法。
     const fresh = liveFresh();
     el.textContent = fresh ? 'LIVE' : t('非即時');
@@ -28497,7 +28497,7 @@ function metroCoreItemsForLine(ln, nowEpoch = Date.now() / 1000) {
   }
   // 🔴 P0-1:空陣列【不得】短路 legacy。[] 是 truthy 的非 null 值,四個消費端都寫
   //    `if (core !== null) { …; return; }`,所以回 [] 等於宣告「這條線現在真的一台車都沒有」
-  //    並跳過官方名冊與班表——而依 08-14 官方逐班追蹤契約,「車子怎麼可能會不見」,
+  //    並跳過官方名冊與班表——而依 08-14 官方逐班追蹤契約,車輛不會憑空消失,
   //    空快照從來不是「這條線沒車」的證據。0 台一律回 null,把決定權交還給既有路徑。
   return out.length ? out : null;
 }
@@ -28836,10 +28836,10 @@ function metroLiveGate() { // 每秒記憶化:未來方向(含快轉)持續套�
 function metroLiveOn(ln) { // 偏移套用中(未必新鮮):資料齡放寬到 30 分,防 API 停擺套陳舊 shift
   // 北捷同樣吃 30 分資料齡。這關的是「校正量還算不算數」不是「車存不存在」:
   // 關掉只讓 metroShiftSec 回 0(車退回班表位置),freqTrainPosAt 的名冊判定完全不看它。
-  // 🔴 2026-08-17 使用者裁示「位置都是班表並非實際位置」⇒ 北捷各線純班表,校正量一律 0。
+  // 🔴 北捷各線只畫班表位置、不假裝是實測位置 ⇒ 純班表,校正量一律 0。
   //    不關掉的話畫出來的不是班表,是「班表減掉誤點校正」:實測新莊線每台車都被往回拖
   //    1069～1098 秒(約 18 分鐘),09:26 發的車在 09:50 被畫回起點迴龍、和 09:35 那班疊在一起;
-  //    校正量每輪重算又會讓車前後跳(使用者回報的「倒退跑」)。
+  //    校正量每輪重算又會讓車前後跳(畫面上會看到車子往回退)。
   //    只影響位置:車站到站倒數走 boardPos.rows,不經這裡,與月台顯示同源。
   if (trtcPureSchedule(ln)) return false;
   if (ln._trtcBoard) return !!(Date.now() - ln._trtcBoard.at < 1800e3 && metroLiveGate());
@@ -29501,7 +29501,7 @@ function trtcOfficialRosterGeometryLine(lineId) {
 // ⇒ 一顆支線車不合格就整包 payload 退掉(這個驗證器是 return false,不是逐台過濾),那一輪全北捷
 // 一百台的官方資料都不更新,頁面拿上一份快照繼續往前外推。
 // 實測 2026-08-17 15:35–15:37 連續 10 輪全退,名冊 113 台連 148 秒一字不變:402 照著兩分半前的
-// 計畫繼續開進古亭、432 停在原地不動,兩台就撞在一起（使用者回報「432 提前跑到這邊」的真來源）。
+// 計畫繼續開進古亭、432 停在原地不動,兩台就撞在一起（432 看起來比表定更早到達這一帶,真正的來源就在這裡）。
 // run 是可以從線形算回來的量,缺值就補回；其餘欄位一律不動,也不放寬驗證規則本身。
 function trtcOfficialRosterRepairRun(vehicle) {
   const from = Number(vehicle && vehicle.from), to = Number(vehicle && vehicle.to);
@@ -29553,7 +29553,7 @@ function trtcOfficialRosterOutage(reason, sourceRevision) {
   return false;
 }
 // 🔴 讀取失敗（網路斷、這次 payload 沒帶 boardPos、套用時丟例外）不是「車不在那邊」的證據。
-// 使用者裁示：「車子怎麼可能會不見，我們不做判定。」實測正式站 14 次輪詢有 2 次整包讀不到，
+// 因此讀取失敗時不作「車已消失」的判定。實測正式站 14 次輪詢有 2 次整包讀不到，
 // 舊碼一律 trtcOfficialRosterOutage ⇒ 整條線的車同時消失、而且連跟車都被 clearFreqFollow 清掉。
 // 改成沿用上一份名冊、位置交給前端續推；沒有缺訊期限，抵達已知終點才由位置時間軸退場。
 function trtcOfficialRosterHold(reason) { // ROSTER_FRONTEND_READ_HOLD
@@ -29579,7 +29579,7 @@ function applyTrtcOfficialRoster(boardPos) {
     vehicles: boardPos.vehicles.map(vehicle => ({ ...vehicle })), receivedEpoch: Date.now() / 1000,
     held: !!boardPos.held, holdReason: boardPos.holdReason ? String(boardPos.holdReason) : null,
     // 訊號回來的那一輪，後端會把「畫面為什麼跳」一起送過來（哪幾條線、斷多久、清掉幾台）。
-    // 這是使用者明示要的：可以直接拿掉推估的車，但要跳通知說明跳動來自官方訊號。
+    // 規則是：可以直接拿掉推估的車，但要跳通知說明跳動來自官方訊號。
     recovery: boardPos.recovery && typeof boardPos.recovery === 'object' ? { ...boardPos.recovery } : null };
   const activeDisplay = new Set(state.trtcOfficialRoster.vehicles.map(vehicle =>
     `${vehicle.line}|${vehicle.vehicleId}`));
@@ -29664,7 +29664,7 @@ function trtcOfficialCrowdHtml(no) {
   const key = String(no || '').trim();
   const cars = key && state.trtcOfficialBoard && state.trtcOfficialBoard.crowdByNo &&
     state.trtcOfficialBoard.crowdByNo[key];
-  // 沒資料也回【透明佔位】不回空字串——使用者回饋(08-14 第五輪):有無 bars 的列時間欄要對齊,
+  // 沒資料也回【透明佔位】不回空字串——有無 bars 的列時間欄要對齊,
   // 佔位是唯一不畫假資料又能對齊的做法(同小工具 38pt 佔位的邏輯);寬度鎖在 CSS .crowd。
   if (!Array.isArray(cars) || !cars.length) return '<span class="crowd" aria-hidden="true"></span>';
   return '<span class="crowd" title="' + escHtml(t('車廂擁擠度（北捷官方）')) + '">' +
@@ -30122,7 +30122,7 @@ async function pollTrtcLive() {
               // 還在飛，若當輪直接放棄就要等下一次輪詢（60 秒）畫面才會有車。
               await trtcCodesEnsure();
               // 🔴 CarWeight 漏掉、只有官方倒數看得到的車,在這裡補成同形狀的逐車列
-              //    (使用者裁示 2026-08-19:「car weight 沒有的車子但是倒數有 那我們一樣要做出來」)。
+              //    (這類車不能因為少了 CarWeight 就被省略)。
               const _cdNow = Date.now() / 1000;
               const built = trtcCensusVehicles(
                 trtcCountdownOnlyTrains(d.board, d.trains, _cdNow), _cdNow, todayStr());
@@ -30134,7 +30134,7 @@ async function pollTrtcLive() {
               // 而某條線臨時 0 台時退回看板也只是回到現行行為，不會比今天差。
               if (built) {
                 // 🔴 文湖線改由官方每站倒數直接切出車輛,CarWeightBR 不再決定它有幾台車、
-                // 車在哪(2026-08-18 裁示:「car weight 直接丟掉也沒有關係」「有倒數才有車」)。
+                // 車在哪。
                 // 切不出來(倒數整批沒回來)才退回原本的 CarWeightBR 路徑,不是硬要空著。
                 const nowSec = Date.now() / 1000, dayKey = todayStr();
                 const cdSeg = new Map();
@@ -30147,7 +30147,7 @@ async function pollTrtcLive() {
                 const mine = cdSeg.size
                   ? built.filter(v => !cdSeg.has(String(v.line))).concat(...cdSeg.values())
                   : built;
-                // 編號是我們自己給的(裁示允許),所以必須自己維持跨輪穩定:依位置與順序接上一輪。
+                // 編號是我們自己給的,所以必須自己維持跨輪穩定:依位置與順序接上一輪。
                 for (const id of TRTC_CD_LINES) {
                   // 🔴 「這一輪切不出車」≠「不走倒數路徑」。短缺批先保留 resolver 狀態，
                   //    否則下一輪整線拿到全新 id ⇒ 跟車中斷、位置整批跳；恢復時若單車已超過
@@ -30307,7 +30307,7 @@ function metroAlertFor(ln) {
   return list.some(a => (!a.sys || a.sys === sysId) &&
     (!a.lines || !a.lines.length || a.lines.some(n => (ln.name || '').includes(n) || String(n).includes(ln.name || ''))));
 }
-// 徽章寫「N 線改用備案」要指得出是哪幾條、為什麼（2026-09-06 使用者：每次只寫兩條線退回，看不出是哪些）。
+// 徽章寫「N 線改用備案」要指得出是哪幾條、為什麼（只寫退回的條數，看不出是哪些線）。
 // 逐線問 metroCoreLineBlocked 拿原因；沒被擋卻退回＝Core 這一輪沒有這條線的車（metroCoreItemsForLine 的 P0-1 回 null）。
 // 桌面滑鼠移上去看 title；手機的 title 看不到，但點時鐘徽章開的「資料狀態」卡（statPopRender）就是照抄各徽章的
 // title 逐行顯示，所以只要把名單放進 title、一行一條線，兩種版面都看得到。
@@ -30963,12 +30963,12 @@ function selfAnomalyEntries() {
 }
 // 官方即時訊號中斷 → 這條講的是「畫面上的東西現在有多可信」，不是營運公告，所以排在最前面當頭條：
 // 2026-08-15 06:27～07:00 北捷斷 33 分鐘，位置被推到互相超車、車站倒數整個找不到車，而當時畫面上
-// 沒有任何一處告訴使用者發生了什麼。這條就是補這個洞（使用者要求：要更明顯，且要講清楚位置與倒數都不準）。
+// 沒有任何一處告訴使用者發生了什麼。這條就是補這個洞（提示要醒目，內容要明說位置與倒數此刻都不可信）。
 // 斷線的「判準」與「文案」必須分家。判準量到的永遠只是「我們多久沒有拿到新資料」,而那有
 // 三種意義完全不同的原因:(a) 官方上游真的斷了 (b) 本站服務(Metro Core／worker)發不出來
 // (c) 這台裝置的網路,或分頁／App 被系統暫停而根本沒去收。舊文案把三者一律寫成
-// 「臺北捷運即時訊號中斷」,等於把 (b)(c) 掛到營運單位頭上——使用者 2026-08-29 回報的正是
-// 這件事:「那可能不是北捷斷線,是 app 或是網路自己停止更新」。
+// 「臺北捷運即時訊號中斷」,等於把 (b)(c) 掛到營運單位頭上——
+// 但實際停止更新的可能是本站服務或這台裝置,與營運單位無關。
 // 歸因取已經記在案的 hold reason(applyTrtcOfficialRoster 每次失敗都寫),不另外猜:
 //   feed-outage  = 上游自報斷訊          ⇒ 真的是官方那邊
 //   fetch-error  = 這一發沒送到／沒回來  ⇒ 網路或本站,不是官方
@@ -31017,7 +31017,7 @@ function trtcOutageEntries() {
     desc: t('{lead}這段期間畫面上的列車是依各站之間的固定行車時間往前推估的，車站倒數也可能找不到車或停住不動——都可能與實際不符，但這不代表列車停駛。官方資料恢復後畫面會重新對齊官方位置，部分列車會因此往前跳或往後退。此為本站自動偵測，非官方公告。', { lead: lead2 }) }];
 }
 // 訊號恢復的那一下畫面會跳：續推中的位置被官方名單取代，接不回去的推估車直接消失。
-// 使用者裁示（2026-08-15）：訊號回來就以訊號為準、不能留多的車，但**必須跳通知**讓人知道
+// 訊號回來就以訊號為準、不能留多的車，但**必須跳通知**讓人知道
 // 這次跳動來自官方訊號，而不是站掛了或列車停駛。素材由後端在恢復輪算好帶上來（boardPos.recovery），
 // 前端只負責挑出「畫面上真的看得到的線」並說人話。
 function trtcRecoveryEntries() {
@@ -31115,7 +31115,7 @@ function activeAlertList() {
   return trtcOutageEntries().concat(trtcRecoveryEntries(), official, hazardWatchEntries(),
     selfAnomalyEntries(), curatedNoticeEntries(visSys));
 }
-// 公告的常駐入口有兩種形態(2026-07-30 使用者回報後改版):
+// 公告的常駐入口有兩種形態(2026-07-30 改版):
 //   桌面 = 右上角橫幅,可按 × 收起,同一批公告本次瀏覽不再跳出(換新公告會再出現)
 //   手機 = 頂列的 ⚠ 鈕(.alert-chip),不佔版面所以沒有關閉的必要
 // 改版前手機也是 top:100 的整寬橫幅:它會蓋住搜尋面板的輸入框、也會撞上被底部 sheet 推高的跟隨小卡,
@@ -31227,11 +31227,11 @@ const QUERY_ANSWER_ROWS_MAX = 4;   // 答案區每站可見列上限
 const QUERY_OPEN_KEY = 'trainmap-query-open';            // '1'/'0':使用者自己的開關記憶
 const QUERY_DISMISS_KEY = 'trainmap-query-dismissed-v1'; // 'sys|name':自動開之後被關掉的站
 const LAST_BOARD_KEY = 'trainmap-last-board-v1';         // {sys,name}:上次看過的站(退路用)
-// 2026-08-26 使用者裁示:三段改兩段。大段(88%)拿掉——實測安靜的站在大段是「750px 裝 2 筆」,
+// 2026-08-26 改版:三段改兩段。大段(88%)拿掉——實測安靜的站在大段是「750px 裝 2 筆」,
 // 其餘全是白紙,而且要多點一下才縮得回去。
 // 🔴 預設同時從「中」改成「小」,這兩件事必須一起做:小與中原本都只有 max-height(上限),
 //    內容比 30% 還短時兩段會量出同高(談文 207/207,webkit 195/195)⇒ 切換完全看不出變化,
-//    正是 2026-07-30 使用者回報過的「做了可以拉大小,但實際上沒有作用」。
+//    正是 2026-07-30 出現過的問題:提供了調整大小的切換,實際高度卻完全沒變。
 //    解法是給【中】下限(見 CSS)、預設退到【小】:打開時貼合內容不留白,按一下才展開到 46%。
 //    下限只給中不給小 ⇒ 不會出現「小比中高」的邏輯反轉(那正是當初不給小段下限的理由)。
 const SHEET_SIZES = ['small', 'medium'];
@@ -31341,7 +31341,7 @@ function stepSheetSize(el, direction) {
   if (el.id === 'searchPanel' && document.body.classList.contains('search-open')) { if (direction < 0) { setSearchTyping(false); applySheetSize(el, 'medium'); } return; }
   const i = SHEET_SIZES.indexOf(sheetSizeOf(el));
   // 已經在最小段還往下滑 ⇒ 收起附近車站卡。手機的 sheet 一律「下滑＝丟掉」,原本這裡在邊界直接不動作,
-  // 使用者下滑兩次看它縮一下就不動了,只會更確定「關不掉」(2026-09-18 回報)。只給附近車站卡:
+  // 使用者下滑兩次看它縮一下就不動了,只會更確定「關不掉」。只給附近車站卡:
   // 看板/護照/查詢那幾張各自有開關記憶與 tab 選中態,把它們一起改成下滑即關是另一件事。
   if (direction < 0 && i === 0 && el.id === 'nearCard') { closeNearbyStations(); return; }
   setSheetSize(el, SHEET_SIZES[Math.max(0, Math.min(SHEET_SIZES.length - 1, i + direction))]);
@@ -31599,7 +31599,7 @@ function searchTypeNorm(s) {
   return String(s || '').replace(/臺/g, '台').replace(/\s+/g, '').replace(/號/g, '').toLowerCase();
 }
 // 回傳 { stocks:命中的車型(點了看介紹卡), trs:命中的班次(可跟隨), total:命中班次總數 }
-// 排序「正在跑的優先」:搜尋的下一步通常是點下去跟車,跟一班今天已經跑完的車沒有意義。
+// 排序讓正在跑的車排前面:搜尋的下一步通常是點下去跟車,跟一班今天已經跑完的車沒有意義。
 function searchTypeMatch(q) {
   const out = { stocks: [], trs: [], total: 0 };
   const nq = searchTypeNorm(q);
@@ -32412,7 +32412,7 @@ function closeBoard() {
   back();
 }
 
-// ── 整合卡(設計 D1–D3):跟車中開車站看板 ⇒ 同一張卡兩個分頁「這班車 / 這一站」 ──────────
+// ── 整合卡(設計 D1–D3):跟車中開車站看板 ⇒ 兩個分頁「這班車 / 這一站」共用一張卡 ──────────
 // 設計的狀態機:跟車中才有分頁列(D1/D2);沒跟車就是今天的看板(D3,卡頭直接是站名)。
 // 🔴 只做搬遷,不重寫內容:跟車卡的提醒／我上車了／行程分享與看板的 ☆×／freq 兩種資料源全部原封。
 let uniTab = 'train';
@@ -32696,7 +32696,7 @@ function evValidDay(s) {
   return !Number.isNaN(t) && new Date(t).toISOString().slice(0, 10) === s;
 }
 // 原文連結白名單。escHtml 擋得住 HTML 注入但擋不住 javascript:,而這條管線是
-// 「LLM 讀營運商公告產草稿 → 使用者只看標題裁示」,url 不會被逐條看過。
+// 「LLM 讀營運商公告產草稿 → 只憑標題判斷是否採用」,url 不會被逐條看過。
 // 非 http(s) 一律當作沒有連結處理(不渲染成 <a>、也不 window.open)。
 const evUrl = ev => { const u = String((ev && ev.url) || ''); return /^https?:\/\//i.test(u) ? u : ''; };
 // 時間窗:開始前 EVENT_LEAD_DAYS 天 ~ 結束當天。「今天」錨定台北,不看裝置時鐘。
@@ -32829,10 +32829,10 @@ function ensureWeekendCount() {
 //   (2)「鐵道活動」是介面字串,會跟著介面語言翻譯。
 // 兩截直接串接在非中文介面會黏成「本週末Rail events」這種壞字串,所以非中文介面用
 // 「期間名 · 譯名」的形狀——與 weekend.html 的 h1 完全同一種做法,不自創第三種。
-// 期間名本身也翻(weekendSpanName):以前外語介面照貼中文 label(2026-09-19 使用者回報);
+// 期間名本身也翻(weekendSpanName):以前外語介面照貼中文 label;
 // 查不到的節日名(新增了節日、字典還沒補)整個退回中文原字,不拼半中半外的名字。
 // 🔴 label 還沒拿到(首開面板的載入窗)或 API 掛掉時【不要編一個期間出來】:核心層把期間文案
-// 分成「本週末／這個連假／假日／<名稱>連假／<名稱>」是使用者親自裁示的分類,而實測未來 730 天
+// 分成「本週末／這個連假／假日／<名稱>連假／<名稱>」這幾類(這是既定分類,不是假設),而實測未來 730 天
 // 有 133 天(18.2%)真值不是「本週末」(這個連假 41、假日 17、兒童節與清明連假 12、光復節連假 12、
 // 春節連假 11…)。未知就只說「鐵道活動」,不去斷言是哪一種期間——API 掛掉時那個斷言是永久錯的。
 // 譯名與 weekend.html 的 SPAN 是同一份，兩處要一起改(那一頁不載 i18n/*.js)。
@@ -32898,7 +32898,7 @@ function stnMetaHtml(st, omitMap = false) {
 function nativeCompactMetroBoard() { const p = window.RAIL_APP_PLATFORM; return p === 'android' || p === 'ios'; }
 // 原生 App 的第一列只回答「這個倒數目前有多準」；網站逐字維持既有內容與順序。
 // accuracy 由呼叫端用字串常值呼叫 t() 翻好再傳進來：這幾句只在 App 出現，以前在這裡 t(變數)，
-// check-i18n 只抽得到 t() 裡的字串常值、看不到它們，於是英日文 App 一直顯示中文（2026-09-19 回報）。
+// check-i18n 只抽得到 t() 裡的字串常值、看不到它們，於是英日文 App 一直顯示中文。
 function metroBoardInfoHtml(st, accuracy, legacySub, extras = '') {
   if (!nativeCompactMetroBoard()) return stnMetaHtml(st) + extras + `<div class="sub">${legacySub}</div>`;
   return `<div class="sub board-accuracy">${escHtml(t('倒數準確度：{accuracy}', { accuracy }))}</div>` + stnMetaHtml(st, true) + extras;
@@ -32999,7 +32999,7 @@ function metroBoardLines(st, lines) {
   return sysId ? source.filter(ln => freqSysIdOf(ln) === sysId) : source;
 }
 // ── 車站看板的方向分組（台鐵／高鐵／林鐵）──────────────────────────────
-// 使用者要求：南下北上與路線分歧要分開顯示，不要全混在一起（2026-08-31）。
+// 看板依行車方向與路線分歧分組，不把各種去向混成同一串。
 // 分組鍵取自「這班車離開本站的那一段」已經貼好的軌道（stops[i].segLn 與 dA/dB），
 // 與地圖上畫的軌道是同一個真相源。🔴 不要改成自己找「本站與下一停靠站的共同線」——
 // 跳站直達車（花蓮→羅東把整條北迴線跳過）那樣算會解不出來：實測 28 班無解，
@@ -33007,17 +33007,17 @@ function metroBoardLines(st, lines) {
 //
 // 南下／北上只給南北跨度夠大的線用。支線跨度只有 0.005~0.10 度（500 公尺~10 公里），
 // 「集集往車埕＝北上」是錯誤資訊，官方月台本來就寫「往車埕」⇒ 支線一律用終點站方向
-// （2026-08-31 裁示：「支線不需要寫南下北上，就寫終點站方向就好，跟著官方的說法」）。
+// （與官方月台的標示方式一致）。
 // 實測跨度：台鐵七條支線 0.006~0.103、林鐵三線 0.005~0.031（都在支線側）；
 // 九條環島幹線 0.278~1.437、高鐵 1.530（都在幹線側）——門檻落在斷層裡，離兩邊都遠。
 // 🔴 這個常數本身不是判準：驗收咬的是「哪幾條線必須落在哪一側」的身分，線網改了會轉紅。
 const BOARD_TRUNK_LAT_SPAN = 0.15;
-// 「抵達本站」只列 60 分鐘內(使用者裁示 2026-08-31)。分組前是全站取前 12 班,終到車幾乎
+// 「抵達本站」只列 60 分鐘內。分組前是全站取前 12 班,終到車幾乎
 // 不會浮上來;改成逐組配額之後,竹南這種站會冒出 106 分／151 分後才終到的車。終到車對站上
 // 等車的人沒有搭乘價值(它到了就不走了),只有來接人才看,一小時外的沒有意義。
 const BOARD_ARRIVE_MAX_SEC = 3600;
-// 例外:終點站不套上面那條(使用者裁示 2026-09-08「終點站其實會有去接人的人看時間,所以
-// 時間本來就應該要在」)。上面那句「只有來接人才看」在終點站正是常態——整站的意義就是接人,
+// 例外:終點站不套上面那條。
+// 上面那句「只有來接人才看」在終點站正是常態——整站的意義就是接人,
 // 而且終到車在那裡本來就是主角不是雜訊。大站(樹林/花蓮/竹南)維持 8/31 的上限不變。
 // 判定取**全量班表**而不是看板的 3 小時窗:窗內取樣會隨時刻漂移(判準盲點 3)。
 // 定義:該系統中沒有任何一班車「通過」這站——每次停靠不是首站就是末站。實測判出
@@ -33090,7 +33090,7 @@ function boardTrunkStations() {
   state._bdTrunkSrc = lines;
   return (state._bdTrunkSt = set);
 }
-// 🔴 2026-09-06 裁示:「不是支線的車就不要放在支線裡」。
+// 🔴 只有真正屬於支線的車才進支線分組。
 // 成追線只有追分(山線)與成功(海線)兩站,兩站都在幹線上 ⇒ 沒有任何一班車「終點在成追線上」,
 // 走它的全是縱貫線直通車。舊寫法只看貼軌那一段屬於哪條線,於是追分／成功兩站長出「往 成功」
 // 「往 追分」兩組,裡面裝的其實是南下北上的縱貫線車(實測 28 班,全部出自成追線)。
@@ -33147,9 +33147,9 @@ function boardGroupOf(tr, i, isLast) {
     return { key: (nb ? 'N' : 'S') + '|' + ln.id, kind: 'trunk', nb, lnId: ln.id, lnName: ln.name,
       order: nb ? 1 : 0 };
   }
-  // 🔴 2026-09-06 裁示:「既然終點是六家,為什麼還要放往內灣?」——組名取【這一趟的終點站】,
+  // 🔴 組名取【這一趟的終點站】,
   // 不是支線的末端站。新竹「往 內灣」46 班裡有 41 班終點其實是六家,舊寫法一律標成內灣。
-  // 這也是 2026-08-31「支線就寫終點站方向,跟著官方的說法」那條裁示原本的意思;
+  // 這與支線標終點站方向、對齊官方說法的既有做法一致;
   // 舊實作取 ln.stations 的末端站,是實作偏離,不是另一個設計。
   const dest = (tr.stops[tr.stops.length - 1] || {}).name || end.name;
   return { key: 'B|' + dest, kind: 'branch',
@@ -33210,8 +33210,8 @@ function schedBoardRows(st) {
 // 🔴 鍵要帶系統:台鐵/高鐵跨系統重號,只拿車次當鍵會把別家的同號列一起掀開(同 el._downSys 的理由)。
 const boardRxOpen = new Set();
 const boardRxKey = (no, sys) => `${no}|${sys || ''}`;
-// 看板的倒數欄與時刻欄逐板等寬。使用者 2026-08-31 回報:「擁擠度跟時間,會因為最後面倒數
-// 那邊時間會變成『即將進站』而擠壓到,變成歪掉」。兩個成因:
+// 看板的倒數欄與時刻欄逐板等寬。症狀:擁擠度與時刻欄會被倒數欄擠歪——
+// 倒數欄一變成『即將進站』就變寬,把前面的欄位推歪。兩個成因:
 //   (1) .min 從前只有 min-width:44px ⇒「即將進站」那幾列比「3 分」寬 8px,時刻欄被往左推;
 //   (2) .t 的 tabular-nums 只在字型真的有 tnum 時才生效 ⇒ chromium 實測 12:31 比 12:26 窄
 //       2.47px,擁擠度欄跟著逐列左右跳(WebKit 沒有這一項)。
@@ -33386,7 +33386,7 @@ function renderBoardBody() {
     `<button class="board-star${fav ? ' on' : ''}" id="boardStar" title="${escHtml(favLabel)}" aria-label="${escHtml(favLabel)}">${railIcon('ui-favorite', fav ? 'ri-icon--fill' : '')}</button>` +
     `<button class="close" id="boardClose" aria-label="${escHtml(t('關閉'))}">×</button></h3>` + stnMetaHtml(st) + eventRowsHtml(st) +
     // 林鐵站不可沿用台鐵誤點文案:群組視圖 liveActive 為真(台鐵 live 在場)但林鐵根本無即時介接,
-    // 顯示「已依即時誤點推估」等於謊稱有校正(使用者截圖抓到);觀日列車另以列上「推算」標記標示。
+    // 顯示「已依即時誤點推估」等於謊稱有校正;觀日列車另以列上「推算」標記標示。
     `<div class="sub">${escHtml(t('接下來 3 小時會有誰來'))} · ${escHtml(t(st.sys === 'afr_sched' ? '依林鐵官方時刻表（無即時資訊）' : liveFresh() ? '已套用台鐵即時誤點' : liveActive() ? '已依即時誤點推估' : '依時刻表（無誤點資訊）'))}${
       // 有停駛才多這一段;零停駛時整條副標與改動前逐字相同
       st.sys === 'tra_sched' && state.traDaily && state.traDaily.cancelled
@@ -33463,7 +33463,7 @@ function renderBoardBody() {
     const sys = row ? row.dataset.sys : el._downSys;
     el._downNo = null; el._downSys = null;
     // 手機:點班次列＝切到「這班車」,卡片留著(setFollow 內同一條規則);桌面照舊收板
-    // 🔴 09-29 使用者裁示 A:App＋通行證(會開跟車卡)時,從看板追一班還沒發車的車要停在「現在」,
+    // 🔴 App＋通行證(會開跟車卡)時,從看板追一班還沒發車的車要停在「現在」,
     //    卡片馬上出現、倒數到它進站;否則 setFollow 會把時鐘撥到發車前 20 秒,liveClock 不成立 ⇒ 不開卡。
     //    網站與未訂閱者維持原本的時光機行為。
     if (no) { if (!uniMobile()) closeBoard(); followTrainNo(no, { sys, keepNow: liveActivityAllowed() }); }
@@ -33930,12 +33930,12 @@ function trtcOfficialLegacyGroups(st, lines, isDeco, includeTrtc = false, offici
       // 🔴 北捷看板的其他列都是官方即時倒數（實測全在 5 分內）。班表補列進來的目的地若排到
       // 一小時後，就會被當成「另一條線」提早列出來——實測松江南京同時出現兩列「往台電大樓」
       // 61 分／77 分，而那是尖峰加開的短程車（官方看板那一輪只給 5 列，沒有它們）。
-      // 使用者裁示：尖峰加開的不用提早列出來。窗綁該線當下班距（三班內才算「下一班」），
+      // 尖峰加開的班次不提早補進看板。窗綁該線當下班距（三班內才算「下一班」），
       // 不寫死分鐘數——班距改了它自己跟著改。
-      // 🔴 短程／加班車的終點用**更緊的窗**（2026-08-17 使用者回報「藍線同樣有加班車提前排進
-      // 班表的問題，這個需要你全部檢查一次」後加）。
-      // 逐站盤查實測：正式站舊窗會列出「忠孝復興往昆陽 20 分」這類，那就是使用者說的
-      // 「當作另外一條線那樣提早列出來」；但同一批裡也有倒數 0–2 分的往昆陽／往台電大樓，
+      // 🔴 短程／加班車的終點用**更緊的窗**（藍線也有加班車被提前補進的情形，
+      // 逐站全面檢查後加）。
+      // 逐站盤查實測：正式站舊窗會列出「忠孝復興往昆陽 20 分」這類，那就是被當成另一條線而
+      // 提早列出來的情形；但同一批裡也有倒數 0–2 分的往昆陽／往台電大樓，
       // 那是馬上要到的車，藏掉它是幫倒忙（先寫成「一律不補非正常終點」，控制組量出會砍掉
       // R／G／BL 共 60 列、其中含倒數 0 分的，過頭了，故改成兩級窗）。
       // 兩級都從班距推導，不寫死分鐘：正常終點三班內、短程終點一班內才算「下一班」。
@@ -34037,8 +34037,8 @@ function renderTrtcOfficialFreqBoard(el, st, lines, isDeco, view, opts) {
   const heads = metroBoardGroupHeads(view.groups);
   const body = view.groups.map((group, gi) => {
     const head = metroBoardHeadHtml(heads, gi, group.ln);
-    // 標籤只寫線名不掛系統前綴(08-14 使用者:擁擠度格進來後「台北捷運」四個字把空間吃掉,
-    // 線名本身已足夠辨識)——這裡是北捷官方板,線名(淡水信義線/安坑輕軌/機場捷運)不會歧義。
+    // 標籤只寫線名不掛系統前綴(擁擠度格加進來後,系統前綴會佔掉標籤的寬度,
+    // 單看線名就分得出來)——這裡是北捷官方板,線名(淡水信義線/安坑輕軌/機場捷運)不會歧義。
     const lineLabel = metroBoardRowLabel(heads, routeName(group.ln.name || group.ln.abbr || group.ln._sysLabel || '', group.ln._sys), group.ln, group.destName);
     const destination = stationName(group.destName, group.ln._sys);
     if (group.kind === 'official') return head + (compact ? group.rows.slice(0, 1) : group.rows).map(rec => {
@@ -34047,7 +34047,7 @@ function renderTrtcOfficialFreqBoard(el, st, lines, isDeco, view, opts) {
       const followAttrs = join ? ` data-li="${join.li}" data-ci="${join.ci}" title="${escHtml(t('跟隨往 {station} 的班次', { station: destination }))}"`
         : ` aria-disabled="true" title="${escHtml(t('官方到站時間；目前無法唯一對應動畫班次'))}"`;
       // 🔴 這種列【認不出是哪條支線】。有組標題時線名已經在標題上,而分支既然認不出來就留白——
-      //    不可以拿 group.ln 的分支去填,那等於冒充(專案既有裁示:認得出來就標,認不出來留白)。
+      //    不可以拿 group.ln 的分支去填,那等於冒充(專案既有原則:認得出來就標,認不出來留白)。
       const genericLine = rec.ambiguousLine
         ? (heads ? '' : (rec.candidates.length && rec.candidates.every(x => x.ln.id.startsWith('O_')) ? routeName('中和新蘆線', group.ln._sys) : t(group.ln._sysLabel || '北捷')))
         : lineLabel;
@@ -34406,7 +34406,7 @@ function metroWaitTrtcBundle(st, lines, isDeco) {
         // 帶空字串,payload 的 crowd 就會是 null——不借別台車的值。
         no: String(rec.row.no || ''),
         eta: Math.round(Number(rec.row.eta)),
-        // 🔴 用語統一(2026-08-15 使用者裁示):卡上只給中文線名,不給內部代碼——
+        // 🔴 用語統一:卡上只給中文線名,不給內部代碼——
         //    ln.id 是幾何線 id(如 O_XINZHUANG),曾直接漏到鎖屏卡上。
         lineLabel: ln ? String(ln.name || '') || null : null,
         color: ln && ln.color ? ln.color : null,
@@ -34871,7 +34871,7 @@ function ensureMetroWaitListener() {
 //      · 誤點分鐘一律照抄官方,不平滑、不內插、不夾正。
 //
 // 🔴 與捷運等車卡的三個結構差異（都是被資料精度逼出來的,不是風格選擇）:
-//      1. 追蹤的是【一班特定的車】,不是「這站的下一班」——台鐵班距以小時計,輪替沒有意義;
+//      1. 追蹤的是【某一個車次】,不是「這站的下一班」——台鐵班距以小時計,輪替沒有意義;
 //      2. 選單【不選時長】——追蹤窗由這班車的實際約到站推出來（原生與伺服器同一條算式）,
 //         使用者不必也不該去猜要追多久;
 //      3. 誤點來源一律是 state.live.map 的【原值】,絕不是 liveDelaySec()——後者是給動畫用的
@@ -34970,7 +34970,7 @@ function traWaitCandidates(rows) {
   }
   return out;
 }
-// 等站卡進站軌道（B 方案）要的那一段，全部取自時刻表、開卡後不再變：
+// 等站卡進站軌道要的那一段，全部取自時刻表、開卡後不再變：
 //   prevStop／prevDepSec：這班車在本站之前【真正停靠】的上一站與它的表定開車（通過站不算——
 //     自強 172 在臺北前停板橋，不是萬華）。prevDepSec 也送給伺服器，它用同一個值決定
 //     「車在上一站→本站之間，每分鐘推一發」的行駛段；卡片用它算車的位置，兩邊不可各算各的。
@@ -35087,7 +35087,7 @@ async function traWaitStartFor(st, cand) {
     payload.dataAt = delay.dataAt;
     if (delay.delayMin != null) payload.delayMin = delay.delayMin;
   }
-  // 進站軌道（B 方案）：上一站、上一站表定開車、站牌鄰站、車型。缺上一站或車型就整組不送，
+  // 進站軌道：上一站、上一站表定開車、站牌鄰站、車型。缺上一站或車型就整組不送，
   // 卡片維持原本的軌脊版（半套資料畫不出一條對的軌道）。
   const carModel = cand.prevStop && cand.tr ? await traWaitCarModel(cand.tr) : null;
   if (cand.prevStop && Number.isFinite(cand.prevDepSec) && carModel) {
@@ -35210,7 +35210,7 @@ function ensureTraWaitListener() {
   traWaitSyncFromNative();
 }
 
-// ── 尖峰流量分析 ──
+// ── 全日流量圖（每 10 分鐘一格的在線列車數）──
 const FLOW_BINS = 144; // 10 分鐘一格
 function computeFlow() {
   const counts = new Array(FLOW_BINS).fill(0);
@@ -35593,7 +35593,7 @@ function offlineLandStyle() {
   // 共 28 張圖磚量平均色,在 RGB 立方體上取 minimax(最壞 ΔE 最小)得 #606050,最壞 ΔE 32.2→21.3、
   // 平均 19.1→10.5。原本的 #345347 是憑感覺挑的森林綠(a*=-14.5),與影像(a*≈-2)差一整個色相,
   // 一次捏合縮小 4 級時 Leaflet 只留上下各 2 級的舊圖磚⇒整個視窗沒圖磚覆蓋⇒整片閃綠
-  // (Android 實機回報;iPhone 17 Pro 因圖磚補得快才看不明顯)。邊線同亮/暗慣例取近海面色。
+  // (Android 實機上明顯;iPhone 17 Pro 因圖磚補得快才不明顯)。邊線同亮/暗慣例取近海面色。
   if (state.basemap === 'sat') return { fillColor: '#606050', color: '#1c303b', fillOpacity: 1, opacity: .7, weight: 1.2 };
   // 亮/暗陸地色貼齊底圖圖磚(CARTO Positron 陸地 #f1f3f1／Dark Matter 陸地 #0e0e0e),
   // 邊線取近海面色的微弱海岸線,縮放瞬間佔位圖與底圖不再有明顯色差(issue #11)。
@@ -35706,7 +35706,7 @@ const OFM_HEALTH_MS = 8000, OFM_ERROR_LIMIT = 4, OFM_VECTOR_SOURCE = 'openmaptil
 // ── L2 退場埋點(2026-09-03)────────────────────────────────────────────────────
 // 量「OpenFreeMap 的健康判定失敗」多常發生。App 那半每中一次＝整個 session 燒 Stadia(計費),
 // 網站那半＝使用者看到「街道底圖載入異常」。在此之前這件事只在 console 留一行 warn,
-// 全體使用者裡有多少人正在燒 Stadia 一個數字都沒有(2026-09-03 使用者自己的手機在 WiFi 上
+// 全體使用者裡有多少人正在燒 Stadia 一個數字都沒有(2026-09-03 實機在 WiFi 上
 // 就中過一次,重開才回到 OFM)。Worker 端 /api/basemap-fallback 只寫一筆 Analytics Engine
 // 資料點(railisland_usage,blob1='ofmfail');查法:node scripts/usage_ofm_fallback.mjs。
 // 帶的只有原因(slow|error)與當下 zoom;來源(app|web)與裝置由 Worker 依 Origin/UA 判,與其他埋點同一把尺。
@@ -35908,8 +35908,8 @@ function placeControlRail() {
     updateFollowLockUI(); // 這裡會依跟隨狀態把容器 display 設回 ''/none,老家的藏匿自然解除
   }
 }
-// §04c 契約3 →(設計 D4 排法B 起)手機一律把時鐘徽章併入頂列(排在 logo 牌之後、公告鈕之前的 flex 子項)。
-// 原本只有橫式才併,直式讓它獨立浮在頂列下方;排法B 把整條頂列收成一排 42px,徽章就是那一排的一節。
+// §04c 契約3 →(設計 D4 頂列單排版起)手機一律把時鐘徽章併入頂列(排在 logo 牌之後、公告鈕之前的 flex 子項)。
+// 原本只有橫式才併,直式讓它獨立浮在頂列下方;D4 頂列單排版把整條頂列收成一排 42px,徽章就是那一排的一節。
 // 桌面(沒有 body.fs)仍搬回 .stage 原位,那裡的 .badge 是左上角獨立卡。
 let _badgeHomeAnchor = null;
 function placeBadge() {
@@ -35925,8 +35925,8 @@ function placeBadge() {
   invalidateMapInsets(); // 徽章換家=上界量法換(獨立徽章 vs 併入頂列),露出地圖重算
 }
 
-// ── 資料狀態小卡:點時鐘徽章展開(2026-08-27 使用者要求)──────────────────────────
-// 「要顯示現在班次是 Live、還是非即時,把上面的燈號資訊詳細顯示出來」。
+// ── 資料狀態小卡:點時鐘徽章展開──────────────────────────
+// 目的:讓人分得出目前的班次資料是即時還是非即時,並把燈號背後的細節攤開。
 // 🔴 值與原因一律**從徽章那幾顆 span 讀回來**,與 syncMoreDataStatus 同一個單一事實來源:
 //    那幾顆燈由 updateLiveBadge／metroBadge／每秒車數各自寫,在這裡複製一份判斷邏輯遲早分岔。
 //    title 就是每顆燈的「為什麼」(資料幾分鐘沒更新、裝置時鐘差幾秒、時間軸不在現在),
@@ -36006,7 +36006,7 @@ function setupStatPop() {
         attributes: true, attributeFilter: ['hidden', 'class', 'title'] });
   }
 }
-// ── 群組選單(手機殼把四顆頁籤收成一顆之後的入口;桌面沒有這顆,四顆分頁照舊)──────────
+// ── 群組選單(手機殼把四顆頁籤併成單一按鈕之後的入口;桌面沒有這顆,四顆分頁照舊)──────────
 // 🔴 選項不自己維護一份:逐項照 TAB_GROUPS 生成,點下去呼叫的也是四顆頁籤同一個 selectGroup()
 //    ⇒ 群組定義改了這裡自動跟著改,也不會出現「兩個入口行為不一致」。
 function renderGtabPop() {
@@ -36028,7 +36028,7 @@ function renderGtabPop() {
   });
 }
 // ── 頂列一排放不放得下「狀態寫成字」──────────────────────────────────────────
-// 使用者 2026-08-27:「時間按鈕其實可以直接寫詳細資訊了」。放得下就寫字,放不下才退回色點。
+// 狀態改成直接以文字呈現在徽章上。放得下就寫字,放不下才退回色點。
 // 🔴 判準必須是量出來的:字級三階 × 機寬 × 有沒有公告 × 亮著幾顆狀態,組合太多,
 //    寫死任何一個媒體查詢斷點都會在別的組合出錯,而且以後多一顆狀態就再錯一次。
 // 🔴 量之前要把軌島牌暫時釘成 flex:none:它是 flex:0 1 auto,會替別人吸收溢出
@@ -36119,7 +36119,7 @@ function setupToolRail() {
   const showTip = (btn, ms) => {
     if (!window.matchMedia(MOBILE_MQ).matches) return;
     // 沒有說明可補的鈕不出提示框:「觀看」鈕本身有字、沒有 aria-label,以前照樣掛一個空框,
-    // 而它沒有定位,空框對齊到整條工具列的中線,剛好蓋住車頭鎖定提示的最後一個字(「開啟」只剩「開[」,09-25 回報)。
+    // 而它沒有定位,空框對齊到整條工具列的中線,剛好蓋住車頭鎖定提示的最後一個字(「開啟」只剩「開[」)。
     const text = tipOf(btn);
     if (!text) return;
     let t = btn.querySelector('.mt-tip');
@@ -36784,7 +36784,7 @@ function setupMapTools() {
     sheet.style.right = 'auto';
     // 目標是貼在鈕正上方 8px。但帶(.controls)是 position:absolute、會隨頁面捲動離開視窗,
     // 捲下去之後鈕的 r.top 變小甚至為負 ⇒ 這個 bottom 變大 ⇒ 面板整個被推出視窗上緣
-    // (2026-08-04 回報:先拉捲軸再開「更多」看不到選單上方,要關掉、捲回頂端、重開才行)。
+    // (先拉捲軸再開「更多」看不到選單上方,要關掉、捲回頂端、重開才行)。
     // 所以比照 left 也 clamp:面板上緣至少留 12px 在視窗內——寧可不貼齊鈕,也不能看不見。
     // 面板是 fixed,量高度要在它已顯示之後;setMore() 先 toggle body.tools-open 再呼叫本函式。
     const H = sheet.getBoundingClientRect().height;
@@ -37246,7 +37246,7 @@ function setupMapTools() {
       // 「離開放空」那一下:onclick 已同步跑完 setAmbient(false) 移除 body.ambient,冒泡到這裡時
       // capsule() 剛從 false 翻成 true ⇒ 會把膠囊展開成 body.cexp。而 cexp 那條
       // 「.controls #ambientBtn{display:none}」(1-2-2)蓋得過所有放空規則,下次再進放空整條控制列
-      // 就只剩一顆空膠囊、出口消失(2026-09-01 使用者回報「再次進入時離開鈕縮成空的小鈕」)。
+      // 就只剩一顆空膠囊、出口消失(症狀:第二次進入放空後,離開鈕變成一顆空殼)。
       // 比照上面 #pp 的寫法把出口鈕排除在展開手勢之外。
       if (e.target.closest && e.target.closest('#ambientBtn')) return false;
       if (body.classList.contains('cexp')) return false;
@@ -37262,8 +37262,8 @@ function setupMapTools() {
       }, { passive: false });
     } else {
       // faint 把手:一下到底——觸碰先回實體(即時視覺回饋),同一次點擊繼續往下走 click 展開。
-      // 原本刻意把喚醒那一下吞掉(「回實體」與「展開」分兩次操作),使用者回報「點開之後要點第二下才出現控制」,
-      // 2026-07-25 裁決改為一下到底。
+      // 原本刻意把喚醒那一下吞掉(「回實體」與「展開」分兩次操作),結果喚醒後還得再按一次才看得到控制項,
+      // 2026-07-25 改為一下到底。
       controls.addEventListener('touchstart', () => { if (capsule() && body.classList.contains('cfaint')) toSlim(); }, { passive: true });
     }
     controls.addEventListener('click', (e) => {
@@ -37571,7 +37571,7 @@ function setupMapTools() {
     // 網站/PWA 沒有定位能力,鈕與抽屜列一併移除,否則列點了靜默無反應(v0718i 對 recBtn/accountBtn 的同一教訓)
     else { nearBtn.remove(); const row = document.querySelector('.ms-row[data-proxy="nearBtn"]'); if (row) row.remove(); }
   }
-  // 地圖縮小(z<12)時給地點釘加光環放大,避免與背景車站點混淆(使用者要求)
+  // 地圖縮小(z<12)時給地點釘加光環放大,避免與背景車站點混淆
   function applyZfar() { const c = M.getContainer(); if (c) c.classList.toggle('zfar', M.getZoom() < 12); }
   M.on('zoomend', applyZfar); applyZfar();
 }
@@ -38076,7 +38076,7 @@ async function boot() {
   //  (2) 平移硬牆:視野被鉗在「活動範圍」(台灣框外擴 ROAM_PAD,一圈海域當邊距)內,拖到邊界即停。
   //      由 M.setMaxBounds 交給引擎執行,setView 也會被一併鉗回(異常深連結亦擋)。
   const TW_BOUNDS = M.latLngBounds(TW_BOX[0], TW_BOX[1]); // 台灣本島外接框(離島無鐵路不納);定位守門 inTaiwan 共用同一個框
-  // 註:曾經給圖磚層掛 bounds 只載入台灣周遭(省框外圖磚),但把畫面切得太緊、四周留白像壞掉(使用者回報),
+  // 註:曾經給圖磚層掛 bounds 只載入台灣周遭(省框外圖磚),但把畫面切得太緊、四周留白像壞掉,
   // 已移除。改由 minZoom 地板(開場再往外縮 N 級為限,不會縮到看全世界)＋平移硬牆(活動範圍)共同界定合理範圍,
   // 圖磚在此範圍內自然填滿、不留白。要重新省框外圖磚,得另想不切出留白的做法(例如提高地板那會犧牲全台同框)。
   // 平移硬牆走「活動範圍」roamBounds(ROAM_PAD,比台灣框大一圈,可自由平移);縮放地板另算,不共用——
@@ -38101,7 +38101,7 @@ async function boot() {
   state._applyTaiwanFloor = applyTaiwanFloor; // 頂層 loadAllGroup 擷取真實開場 zoom 後,回呼此閉包函式校正地板
   // 🔴 maxBounds 的語意是「使用者**看得到**的範圍不要跑出台灣」——被面板遮住的那塊(直向的底部 sheet、
   //    橫式的右側欄)不該被要求塞進框內,否則台灣會被釘死在容器正中央,而正中央正好在面板底下
-  //    (使用者 2026-08-11 親自指出:橫放開著面板時台灣整個偏右貼著側欄;375 寬直向同一個根)。
+  //    (實測症狀:橫放開著面板時台灣整個偏右貼著側欄;375 寬直向同一個根)。
   //    M4-B 之前是 patch Leaflet 私有的 _limitCenter,把夾限可視框換成「露出來的那塊」;
   //    MapLibre 從 M1 起改走 setPadding(syncMapLibrePadding)——padding 本來就是「相機讓位」的
   //    第一級概念,maxBounds 的夾限會自動吃它,不必再 patch 任何私有 API。
@@ -38118,7 +38118,7 @@ async function boot() {
     M.off('movestart', closeTapPickOnUserMove); M.off('zoomstart', closeTapPickOnUserMove);
   }
   // 只有「使用者自己移動地圖」才收選單。跟隨中 recenterTo 每幀把車釘回中心(setView)也發 movestart,
-  // 那是自家鏡頭不是使用者意圖——照收的話選單開瞬間就被自己關掉,根本來不及點(v0717i 使用者回報)。
+  // 那是自家鏡頭不是使用者意圖——照收的話選單開瞬間就被自己關掉,根本來不及點(v0717i 曾發生)。
   function closeTapPickOnUserMove() { if (!state._autoPan) closeTapPick(); }
   function openTapPick(cp, items) {
     const el = document.getElementById('tapPick');
@@ -38178,11 +38178,11 @@ async function boot() {
   // 點到真的空白處(車/站/平交道/記號全部沒命中)的統一收尾。兩條分支:
   //  ① 跟車中的手機整合卡 ⇒ 維持設計 1a:卡片收成膠囊、跟車不斷(uniCollapse 自己會把看板一併收起,
   //     innerHTML 與 state.boardStation 都留著,點膠囊展開回得去)。
-  //  ② 其餘情形 ⇒ 車站看板開著就關掉(使用者要求:看板開著時點地圖空白處要把它收掉)。
+  //  ② 其餘情形 ⇒ 車站看板開著就關掉(空白處的點擊也是看板的收合出口)。
   //     捷運模式的跟車卡是 #freqCard、不吃 uniCollapse,所以捷運一律走這條——原本整個空白點擊是 no-op。
   //     🔴 走 closeBoard() 而不是自己藏 el:它會 unmountUniCard、清 boardStation、並經 updateSheetOpenClass
   //     觸發 invalidateMapInsets/reframeFocus ⇒ 「列車或車站置中不被卡片擋住」那套讓位會跟著重算。
-  //  ③ 附近車站卡吃同一條規則(2026-09-18 使用者回報「按定位跳出附近車站就關不掉,只能選車站」):
+  //  ③ 附近車站卡吃同一條規則(症狀:定位後彈出的附近車站卡找不到收起的方式):
   //     它跟看板一樣是蓋住地圖的清單卡,使用者的直覺出口就是點旁邊的地圖。原本只有看板收、它不收,
   //     所以唯一走得通的出路變成「點一站」——點了開看板,看板點空白處收得掉,於是看起來像「選車站才關得掉」。
   //     放在 closeBoard() 之前:兩張卡在手機是互斥的(soloPanel),桌面則可能同時開著,兩張都該收。
@@ -38246,7 +38246,7 @@ async function boot() {
     }
     if (state.dropMode) { // 落釘模式(開關式):點地圖任一處落釘查看附近火車,落完「維持」模式可連續落釘/存點(可拖曳微調)
       const ll = e.latlng || M.fromScreen(cp); // 引擎的 LatLng 用 .lng(非本專案的 .lon)
-      openPinAt(ll.lat, ll.lng); return; // 不再自動退出——開著就能一直新增要存的點,再按一次「釘」才關(使用者要求)
+      openPinAt(ll.lat, ll.lng); return; // 不再自動退出——模式維持開啟、可連續落釘存點,再按一次「釘」才關閉
     }
     closePinCard();      // 一般點擊(選車/站/平交道)先收掉可能開著的落釘卡
     closeCrossingCard(); // 點任何地方先收平交道卡;下面命中平交道會重開
@@ -38297,7 +38297,7 @@ async function boot() {
     if (hit && best && bd <= stationRadius && Math.abs(hit.dist - bd) < TAP_AMBIG_PX) { openTapPick(cp, [tapPickSchedTrain(hit), ...stAmb()]); return; }
     if (hit && (bd > stationRadius || hit.dist <= bd)) {
       // 點到「正在跟的那一台」＝把鏡頭鎖回它身上（拖走過就是回置中），不是取消跟隨：跟車時車子就在畫面
-      // 正中央，全畫面最容易誤觸的就是它，一點就跳出追蹤讓人莫名其妙（2026-09-07 使用者回報）。
+      // 正中央，全畫面最容易誤觸的就是它，一點就跳出追蹤讓人莫名其妙。
       // 要取消跟隨走跟車卡的 ×，或疊車選單裡那條寫明「取消跟隨 N 次」的項目——那兩個都是看得懂才會按的。
       if (hit.tr === state.followTrain) { setFollowLock(true); return; }
       const ts = document.getElementById('trainSearch');

@@ -722,7 +722,7 @@ function staticGate(src, check) {
   const fam = widget.match(/\.supportedFamilies\(\[([^\]]*)\]\)/)?.[1] ?? '';
   const list = fam.split(',').map(s => s.trim()).filter(Boolean);
   check('u', 'CollectionWidget.swift', JSON.stringify(list) === JSON.stringify(['.systemSmall', '.systemMedium', '.accessoryRectangular', '.accessoryCircular']),
-    `supportedFamilies＝${JSON.stringify(list)}，應只有 小、中、鎖屏矩形、鎖屏圓形（使用者不要大卡）`);
+    `supportedFamilies＝${JSON.stringify(list)}，應只有 小、中、鎖屏矩形、鎖屏圓形（收集小工具不提供大尺寸）`);
   check('u', 'CollectionCard.swift', !/systemLarge|LargeCollectionView/.test(widget + card), 'Collection*.swift 裡還有 systemLarge／LargeCollectionView');
   // plugin：handleOpen 接受 host passport，forwardOpen 對 passport 帶 view:"passport"
   const guardLine = plugin.match(/guard url\.scheme == "railisland",[\s\S]*?else \{ return false \}/)?.[0] ?? '';

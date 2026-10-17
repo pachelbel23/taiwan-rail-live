@@ -4,7 +4,7 @@
 // 純 kind 字串）。兩種效力：沒有 override 的只補「來源沒有標記」的地面段；帶 override 的
 // 是產生器用 DEM 地形裁決過的反向改判（來源與官方互指橋／隧道），才可以推翻來源明示的標記。
 // rank 只拿來排相交上下序，**不可拿來當顯示高度**——OSM 把高鐵某些高架橋標到 layer=4，
-// 乘 8 公尺就變成離地 32 公尺的空中軌道，那正是 2026-09-11 回報的「整段多次上上下下」。
+// 乘 8 公尺就變成離地 32 公尺的空中軌道，整段軌道因此反覆起伏。
 export function classifyRailStructure(tags={},official=null){
   const o=typeof official==='string'?{kind:official}:official;
   const structural=o&&(o.kind==='bridge'||o.kind==='tunnel');

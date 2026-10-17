@@ -2,7 +2,7 @@
 
 ## 1. 甲／乙分辨與上游診斷
 
-本輪只做裁示要求的第一步。樣本為 `tmp/binder-fixtures/rounds/` 20 輪：看板時間
+本輪只做第一步。樣本為 `tmp/binder-fixtures/rounds/` 20 輪：看板時間
 `1786593845–1786594445`（2026-08-13 12:04:05–12:14:05 +08:00），共 2,296 列，
 排除停站列與過期列後 1,962 列。`trip_dyn` 只有 11 個相異 `at`，所以 shift／birth
 動態只有 10 次真正 cron 轉換；所有時間均取同輪 `live.boardPos.at`，未用執行當下時鐘。
@@ -106,7 +106,7 @@ BR 平日 07–09 設為 132 秒、09–17 設為 276 秒，且實測帶優先�
 派工①收班判定、班表、worker 與前端皆未動。新增的只有唯讀診斷／mutation harness
 `scripts/verify_binder_join_window.mjs` 與本報告。
 
-理由是甲／乙判別仍明確為乙，依派工要求必須停在第一步等裁示；而且上游形態不同：Y 有
+理由是甲／乙判別仍明確為乙，依派工要求必須停在第一步，等下一步決定；而且上游形態不同：Y 有
 ref survivor proxy 稀疏嫌疑與 synthetic identity churn，BR 的 proxy 不稀疏、單 binding 漂移不大，
 但不同 binding 呈 offset 分群形態。這些都還不是已閉合根因；現有午間班距又與表大致吻合，
 沒有證據可自行改班距或用同一個 binder fallback 同時處理兩線。
@@ -163,5 +163,5 @@ BR/Y 都沒有增量，故本單兩個目標線的可量基線不受該反事實
 - BR 的 offset 分群形態根因仍未閉合；可疑範圍是出生選邊／上游無號 track 碎裂，而不是已被
   本批排除的單純 45 秒窗或午間班距。Y 的 ref survivor proxy 稀疏雖有訊號，但只有 4 個可見 birth，尚不足以
   在缺 raw claims 下安全設計 fallback。
-- 下一步需主對話裁示：補收含 raw cron claims、尖峰與持久 ref telemetry 的語料，或授權針對
+- 下一步待決：補收含 raw cron claims、尖峰與持久 ref telemetry 的語料，或針對
   Y ref survivor proxy 稀疏嫌疑／BR synthetic identity 分開設計；在此之前不改班表、不放寬窗。

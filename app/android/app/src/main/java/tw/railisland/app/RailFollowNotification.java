@@ -165,7 +165,7 @@ final class RailFollowNotification {
         int trackCarRes = ("tra_sched".equals(sys) || "thsr_sched".equals(sys))
             ? RailWaitTrack.traCarDrawable(state.optString("carModel", "")) : 0;
         if (Build.VERSION.SDK_INT >= 36 && trackCarRes != 0) {
-            // 進站軌道（同等車卡 B 方案零件）：一節大車沿「上一站→本站」跑，車後灰、車前路線色。
+            // 進站軌道（同等車卡的零件）：一節大車沿「上一站→本站」跑，車後灰、車前路線色。
             double pos = RailWaitTrack.followCarPosition(!prevStop.isEmpty(), transferWaiting, stopping,
                 departed / 1000.0, arrival / 1000.0, now / 1000.0);
             builder.setStyle(RailWaitTrack.followStyle(context, trackCarRes, pos, sys, state.optString("color", "")));

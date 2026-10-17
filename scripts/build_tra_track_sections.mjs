@@ -17,8 +17,8 @@
 //     其餘維持不算。判單線的代價只是「多夾一次通過時刻」，判雙線的代價是漏掉整段交會推論，兩者不對稱，
 //     所以沒核實的一律取保守。證據與門檻：scripts/build_tdx_parallel_evidence.mjs
 //     → scripts/fixtures/tra-parallel-verified-tdx-0914.json。
-//     🔴 2026-09-14 稍晚：使用者提供台鐵官方《路線修築沿革》（scripts/fixtures/tra-line-construction-history.csv）
-//     後改判——官方沿革比 TDX 幾何上位，南迴線自 1991 通車只有電氣化、沒有任何「添築雙線」紀錄，
+//     🔴 後續另依台鐵官方《路線修築沿革》（scripts/fixtures/tra-line-construction-history.csv）
+//     改判——官方沿革比 TDX 幾何上位，南迴線自 1991 通車只有電氣化、沒有任何「添築雙線」紀錄，
 //     中央隧道／安朔隧道改回不算；山里隧道有「山里─臺東(雙線) 2013 添築雙線」佐證，維持算。逐對依據在
 //     fixture 的 truthSource。
 //   * 🔴 鍵一律用 lib/parallel_tracks.mjs 的 sectionKey()（站名正規化成班表用字「臺」再排序）：

@@ -45,10 +45,10 @@
 
 ---
 
-## 主對話更正（2026-08-10，非 Codex 產出）
+## 更正（2026-08-10，非 Codex 產出）
 
 上面「已證實的完整度低於一成」**量的是 Codex sandbox 沒有網路**（它自己記錄了
-`DNS 為 ENOTFOUND`），不是 TDX 的實況。主對話從有網路的環境用同一組憑證實打八個端點，
+`DNS 為 ENOTFOUND`），不是 TDX 的實況。後來從有網路的環境用同一組憑證實打八個端點，
 **全部 HTTP 200 有資料**，實際填充率是：
 
 | 系統 | 站數 | Elevators | Toilets | DrinkingFountains | FacilityMapURLs |

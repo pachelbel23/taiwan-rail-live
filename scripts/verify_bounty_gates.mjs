@@ -140,7 +140,7 @@ ok('H1 兩閘都過 → ok', verdictOf({ pass: true }, { pass: true }).verdict =
 ok('H4 防偽不過時不看品質閘的結論（順序固定：先防偽後品質）',
   verdictOf({ pass: false, code: 'x' }, { pass: false, code: 'y' }).verdict === 'suspect');
 {
-  // 🔴 H4b 鎖不變式（task-6 controller 指令要求）：verdictOf 是「防偽不過就短路，不把品質閘的
+  // 🔴 H4b 鎖不變式：verdictOf 是「防偽不過就短路，不把品質閘的
   // code 混進來」這個設計（worker.js verdictOf：ig 不過時直接 return，完全不讀 qg.code）。
   // H4 只斷言了 verdict==='suspect'，沒斷言 qualityCode/rejectCode 兩個欄位——覆蓋缺口在於：
   // 如果哪天有人把 verdictOf 改成「兩閘都跑完才判定」（即使 ig 不過，還是把 qg.code 塞進
@@ -170,7 +170,7 @@ ok('H4 防偽不過時不看品質閘的結論（順序固定：先防偽後品�
      INSERT INTO bounty_samples (id,actor,sys,ln_id,train_no,dir,trip_date,payload,segs,submitted_at,verdict) VALUES
        ${mk('s-ok', 'dev-ok', clean)}, ${mk('s-un', 'dev-un', blocked)}, ${mk('s-sp', 'dev-sp', spoof)};`);
 
-  // 🔴 模組級快取防呆（task-6 controller 指令要求，見報告「模組級快取」節）：bountyRulesMem／
+  // 🔴 模組級快取防呆（見報告「模組級快取」節）：bountyRulesMem／
   // bountyUnitsMem 是 worker.js 模組層級變數，同一個 process 內第一次呼叫 bountyRules(env)／
   // bountyUnits(env) 之後就不會再讀 env.ASSETS。本檔到這裡為止（F/G/H1-H4）從未呼叫過
   // bountyVerifyCron，理論上快取還是空的，這裡仍先顯式歸零——不是因為現在會紅，是因為往下任何人
@@ -193,7 +193,7 @@ ok('H4 防偽不過時不看品質閘的結論（順序固定：先防偽後品�
     sampled === db.prepare("SELECT SUM(sample_count) s FROM bounty_board").get().s && sampled > 0 && sampled <= 10,
     `sample_count 合計=${sampled}`);
   {
-    // 🔴 H8b（task-6 controller 指令要求驗收條件 4）：H8 只驗總和的上下界，同段 ok+unusable
+    // 🔴 H8b（驗收條件 4）：H8 只驗總和的上下界，同段 ok+unusable
     // 只加 1 這件事是「總和沒超過 10」間接推出來的，不是直接量。s-ok 與 s-un 的 payload 除了
     // acc 以外完全相同（見上面 blocked = clean.map(...acc:120)），兩者理論上覆蓋同一批區間；
     // 直接點名第一段（S0-S1，兩趟都保證有效覆蓋，見 coverageOf 對 d∈[0,2km] 的計算）查
@@ -238,7 +238,7 @@ ok('H4 防偽不過時不看品質閘的結論（順序固定：先防偽後品�
     `灌之前 ${openBefore} 段在架、灌之後 ${stillOpen} 段（先前已被 ok 收滿 ${covered} 段）`);
 }
 
-// ── K 組：模組級快取重置自檢（task-6 controller 指令驗收條件 6：「處理掉，並說明你怎麼處理的」）
+// ── K 組：模組級快取重置自檢（驗收條件 6：要處理掉並說明做法）
 // 上面 H 組全程只用同一份 rules/units 內容,不會自然踩到快取污染,「先呼叫 bountyResetMemCaches()
 // 才進第一個情境」純屬防禦性動作,不是被逼出來的紅測試。這裡直接證明重置機制本身有效：用
 // bountyBoard()(已導出,內部呼叫 bountyRules(env))餵兩份 coverN 明顯不同的 rules 內容——

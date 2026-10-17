@@ -100,7 +100,7 @@ public final class RailTraWaitPlugin: CAPPlugin, CAPBridgedPlugin {
             schedSec: schedSec,
             color: call.getString("color"),
             endAt: endAt,
-            // 進站軌道（B 方案）：網頁從時刻表算好送進來，開卡後不再變。缺任何一欄卡片就維持軌脊版。
+            // 進站軌道：網頁從時刻表算好送進來，開卡後不再變。缺任何一欄卡片就維持軌脊版。
             prevStop: call.getString("prevStop"),
             prevDepSec: call.getDouble("prevDepSec"),
             plateLeft: call.getString("plateLeft"),

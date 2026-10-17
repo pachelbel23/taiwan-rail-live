@@ -4,7 +4,7 @@
 // 演算法:對每個道口,以最近 OSM way 的方位角作垂直取樣線(±30m),數與所有 rail way 的交點,2.5m 聚類 = tracks;
 //         相交 way 的 electrified 標籤決定 elec(任一 contact_line/yes/rail→true;全 no→false;全缺→線名 fallback)。
 //   tracks==0(垂直段 30m 內無軌道)= 資料缺口,該筆不寫 tracks/elec(前端退回通用圖示)。
-// 演算法之後套用主對話裁決 OVERRIDES(見 LINE_OVERRIDES/ENTRY_OVERRIDES 常數),重跑本腳本裁決存活。
+// 演算法之後套用手動覆寫 OVERRIDES(見 LINE_OVERRIDES/ENTRY_OVERRIDES 常數),重跑本腳本覆寫仍然有效。
 // 用法:node scripts/enrich_crossings_osm.mjs   (先跑 build_crossings.mjs 產出 crossings.json)
 // 注意:crossings.json 就地改寫,只新增 tracks/elec,其餘欄位與筆數一字不動。
 
@@ -29,7 +29,7 @@ const CLUSTER_M = 2.5;        // 交點聚類半徑(台鐵軌距間距 ≥3.5m,�
 const BBOX_MARGIN_DEG = 0.0018; // 候選 way 粗篩:bbox 外擴約 200m
 const BRANCH_LINES = new Set(['PINGXI', 'NEIWAN', 'JIJI', 'SHENAO']); // 支線 fallback → 非電化(NEIWAN 由 override 救回)
 
-// ─────────────── 主對話裁決 OVERRIDES(2026-07-13)——演算法輸出後強制覆寫,重跑本腳本時裁決存活 ───────────────
+// ─────────────── 手動覆寫 OVERRIDES——演算法輸出後強制覆寫,重跑本腳本時覆寫仍然有效 ───────────────
 // 1) NEIWAN 線級 elec:true —— 內灣線 2011 年隨六家線通車已全線電化;OSM「內灣」ways 電化標籤混雜
 //    (electrified=no 34 條/contact_line 46 條),七個道口恰全落於舊標 no 段,演算法照讀成 false 與現實不符。
 // 2) 八股頭/光復路[山線] elec:false —— 兩筆為 projFallback,實體在非電化「舊山線」保存段(OSM 該處無
@@ -44,7 +44,7 @@ const ENTRY_OVERRIDES = { // `${name}|${lnId}` → 補丁(單筆適用)
   '光復路|山線': { elec: false },
   '大石巷|JIJI': { tracks: 1 },
 };
-// 硬 gate 的支線 elec 期望(2026-07-13 主對話修正:原「內灣=非電化」是錯的領域知識,內灣線已電化)
+// 硬 gate 的支線 elec 期望(2026-07-13 修正:原「內灣=非電化」是錯的領域知識,內灣線已電化)
 const BRANCH_ELEC_EXPECT = { PINGXI: false, JIJI: false, SHENAO: false, NEIWAN: true };
 
 // ─────────────── 幾何 ───────────────
@@ -208,7 +208,7 @@ async function main() {
       }
     }
 
-    // 裁決 overrides:演算法結果之後套用(理由見檔頭 OVERRIDES 常數);缺口(tracks=0)不造值
+    // 手動覆寫 overrides:演算法結果之後套用(理由見檔頭 OVERRIDES 常數);缺口(tracks=0)不造值
     if (rec.tracks > 0) {
       const ov = { ...(LINE_OVERRIDES[c.lnId] || {}), ...(ENTRY_OVERRIDES[`${c.name}|${c.lnId}`] || {}) };
       if ('tracks' in ov || 'elec' in ov) {
@@ -267,8 +267,8 @@ async function main() {
 
   // ─────────────── console 輸出 ───────────────
   console.log(`\n=== 補欄結果 ===`);
-  console.log(`補上 tracks/elec:${enriched}/${before};缺口(不寫欄):${gaps};電化 fallback(線名推):${fallbackUsed};裁決 override:${overrideList.length}`);
-  console.log(`\n=== 裁決 OVERRIDES 生效(${overrideList.length}) ===`);
+  console.log(`補上 tracks/elec:${enriched}/${before};缺口(不寫欄):${gaps};電化 fallback(線名推):${fallbackUsed};手動覆寫 override:${overrideList.length}`);
+  console.log(`\n=== 手動覆寫 OVERRIDES 生效(${overrideList.length}) ===`);
   overrideList.forEach(o => console.log('  * ' + o));
   console.log(`\n=== 硬 GATE:四支線 tracks==1;elec 平溪/集集/深澳=false、內灣=true ===`);
   if (violations.length === 0) console.log('PASS — 無違反');
@@ -291,10 +291,10 @@ async function main() {
   const REPORT = '/private/tmp/claude-501/-Users-xuxiang-Code------/9364938b-6a7d-4c36-8927-76fd03177f46/scratchpad/crossing-enrich-report.md';
   const L = [];
   L.push('# 平交道 tracks/elec 補欄報告', '');
-  L.push(`- 資料:${before} 筆(crossings.json);補上 ${enriched},缺口 ${gaps},電化 fallback ${fallbackUsed},裁決 override ${overrideList.length}`);
+  L.push(`- 資料:${before} 筆(crossings.json);補上 ${enriched},缺口 ${gaps},電化 fallback ${fallbackUsed},手動覆寫 override ${overrideList.length}`);
   L.push(`- OSM railway=rail ways:${ways.length};快取 ${CACHE}`);
   L.push('');
-  L.push(`## 裁決 OVERRIDES 生效(${overrideList.length}) — 2026-07-13 主對話定案,理由見腳本 OVERRIDES 常數註解`);
+  L.push(`## 手動覆寫 OVERRIDES 生效(${overrideList.length}) — 理由見腳本 OVERRIDES 常數註解`);
   overrideList.forEach(o => L.push(`- ${o}`));
   L.push('');
   L.push('## 硬 GATE(四支線 tracks==1;elec 平溪/集集/深澳=false、內灣=true)');

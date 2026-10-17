@@ -371,7 +371,7 @@ check(ingestAudit() && sourceHoldAudit(), 'H gate：失敗、畸形、舊版本�
   const first = gaps[0], last = gaps[gaps.length - 1];
   const monotonic = gaps.every((g, i) => i === 0 || g <= gaps[i - 1] + 1e-9);
   // 🔴 判準是**結果**不是機制:落後的車要在「官方說的到站時刻」出現在那一站上(1060 是官方 arrEpoch)。
-  // 舊判準寫的是「30 秒內收斂到官方的瞬時位置」——那是舊棘輪+兩倍速追趕的形狀,不是使用者的要求;
+  // 舊判準寫的是「30 秒內收斂到官方的瞬時位置」——那是舊棘輪+兩倍速追趕的形狀,而不是該驗的行為;
   // 預期行為:到站時刻取官方站牌,列車在該時刻抵達那一站。
   const converged = !!arrived && arrived.atStation === true &&
     arrived.lat === LINE.stations[1].lat && arrived.lon === LINE.stations[1].lon;

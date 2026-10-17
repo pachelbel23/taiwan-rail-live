@@ -18,7 +18,7 @@ import WidgetKit
 ///         沒有自走文字，就沒有 `la-countdown-static-text-freeze` 那一族的凍住問題。
 ///      2. `heroText` 不吃 `now`：同一份資料在任何時刻算出來都是同一個字串。
 ///         這一條由算繪 harness 的 `traPrecisionGate()` 用兩個相差一小時的 now 驗。
-///      3. 誤點分鐘一律照抄官方，不平滑、不內插、不猜（使用者長期裁示）。
+///      3. 誤點分鐘取官方原值，不平滑、不內插、不猜（這是規則，不是假設）。
 struct TraWaitDisplay {
     /// 車種標：自強／莒光／區間…（開卡當下就定了，不會變）
     let trainType: String
@@ -62,7 +62,7 @@ struct TraWaitDisplay {
     let notice: String?
     /// 到站後那句說明（接上推播與沒接上是兩種話，不可只留一種）。
     let staleHint: String?
-    /// 進站軌道（B 方案）。nil ＝ 開卡時沒有上一站資訊（本站就是起站、舊版網頁、沒有車模素材）
+    /// 進站軌道。nil ＝ 開卡時沒有上一站資訊（本站就是起站、舊版網頁、沒有車模素材）
     /// ⇒ 維持原本的軌脊版面。與捷運等車卡共用同一個型別與同一條軌道（`MetroWaitTrack`）。
     /// 🔴 車的位置 ＝ 表定＋官方誤點推出來的（上一站開車 → 本站），跟地圖上畫車同一套；
     ///    官方沒有給台鐵列車位置。而且【只用推播的 tick 算】，不用重繪當下的時鐘（見 `make`）。
@@ -157,7 +157,7 @@ struct TraWaitDisplay {
             } else if let t = tick, let m = shown {
                 // 🔴 只用 tick（伺服器送出這一發的時刻）不用 now：系統會替同一份 ContentState 在
                 //    不同時間各算一張快照（淺／深色、切外觀），用 now 同一次更新的車會前後跳甚至倒退
-                //    （捷運 B 09-23 模擬器實見）。車只在收到推播時往前挪一格——那正是設計稿要的。
+                //    （捷運進站軌道 09-23 模擬器實見）。車只在收到推播時往前挪一格——那正是設計稿要的。
                 let from = hop.prevDepSec + Double(m) * 60
                 let to = schedSec + Double(m) * 60
                 if t < from { car = .far }
@@ -283,8 +283,8 @@ struct TraWaitLockView: View {
         .opacity(display.expired ? 0.62 : 1)
     }
 
-    /// 主角：「實際約 21:27」。兩種版面同一顆（B 方案也不改成倒數——台鐵官方沒有預估到站）。
-    /// B 版照設計稿縮到 32pt、行高壓到字級本身（設計稿 `.hero{line-height:1}`）：數字沒有下伸部，
+    /// 主角：「實際約 21:27」。兩種版面同一顆（進站軌道版面也不改成倒數——台鐵官方沒有預估到站）。
+    /// 進站軌道版面照設計稿縮到 32pt、行高壓到字級本身（設計稿 `.hero{line-height:1}`）：數字沒有下伸部，
     /// 系統預設行高上下多留的那幾 pt 是空的，卻會把「車應已到」那張擠破 160pt。
     private func hero(size: CGFloat, tight: Bool = false) -> some View {
         // 🔴 主角是【鐘面時刻】。這裡刻意不用 RailCountdownText：那顆會畫成
@@ -347,7 +347,7 @@ struct TraWaitLockView: View {
         }
     }
 
-    /// B 方案：原本的站名列拿掉（站名改由軌道右端的站名牌說），車種標併進主角列；
+    /// 進站軌道版面：原本的站名列拿掉（站名改由軌道右端的站名牌說），車種標併進主角列；
     /// 「更新時間」移到軌道下方右側，官方值與「結束」同一列。
     private func trackLayout(_ track: MetroWaitDisplay.TrackB) -> some View {
         VStack(alignment: .leading, spacing: scale.pt(3)) {

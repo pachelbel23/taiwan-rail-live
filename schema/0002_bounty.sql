@@ -89,7 +89,7 @@ CREATE TABLE IF NOT EXISTS bounty_samples (
 CREATE INDEX IF NOT EXISTS idx_samples_pending ON bounty_samples (verdict, trip_date);
 CREATE INDEX IF NOT EXISTS idx_samples_trip    ON bounty_samples (actor, trip_date, train_no);
 
--- ── 點數帳：匿名先玩，登入才跨裝置 ──────────────────────────────────────────
+-- ── 點數帳：未登入以匿名裝置累積，登入後可跨裝置 ──────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS bounty_points (
   actor       TEXT PRIMARY KEY,   -- 匿名 device token 或 Firebase uid
   uid         TEXT,               -- 登入後綁定

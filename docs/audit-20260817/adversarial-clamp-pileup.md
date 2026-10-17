@@ -49,8 +49,8 @@
 - **(c) 修法會退掉什麼？** 該發現本身沒提修法，但它被用來支撐的已上線修法
   （`TRTC_PURE_SCHEDULE_POSITION`）會一併關掉官方逐班錨點：修法前的重現裡
   R 有 4 筆、O_XINZHUANG 3 筆、BL 8 筆 `anchored=Y`（官方端點決定的位置），現在全部丟棄；
-  `freqTrainInfoAt` 的 `nextSec = tr[ni+1] + sh` 也因 sh→0 退回表定時刻。這與使用者
-  08-17「位置都是班表」的裁示一致，但屬於已知的功能取捨，不是零成本。
+  `freqTrainInfoAt` 的 `nextSec = tr[ni+1] + sh` 也因 sh→0 退回表定時刻。這與位置一律取自班表的
+  模型一致，但屬於已知的功能取捨，不是零成本。
 
 ## 需要修正的細節（不影響結論）
 

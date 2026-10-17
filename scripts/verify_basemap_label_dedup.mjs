@@ -33,7 +33,7 @@ const check = (name, pass, detail) => { results.push({ name, pass }); console.lo
 const TAG = '__rail_place_dedup__'; // index.html 的 PLACE_DEDUP_TAG
 const TSA = '臺北松山機場', KHH = '高雄國際機場', TPE = '臺灣桃園國際機場';
 const flat = (center, zoom) => ({ center, zoom, pitch: 0, bearing: 0 });
-const USER_CAM = { center: [121.525, 25.035], zoom: 12.4, pitch: 55, bearing: -10 }; // 2026-09-29 回報的鏡頭（v0929d、地景、全畫面）
+const USER_CAM = { center: [121.525, 25.035], zoom: 12.4, pitch: 55, bearing: -10 }; // 實際出問題時的鏡頭（v0929d、地景、全畫面）
 
 async function boot(p, kind) {
   await p.goto(base + '?map=' + kind + '&lang=zh-TW');

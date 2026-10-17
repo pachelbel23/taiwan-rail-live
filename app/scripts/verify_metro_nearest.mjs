@@ -146,7 +146,7 @@ const probes = [
     expectKind: 'serviceable', boundary: 'in' },
   { name: `邊界外-岡山正北${(RADIUS + 100) / 1000}km`, ...boundaryProbe(+100),
     expectKind: 'outOfRange', boundary: 'out' },
-  // ---- 服務範圍:實際會發生的遠距情境(使用者 2026-08-18 回報的那一類) ----
+  // ---- 服務範圍:實際會發生的遠距情境(實機上出現過的那一類) ----
   { name: '範圍外-台中車站', lat: 24.1369, lon: 120.6851, expectKind: 'outOfRange' },
   { name: '範圍外-花蓮車站', lat: 23.9930, lon: 121.6010, expectKind: 'outOfRange' },
   { name: '範圍外-台南車站', lat: 22.9971, lon: 120.2129, expectKind: 'outOfRange' },

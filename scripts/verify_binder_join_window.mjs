@@ -779,7 +779,7 @@ console.log('\n【A4 固定站點班距】');
 console.log(JSON.stringify(headways, null, 2));
 console.log('\n【目前逐線接上率（尚未修，非 before/after）】');
 console.log(JSON.stringify(coverage, null, 2));
-console.log(`\n【裁示停點】${g20.verdict}；${isVerdictB(g20)
+console.log(`\n【判定停點】${g20.verdict}；${isVerdictB(g20)
   ? '本腳本未修改 45 秒窗、binder、班表或前端，B–E 尚未進入。'
   : '不得無條件宣告乙，需回報本批差異。'}`);
 console.log(`\n${failures ? `FAIL ${failures}` : 'PASS'}: 派工② Z、第一步診斷與 mutation controls`);

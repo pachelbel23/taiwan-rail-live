@@ -84,7 +84,7 @@ for (const L of r.lines) {
     for (const x of over.slice(0, 6))
       console.log(`   ❌ ${x.st} 往${x.dest} ${Math.round(x.sec / 60)} 分（窗 ${Math.round(cap / 60)} 分）${x.shortTurn ? '［短程車終點］' : ''}`);
   }
-  // 短程車終點即使在窗內也列出來讓人看得到（使用者要看的是「有沒有提前排進來」）
+  // 短程車終點即使在窗內也列出來讓人看得到（要看的是加班車有沒有被提早排進班表）
   const byDest = new Map();
   for (const x of shortTurns) {
     if (!byDest.has(x.dest)) byDest.set(x.dest, []);

@@ -15,7 +15,7 @@
 //
 // 跑法：node scripts/extend_tra_station_tracks.mjs
 //   NETWORK=／OUT= 換檔；SECTION=ways|bridge|ways,bridge 選區段（預設 ways）。
-//   bridge＝萬華–臺北隧道東正線那 30 m 的補缺，其中一條是依 TDX 官方幾何擬的非 OSM way，**要裁定才套用**。
+//   bridge＝萬華–臺北隧道東正線那 30 m 的補缺，其中一條是依 TDX 官方幾何擬的非 OSM way，**確認過才套用**。
 // 🔴 重新打包 network.json 之後要再跑一次；用 extensions 記錄判斷是否已補入，重跑無害。
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
@@ -30,7 +30,7 @@ const file = process.env.NETWORK || 'rail-3d/physical/network.json', out = proce
 const net = JSON.parse(fs.readFileSync(file, 'utf8'));
 if (net.extensions?.some(e => e.name === NAME)) { console.log('已補入', NAME); process.exit(0); }
 const fx = JSON.parse(fs.readFileSync(FIXTURE, 'utf8'));
-// 2026-09-14 使用者要求直接完成交接：採本批暫緩蘇澳橋東四條死端的建議。20m DEM 未表達路塹，現行算繪會浮空；四條皆無列車路徑，待路塹算繪支援再補，不放寬高度閘門。
+// 本批暫緩蘇澳橋東四條死端：20m DEM 未表達路塹，現行算繪會浮空；四條皆無列車路徑，待路塹算繪支援再補，不放寬高度閘門。
 const DEFERRED_SU_AO_CUTTING = new Set(["145608233","1527875178","1527875179","1527875182"]);
 const wanted = sections.flatMap(s => { const v = s === 'bridge' ? fx.bridge?.ways : fx[s]; assert(Array.isArray(v), 'fixture 沒有區段 ' + s); return v.filter(w => !DEFERRED_SU_AO_CUTTING.has(String(w.id))); });
 

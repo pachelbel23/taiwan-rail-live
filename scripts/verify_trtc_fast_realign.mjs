@@ -1,12 +1,12 @@
 #!/usr/bin/env node
-// 「迅速重置」驗收（2026-08-17 使用者要求）：
-//   「我們需要一個迅速重置的方式，就像我昨天要求的斷訊後回歸，
-//     依照現在當下的北捷資訊來判斷現在路線上有哪些車」
-//   判準：「兩站之間有兩台車就已經要懷疑了 我們一堆三台連在一起的」
-//   約束：「你收掉車子 但是需要知道現在官方資料有的車子都要在」
+// 「迅速重置」驗收（2026-08-17）：
+//   需求：比照斷訊後回歸，要有一種快速重置的做法，
+//     直接以當下北捷官方資訊重新判斷路線上現有哪些車。
+//   判準：同一區間出現兩台車已屬可疑，三台連在一起就不合理。
+//   約束：可以收掉多餘的車，但官方資料裡有的車一律要留在畫面上。
 //
 // 語料是 2026-08-17 07:42 正式站真實名冊（boardPos）＋同輪官方站牌（board）。
-// 那三輪的 boardPos 自己就有「一段軌道 5–6 台車」，是使用者截圖症狀的直接對應物。
+// 那三輪的 boardPos 自己就有「一段軌道 5–6 台車」，是截圖裡那種疊車症狀的直接對應物。
 // 環狀線（Y）的看板列與名冊是依虛構時刻表產生的合成資料（同一段 3 台以上的狀況由起點重複列重現），其餘線照原錄檔。
 //
 // 判準與實作不同源：擁擠度由本檔自己數 vehicles 算出來，不讀 reducer 的計數器；
@@ -121,7 +121,7 @@ function reduceRound(pipeline, snap, { heal = true, force = null, prior = null, 
 
 const pipeline = await loadPipeline();
 
-// ---- 1. 語料代表性：這幾輪的正式站名冊真的有使用者說的那種畫面 ----
+// ---- 1. 語料代表性：這幾輪的正式站名冊真的有同區間疊車的那種畫面 ----
 console.log('---- 1. 語料代表性（正式站當時的名冊；環狀線為合成資料）----');
 for (const snap of rounds) {
   const c = crowdOf(snap.boardPos.vehicles);
@@ -138,7 +138,7 @@ for (const b of baseline) {
     `最擠 ${c.worst} 台；${c.over.slice(0, 3).join(' ')}`);
 }
 
-// ---- 3. 自癒＝使用者的判準歸零 ----
+// ---- 3. 自癒＝疊車判準的超標數歸零 ----
 console.log('\n---- 3. 自癒後：行進中區間不得有 ≥3 台 ----');
 const healed = rounds.map(snap => ({ snap, ...reduceRound(pipeline, snap, { heal: true }) }));
 for (const h of healed) {
@@ -147,7 +147,7 @@ for (const h of healed) {
     `最擠 ${c.worst} 台${c.over.length ? `；殘留 ${c.over.slice(0, 3).join(' ')}` : ''}`);
 }
 
-// ---- 4. 使用者的約束：官方有的車都要在（不得比對照組差）----
+// ---- 4. 約束：官方有的車都要在（不得比對照組差）----
 console.log('\n---- 4. 約束：官方報了、畫面整段沒車——不得變差 ----');
 for (let i = 0; i < rounds.length; i++) {
   const b = goneRows(baseline[i].rows, baseline[i].state.vehicles).length;

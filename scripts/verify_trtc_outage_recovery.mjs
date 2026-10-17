@@ -212,7 +212,7 @@ check(yAfter >= yBefore - 1,
   '沒斷的環狀線照舊沿用，不被恢復動作波及', `恢復前 ${yBefore} → 恢復後 ${yAfter} 台`);
 
 // 「以訊號為準」不等於「全部砍掉重生」：官方名單回來後，接得上的車保住原本的 vehicleId
-// （使用者的「從他早上一發車就認得他」），只有接不上的才清掉。這裡驗的是守恆式而不是魔術數字：
+// （同一台車從當天發車起身分不變），只有接不上的才清掉。這裡驗的是守恆式而不是魔術數字：
 // 斷訊前六條線的每一台，恢復後不是被接回就是被清掉，沒有第三種下場、也不會兩邊都算。
 const priorDeadIds = new Set(prior.vehicles.filter(vehicle => EXPECTED.deadLines.includes(vehicle.line))
   .map(vehicle => String(vehicle.vehicleId)));

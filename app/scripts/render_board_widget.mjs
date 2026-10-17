@@ -273,7 +273,7 @@ let fullBoard = snapshot(title: "臺北車站", watching: true, rows: [
     boardRow("4048", "區間快", to: "苗栗", minutesFromNow: 64, lastOfDay: true),
 ])
 
-// ── 背景 A 車模／C 場景（2026-09-23 裁示）────────────────────────────────────
+// ── 背景：車模／場景 ─────────────────────────────────────────────────────────
 // 班次照 mockup（臺北、北上三班南下兩班、自強誤點 1 分），站名牌照 mockup「◀ 萬華　松山 ▶」。
 // 站名牌的鄰站在出貨路徑是 StationNeighbors.derive 從班表推的；這裡是凍結樣本。
 var artBoard: BoardSnapshot {
@@ -295,7 +295,7 @@ var artCommute: BoardSnapshot {
     return s
 }
 
-/// 班表警示：小卡 C 要收掉鄰站帶才放得下警示那一行。
+/// 班表警示：場景小卡要收掉鄰站帶才放得下警示那一行。
 var artExpiring: BoardSnapshot {
     var s = expiring
     s.plate = RailPlateInfo(name: "臺北", band: .neighbors(left: "萬華", right: "松山"))
@@ -833,7 +833,7 @@ struct Harness {
         render(MediumBoardView(snapshot: taipeiWatch, entryDate: clockNow),
                family: .systemMedium, width: 364, height: 170, scheme: .dark,
                to: out + "/board-medium-dark.png")
-        // 送審圖用：使用者那台是 402pt 機型,量到的中卡實際是 350×164pt(不是 364×170)。
+        // 送審圖用：402pt 寬機型實測,量到的中卡實際是 350×164pt(不是 364×170)。
         // 🔴 用通勤那張不用臺北那張：同一張送審圖裡的大卡已經是台北車站,同一站兩張卡會
         //    各報一組不同的「下一班」,看圖的人只會覺得其中一張是錯的。
         render(MediumBoardView(snapshot: commute, entryDate: clockNow),
@@ -865,7 +865,7 @@ struct Harness {
         render(SmallBoardView(snapshot: fullBoard, entryDate: clockNow),
                family: .systemSmall, width: 170, height: 170, to: out + "/board-small-full.png")
 
-        // Large（2026-08-17 使用者裁示「台鐵也可以加一個大的卡片」）：八列＋發車時刻欄。
+        // Large（2026-08-17 新增的大尺寸卡片）：八列＋發車時刻欄。
         render(LargeBoardView(snapshot: fullBoard, entryDate: clockNow),
                family: .systemLarge, width: 364, height: 382, to: out + "/board-large.png")
         render(LargeBoardView(snapshot: fullBoard, entryDate: clockNow),
@@ -894,7 +894,7 @@ struct Harness {
         render(LargeBoardView(snapshot: emptyBoard, entryDate: clockNow),
                family: .systemLarge, width: 364, height: 382, to: out + "/board-large-empty.png")
 
-        // 「主要顯示發車時刻」（2026-09-01 使用者裁示：讓使用者自己選倒數還是時刻）。
+        // 「主要顯示發車時刻」（2026-09-01 起的設定：主要數字可自行選倒數或時刻）。
         // 同一組樣本、同一組 View,只換 clockFirst ⇒ 兩張圖的差異就是這個設定的全部效果。
         render(LargeBoardView(snapshot: fullBoard, entryDate: clockNow, clockFirst: true),
                family: .systemLarge, width: 364, height: 382,
@@ -925,7 +925,7 @@ struct Harness {
                width: 160, height: 72,
                scheme: .dark, mono: true, inset: 0, to: out + "/board-rect-pass.png")
 
-        // ── 背景 A 車模／C 場景：三尺寸 × 淺色／深色／著色 ──
+        // ── 車模／場景背景：三尺寸 × 淺色／深色／著色 ──
         artLoadedGate()
         let artSizes: [(WidgetFamily, String, CGFloat, CGFloat)] = [
             (.systemSmall, "small", 170, 170), (.systemMedium, "medium", 364, 170), (.systemLarge, "large", 364, 382),

@@ -3,7 +3,7 @@ import SwiftUI
 import WidgetKit
 
 struct MixedBoardIntent: AppIntent, WidgetConfigurationIntent {
-    // 08-14 真機回饋:不叫「轉乘」——真轉乘要知道「我這班車幾點到這站」,這張卡給的是
+    // 不叫「轉乘」——真轉乘要知道「我這班車幾點到這站」,這張卡給的是
     // 兩張即時看板並排(鐵路發車＋捷運進站),名字不可以承諾它沒做的事。
     static var title: LocalizedStringResource = "鐵路＋捷運看板"
     static var description = IntentDescription("同一張卡查看台鐵／高鐵發車與捷運進站倒數。")
@@ -233,8 +233,8 @@ private enum MixedMetrics {
 
 /// 兩區共用一份次列名額。
 ///
-/// 🔴 設計稿畫的是「每區主角＋兩班次要」，但 08-15 真機回饋是大卡下半留白太多
-///    （「台北車站這種多線大站班次很多，大卡下半還有空位卻只列三班」）⇒ 名額改從
+/// 🔴 設計稿畫的是「每區主角＋兩班次要」，但固定兩班次要時，班次密的多線車站
+///    會讓大卡下半段空著、整卡只排出三班 ⇒ 名額改從
 ///    【實測內容框高】推：有餘裕就多列，餘裕被末班車／告示／空狀態吃掉就少列。
 ///    依設計稿「超出先砍列不縮字」，這裡只動列數，不動任何字級或列高。
 private struct MixedPlan {

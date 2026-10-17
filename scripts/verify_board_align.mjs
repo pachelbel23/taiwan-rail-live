@@ -158,7 +158,7 @@ const matrix = await runEngineMatrix(async ({ engineUrl, check }) => {
     ok(`${tag} S2·G2 時刻/倒數/擁擠度逐列同一欄`, !!v && v.g2, v && v.detail);
     ok(`${tag} S2·G3 沒有列橫向溢出`, !!v && v.g3, v && v.detail);
 
-    // ── S1:自然情境——找一張同時有「即將進站」與「N 分」的板(使用者說的那種擠壓) ──
+    // ── S1:自然情境——找一張同時有「即將進站」與「N 分」的板(版面最容易擠壓的那種組合) ──
     const hit = await page.evaluate(() => {
       const previousSec = state.simSec;
       for (const testSec of [8 * 3600, 7.5 * 3600, 12 * 3600, 17.5 * 3600, 18 * 3600]) {

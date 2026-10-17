@@ -4,7 +4,7 @@ import Foundation
 import MediaPlayer
 import UIKit
 
-// 原生背景音樂播放器（2026-08-10 build 38，使用者裁示「跟車時島位讓給列車動態」）。
+// 原生背景音樂播放器（2026-08-10 build 38；跟車期間動態島與鎖定畫面歸跟車卡獨占）。
 // 為什麼不能繼續用 WKWebView 的 <audio>：網頁音訊一播放，WebKit 就替 App 註冊系統「正在播放」，
 // 跟車 Live Activity 並存時動態島被仲裁成兩顆 minimal 小圓；而 App 層 AVAudioSession 的設定
 // 會被 WebKit 自己的 session 蓋掉（build 37 mixWithOthers 實測無效）。只有音訊走原生層，
@@ -181,7 +181,7 @@ public final class RailAudioPlugin: CAPPlugin, CAPBridgedPlugin {
         player?.replaceCurrentItem(with: item)
         // 🔴 串流曲目載入失敗(404、斷網、母站還沒部署)只反映在 item.status,沒有任何通知會來。
         //    2026-09-03 iOS 91 實測:正式站尚未上 _pass/ 曲目時每一首都靜靜地不播,JS 也收不到
-        //    error ⇒ 「跳下一首、連錯三次退回內建曲」那套從沒被觸發,使用者看到的是「點了沒反應」。
+        //    error ⇒ 「跳下一首、連錯三次退回內建曲」那套從沒被觸發,畫面上就是按了沒有任何反應。
         //    readyToPlay 才回報 ready(JS 據此才發 'playing'),failed 走與缺檔同一條 trackError。
         statusObs = item.observe(\.status, options: [.initial, .new]) { [weak self] observed, _ in
             DispatchQueue.main.async {

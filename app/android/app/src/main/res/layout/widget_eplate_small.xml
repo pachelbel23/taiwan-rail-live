@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- C 小世界場景的琺瑯站名牌・小（mockup .eplate.sm）。被中、小兩張場景版面以 include 引入。
+<!-- 小世界場景的琺瑯站名牌・小（mockup .eplate.sm）。被中、小兩張場景版面以 include 引入。
      鄰站帶三個 TextView：一般＝左「◀ 往南那一站」右「往北那一站 ▶」；直達模式（有目的站）
      改成置中一個「往 目的站」。缺一側就只收掉那一側，兩側都沒有整條帶子收掉（binder 決定）。 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"

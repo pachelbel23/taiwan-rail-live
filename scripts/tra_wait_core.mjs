@@ -35,7 +35,7 @@ export const TW_MAX_TRACK_SEC = Math.round(3.5 * 3600);
 // 🔴 這與 metro_wait 的作法【刻意不同】:那張卡的視圖根本不畫 dataAt,所以它把 dataAt
 //    完全排除在比較之外;這張卡畫了,排除就等於印一個會越來越假的時刻。
 // 🔴 2026-09-23 例外:
-//    等車卡 B 在軌道上畫了一台車,而即時動態的圖片不會自己走,只在收到推播時往前挪一格。
+//    等車卡的進站軌道版面在軌道上畫了一台車,而即時動態的圖片不會自己走,只在收到推播時往前挪一格。
 //    所以「車正在上一站→本站之間」那一段每 30 秒推一發(見 twRunWindow/twRunTickDue);
 //    其他時段車是靜止的,仍照這條遲滯。
 export const TW_DATA_AT_EPS_SEC = 600;
@@ -133,7 +133,7 @@ export function twContentState(delay, dataAt, tickSec) {
     dataAt: at == null ? null : Math.round(at),
     notice: null,
     // 🔴 pushed:告訴視圖「這張卡有伺服器在餵」。消費點有二:到站後那句說明(零推播的卡
-    //    必須老實說「不會自己更新誤點」),以及等車卡 B 要不要畫車(沒人餵的卡,車會停在
+    //    必須老實說「不會自己更新誤點」),以及等車卡的進站軌道版面要不要畫車(沒人餵的卡,車會停在
     //    開卡那一刻的位置騙人)。App 開卡時不送(nil=還不知道),伺服器每一發都送 true。
     pushed: true,
     // 🔴 tick:伺服器送出這一發的時刻(epoch 秒)。兩個用途:
@@ -141,7 +141,7 @@ export function twContentState(delay, dataAt, tickSec) {
     //        內容若與上一發完全相同,系統不保證會重畫,車就不會往前挪。這一欄保證每一發都不一樣。
     //    (2) 視圖畫車的時鐘【只准用它】,不准用 Date():系統會替同一份 ContentState 在不同時間
     //        各算一張快照(淺色／深色／切外觀),用 Date() 同一次更新的車會前後跳、甚至倒退
-    //        (捷運等車卡 B 實測踩到,feat/metro-wait-track-b f7b144d3)。
+    //        (捷運等車卡的進站軌道版面實測踩到,feat/metro-wait-track-b f7b144d3)。
     //    它【不是】倒數,也不進 twShouldPush 的比較(否則車靜止的時段也每一輪都推)。
     tick: tick == null ? null : Math.round(tick),
   };

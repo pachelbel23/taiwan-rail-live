@@ -1301,7 +1301,7 @@ for (const [tag, status] of [['p7a', 429], ['p7b', 500]]) {
 // 既有 139 條的 last_delay 一律 0、四個 TDX fixture 的 DelayTime 也全是 0 ⇒ worker.js 裡
 // 五處消費誤點的程式碼(單位換算 ×60、「沒變就不推」的誤點那一半、arrivalDate、departedDate、
 // 成功後寫回 last_delay)【六發突變全部紅集 0】。本組把「誤點」這條軸線釘住,
-// 它與 idx 是彼此獨立的更新觸發源,而「台鐵含誤點 offset」正是使用者定的核心規格。
+// 它與 idx 是彼此獨立的更新觸發源,而「台鐵含誤點 offset」正是這條推播的核心規格。
 // ══════════════════════════════════════════════════════════════════
 
 // 🔴 Group H 起把假時鐘設成一個【絕對】的、必定晚於前面所有區塊的值。
@@ -1636,7 +1636,7 @@ const csOne = (list) => {
   if (c.length !== 1) return null;
   try { return JSON.parse(c[0].init.body).aps['content-state']; } catch (e) { return null; }
 };
-const NOTICE_EXPECT = '即時資料中斷，位置為預估。實際動態請查台鐵官網';   // 使用者逐字核可,獨立寫死一份
+const NOTICE_EXPECT = '即時資料中斷，位置為預估。實際動態請查台鐵官網';   // 斷線告知文案,獨立寫死一份
 
 // P36(工項 A 關鍵 + 實作時查出的凍住漏洞):上游整批失效,而【舊快取裡有這台車】。
 // 🔴 這是真實斷線的形態,既有的 P34 照不到:P34 的舊快取裡剛好沒有那台車(t 為 undefined),
@@ -1683,7 +1683,7 @@ const NOTICE_EXPECT = '即時資料中斷，位置為預估。實際動態請查
   ok('P36(關鍵)上游整批失效但舊看板裡仍有這台車時,卡片【不凍住】:照表定前進到 C(舊碼會停在舊觀測的 A)',
     cap36.result.sent === 1 && !!cs36 && cs36.nextStop === 'C',
     `sent=${cap36.result.sent} nextStop=${cs36 ? cs36.nextStop : '(無 APNs 呼叫)'}`);
-  ok('P36(關鍵)content-state 帶上使用者核可的斷線告知(逐字比對)',
+  ok('P36(關鍵)content-state 帶上斷線告知文案(逐字比對)',
     !!cs36 && cs36.notice === NOTICE_EXPECT, cs36 ? JSON.stringify(cs36.notice) : '(APNs 呼叫數不是 1)');
   ok('P36(關鍵)舊觀測不得被記成觀測:摘要 log 是 obs=0 sched=1',
     cap36.logLines.some(l => l.includes('tick 完成') && l.includes('obs=0 sched=1')), JSON.stringify(cap36.logLines));
@@ -1753,7 +1753,7 @@ const NOTICE_EXPECT = '即時資料中斷，位置為預估。實際動態請查
 }
 
 // P37c(工項 B 的地板):往回修有下限——最低只能修回【上一次真的觀測到】的那一站。
-// 這條把本輪選的做法(地板＝last_obs_idx)與「上一次是推算就整個放行」的做法分開:
+// 這條把現行做法(地板＝last_obs_idx)與「上一次是推算就整個放行」的做法分開:
 // 後者會讓一發落後的觀測把卡片一路拉回 S1,比推過頭更難看。
 {
   const T = tok('p37c');
@@ -1916,7 +1916,7 @@ const csOfTok = (tk) => {
   ok('P36b 前置(正向對照):同一個斷線 tick 裡台鐵與高鐵【兩列都真的推了】——否則下面兩條在「根本沒推」時也會通過',
     cap36b.result.sent === 2 && served36b.has(Ttra) && served36b.has(Tthsr),
     `sent=${cap36b.result.sent} served=${JSON.stringify([...served36b].map(x => x.slice(0, 8)))}`);
-  ok('P36b(I-2 關鍵)同一個斷線 tick 裡,【台鐵】列掛上核可文案',
+  ok('P36b(I-2 關鍵)同一個斷線 tick 裡,【台鐵】列掛上斷線告知文案',
     (csOfTok(Ttra) || {}).notice === NOTICE_EXPECT, JSON.stringify((csOfTok(Ttra) || {}).notice));
   ok('P36b(I-2 關鍵)同一個斷線 tick 裡,【高鐵】列的 notice 必須是 null——高鐵本來就沒有台鐵即時資料,掛「請查台鐵官網」是雙重錯誤',
     (csOfTok(Tthsr) || { notice: '(這一列沒推)' }).notice === null,
@@ -1971,7 +1971,7 @@ const csOfTok = (tk) => {
   calls.length = 0;
   const cap39b = await captureConsole(() => laPushAll(env, fakeCtx, BASE_URL));
   const cs39b = csOne(calls);
-  ok('P39 前置:② 斷線時表定推到 S3 且掛上核可文案',
+  ok('P39 前置:② 斷線時表定推到 S3 且掛上斷線告知文案',
     cap39b.result.sent === 1 && !!cs39b && cs39b.nextStop === 'S3' && cs39b.notice === NOTICE_EXPECT,
     `sent=${cap39b.result.sent} ${cs39b ? `nextStop=${cs39b.nextStop} notice=${JSON.stringify(cs39b.notice)}` : '(無 APNs 呼叫)'}`);
 
@@ -2087,7 +2087,7 @@ const csOfTok = (tk) => {
   const cs41b = csOne(calls);
   ok('P41(I-3 邊界)觀測距今 310 秒(門檻 300 之上):算斷線——摘要 log 標記 traLiveDown',
     cap41b.logLines.some(l => l.includes('tick 完成') && l.includes('traLiveDown')), JSON.stringify(cap41b.logLines));
-  ok('P41(I-3 邊界)門檻之上掛上核可文案(與 ① 只差 20 秒,兩側各釘一格才擋得住門檻被改壞)',
+  ok('P41(I-3 邊界)門檻之上掛上斷線告知文案(與 ① 只差 20 秒,兩側各釘一格才擋得住門檻被改壞)',
     cap41b.result.sent === 1 && !!cs41b && cs41b.notice === NOTICE_EXPECT,
     `sent=${cap41b.result.sent} ${cs41b ? `notice=${JSON.stringify(cs41b.notice)}` : '(無 APNs 呼叫)'}`);
   await resetTable();
@@ -2232,8 +2232,8 @@ const csOfTok = (tk) => {
   await resetTable();
 }
 
-// PSTOP(2026-08-08 使用者實機回報):停靠中。「車停在嘉義,卡片卻還寫著『下一站 嘉義』配一個
-// 不動的倒數」是使用者第一眼就注意到的缺陷。這一格盯四件事:亮得起來、不重推、熄得掉、不誤標。
+// PSTOP(2026-08-08 實機驗出):停靠中。症狀是停在嘉義時,卡片的下一站欄位仍是嘉義、倒數停滯,
+// 這種缺陷一眼就看得出來。這一格盯四件事:亮得起來、不重推、熄得掉、不誤標。
 // 🔴「熄得掉」與 last_notice(schema 0006)是同一族的坑:車開走時站序/誤點/告知三項都沒變,
 //    判定式若不看 stopping 就是零推播 ⇒ 標籤黏在卡片上直到列車真的換站(自強號可達 20–40 分)。
 //    那一條是本格存在的主要理由——「亮得起來」很容易寫對,「熄得掉」才是會被漏掉的一半。
@@ -2448,7 +2448,7 @@ const csOfTok = (tk) => {
   await resetTable();
 }
 
-// PJOURNEY：使用者回報的實際失效路徑——App 已縮到背景，區間車抵達板橋後，同一張
+// PJOURNEY：實際發生過的失效路徑——App 已縮到背景，區間車抵達板橋後，同一張
 // Live Activity 必須改成「等候已選高鐵」，高鐵開車後再繼續顯示它的下一站。這一組直接跑
 // laPushAll＋真 D1 寫回＋APNs body，不以「有 journey_state 欄位」代替最終行為。
 {

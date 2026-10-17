@@ -146,7 +146,7 @@ const contrast = (a, b) => { const la = wl(a), lb = wl(b); return (Math.max(la, 
 /** Bitmap 的「出血」（dp）：點陣框四邊之外的透明邊。小卡左邊不出血（地圖在右、左邊就是文字欄，墨越不過 ImageView 的邊界）；中卡地圖在左、左邊是卡片內距，出血 8dp。
  *  三處要一起改：dimens_collect.xml、CollectionMapRender.bleed()、這裡。 */
 const BLEED = { small: { start: 0, top: 2, end: 3, bottom: 18 }, medium: { start: 8, top: 2, end: 3, bottom: 18 } };
-/** 顏色（手寫）：卡底 wg_paper、全台填色、單一系統細線、未收集灰點、其他系統灰。 */
+/** 顏色（手寫）：卡底 wg_paper、全台畫陸地填色、只看單一系統時只畫海岸線、未收集灰點、其他系統灰。 */
 const PAPER = { light: [253, 251, 244], dark: [16, 28, 46] };
 const FILL = { light: [242, 241, 236], dark: [24, 35, 53] };
 const LINE = { light: [226, 225, 222], dark: [48, 58, 76] };
@@ -583,7 +583,7 @@ for (const c of cases) {
       } else if (p[3] === 1) {
         const want = lineColor(p);
         const center = img.at(Math.round(x), Math.round(y));
-        // 空心中心：透明，或露出底下的輪廓（全台填色／單一系統的細線）；絕不是線色（那是實心）
+        // 空心中心：透明，或露出底下的輪廓（全台的陸地填色，或只看單一系統時的海岸線）；絕不是線色（那是實心）
         const hollow = (center[3] < 60 || dist(center, FILL[which]) <= 12 || dist(center, LINE[which]) <= 12) && !(center[3] > 200 && dist(center, want) <= 40);
         check(`地圖 ${which}：s=1 跟完＝空心（中心透明或露出輪廓，不是線色）`, hollow, () => `${tag}：點 ${p[0]},${p[1]} 中心 ${center}（實心會是線色 ${want}）`);
         // 外圈：中心往外 [0.55rs, 1.15rs] 的環上找得到線色
@@ -656,7 +656,7 @@ for (const c of cases) {
       mapsChecked++;
     }
 
-    // ── 輪廓：全台＝陸地填色（畫得出點陣框）、單一系統＝細線；期望色與取樣點都是手寫的 ──
+    // ── 輪廓：全台畫陸地填色（畫得出點陣框）、只看單一系統時只畫海岸線；期望色與取樣點都是手寫的 ──
     // 取樣點要離所有畫出的點夠遠（點半徑 rs＋抗鋸齒 1.5px）；填色是均勻的不透明色，沒被點蓋到的像素就是填色本身
     const clear = pos => drawnPos.every(q => Math.hypot(q[0] - pos[0], q[1] - pos[1]) > rs + 1.5);
     const pxAt = pos => img.at(Math.round(pos[0]), Math.round(pos[1]));

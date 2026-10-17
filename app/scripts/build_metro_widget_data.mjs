@@ -95,7 +95,7 @@ for (const s of SYS) {
   // 即時回應用的是帶「站」的名字,而首末班表不一定兩種都出現過 ⇒ 兩種寫法都補進別名表。
   for (const n of known) { alias[n] = n; alias[n + '站'] = n; }
 
-  // 首班：一致的才輸出，有分歧的只記數量與樣本（留給使用者裁示，不自己挑）。
+  // 首班：一致的才輸出，有分歧的只記數量與樣本（不自己挑一個）。
   const ambiguous = [];
   for (const [key, times] of firstSeen) {
     if (times.size === 1) out.firstTrain[key] = [...times][0];
@@ -114,7 +114,7 @@ for (const s of SYS) {
       stations: l.stations.map((st, i) => {
         const one = { name: st.name, lat: st.lat, lon: st.lon,
                       dests: [...(destsOf.get(st.name) || [])].sort() };
-        // 等車卡的進站軌道（B 方案）：車的位置＝官方倒數 ÷ 上一站到本站的站間時間。
+        // 等車卡的進站軌道：車的位置＝官方倒數 ÷ 上一站到本站的站間時間。
         // run＝【本線前一站】到這一站的行駛秒（幾何檔 segs[i-1]，TDX S2STravelTime，兩個方向同值）；
         // dwell＝這一站的停站秒。對不到就不給——兩端讀不到就不畫車，不拿距離或均速去估一個。
         const run = i > 0 ? Number(l.segs?.[i - 1]?.run) : NaN;

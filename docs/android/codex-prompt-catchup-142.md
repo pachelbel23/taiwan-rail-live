@@ -56,7 +56,7 @@ iOS 1.4.2(44) 已上架，Android 還停在 7 月底的內容。**目標：Andro
 
 1. `RAIL_VERIFY_NATIVE=android npm run verify` 全綠（含 assertAndroidPlusGate 與 release 側新 gates）。
 2. release APK 裝進模擬器（`RailIsland_API35_Pixel7` 供 adb install；`RailIsland_API35_Pixel7_Play` 是 Play 安裝鏈用）冷啟動：不 crash、地圖畫出來**且畫面上有列車**。
-3. 「更多」選單：「軌島」節與評分列**在**（紅字粗體、**無任何 emoji**——這是 8/12 使用者裁決，合併內容已含）；更新列與更新橫幅**不出現**；點評分列開出 **Play 商店頁**（不是 App Store）。
+3. 「更多」選單：「軌島」節與評分列**在**（紅字粗體、**無任何 emoji**——這是規則，合併內容已含）；更新列與更新橫幅**不出現**；點評分列開出 **Play 商店頁**（不是 App Store）。
 4. 通行證入口全滅（gate 生效）：入口×2、誤點履歷付費 CTA、說明中心通行證節都不存在。
 5. **橫放**（模擬器轉橫向）：跟一班車、點跟隨小卡開列車卡＝**右側欄**、列車落在露出地圖的中心（elementFromPoint 命中地圖）、頂列／時鐘／動作列互不重疊。網頁層可先跑 `node scripts/verify_landscape.mjs`（合併後就在樹裡，需 playwright；BASE_REF 用合併前的 `746642b` 當桌面零回歸基準不適用——那支的基準是 main 系，若 baseline 比對紅了先判斷是不是基準錯樹，照鐵則 7）。
 6. 背景音樂：開關不炸、有聲（模擬器抓 audio dump 或 logcat 佐證即可）。

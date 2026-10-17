@@ -164,7 +164,7 @@ ok('D8 反例 E2E：通過不停靠時 dwell 不收樣、claim 不關',
 // ── 三個門檻的鑑別力（2026-07-29 補）─────────────────────────────────────────
 // 起因：把 stopMinSec 與 sideMinM 突變成 0，D1–D8 仍然 8/8 全綠——反例那趟是高速通過，
 // 光靠 stopSpeedMaxMps 就被擋掉，另外兩道閘門從來沒有被考到。下面三筆各自提供
-// 「能讓它變紅的那一筆輸入」。D9 同時是使用者要的新行為：自己上下車那站只有單側樣本也要算。
+// 「能讓它變紅的那一筆輸入」。D9 同時也是新加的行為：自己上下車那站只有單側樣本也要算。
 const covOf = pts => _bounty.coverageOf(trip(pts), LINE, RULES, UNITS.peakHoursBySys);
 const hitsDwell = pts => covOf(pts).some(c => c.key === DWELL_KEY && c.kind === 'dwell');
 const iStop = LINE.stations.findIndex(s => s.name === '新烏日');

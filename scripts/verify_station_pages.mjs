@@ -201,7 +201,7 @@ const timeParts = sec => ({ hh: Math.floor(sec / 3600) % 24, mm: Math.floor((sec
 const floorText = sec => { const t = timeParts(sec); return `${pad2(t.hh)}:${pad2(t.mm)}${t.nd ? '+1' : ''}`; };
 const roundText = sec => floorText(Math.round(sec / 60) * 60);
 
-// 一列的身分是（車次、floor(本站開車秒/60)、終點）——以「分」為單位，不是秒（規格，主對話 2026-09-30 訂正）。
+// 一列的身分是（車次、floor(本站開車秒/60)、終點）——以「分」為單位，不是秒（規格 2026-09-30 訂正）。
 // 同車次改點前後只差幾秒、捨去到分後同一分鐘的，必須併成一列（行駛日取聯集）；否則頁面會出現顯示上一模一樣的兩列。
 const mergeMin = sec => Math.floor(sec / 60);
 

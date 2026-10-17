@@ -259,13 +259,13 @@ function blockHoldSec(tr) { return _blockHold.size && BLOCK_SYS[tr.sys] ? (_bloc
 **歷史脈絡（逐字節錄，2026-09-12 之前的一次修復記錄，附在同一個迴圈正上方，index.html:10735-10740）**：
 ```js
 // 🔴 這裡曾經加上「走實體股道的車就跳過」(0f5bb774 v0907n)，因為那一版另有一套橫移避讓
-// (rail-3d/integration/passing-avoidance.js)接手。那套在 06dd0034 v0908f 依裁示整個移除了
+// (rail-3d/integration/passing-avoidance.js)接手。那套在 06dd0034 v0908f 整個移除了
 // (車廂必須沿指派股道走、不准整列橫移)，短路卻留在原地 ⇒ 台鐵 918 班全部 has()=true
 // ⇒ issue #17 的防追撞在台鐵上變成 100% 死碼。實測 05:00–23:55 每 5 分抽樣 228 個時點，
 // 同向在途車身互相穿透 9 對(七堵→八堵 278/6652 車頭距 0.39 公尺、車身重疊 60 公尺)，
 // 這 9 對全部落在同一個 ln.id|dir 分組內 ⇒ 拿掉短路就接得住，不必改分組的尺。
 ```
-目前程式碼（HEAD 86663b05）**沒有**看到「走實體股道就跳過」這行短路（迴圈裡只有 `if (!BLOCK_SYS[tr.sys]) continue;`），所以就文字描述而言這個特定短路已經移除。這段歷史與使用者現在要查的「同股道互穿」症狀描述高度相似（七堵→八堵、車身重疊），但這是**過去的修復記錄**，不代表現在沒有其他成因——是否仍有殘餘、或問題已轉移到 A 節發現的長度不同源，需要另外驗證。
+目前程式碼（HEAD 86663b05）**沒有**看到「走實體股道就跳過」這行短路（迴圈裡只有 `if (!BLOCK_SYS[tr.sys]) continue;`），所以就文字描述而言這個特定短路已經移除。這段歷史與本次要查的「同股道互穿」症狀描述高度相似（七堵→八堵、車身重疊），但這是**過去的修復記錄**，不代表現在沒有其他成因——是否仍有殘餘、或問題已轉移到 A 節發現的長度不同源，需要另外驗證。
 
 ### C-2 physical 端沒有獨立的防追撞/占用 hold
 
@@ -327,7 +327,7 @@ grep `hold|reservation|occupanc`（大小寫不拘）於 `rail-3d/physical/*.js`
 commuter:unknown('emu800',repeat(3,20),2.9),
 chukuang:unknown('e200',[17,20,20],2.9),
 ```
-即：註解明講區間車真實編組應為 8 輛/160m、莒光應為 8 客車+機車/177m，但目前程式碼實際使用的是 `unknown(...)` 只給 3 節（60m／57m）。**此觀察與 E 節 `verify_physical_no_overlap.mjs` 的 `FORMATION_PROBE=long` 機制（腳本第 97-102 行，把 commuter/chukuang 動態換成 8/9 節再重量一次）直接對應**——即目前程式庫裡確實有「換長編組會讓 A/A′ 類判準變糟」這個已知但未解的狀態，`FORMATIONS.md`（本次未讀取此檔，因其在工作樹之外或未被要求）應有更完整記錄。這是觀察，不是結論：沒有做實驗，不代表「這就是使用者回報症狀的成因」，但長度低估必然讓 `verify_physical_no_overlap.mjs` 的車身佔用計算（`occupancy(route,chainageM,lenM)`，E 節）對這兩種車種系統性地低估車身涵蓋範圍。
+即：註解明講區間車真實編組應為 8 輛/160m、莒光應為 8 客車+機車/177m，但目前程式碼實際使用的是 `unknown(...)` 只給 3 節（60m／57m）。**此觀察與 E 節 `verify_physical_no_overlap.mjs` 的 `FORMATION_PROBE=long` 機制（腳本第 97-102 行，把 commuter/chukuang 動態換成 8/9 節再重量一次）直接對應**——即目前程式庫裡確實有「換長編組會讓 A/A′ 類判準變糟」這個已知但未解的狀態，`FORMATIONS.md`（本次未讀取此檔，因其在工作樹之外或未被要求）應有更完整記錄。這是觀察，不是結論：沒有做實驗，不代表「這就是該症狀的成因」，但長度低估必然讓 `verify_physical_no_overlap.mjs` 的車身佔用計算（`occupancy(route,chainageM,lenM)`，E 節）對這兩種車種系統性地低估車身涵蓋範圍。
 
 ### D-3 車身在畫面上怎麼從車頭位置往後延伸
 
@@ -559,7 +559,7 @@ window.__step = (sec) => { state.playing = false; setSimSec(sec); updateBlockHol
 3. **C-1 節的「歷史修復記錄」（0f5bb774/06dd0034 commit）是否代表七堵→八堵那 9 對已經解決、或問題以别的形式殘留，本次未查證**（未跑 git log/git show 確認這兩個 commit 的完整內容，只讀了 index.html 現有註解與程式碼）。
 4. **E-6 節 `verify_tra_pass_continuity.mjs` 標頭引用的 `index.html:7374 Math.round` 與現況（10594-10595 無 round）的落差，可能只是行號漂移或指涉別處，本次沒有用 `git log -p` 追這個函式的歷史版本去確認「哪一個 commit 移除了 Math.round」，只並排比較了現在的兩份文字。**
 5. **本次完全沒有執行任何程式碼**（沒有起 server、沒有跑 Playwright、沒有跑任何 verify_*.mjs），純粹靜態讀碼——所有「行為」描述都是從程式碼邏輯推導，未經執行期驗證。若程式碼中有動態 import、條件式 polyfill、或本次 grep 沒覆蓋到的別名（例如透過 `window[...]` 動態組字串呼叫），可能有漏網之魚。
-6. **F-3 節刻意不假造台南站座標**——這是任務指示「不准編造」的直接體現，需要主對話自行從 `data/tra.json`／`data/tra_seg_cumdist.json` 或既有腳本查證。
+6. **F-3 節刻意不假造台南站座標**——這是「不准編造」原則的直接體現，需要之後另行從 `data/tra.json`／`data/tra_seg_cumdist.json` 或既有腳本查證。
 7. `rail-3d/physical/metro-motion.js`（捷運版的 physical motion）本次完全沒讀——任務六項都限定台鐵，故略過；但如果日後懷疑台鐵/捷運共用某段邏輯（例如 `route-runtime.js`／`train-path.js` 是共用的），需要另外檢查 metro-motion.js 是否有相同的「長度不同源」模式。
 8. 本檔所有逐字節錄均直接複製自 `/private/tmp/railisland-overlap-repair-0912` 內的檔案內容（已核對 HEAD=86663b05=origin/main，git status 乾淨），行號為該工作樹當時的行號。
 

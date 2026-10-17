@@ -50,9 +50,9 @@ const dataSource = readFileSync(join(widgetDir, 'RailBoardData.swift'), 'utf8');
 const intentSource = readFileSync(join(widgetDir, 'AppIntent.swift'), 'utf8');
 const fallbackBuilderPath = join(here, 'build_widget_station_fallback.mjs');
 
-// 2026-08-06 真機回報：App 更新後共享班表尚未建立時，起站／目的站 provider 把讀檔錯誤
+// 2026-08-06 實機上的症狀：App 更新後共享班表尚未建立時，起站／目的站 provider 把讀檔錯誤
 // 丟回 AppIntents，iOS 會關掉整張 Widget 設定頁；第二輪真機又抓到依賴值短暫為 nil、或
-// 起站鍵暫時解析成空陣列時，目的站回 .empty 也會讓選單「載入一下就收起」。兩列都必須能
+// 起站鍵暫時解析成空陣列時，目的站回 .empty 也會讓選單載入後立刻收起。兩列都必須能
 // 改讀 bundle 內建站表；目的站在共享資料正常時仍保留「只列直達站」的起站連動。
 const destinationProvider = extractDeclaration(
   intentSource,
@@ -77,7 +77,7 @@ if (!destinationProvider.includes('if direct.isEmpty {')
   throw new Error('目的站 provider 必須接住 nil dependency 與空直達站陣列，兩者都降級成完整站表');
 }
 
-// 2026-08-08 使用者第三次回報「起站選共站後，目的站點下去就跳出」。前兩輪把 nil dependency
+// 2026-08-08 同一個症狀第三次出現：起站是共站時，點目的站欄位，選單一開就被系統收掉、打不開。前兩輪把 nil dependency
 // 與空陣列的 .empty 都拔掉了，唯獨共站／我的地點那一支還留著一個「刻意」的 return .empty
 // ——那是 08-05 為了「停用這一格」寫的，但 iOS 對 .empty 的反應就是把選單收掉，使用者看到的
 // 就是打不開。渲染路徑（RailBoardWidget.swift 的 placeTimeline）在讀 destination 之前就早退，
@@ -108,7 +108,7 @@ if (compositeBranch.length < 50) {
   throw new Error(`共站分支只抽到 ${compositeBranch.length} 字元，抽取失敗而不是通過`);
 }
 if (returnsEmpty(compositeBranch)) {
-  throw new Error('共站／我的地點起站不可回 .empty——iOS 會直接把目的站選單收掉（使用者看到的是點了就跳出）');
+  throw new Error('共站／我的地點起站不可回 .empty——iOS 會直接把目的站選單收掉（畫面上的症狀是選單立刻關閉）');
 }
 if (!compositeBranch.includes('configurationStationOptions()')) {
   throw new Error('共站／我的地點起站的目的站清單必須照樣給出完整站表');

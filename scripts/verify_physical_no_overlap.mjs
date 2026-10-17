@@ -71,7 +71,7 @@ const STEP = Number(process.env.STEP || 4);
 const SAMPLE = Number(process.env.SAMPLE || 120);
 const FROM = Number(process.env.FROM || 5 * 3600);
 const TO = Number(process.env.TO || 24 * 3600 - 1);
-// 2026-09-22 重量基線（使用者 go）：輸入釘死之後重放是決定性的（同一份快照在 main 與正式站 v0920e
+// 2026-09-22 重量基線：輸入釘死之後重放是決定性的（同一份快照在 main 與正式站 v0920e
 // 兩棵樹各跑一次，四個數字逐一相同），所以棘輪直接取實測值，不留餘裕。舊值 5／55／10／18 是 9/12–13
 // 在短編組、各自不同服務日量的，9/14 開放完整編組後車身變長、互穿本來就會多，只是之後每次出貨
 // 剛好都在數字夠低的日子跑過。要動這四個值，先在正式站那顆 commit 的乾淨樹跑同一支當對照組。

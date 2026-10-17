@@ -171,7 +171,7 @@ public final class RailWaitNotificationInstrumentedTest {
             replaced.optString("kind"));
     }
 
-    // ── 進站軌道（B 方案）──────────────────────────────────────────────
+    // ── 進站軌道 ──────────────────────────────────────────────
     // 期望值直接寫字面量（上一站、站間秒、路線色），不呼叫 RailWaitTrack 產生「期望」。
     // `-e holdMs 7000`：貼完停在畫面上，給主機端 adb screencap 截圖用；不帶就不停。
 
@@ -224,7 +224,7 @@ public final class RailWaitNotificationInstrumentedTest {
     @Test
     public void android16TrackNotYetAtPrev() throws Exception {
         Notification.ProgressStyle p = (Notification.ProgressStyle) postTrack(200, false);
-        assertEquals("還沒到上一站：不再畫進度點（09-23 裁示拿掉方塊）", 0, p.getProgressPoints().size());
+        assertEquals("還沒到上一站：不再畫進度點（方形標記已取消）", 0, p.getProgressPoints().size());
         assertEquals("整段（上一站→本站）都還沒走，一段路線色", 1, p.getProgressSegments().size());
         assertEquals(0xFFE3002C, p.getProgressSegments().get(0).getColor());
         assertNotNull(p.getProgressTrackerIcon());
@@ -297,7 +297,7 @@ public final class RailWaitNotificationInstrumentedTest {
         return ((Notification.ProgressStyle) Notification.Builder.recoverBuilder(context, n).getStyle()).getProgress();
     }
 
-    // ── 台鐵等站卡 B：進站軌道。位置＝表定＋官方誤點；上一站開車與本站到站都加同一個誤點。 ──
+    // ── 台鐵等站卡：進站軌道。位置＝表定＋官方誤點；上一站開車與本站到站都加同一個誤點。 ──
 
     @Test
     public void android16TraTrackRunning() throws Exception {
@@ -322,7 +322,7 @@ public final class RailWaitNotificationInstrumentedTest {
     public void android16TraTrackNotYetAtPrev() throws Exception {
         // 上一站表定還要 5 分才開（誤點 0）⇒ 車貼在最左，整段都還沒走。
         Notification.ProgressStyle p = (Notification.ProgressStyle) postTraTrack(5 * 60, 12 * 60, 0, "temu1000");
-        assertEquals("還沒到上一站：不再畫進度點（09-23 裁示拿掉方塊）", 0, p.getProgressPoints().size());
+        assertEquals("還沒到上一站：不再畫進度點（方形標記已取消）", 0, p.getProgressPoints().size());
         assertEquals("整段（上一站→本站）都還沒走，一段路線色", 1, p.getProgressSegments().size());
         assertEquals(0xFFC0392B, p.getProgressSegments().get(0).getColor());
         assertNotNull(p.getProgressTrackerIcon());
@@ -439,7 +439,7 @@ public final class RailWaitNotificationInstrumentedTest {
     }
 
     /**
-     * 站牌深色版＝同一塊白瓷壓暗一階（09-23 使用者裁示；網站那組深藍瓷放在黑灰卡片上不搭）。
+     * 站牌深色版＝同一塊白瓷壓暗一階（網站那組深藍瓷放在黑灰卡片上不搭）。
      * 深色靠 createConfigurationContext 切，不動手機的系統深色設定（別的 session 可能正在用這支手機）。
      * 兩張圖存在 cache/plate-{light,dark}.png，可用 run-as 拉出來看。
      */

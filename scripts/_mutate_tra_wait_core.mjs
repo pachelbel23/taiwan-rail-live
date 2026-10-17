@@ -111,7 +111,7 @@ const MUTATIONS = [
   {
     id: 'M10 兩種 known=false 併掉(往「都新鮮」那邊倒)',
     why: '反方向的併法:上游掛掉 30 分鐘以上時,呼叫端會無限期沿用一個過期的誤點,\n'
-       + '     卡片繼續宣稱「誤點 3 分」——這正是「有資訊就一定要對」要擋的事。\n'
+       + '     卡片繼續宣稱「誤點 3 分」——這正是「卡上顯示的資訊必須正確」這條規則要擋的事。\n'
        + '     兩個方向各一發是刻意的:單向併只證明得了其中一條判準有牙。',
     from: `  const stale = { delayMin: null, known: false, dataAt, fresh: false };`,
     to: `  const stale = { delayMin: null, known: false, dataAt, fresh: true };`,
@@ -127,7 +127,7 @@ const MUTATIONS = [
     to: `    found = candidate;`,
     expect: ['A7'],
   },
-  // ── 2026-09-23 等車卡 B:行駛段每分鐘推──────────
+  // ── 2026-09-23 等車卡的進站軌道版面:行駛段每分鐘推──────────
   {
     id: 'M12 誤點未知時拿表定充數(null 當 0)',
     why: '沒想到精度紅線時最自然的寫法:沒誤點就當準點算行駛段。後果:卡片照表定畫一台在走的車,\n'
@@ -165,7 +165,7 @@ const MUTATIONS = [
   {
     id: 'M16 行駛段沒有起點(車還沒開也每分鐘推)',
     why: '「到站前都推」是最省事的寫法。後果:開卡後車還在上一站以前的那幾十分鐘也每分鐘推,\n'
-       + '     而那段車根本不動(使用者裁示:車還沒到上一站時不要白推)。',
+       + '     而那段車根本不動(那段期間推送沒有任何資訊量)。',
     from: `  if (now < win.from || now >= win.to) return false;`,
     to: `  if (now >= win.to) return false;`,
     expect: ['H6'],

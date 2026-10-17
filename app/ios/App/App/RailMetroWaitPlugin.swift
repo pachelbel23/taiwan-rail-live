@@ -3,7 +3,7 @@ import Capacitor
 import Foundation
 import WidgetKit
 
-// 捷運等車卡:全手動開卡(使用者裁示)——零定位。倒數靠 Text(timerInterval:) 自走,
+// 捷運等車卡:全手動開卡——零定位。倒數靠 Text(timerInterval:) 自走,
 // staleDate=下一班到站整點,isStale 翻真=view 畫「進站」。
 // 🔴 2026-08-14 推播鏈:開卡改成 pushType: .token,拿到的 token 交給 JS 去 /api/metro-wait/bind,
 //    之後由伺服器每分鐘接續班次、時段到點推 end 收卡。綁定失敗(沒網路、伺服器拒收)時整張卡
@@ -153,7 +153,7 @@ public final class RailMetroWaitPlugin: CAPPlugin, CAPBridgedPlugin {
             await self.endAll()   // 🔴 await:等車卡最多一張,換站=舊卡確實收掉才開新的
             do {
                 // staleDate:下一班【到站整點】。isStale 翻真=「列車進站」狀態(view 有分支),
-                // 不是「資料過期」——真機回饋(08-14):倒數歸零後停在 0:00 的殭屍卡不夠實用,
+                // 不是「資料過期」——08-14 起的設計:倒數歸零後不再讓卡停在 0:00(那樣的卡沒有資訊量),
                 // 到點就把語意翻成進站,次班倒數(絕對時刻)在 stale 後仍自走。
                 let stale = st.nextEta.map { Date(timeIntervalSince1970: $0) }
                     ?? Date().addingTimeInterval(Double((st.nextMinutes ?? 5) * 60))
@@ -214,7 +214,7 @@ public final class RailMetroWaitPlugin: CAPPlugin, CAPBridgedPlugin {
             // 🔴 一定要濾 activityState:`activities` 連【已結束/已關閉】的卡都還留在列表裡,
             //    照收就會回報「還在追蹤」⇒ 看板鈕變「結束追蹤」⇒ 使用者以為在重新追蹤,
             //    實際執行的是 metroWaitStop(),零提示、零新卡,要再點第二次才開得成。
-            //    (真機回報「打開 App 重新追蹤有時也不會出現」的其中一條路徑。)
+            //    (這是追蹤卡偶爾沒能重新開出來的其中一條路徑。)
             //    .stale 必須算數:本卡刻意用 staleDate 把語意翻成「列車進站」,
             //    那段時間卡片還在螢幕上,當成沒卡就會把它悄悄收掉。
             let alive = Activity<MetroWaitAttributes>.activities.first {

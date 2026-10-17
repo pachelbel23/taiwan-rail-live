@@ -49,7 +49,7 @@
         // 與 rail-3d/station-layer.js 的遮罩同一條規則:手指拖曳／慣性／飛行動畫距上次移動 <400ms 就先不重建,
         // 最多延後 15s。地形圖磚到貨會改高度,整批快取作廢。
         // 跟車是程式每幀 jumpTo(沒有 originalEvent、也不在 easing),不能等相機停:否則要等 15s 上限或靠站
-        // 才重建,前進中近景大多沒有線(2026-09-23 使用者回報;桌面實測近景有線比例 7s 後掉到 34%)。
+        // 才重建,前進中近景大多沒有線(桌面實測近景有線比例 7s 後掉到 34%)。
         // 跟車改成最多每 1s 重建一次;快取路徑一次重建桌面 4x 降速約 14–44ms。
         this.schedule=e=>{if(e?.sourceId && e.sourceId!=='openmaptiles'&&e.sourceId!=='terrain')return; if(e?.sourceId==='terrain')this.tiles=null; if(this.timer||this.disposed)return; this.timer=setTimeout(()=>{this.timer=null;this.settle();},240);};
         this.settle=()=>{const now=performance.now();if(now-(this.movedAt||0)<400){if(!this.deferSince)this.deferSince=now;if(now-this.deferSince<15000){this.timer=setTimeout(()=>{this.timer=null;this.settle();},150);return;}}if(now-this.autoAt<400&&now-this.builtAt<1000){this.timer=setTimeout(()=>{this.timer=null;this.settle();},1000-(now-this.builtAt));return;}this.deferSince=0;this.rebuild();};

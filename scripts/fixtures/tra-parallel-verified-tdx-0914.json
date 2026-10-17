@@ -3,7 +3,7 @@
  "generatedAt": "2026-09-14",
  "generator": "scripts/build_tdx_parallel_evidence.mjs",
  "purpose": "用 TDX 官方逐股幾何核實 scripts/lib/parallel_tracks.mjs 的 UNVERIFIED_REFS 排除清單；verified=true 的 way 對之後要當第二股算。",
- "ruling": "2026-09-14 使用者裁示：「交通部都有資料，那我們就應該知道有，怎麼會是當作沒有核實就不畫？」⇒ TDX 官方逐股幾何算核實來源。",
+ "ruling": "TDX 官方逐股幾何算核實來源：有官方資料可查的平行股道，不該一律當成未核實而排除。",
  "source": {
   "name": "TDX 運輸資料流通服務 — GIS圖資 v3 軌道路網實體路線（臺鐵）",
   "url": "https://tdx.transportdata.tw/api/basic/V3/Map/Rail/Network/Line/OperatorCode/TRA",
@@ -101,7 +101,7 @@
       "truthDoubleFrac": 0.725
      }
     ],
-    "ruling": "2026-09-14 第三次裁示（獨立核實推翻同日第二次）：官方《路線修築沿革》只記「施工案」，沒列的不代表單線（沙崙線 2011 建成即雙線，整條沒列）。本對的依據見 stationPairs 的 basis；原始核實報告 worktrees/f9-prep-0914/output/audit-0914/double-track-truth.md。"
+    "ruling": "獨立核實後的判定（取代先前只憑沿革表所做的單線判定）：官方《路線修築沿革》只記「施工案」，沒列的不代表單線（沙崙線 2011 建成即雙線，整條沒列）。本對的依據見 stationPairs 的 basis；原始核實報告 worktrees/f9-prep-0914/output/audit-0914/double-track-truth.md。"
    }
   },
   {
@@ -173,7 +173,7 @@
       "truthDoubleFrac": 0.725
      }
     ],
-    "ruling": "2026-09-14 第三次裁示（獨立核實推翻同日第二次）：官方《路線修築沿革》只記「施工案」，沒列的不代表單線（沙崙線 2011 建成即雙線，整條沒列）。本對的依據見 stationPairs 的 basis；原始核實報告 worktrees/f9-prep-0914/output/audit-0914/double-track-truth.md。"
+    "ruling": "獨立核實後的判定（取代先前只憑沿革表所做的單線判定）：官方《路線修築沿革》只記「施工案」，沒列的不代表單線（沙崙線 2011 建成即雙線，整條沒列）。本對的依據見 stationPairs 的 basis；原始核實報告 worktrees/f9-prep-0914/output/audit-0914/double-track-truth.md。"
    }
   },
   {
@@ -245,7 +245,7 @@
       "truthDoubleFrac": 1.0
      }
     ],
-    "ruling": "2026-09-14 第三次裁示（獨立核實推翻同日第二次）：官方《路線修築沿革》只記「施工案」，沒列的不代表單線（沙崙線 2011 建成即雙線，整條沒列）。本對的依據見 stationPairs 的 basis；原始核實報告 worktrees/f9-prep-0914/output/audit-0914/double-track-truth.md。"
+    "ruling": "獨立核實後的判定（取代先前只憑沿革表所做的單線判定）：官方《路線修築沿革》只記「施工案」，沒列的不代表單線（沙崙線 2011 建成即雙線，整條沒列）。本對的依據見 stationPairs 的 basis；原始核實報告 worktrees/f9-prep-0914/output/audit-0914/double-track-truth.md。"
    }
   },
   {
@@ -325,7 +325,7 @@
       "truthDoubleFrac": 1.0
      }
     ],
-    "ruling": "2026-09-14 第三次裁示（獨立核實推翻同日第二次）：官方《路線修築沿革》只記「施工案」，沒列的不代表單線（沙崙線 2011 建成即雙線，整條沒列）。本對的依據見 stationPairs 的 basis；原始核實報告 worktrees/f9-prep-0914/output/audit-0914/double-track-truth.md。"
+    "ruling": "獨立核實後的判定（取代先前只憑沿革表所做的單線判定）：官方《路線修築沿革》只記「施工案」，沒列的不代表單線（沙崙線 2011 建成即雙線，整條沒列）。本對的依據見 stationPairs 的 basis；原始核實報告 worktrees/f9-prep-0914/output/audit-0914/double-track-truth.md。"
    }
   },
   {
@@ -397,7 +397,7 @@
       "truthDoubleFrac": 1.0
      }
     ],
-    "ruling": "2026-09-14 第三次裁示（獨立核實推翻同日第二次）：官方《路線修築沿革》只記「施工案」，沒列的不代表單線（沙崙線 2011 建成即雙線，整條沒列）。本對的依據見 stationPairs 的 basis；原始核實報告 worktrees/f9-prep-0914/output/audit-0914/double-track-truth.md。"
+    "ruling": "獨立核實後的判定（取代先前只憑沿革表所做的單線判定）：官方《路線修築沿革》只記「施工案」，沒列的不代表單線（沙崙線 2011 建成即雙線，整條沒列）。本對的依據見 stationPairs 的 basis；原始核實報告 worktrees/f9-prep-0914/output/audit-0914/double-track-truth.md。"
    }
   },
   {
@@ -469,7 +469,7 @@
       "truthDoubleFrac": 1.0
      }
     ],
-    "ruling": "2026-09-14 第三次裁示（獨立核實推翻同日第二次）：官方《路線修築沿革》只記「施工案」，沒列的不代表單線（沙崙線 2011 建成即雙線，整條沒列）。本對的依據見 stationPairs 的 basis；原始核實報告 worktrees/f9-prep-0914/output/audit-0914/double-track-truth.md。"
+    "ruling": "獨立核實後的判定（取代先前只憑沿革表所做的單線判定）：官方《路線修築沿革》只記「施工案」，沒列的不代表單線（沙崙線 2011 建成即雙線，整條沒列）。本對的依據見 stationPairs 的 basis；原始核實報告 worktrees/f9-prep-0914/output/audit-0914/double-track-truth.md。"
    }
   },
   {
@@ -541,7 +541,7 @@
       "truthDoubleFrac": 1.0
      }
     ],
-    "ruling": "2026-09-14 第三次裁示（獨立核實推翻同日第二次）：官方《路線修築沿革》只記「施工案」，沒列的不代表單線（沙崙線 2011 建成即雙線，整條沒列）。本對的依據見 stationPairs 的 basis；原始核實報告 worktrees/f9-prep-0914/output/audit-0914/double-track-truth.md。"
+    "ruling": "獨立核實後的判定（取代先前只憑沿革表所做的單線判定）：官方《路線修築沿革》只記「施工案」，沒列的不代表單線（沙崙線 2011 建成即雙線，整條沒列）。本對的依據見 stationPairs 的 basis；原始核實報告 worktrees/f9-prep-0914/output/audit-0914/double-track-truth.md。"
    }
   },
   {
@@ -613,11 +613,11 @@
       "truthDoubleFrac": 0.725
      }
     ],
-    "ruling": "2026-09-14 第三次裁示（獨立核實推翻同日第二次）：官方《路線修築沿革》只記「施工案」，沒列的不代表單線（沙崙線 2011 建成即雙線，整條沒列）。本對的依據見 stationPairs 的 basis；原始核實報告 worktrees/f9-prep-0914/output/audit-0914/double-track-truth.md。"
+    "ruling": "獨立核實後的判定（取代先前只憑沿革表所做的單線判定）：官方《路線修築沿革》只記「施工案」，沒列的不代表單線（沙崙線 2011 建成即雙線，整條沒列）。本對的依據見 stationPairs 的 basis；原始核實報告 worktrees/f9-prep-0914/output/audit-0914/double-track-truth.md。"
    }
   }
  ],
- "ruling2": "2026-09-14 第二次裁示（使用者提供官方《路線修築沿革》）曾把南迴線兩對改判單線；同日第三次裁示訂正回來——獨立核實（f9-prep double-track-truth.md）指出沿革表只記施工案，南迴線大武｜枋野的中央號誌–古莊號誌 16.9 km 是雙線區間（南迴線條目＋中央／安朔隧道 notrack=雙軌＋官方里程＋TDX 四源一致），三民｜瑞穗、光復｜萬榮屬鐵道局「4 處瓶頸路段雙線化」2022-11 完工（官方年度統計停在 2020，本來就照不到）。⇒ 6 對全部維持 verified:true，逐對依據寫在 truthSource。",
+ "ruling2": "曾依官方《路線修築沿革》把南迴線兩對改判單線，後來訂正回來——獨立核實（f9-prep double-track-truth.md）指出沿革表只記施工案，南迴線大武｜枋野的中央號誌–古莊號誌 16.9 km 是雙線區間（南迴線條目＋中央／安朔隧道 notrack=雙軌＋官方里程＋TDX 四源一致），三民｜瑞穗、光復｜萬榮屬鐵道局「4 處瓶頸路段雙線化」2022-11 完工（官方年度統計停在 2020，本來就照不到）。⇒ 6 對全部維持 verified:true，逐對依據寫在 truthSource。",
  "truthSourceDoc": {
   "files": [
    {

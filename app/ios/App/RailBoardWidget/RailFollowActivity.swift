@@ -33,15 +33,15 @@ struct RailFollowDisplay {
     /// 資料過期（見 staleGraceSeconds）⇒ 全卡降到 62%，與候車卡同一條規則。
     let expired: Bool
     let notice: String?
-    /// 進站軌道（B 方案，docs/follow-card-track-20260923.md 三）。nil ⇒ 退回上面這整組
+    /// 進站軌道（docs/follow-card-track-20260923.md 三）。nil ⇒ 退回上面這整組
     /// RailSpineTrack 欄位畫的舊版面——沒有車模素材、系統不是台鐵／高鐵、或始發前（沒有
     /// 上一站）都在這條。與捷運等車卡、台鐵等站卡共用同一個型別（MetroWaitDisplay.TrackB）。
     let trackB: MetroWaitDisplay.TrackB?
     /// 軌道右下角「HH:MM 到」。只有 trackB 非 nil 時畫。
     let arrivalClockText: String?
 
-    /// B 版面最後一列「狀態詞 · 誤點」的後半段，讀法與 RailStatusTag(.delay(_:)) 同一套
-    /// （0 分＝準點、正＝誤點、負＝早到）——舊版面的誤點是獨立膠囊放第一行，B 版面併進最後一列。
+    /// 進站軌道版面最後一列「狀態詞 · 誤點」的後半段，讀法與 RailStatusTag(.delay(_:)) 同一套
+    /// （0 分＝準點、正＝誤點、負＝早到）——舊版面的誤點是獨立膠囊放第一行，進站軌道版面併進最後一列。
     var delayWord: String {
         if delayMinutes == 0 { return RailNativeL10n.text("準點") }
         return delayMinutes > 0
@@ -63,7 +63,7 @@ struct RailFollowDisplay {
         arrivalDate: Double?, departedDate: Double?,
         delaySec: Int, stopping: Bool, transferWaiting: Bool = false,
         notice: String?, isStale: Bool, now: Date,
-        // 進站軌道（B 方案）用的輸入,全部有預設值——舊呼叫端(捷運跟車卡／還沒補上這些欄位
+        // 進站軌道用的輸入,全部有預設值——舊呼叫端(捷運跟車卡／還沒補上這些欄位
         // 的地方)不用改。sys 不是台鐵／高鐵,或找不到車模寬高比,就維持舊版面(見下方 trackB)。
         sys: String = "", carModel: String? = nil, carModelOverride: String? = nil,
         tick: Double? = nil, plateLeft: String? = nil, plateRight: String? = nil
@@ -93,7 +93,7 @@ struct RailFollowDisplay {
             // 🔴 ≥60 秒交給 `.until`（自走）而不是 `.minutes`（算好的死數字）：
             //    這張卡在交班給伺服器之後就沒有本機 update 了，而伺服器「四個量都沒變就不推」
             //    ⇒ 準點車跑完整段可以零推播。`.minutes` 會凍在最後一次推播算出的分鐘數，
-            //    旁邊的進度條卻自己爬到 90%——使用者實機回報的正是這個畫面。
+            //    旁邊的進度條卻自己爬到 90%——實機上出現過的正是這個畫面。
             //    <60 秒維持 `.arriving`：實心「進站」色塊是重繪時才畫得出的形態（見 railLiveCountdownStyle）。
             countdown = left < arrivingSeconds ? .arriving
                                                : .until(Date(timeIntervalSince1970: a))
@@ -153,7 +153,7 @@ struct RailFollowDisplay {
             }
         }
 
-        // 進站軌道（B 方案）：sys 是台鐵／高鐵且找得到車模寬高比 ⇒ 新版面；沒有上一站
+        // 進站軌道：sys 是台鐵／高鐵且找得到車模寬高比 ⇒ 新版面；沒有上一站
         // （始發前，TrackB.prev 是非 Optional，沒有字可畫）就沒有東西可組 ⇒ trackB 仍是 nil，
         // 版面退回上面這整組 RailSpineTrack 欄位——與 TraWaitHop.init? 缺上一站時同一個退路。
         var trackB: MetroWaitDisplay.TrackB?
@@ -234,15 +234,15 @@ struct RailFollowLockView: View {
         }
         .padding(.horizontal, scale.pt(14))
         // 進站軌道版少了獨立的站名列（改由軌道右端的站名牌說）、多了軌道本身，列距因此
-        // 跟 1.6.11 台鐵等站卡 B 同一個值（7）；舊版面維持原本的 10，逐像素不變。
+        // 跟 1.6.11 台鐵等站卡的進站軌道版面同一個值（7）；舊版面維持原本的 10，逐像素不變。
         .padding(.vertical, scale.pt(display.trackB == nil ? 10 : 7))
         // 設計稿：資料過期時「整張卡降到 secondary」。與候車卡同一個值，不然同一件事在兩張卡上
         // 長得不一樣，使用者要學兩次。
         .opacity(display.expired ? 0.62 : 1)
     }
 
-    /// B 方案：站名列拿掉（改由軌道右端的站名牌說），誤點併進最後一列「狀態詞 · 誤點」，
-    /// 倒數搬到第一列（車種標＋車次＋往 終點 同一列）。與 1.6.11 台鐵等站卡 B 同一套排法。
+    /// 進站軌道版面：站名列拿掉（改由軌道右端的站名牌說），誤點併進最後一列「狀態詞 · 誤點」，
+    /// 倒數搬到第一列（車種標＋車次＋往 終點 同一列）。與 1.6.11 台鐵等站卡的進站軌道版面同一套排法。
     private func trackLayout(_ track: MetroWaitDisplay.TrackB) -> some View {
         VStack(alignment: .leading, spacing: scale.pt(3)) {
             HStack(spacing: scale.pt(6)) {
@@ -395,7 +395,7 @@ struct RailFollowIslandBottom: View {
         VStack(alignment: .leading, spacing: scale.pt(display.trackB == nil ? 4 : 3)) {
             HStack(alignment: .center, spacing: scale.pt(6)) {
                 if display.trackB != nil {
-                    // 進站軌道版：站名已在軌道右端的站牌上，這裡留目的地（同鎖屏 B 版面第一列）。
+                    // 進站軌道版：站名已在軌道右端的站牌上，這裡留目的地（同鎖屏進站軌道版面第一列）。
                     Text(RailNativeL10n.text("往 {station}", ["station": display.terminus]))
                         .font(.system(size: scale.pt(15), weight: .semibold))
                         .lineLimit(1).minimumScaleFactor(0.7)
@@ -479,7 +479,7 @@ struct RailFollowActivityWidget: Widget {
             //    都送同一個值）⇒ isStale 的語意就是「資料過期」。候車卡的 staleDate 是
             //    「下一班到站整點」，那裡的 isStale 語意是「列車進站」——兩張卡不可互抄。
             isStale: ctx.isStale, now: Date(),
-            // 進站軌道（B 方案）：sys／carModel 建立後不變放在 attributes；carModelOverride／
+            // 進站軌道：sys／carModel 建立後不變放在 attributes；carModelOverride／
             // plateLeft／plateRight／tick 每發都可能換，放在 state。車位只准看 tick，不准看 Date()
             // ——理由同台鐵等站卡（見 TraWaitDisplay.make 的註解），這裡刻意不多傳一個 now 進車位算式。
             sys: ctx.attributes.sys, carModel: ctx.attributes.carModel,
@@ -526,7 +526,7 @@ struct RailFollowActivityWidget: Widget {
                 }
                 .frame(maxWidth: 52)
             } minimal: {
-                // 2026-08-10 使用者裁示：「車站倒數才是重點」⇒ minimal 只留倒數那一顆圓
+                // 2026-08-10 起 minimal 只留倒數那一顆圓——這個尺寸只需要傳達到站倒數
                 // （設計稿：「環的顏色＝路線色，數字＝分鐘」）。
                 RailIslandMinimal(countdown: d.countdown ?? .arriving, color: d.color)
             }

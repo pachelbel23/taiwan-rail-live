@@ -806,7 +806,7 @@ struct RailBoardWidgetEntryView: View {
 
     @Environment(\.showsWidgetContainerBackground) private var showsContainerBackground
 
-    /// 小工具設定的「背景」（2026-09-23 裁示：車模預設／場景／素色）。
+    /// 小工具設定的「背景」（車模預設／場景／素色三選一）。
     /// 🔴 只有桌面三種尺寸的【車站看板】吃這個設定，其餘一律素色：
     ///    鎖屏家族恆為單色、三行高；「我的地點」與無資料畫面沒有這兩種版面；
     ///    好讀版要的是字大與列數，頭帶／站名牌會再吃掉一列以上，無障礙需求優先。
@@ -887,7 +887,7 @@ struct RailBoardWidgetEntryView: View {
 /// 不會有任何錯誤訊息（捷運那支腳本改版前就是這樣）。
 ///
 /// 值是 16 不是 12：設計稿的內容框（Small 138、Medium 332×138）正是 170／364×170
-/// 扣掉 16pt 邊距得到的。08-14 真機回饋「上緣只留 12pt，首行貼著圓角」講的就是舊值。
+/// 扣掉 16pt 邊距得到的。舊值讓上緣內距只剩 12pt、第一行幾乎頂到圓角（08-14 實機上看到）。
 enum RailBoardInsets {
     static let content: CGFloat = 16
 }
@@ -918,9 +918,9 @@ struct BoardNotice: View {
 /// v2 設計稿：Small 是【兩班車】。
 ///
 /// 高度預算 20（識別）＋4＋31（終點站 26pt）＋2＋44（倒數）＋彈簧＋22（第二班）＝ 123／138。
-/// 設計稿的原話：「Small 是誤讀最嚴重的尺寸，也是最容易解決的：只有兩列，把 12pt 的軌脊欄
-/// 拿掉之後，站名與方向都往左推 21pt，26pt 的終點站不再需要截字。省下的橫向空間讓第二列
-/// 裝得下車種標，第一列裝得下『準點』。」
+/// 設計稿的重點：Small 是最容易被誤讀的尺寸，卻也最好解——只有兩列，拿掉 12pt 的軌脊欄
+/// 之後，站名與方向都往左挪 21pt，26pt 的終點站不必再截字；省下的橫向空間讓第二列
+/// 放得下車種標，第一列放得下『準點』。
 ///
 /// 兩個角色跟 v1 對調了：站名降到 11pt（那是這張卡自己的站，使用者知道），終點站升到 26pt
 /// （那才是「這班車去哪」）。
@@ -981,7 +981,7 @@ struct SmallBoardView: View {
             // 🔴 底列只有一位，三種內容互斥，優先序是硬的：
             //    班表過期 ＞ 第二班車 ＞ 這一班幾點開。
             //    「班表過期」排第一是因為這張卡上每一個數字都是那份班表算出來的；
-            //    第二班車排在「幾點開」前面是 v2 的裁示（「只有兩列」），而主角的
+            //    第二班車排在「幾點開」前面是 v2 設計的取捨（版面只有兩列），而主角的
             //    發車時刻在倒數退成靜態時刻時本來就已經畫在數字欄了。
             if snapshot.notice != nil {
                 footer(row, scale)
@@ -1031,7 +1031,7 @@ struct SmallBoardView: View {
             if let heading = row.heading {
                 RailHeadingMark(heading: heading, scale: scale)
             }
-            // 好讀版的車次讓位給站名；有官方月台時依 2026-09-07 裁示另列在目的地旁。
+            // 好讀版的車次讓位給站名；有官方月台時另列在目的地旁。
             RailTrainMark(kind: row.trainType,
                           number: scale.readable ? nil : row.trainNumber,
                           color: trainColor(row.trainType), fontSize: 12,
@@ -1102,9 +1102,9 @@ struct SmallBoardView: View {
         }
     }
 
-    // MARK: A 車模
+    // MARK: 車模背景
 
-    /// mockup A 小卡：右下角停一台下一班車種的代表車，超出卡片邊緣、被圓角裁掉。
+    /// mockup 的車模小卡：右下角停一台下一班車種的代表車，超出卡片邊緣、被圓角裁掉。
     /// 右下角讓給車 ⇒ 狀態從倒數右邊搬到倒數下面一行，第二班車那一列拿掉（mockup 原樣）。
     /// 高度：20＋3＋31＋3＋44＋3＋18 ＝ 122／138。
     @ViewBuilder
@@ -1135,9 +1135,9 @@ struct SmallBoardView: View {
         }
     }
 
-    // MARK: C 場景
+    // MARK: 場景背景
 
-    /// mockup C 小卡：左上角琺瑯站名牌，其餘貼著卡底排（場景露在站名牌右邊與下方）。
+    /// mockup 的場景小卡：左上角琺瑯站名牌，其餘貼著卡底排（場景露在站名牌右邊與下方）。
     /// 高度：41（站名牌）＋≥6＋20＋24＋44 ＝ 135／138。
     /// 🔴 班表警示那一行（16）放不下 ⇒ 站名牌收掉鄰站帶（省 12）、間距降到 2：
     ///    29＋2＋16＋20＋24＋44 ＝ 135。鄰站是裝飾，警示是「這張卡的數字可能錯」。
@@ -1217,7 +1217,7 @@ struct SmallBoardView: View {
 
 /// v2 設計檔的 LARGE：364×382、八列、多一個發車時刻欄。
 ///
-/// 使用者裁示「台鐵也可以加一個大的卡片」（2026-08-17）——在那之前這個小工具只支援
+/// 2026-08-17 新增台鐵的大尺寸卡片——在那之前這個小工具只支援
 /// Small／Medium／accessoryRectangular，設計檔畫的 large 無處可去。
 ///
 /// 高度預算 21（標題）＋4＋64（主角含副標）＋32×8 ＝ 345／350。
@@ -1231,7 +1231,7 @@ struct LargeBoardView: View {
     @Environment(\.railMonochrome) private var mono
     @Environment(\.railContainerShown) private var containerShown
 
-    /// C 的場景這一次真的畫得出來（著色模式、StandBy 系統會把背景整個拿掉）。
+    /// 場景背景這一次真的畫得出來（著色模式、StandBy 系統會把背景整個拿掉）。
     private var sceneShown: Bool { backdrop == .scene && containerShown && !mono }
 
     var body: some View {
@@ -1253,7 +1253,7 @@ struct LargeBoardView: View {
     /// 好讀版降一階：五筆 → 三筆（設計稿「特大字一律讓版位降一階」）。
     /// 班表警示那一行多吃 18pt ⇒ 少一班（同 Medium 的取捨：砍列不縮字）。
     private func followLimit(_ scale: RailScale) -> Int {
-        // C：站名牌下面要留一段給場景看（mockup `.C .list{margin-top:56px}`）⇒ 大卡少一列
+        // 場景背景：站名牌下面要留一段給場景看（mockup `.C .list{margin-top:56px}`）⇒ 大卡少一列
         //    （五列→四列）。場景被系統拿掉時那段空白跟著收掉，列數回到五列。
         let full = scale.readable ? 2 : (sceneShown ? 3 : 4)
         return snapshot.notice == nil ? full : full - 1
@@ -1276,10 +1276,10 @@ struct LargeBoardView: View {
     }
 
     /// 🔴 分組標頭只在【真的有兩個方向可分】而且每一列都知道自己的方向時才畫。
-    ///    單一方向時標頭換不到任何辨識，卻要吃掉一整列的高度；使用者 2026-08-31 對小尺寸
-    ///    的裁示（RailHeadingMark 的紅字：「維持逐列三角，不加分組標頭」）講的正是這件事，
-    ///    只是那時候的理由是「整張只有 2 班車」——那個「2 班」來自 entry() 的 3 筆上限。
-    ///    2026-09-01 使用者裁示：4x4 拉到五筆之後加標頭，4x2／2x2 維持逐列三角。
+    ///    單一方向時標頭換不到任何辨識，卻要吃掉一整列的高度；小尺寸保留每一列的方向三角、
+    ///    不另設分組標頭（RailHeadingMark 的紅字）考量的正是這件事，
+    ///    只是那時候的理由是小尺寸整張只有 2 班車——那個 2 班來自 entry() 的 3 筆上限。
+    ///    2026-09-01 起：4x4 拉到五筆之後加標頭，4x2／2x2 保留每一列的方向三角。
     private func sectionsVisible(_ groups: [(heading: RailHeading?, rows: [BoardRow])]) -> Bool {
         groups.count >= 2 && groups.allSatisfy { $0.heading != nil }
     }
@@ -1363,7 +1363,7 @@ struct LargeBoardView: View {
                     BoardRowView(row: item.row, snapshot: snapshot, entryDate: entryDate,
                                  role: item.isHero ? .hero : .followLarge,
                                  // 設計稿特大字版：後兩列只留倒數，開車時刻那一行一起收。
-                                 // 2026-09-01 裁示：好讀版那幾列也要有開車時刻。
+                                 // 2026-09-01 起：好讀版那幾列也有開車時刻。
                                  // 做得到的原因是 stacked 版面把時刻疊到列底下自成一行，
                                  // 不跟終點站搶同一條橫向欄位——原本擋著不畫的理由
                                  //（六欄在放大字級下會右溢 15.7pt）只對「同一行再加一欄」成立。
@@ -1428,14 +1428,14 @@ struct LargeBoardView: View {
                           suffix: scale.readable ? "" : "更新", scale: scale)
             }
         case .model:
-            // mockup A 大卡：頭帶 86pt，站名 24pt 粗體、更新時間在下面，右邊停下一班的代表車。
+            // mockup 的車模大卡：頭帶 86pt，站名 24pt 粗體、更新時間在下面，右邊停下一班的代表車。
             RailModelBand(title: RailNativeL10n.name(snapshot.title),
                           model: snapshot.rows.first.map { RailWidgetArt.traModel(type: $0.trainType) },
                           large: true, scale: scale) {
                 RailStamp(text: RailBoardClock.updateTimeString(snapshot.generatedAt), scale: scale)
             }
         case .scene:
-            // C：左上角琺瑯站名牌；更新時間在頁尾那行（mockup：「更新時間移到大卡最底那行」）。
+            // 場景背景：左上角琺瑯站名牌；更新時間在頁尾那行（mockup：「更新時間移到大卡最底那行」）。
             RailStationPlate(info: snapshot.plate ?? RailPlateInfo(name: snapshot.title, band: nil),
                              size: .large, scale: scale)
         }
@@ -1467,8 +1467,8 @@ struct LargeBoardView: View {
 /// 方向區段標頭：三角＋「北上／南下」＋一條延伸到右緣的細線。
 ///
 /// 設計稿「我的站 · 4x4」：「方向箭頭只畫一次，省下的每列 20pt 拿去放時刻。」
-/// 🔴 只有 Large 用它。4x2 只有三筆、2x2 只有一筆，兩個標頭會把版面吃光——那是使用者
-///    2026-08-31 的裁示，2026-09-01 只對 4x4 解除。
+/// 🔴 只有 Large 用它。4x2 只有三筆、2x2 只有一筆，兩個標頭會把版面吃光——所以
+///    2026-08-31 起小尺寸一律不加，2026-09-01 只對 4x4 解除。
 struct BoardDirectionHeader: View {
     let heading: RailHeading
     var height: CGFloat = 20
@@ -1532,8 +1532,8 @@ struct SmallSecondRow: View {
 // MARK: - 發車看板 · Medium（一主兩從）
 
 /// v2 設計稿的高度預算：21（標題）＋4＋44（主角）＋22×3 ＝ 138 ＝ Medium 內容區高度，
-/// 剛好四班車。原本的 9pt 分隔線與主角副標那一行都拿去換第四班車了——設計稿的原話是
-/// 「Medium 是主力尺寸，138pt 高的預算選擇留給列數」。
+/// 剛好四班車。原本的 9pt 分隔線與主角副標那一行都拿去換第四班車了——設計稿的取捨是
+/// Medium 為主力尺寸，138pt 高的預算優先留給列數。
 struct MediumBoardView: View {
     let snapshot: BoardSnapshot
     let entryDate: Date
@@ -1608,14 +1608,14 @@ struct MediumBoardView: View {
                 RailStamp(text: RailBoardClock.updateTimeString(snapshot.generatedAt), scale: scale)
             }
         case .model:
-            // A 頭帶：站名＋更新時間疊兩行靠左，右邊停下一班的代表車（車壓在頭帶下緣上）。
+            // 車模頭帶：站名＋更新時間疊兩行靠左，右邊停下一班的代表車（車壓在頭帶下緣上）。
             RailModelBand(title: RailNativeL10n.name(snapshot.title),
                           model: snapshot.rows.first.map { RailWidgetArt.traModel(type: $0.trainType) },
                           large: false, scale: scale) {
                 RailStamp(text: RailBoardClock.updateTimeString(snapshot.generatedAt), scale: scale)
             }
         case .scene:
-            // C：站名牌在左、更新時間靠右貼著站名牌底緣（中卡沒有頁尾可以放它）。
+            // 場景背景：站名牌在左、更新時間靠右貼著站名牌底緣（中卡沒有頁尾可以放它）。
             HStack(alignment: .bottom, spacing: scale.pt(6)) {
                 RailStationPlate(info: snapshot.plate ?? RailPlateInfo(name: snapshot.title, band: nil),
                                  size: .small, scale: scale)
@@ -1643,7 +1643,7 @@ struct BoardRowView: View {
     /// 『接下來有哪幾班』」。Medium 拿那一行的高度換第四班車（138pt 預算只夠選一個）。
     var showsDepartureLine: Bool = true
     /// 逐列方向三角要不要畫。Large 分組版把方向升成區段標題之後，列上就不再重複畫一次
-    /// （設計稿：「方向箭頭只畫一次」）；4x2／2x2 仍然逐列畫（2026-08-31 裁示）。
+    /// （設計稿：「方向箭頭只畫一次」）；4x2／2x2 仍然逐列畫（自 2026-08-31 起）。
     var showsHeading: Bool = true
     /// 由呼叫端算好的列高（設計基準座標系）。Large 分組版把剩餘空間平均分給每一列，
     /// 所以列高不再是常數——nil 時退回 RailRowHeight 的固定值。
@@ -1661,7 +1661,7 @@ struct BoardRowView: View {
 
     /// 好讀版：車次號只留在 large 的主角列。
     /// 設計檔規則四「砍欄不砍字」有兩句話，各管一半：
-    /// 車次依原設計按尺寸省略；月台依 2026-09-07 裁示，有官方值才顯示。
+    /// 車次依原設計按尺寸省略；月台從 2026-09-07 起，有官方值才顯示。
     /// 而它的好讀版 mock 連 large 的從班也沒有車次（只有主角那列印「371」）⇒ 按角色砍。
     /// 兩句合起來就是「只有 large 的主角留車次」。`showsDepartureLine` 只有 large 的主角
     /// 是 true（發車時刻副標是 large 獨有），所以拿它當「我是不是 large 的主角」。
@@ -2048,8 +2048,8 @@ struct SmallPlaceBoardView: View {
 /// - 兩條以上：並排欄。平行的兩條鐵路不是一串序列，硬排成一條軌脊會謊報先後關係。
 ///
 /// 🔴 字級改成設計稿的固定 pt（原本是由欄寬反解的 PlaceColumnMetrics，8–15pt 浮動）。
-///    當初那套是為了修「medium 的字比 small 還小」（使用者 2026-07-31 回報），做法是
-///    照最壞情況反解；新的固定級距比它【更大】（12–20pt 對 8–15pt），那個回饋仍然被滿足，
+///    當初那套是為了解決 medium 的字級低於 small（級距倒掛）的狀況，做法是
+///    照最壞情況反解；新的固定級距比它【更大】（12–20pt 對 8–15pt），原本的問題仍然解決，
 ///    而且不再有「同一張卡在不同機型上字級不同」這件事——RailScale 的等比縮放取代它。
 struct MediumPlaceBoardView: View {
     let snapshot: PlaceBoardSnapshot

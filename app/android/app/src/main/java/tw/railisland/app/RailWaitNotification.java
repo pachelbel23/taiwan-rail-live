@@ -222,7 +222,7 @@ final class RailWaitNotification {
             ? RailWaitTrack.hop(context, state.optString("sys", ""), rawStation, state.optString("nextDest", ""))
             : null;
         if (hop != null) {
-            // 進站軌道（B 方案）：兩端是上一站與本站，車模沿軌道走；兩端只能放圖示，站名寫進內文。
+            // 進站軌道：兩端是上一站與本站，車模沿軌道走；兩端只能放圖示，站名寫進內文。
             double pos = RailWaitTrack.carPosition(hop, nextEta, now / 1000.0,
                 !state.optBoolean("trackOffline", false));
             builder.setContentText(RailNativeL10n.name(context, hop.prev) + " → " + station
@@ -334,7 +334,7 @@ final class RailWaitNotification {
         int carRes = RailWaitTrack.traCarDrawable(state.optString("carModel", ""));
         if (Build.VERSION.SDK_INT >= 36 && !prevStop.isEmpty() && prevDepSec != null
                 && prevDepSec < schedSec && carRes != 0) {
-            // 進站軌道（B 方案）：兩端是上一站與本站，正側面車模沿軌道走；兩端只能放圖示，站名寫進內文。
+            // 進站軌道：兩端是上一站與本站，正側面車模沿軌道走；兩端只能放圖示，站名寫進內文。
             // 車頭位置＝「上一站實際開車 → 本站實際約到站」的比例，兩端都是表定＋官方誤點（同 iOS）。
             // 沒有官方誤點（未知或過期）就不畫車：照表定畫一台在走的車＝宣稱準點。
             // 這張通知每分鐘重抓一次 /api/tra-live 並重貼（scheduleRefresh），車就一分鐘挪一格。

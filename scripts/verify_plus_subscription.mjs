@@ -74,7 +74,7 @@ const PORT = server.address().port;
 //   (整個 repo grep 過 get('plus') 零命中,實載也證實不帶它 PLUS_ENABLED 照樣是 true)。
 const BASE = `http://127.0.0.1:${PORT}/`; // 與 listen 同一個位址;index.html 的 LOCAL_DEV 對 localhost/127.0.0.1 一視同仁
 
-// 刻意用非真實佔位值:本 repo 公開,實際定價未拍板,不放進版控。
+// 刻意用非真實佔位值:本 repo 公開,實際定價還沒定,不放進版控。
 // 判準只比「商店回傳什麼、UI 就顯示什麼」,不解析數值,故任何相異字串皆可。
 const M_PRICE = 'NT$MONTH-STUB';  // stub「月訂」價(模擬商店回傳;index.html 不得硬編此值)
 const A_PRICE = 'NT$YEAR-STUB';   // stub「年訂」價

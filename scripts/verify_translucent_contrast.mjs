@@ -1,7 +1,7 @@
 // 面板半透明(body.panel-translucent)的文字/圖表可讀性驗收。
 //
 // 為什麼要量而不是看:面板底色是 alpha .30 + backdrop-filter blur(3px),背後直接透出地圖
-// (圖磚、路網彩線、車號牌)。「字會不會跟背景融在一起」取決於「字色 vs 該處實際透出來的顏色」,
+// (圖磚、路網彩線、車號牌)。字是否清楚可讀取決於「字色 vs 該處實際透出來的顏色」,
 // 縮圖裸眼看不出 4.5:1 與 2.8:1 的差別(judgment.md 心得 6)。
 //
 // 判準來源刻意與實作不同源(心得 29):背景真值取自「把七個面板 visibility:hidden 之後的實際螢幕
@@ -595,7 +595,7 @@ const SCENARIOS = [
   { ...D, theme: 'dark' },
   { ...M, theme: 'light' },
   { ...M, theme: 'dark' },
-  // 衛星影像=使用者實機回報最糟的一張:亮色面板疊在深淺交錯的照片上
+  // 衛星影像=實機上對比最糟的一張:亮色面板疊在深淺交錯的照片上
   { ...M, theme: 'light', basemap: 'sat' },
   { ...D, theme: 'light', basemap: 'sat' },
   { ...M, theme: 'dark', basemap: 'sat' },

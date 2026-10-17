@@ -90,7 +90,7 @@ if (native) {
     async signIn(provider, legacy) {
       const options = { skipNativeAuth: true, scopes: ['email', 'name'] };
       if (provider === 'apple') return FirebaseAuthentication.signInWithApple(options);
-      // 2026-08-30:多位 Android 使用者回報「點 Google 登入完全沒反應,連錯誤訊息都沒有」。
+      // 2026-08-30：多位 Android 使用者回報點 Google 登入毫無動靜、也沒有錯誤提示。
       // Android 的 Google 登入預設走 Credential Manager,而 plugin 那條路徑有兩處不保證回覆:
       // 成功處理只認 GOOGLE_ID_TOKEN 型別、沒有 else 分支;憑證解析是在自建的 executor 執行緒上
       // 做的,拋錯不會 reject。兩者都讓 PluginCall 永遠不 resolve/reject ⇒ 前端 await 永遠不回,

@@ -74,7 +74,7 @@ const MUTATIONS = [
   },
   {
     id: 'R6 誤點資訊不會過期',
-    why: '半小時前的誤點被當成現在的事實(使用者長期裁示:「有資訊就一定要對」)。',
+    why: '半小時前的誤點被當成現在的事實(卡上顯示的資訊必須正確,這是規則,不是假設)。',
     from: '        let expired = age.map { $0 > TraWaitStale.delayMaxAgeSeconds } ?? false',
     to: '        let expired = false',
     // 先開火的同樣是逐格期望表(過齡那一格的主角必須退回表定);
@@ -94,7 +94,7 @@ const MUTATIONS = [
   {
     id: 'R8 主角字級與列距調回寬鬆值',
     why: '這兩個數字是被 160pt 逼出來的,不是美感選擇:六列全滿時鎖屏卡片會被系統截掉上下緣\n'
-       + '     (2026-08-17 使用者實機回報過同一件事)。',
+       + '     (2026-08-17 在實機上也出現過同一件事)。',
     from: '        VStack(alignment: .leading, spacing: scale.pt(3)) {',
     to: '        VStack(alignment: .leading, spacing: scale.pt(6)) {',
     to2: {
@@ -128,7 +128,7 @@ const MUTATIONS = [
   },
   {
     id: 'R11 負誤點(早到)被夾成準點',
-    why: '官方值一律照抄(使用者長期裁示)。夾正看起來「比較合理」,但那是我們改了官方說的話。',
+    why: '誤點數字只能是官方原值、不得加工(這是規則,不是假設)。夾正看起來「比較合理」,但那是我們改了官方說的話。',
     from: '            else if m < 0 { tone = .late; delayText = "早到 \\(-m) 分" }   // 官方值照抄，不夾正',
     to: '            else if m < 0 { tone = .onTime; delayText = "準點" }',
     expect: '的誤點句是',

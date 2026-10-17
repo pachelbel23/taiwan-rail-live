@@ -103,7 +103,7 @@ if (existsSync('data/bounty_units.json')) {
   ok('E12 剛到頂還沒滿 30 天 → 自動開關不開', nh3.unlocked_offer === 0, String(nh3.unlocked_offer));
 }
 
-// ── F 組：seg_key 鍵空間硬 gate（controller 任務指令額外要求，brief 沒有給）───────────
+// ── F 組：seg_key 鍵空間硬 gate（額外加的驗收）───────────
 // 判準與 build_bounty_units.mjs 完全獨立重寫（不 import 它、不 import worker.js 的任何 canonicalSegs
 // 邏輯），真值來源＝index.html 的 lineNetwork()/segKey()（index.html:9099,9166——已用
 // `diff` 逐行核對過與這裡的邏輯等價，見 task-5-report.md 前置檢查）。同源判準會一起失明（心得29），

@@ -1,5 +1,5 @@
 #!/bin/bash
-# 併入巡檢的排程殼（2026-08-24 使用者要求：「看有沒有遺漏沒有併進去的功能，或是進度落在外面」）。
+# 併入巡檢的排程殼：定期找出還沒併進主線的功能與分支進度。
 # 由 launchd 每天叫一次，見 ~/Library/LaunchAgents/com.sirius.railisland.mergescan.plist
 #
 # 刻意只告警不自動併：合併 index.html 是這個 repo 最危險的動作之一（2026-08-23 就是一顆

@@ -35,7 +35,7 @@ for (const [i, m] of depDecls.entries()) {
 }
 // 2b. 本檔的設計約定(2026-09-02 起):恰兩個依賴——車站 provider 綁 \.$sys、方向 provider 綁
 //     \.$station(方向只列該站開得到的;原本「方向不帶依賴、列全系統終點」讓使用者選得到
-//     跨系統／跨線的方向,選完看板永遠空白——使用者回報後改掉)。
+//     跨系統／跨線的方向,選完看板永遠空白——因此改掉)。
 const depKeys = depDecls.map(m => m[1].trim());
 ok('L2b 全檔恰兩個依賴:sys 與 station', depDecls.length === 2
    && depKeys.some(k => /\\\.\$sys\b/.test(k)) && depKeys.some(k => /\\\.\$station\b/.test(k)),
@@ -66,8 +66,8 @@ ok('L0 真的有抽到 provider', /OptionsProvider/.test(code));
 // 5. 免費站數常數存在且是合法值。
 // 🔴 2026-08-15 改判準:原本釘死 `= nil`(定價未決時的當下實測值),定價一落地就假紅——
 //    心得 35「判準寫是什麼、不寫有幾個」。真正要守的兩件事:(a) 常數還在(它是唯一開關);
-//    (b) 若設了限制,同批必須有明講 CTA——後者由 verify_metro_plus_gate.mjs 的 S 組守,
-//    這裡只斷言「設了限制就必須有那支驗收在守」,避免有人把限制打開卻繞過 CTA 那條裁示。
+//    (b) 若設了限制,擋下時必須附上 CTA——後者由 verify_metro_plus_gate.mjs 的 S 組守,
+//    這裡只斷言有限制時那支驗收檔一定存在(L5b),避免有人把限制打開卻繞過 CTA 那條規則。
 const limitMatch = code.match(/freeStationLimit\s*:\s*Int\?\s*=\s*(nil|\d+)/);
 ok('L5 免費站數常數存在且值合法', !!limitMatch,
    (src.match(/freeStationLimit.*/) || ['(找不到)'])[0]);
@@ -173,7 +173,7 @@ ok('L6 沒有 parameterSummary', !/\bvar\s+parameterSummary\b/.test(code),
          /m\s*>=\s*1/.test(approxBody) && /st\.secondDest\s*=\s*m\s*>=\s*1/.test(approxBody),
          '(缺 m>=1 閘或 secondDest 沒跟著閘)');
       // 反向對照:官方列的照抄必須還在——沒有這條,「把 secondEta 整個刪掉」也能讓 L8b 全綠,
-      // 但那會把北捷官方秒級倒數降級成分鐘,違反「有資訊就一定要對」。
+      // 但那會把北捷官方秒級倒數降級成分鐘,等於丟掉官方已給的精度。
       ok('L8e 官方路(else)照抄 st.secondEta = b?.etaEpoch', /st\.secondEta\s*=\s*b\?\.etaEpoch/.test(elseBody),
          elseBody.trim().slice(0, 120));
       ok('L8f 官方路同時保留 secondMinutes 與 secondDest',

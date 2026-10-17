@@ -86,7 +86,7 @@ public final class MixedWidgetConfigActivity extends AppCompatActivity {
 
         // 通行證狀態照小工具判定用的同一顆旗標（MixedBoardWidgetProvider.hasMetroSlot 讀的就是它）。
         // 🔴 這行原本寫死免費版說明：已開通的人每次打開設定頁都被告知「需啟用通行證」，
-        //    而自動選站明明能用（使用者 2026-09-18 回報）。捷運單卡的設定頁早就分兩種說法，這裡跟上。
+        //    而自動選站明明能用。捷運單卡的設定頁早就分兩種說法，這裡跟上。
         boolean plus = getSharedPreferences(MetroWidgetProvider.PREFS, Context.MODE_PRIVATE)
             .getBoolean("plus_active", false);
         TextView pass = text(plus ? "通行證已啟用：可以放多站，也可以用自動選站。"
@@ -162,7 +162,7 @@ public final class MixedWidgetConfigActivity extends AppCompatActivity {
     private void updateMetroDirections() {
         // 重建前記住現在選的終點,新清單裡還有就選回去:restore() 選好方向之後,捷運站 spinner 的
         // listener 要到下一個 layout 才觸發、再重建一次清單,沒有這一步那次重建會把方向打回
-        // 「全部方向」(使用者 2026-09-02 回報「選了方向就取消不了」的 Android 側根因之一)。
+        // 「全部方向」(這是 Android 側方向設定改不回來的根因之一)。
         String keep = selectedDirection();
         List<String> labels = new ArrayList<>();
         metroDirectionValues.clear();

@@ -30,11 +30,11 @@
 // 呼叫 weekendBody 的方式 / body 有沒有真的被送進回應),不驗內部邏輯——邏輯的正確性交給
 // 下面三段,因為它們現在跟 handler 呼叫同一支純函式,不是各自重算。
 //
-// 🔴 修復輪 3(2026-09-04,協調者驗收修復輪 2 時自己撞出來,非複審提出):原本 W5/W6 是在
+// 🔴 修復輪 3(2026-09-04,驗收修復輪 2 時撞出來,非複審提出):原本 W5/W6 是在
 // 【整份 worker.js】上找字面,沒有指名是在量哪一個函式——`jsonResCached(edge, cacheKey,
 // body, 200,` 這串字同時出現在 delayHistory(:2663)與 weekendBoard(:4112),兩邊都用
 // 「body」這個菜市場變數名。W6(舊編號)分辨得出來純屬巧合:delayHistory 那行接在同一行
-// 尾巴、weekendBoard 那行剛好斷行,正則的行尾 `$` 才對不上前者——協調者用受控實驗證明,只要
+// 尾巴、weekendBoard 那行剛好斷行,正則的行尾 `$` 才對不上前者——受控實驗證明,只要
 // 把 delayHistory 那行【純格式】改成斷行寫法,即使 weekendBoard 自己的 body 被改成 {},
 // W6 依然全綠。這是判準盲點形態 0(沒有證明「我在量的是誰」)。
 // 修法:把 weekendBoard 的函式本體用大括號深度計數精確切出來(見下面 extractFunctionBody),
@@ -123,7 +123,7 @@ chk('W6 weekendBoard 內確實呼叫 weekendBody(today, span, eventsDoc, names)'
 // 【F】【E】【S】三段是直接呼叫 weekendBody、完全繞過 weekendBoard() 這個 handler 本體的,
 // body 算對了與 body 真的被回傳出去是斷開的兩件事。
 // 這裡只能做到字面比對:worker.js 帶滿 Cloudflare 專屬全域(caches.default 等),node 直接
-// import 會整支炸掉;任務書也已裁定不起 wrangler dev(.wrangler 本機快取跨重啟存活,突變
+// import 會整支炸掉;這支刻意不起 wrangler dev(.wrangler 本機快取跨重啟存活,突變
 // 測試會假綠)。字串比對的代價是只要那行文字沒變就測不出「邏輯上是否真的送對」,但至少接得住
 // 「回應引數被改成別的變數/字面值」這種最粗暴的手誤——這是已知取捨,不是懶得驗到底。
 // 比對範圍限定在 weekendBoardBody:就算 worker.js 裡其他函式(例如 delayHistory)有一模一樣的

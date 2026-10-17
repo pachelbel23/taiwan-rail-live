@@ -98,7 +98,7 @@ struct DirectionHarness {
                 RailBoardScheduleWriter.Station(n: record.n, s: record.s)
             ] = (record.lat, record.lon)
         }
-        // 共站【不再】走 PlaceBoardBuilder（2026-08-17 改吃官方發車看板）。這裡要驗的
+        // 共站【不再】走 PlaceBoardBuilder（2026-08-17 起改以官方發車看板為資料來源）。這裡要驗的
         // 是「共站有沒有正確認出它的成員站」——那是官方看板索引的唯一來源，錯了就會
         // 指到別站的班次，而站名反推救不了（5 對共站兩系統名字不一樣）。
         let composites = RailBoardScheduleWriter.CompositeStationFinder.find(

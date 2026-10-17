@@ -1181,7 +1181,7 @@ function dedupeLatest(rows, timeField) {
 // 複審 Important 2(task-12):值域必須收在官方 1–4 級的整數,不能只擋「非正數」——
 // 上游若曾送出 9/5/2.5 這類值域外的髒值,前端逐格對照表(TRTC_CROWD[v])查無對應項會
 // 整格跳過不畫,導致「少畫一格、整條左移」(fail-shifted,指到錯的節次),比整條不顯示更糟
-// (需求書原文:「講錯方向比不講更糟」)。任何一格出界,整讀視同缺值,整個 cars 欄位不帶。
+// (寧可不講,也不能講錯方向)。任何一格出界,整讀視同缺值,整個 cars 欄位不帶。
 const carsOf = (r, keys) => {
   const v = keys.map(k => Number(r[k]));
   return v.every(x => Number.isInteger(x) && x >= 1 && x <= 4) ? v : null;
@@ -1191,12 +1191,12 @@ let trtcMem = null; // { data, at }
 // 不透過真的等待 15 秒,也不靠讀常數字面值反推——見 verify_trtc_freshness.mjs。
 function trtcMemoStale(stale, now) { return !stale || now - stale.at > 15e3; }
 // CarWeight(高運量逐車)獨立節流(2026-09-02,北捷來函要求降低呼叫頻率)。
-// 它只供擁擠度與車號標籤,不決定名冊也不畫位置(2026-08-18 裁示:位置一律從官方每站倒數反推),
+// 它只供擁擠度與車號標籤,不決定名冊也不畫位置(位置一律從官方每站倒數反推),
 // 而它的 utime 是「該車最後一次抵站」的事件時刻、實測中位落後 76–96 秒 ⇒ 15 秒取樣本來就是過取樣。
 // 節流到 60 秒不會讓任何一台車的 at 變老(at 取自上游事件時刻,不是我們的抓取時刻),
 // 只是最多晚 60 秒才看到新的抵站事件——小於上游自己的發佈延遲。
 // 🔴 CarWeightBR 刻意【不】節流:它的 TrainNumber 要與倒數切段的車逐台【順序配對】(:983),
-// 用舊列會把車號標到別台車上,那是「標錯」不是「留白」,違反裁示。
+// 用舊列會把車號標到別台車上,那是「標錯」不是「留白」,違反寧可留白也不標錯的原則。
 let trtcHwMem = null; // { rows, at } —— 只快取 CarWeight,與 trtcMem 分開
 const TRTC_HW_THROTTLE_MS = 60e3;
 // 門檻同樣抽成可測函式(比照 trtcMemoStale 的 task-11 理由):驗收要量 59999/60001ms 的邊界,
@@ -1206,9 +1206,9 @@ function trtcHwStale(mem, now) { return !mem || now - mem.at > TRTC_HW_THROTTLE_
 // 🔴 為什麼要有這條(2026-09-03):節流命中時本來就會送出最多 60 秒舊的那份,所以「舊 60 秒」
 // 是這支資料【已經被接受】的新鮮度;但失敗那一輪舊碼直接落到 [],於是整批高運量擁擠度
 // 一起消失一輪——上游抖一下的代價從「晚 60 秒看到新的抵站事件」變成「畫面上每一台車都
-// 沒有擁擠度」,而手上明明有一份合格的資料沒用。使用者 09-03 回報「高運量的擁擠度有時候
-// 也會不見」。
-// 上限取節流窗的兩倍:再撐不到就寧可留白,不拿真的過期的擁擠度騙人(裁示「有資訊就一定要對」)。
+// 沒有擁擠度」,而手上明明有一份合格的資料沒用。這個症狀確實出現過:某一輪全線車輛的
+// 擁擠度同時空白。
+// 上限取節流窗的兩倍:再撐不到就寧可留白,不拿真的過期的擁擠度騙人。
 // 寫成從 TRTC_HW_THROTTLE_MS 推導,不手打第二個常數(judgment 第七節第 3 條)。
 function trtcHwFallbackUsable(mem, now) {
   return !!mem && Array.isArray(mem.rows) && now - mem.at <= TRTC_HW_THROTTLE_MS * 2;
@@ -1222,16 +1222,16 @@ function trtcHwFallbackUsable(mem, now) {
 // 是 per-isolate 而只省下一半（實測比值 0.50，理論值 0.25）。把三支上游收斂到單一 Durable Object
 // 之後，全球只剩一份計時器，量才會真的掉一個量級。
 //
-// 🔴 落點必須避開中國與香港（使用者長期裁示）。實測（2026-09-02，各 8 顆新 DO）：
+// 🔴 落點必須避開中國與香港（長期規則）。實測（2026-09-02，各 8 顆新 DO）：
 //    apac-ne → NRT×4 / KIX×3 / ICN×1，香港 0；apac-se → 香港 7/8；apac → 香港 3/8；
 //    無提示 → 香港 4/8。⇒ 只能用 apac-ne，另外三種都不合格。
 // 官方文件兩句（原文）：「Hints are a best effort and not a guarantee」、
 // 「Durable Objects do not currently change locations after they are created」。
 // ⇒ 提示不是保證，所以不能設完就算：每一輪都把 DO 自報的 colo 帶回來，落在禁區就【不用】這顆
-//    DO、退回各 colo 直打。量會回到原點，但不會違反裁示——這是刻意的取捨方向。
+//    DO、退回各 colo 直打。量會回到原點，但不會違反落點限制——這是刻意的取捨方向。
 // 🔴 名字不是隨便取的:DO 的落點在【建立當下】決定、之後不會搬,所以「哪個名字」等於
 //    「落在哪個城市」。2026-09-02 以 apac-ne 實測 8 個名字:NRT×4／ICN×2／KIX×2、香港 0;
-//    v2 落在 NRT(東京),符合裁示「亞洲首選東京」,故釘死它。
+//    v2 落在 NRT(東京),亞洲區本來就優先選東京,故釘死它。
 //    要換名字＝換一顆新 DO＝重新抽落點,換之前先用 /status?name= 量到東京再換。
 const TRTC_POLLER_NAME = 'trtc-poller-v2';
 const TRTC_POLLER_HINT = 'apac-ne';
@@ -1256,7 +1256,7 @@ async function trtcFetchUpstream(env, now, hwMem) {
     hwFresh ? Promise.resolve(null)
       : trtcCall(trtcApiUrl(env, 'CarWeight'), 'getCarWeightByInfoEx', env).catch(() => null),
     // 🔴 CarWeightBR 刻意不節流：它的 TrainNumber 要與倒數切出來的區段【逐台順序配對】，
-    //    用舊列會把車號標到別台車上＝「標錯」而非「留白」，違反裁示。
+    //    用舊列會把車號標到別台車上＝「標錯」而非「留白」，違反寧可留白也不標錯的原則。
     trtcCall(trtcApiUrl(env, 'CarWeightBR'), 'getCarWeightBRInfo', env).catch(() => []),
     trtcCall(trtcApiUrl(env, 'TrackInfo'), 'getTrackInfo', env)
       .then(rows => ({ ok: true, rows: Array.isArray(rows) ? rows : [] }))
@@ -1289,7 +1289,7 @@ export class TrtcPoller {
     this.hwMem = null;
     this.inflight = null;
     this.colo = null;
-    this.denied = null;   // 落點違反區域裁示時記在這裡,之後一律不再碰上游
+    this.denied = null;   // 落點違反區域限制時記在這裡,之後一律不再碰上游
     this.noCreds = false; // 這顆 Worker 沒設 TRTC secret(與 denied 不同:每輪重驗,不 latch)
   }
   async detectColo() {
@@ -1476,13 +1476,13 @@ async function trtcLive(request, env) {
         trains.push({ no: String(r.TrainNumber), sys: 'hw', dir: +r.CID, stn: r.StationID,
           at: trtcEpoch(r.utime), dest: m ? m.dest : null, path: m ? m.path : [], ...(cars ? { cars } : {}) });
       }
-      // ── BR 位置改由官方每站倒數決定（2026-08-18 使用者裁示）────────────────────
-      // 「不可能拿什麼carweight慢那麼多的時間去顯示給人看」。TrackInfo 的 NowDateTime 落後約
+      // ── BR 位置改由官方每站倒數決定 ────────────────────
+      // CarWeight 的時間戳太舊，拿來定位等於顯示過期位置。TrackInfo 的 NowDateTime 落後約
       // 15 秒，CarWeightBR 的 UpdateTime 落後 96–265 秒，而前端在有 path 時就用 path 的
       // 下一站定位（index.html 的 `to = nextIdx; from = to - step`），沒 path 才吃 stn。
       // ⇒ 把切段還原出來的 path 填進去，位置就自動換成新鮮來源，前端零改動。
       // 配對用「順序」不用距離：同向不能超車 ⇒ 兩份清單沿行進方向的排列必然一致，
-      // 這比拿落後兩到四分鐘的站碼去比距離穩得多（使用者裁示：順序是物理不變量）。
+      // 這比拿落後兩到四分鐘的站碼去比距離穩得多。
       // 車數不一致時不硬配也不刪車，只記進 cd.brSeg 供每小時巡檢與晨間觀察比對。
       let brSegStat = { derived: 0, matched: 0, cwRows: br.length, groups: 0, originRows: 0, unaligned: 0 };
       const brPathByNo = new Map();
@@ -1512,7 +1512,7 @@ async function trtcLive(request, env) {
           const cw = br.filter(r => Number(r.CID) === dir && idxOfCode.has(String(r.StationID)))
             .sort((a, b) => (idxOfCode.get(String(a.StationID)) - idxOfCode.get(String(b.StationID))) * step);
           // 🔴 舊寫法要求兩邊台數全等才配對，否則整個方向零配對、全部退回落後 96–265 秒的站碼
-          // ——那正是使用者禁止的事。實測 08-15 語料 80 個方向：段數−車數 只有 0(38%)／−1(49%)／
+          // ——那正是必須避免的事。實測 08-15 語料 80 個方向：段數−車數 只有 0(38%)／−1(49%)／
           // −2(14%)，**一次都沒有多出來**。少的那 1–2 台是端點附近觀測不到的（跑最後一段沒有
           // 前方站可報、剛要發車的起點列被丟），必定落在頭或尾 ⇒ 正確的對應只可能是 cw 裡的一段
           // **連續視窗**，候選僅 N−M+1 個（實測 ≤3）。逐一評分取最佳，比全等閘門多救回 62% 的方向。
@@ -1566,7 +1566,7 @@ async function trtcLive(request, env) {
           // 差很多就是有一邊在騙人（晨間觀察與每小時巡檢都讀這三個數）。
           brSeg: brSegStat,
           // 這一輪的上游是誰打的：colo 代碼(如 'NRT')＝集中輪詢生效中；'direct'＝退回各 colo
-          // 直打(DO 掛了或沒綁定，量會回到 41 個 colo 各打)；'denied:HKG'＝落點違反區域裁示被擋。
+          // 直打(DO 掛了或沒綁定，量會回到 41 個 colo 各打)；'denied:HKG'＝落點違反區域限制被擋。
           // 🔴 這是「集中輪詢有沒有在跑」的唯一外部證據——回應長得對不代表省到了呼叫。
           poller: frame.poller, pollerAgeMs: frame.ageMs } };
       // TrackInfo collapsed rows 同時是位置錨點與唯一官方名冊；站名正規化、支線／終點消歧、
@@ -1580,7 +1580,7 @@ async function trtcLive(request, env) {
         // 我方組裝錯誤也不是刪掉上一份官方車的證據；保留 D1 已知名冊續推。
         boardPos = await trtcOfficialHeldPayload(env, 'assembly-error');
       }
-      // 「再下一班」裝飾進看板列（2026-08-22 裁示）：eta2 只增欄不動 board 既有欄位與列數，
+      // 「再下一班」裝飾進看板列：eta2 只增欄不動 board 既有欄位與列數，
       // 消費端（小工具/等車卡）沒解這個欄位就完全無感。join 鍵含 no+eta 判別欄與毒化
       // 邏輯（忠孝復興 BL/BR 撞名對），細節在 applyNext2ToBoard。held/outage 模式沒有
       // next2 ⇒ 整段自然跳過。
@@ -1872,12 +1872,12 @@ const TRTC_OFFICIAL_OUTAGE_KEY = 'official_outage_v1';
 // 官方正常 15～60 秒一輪；3 分鐘沒動就是真的斷了——與前端 TRTC_FEED_STALE_SEC 同一個推導，
 // 刻意共用同一個數字，不另外發明門檻。落差小於它的空白屬正常跳拍，照舊 carry。
 const TRTC_OFFICIAL_REALIGN_SEC = 180;
-// 🔴 2026-08-17 使用者訂正：「發車的第一段路,我們在下一站也會看到兩個倒數時間,那就可以有兩台啊」
+// 🔴 起點剛發車的首段,下一站會並列兩筆倒數,雙車同段是合法狀態
 // ——同一段軌道上有幾台車，官方的倒數自己會說；用「幾台算太多」去猜只會誤殺合法的兩台。
 // 規則收斂成一條：一個倒數就是一台車（TRTC_OFFICIAL_ONLY）。故段擠自癒設 0 停用，
 // 機制與驗收保留，日後若真需要「結果荒謬就重排」的後備再開。
 const TRTC_OFFICIAL_CROWD_LIMIT = 0;
-// 有倒數才畫：2026-08-17 一度啟用,但使用者訂正——有編號就代表車在,不該從畫面消失。
+// 有倒數才畫：2026-08-17 一度啟用,但已編號的車一律當作還在線上,不該從畫面消失。
 // 改由「失去倒數的車繼續沿線往前跑、到終點收車」解決疊車,故關閉。機制與驗收保留。
 const TRTC_OFFICIAL_ONLY = false;
 // 恢復通知在名冊裡帶多久。夠久讓斷訊後才開頁面的人也看得到跳動的原因，又不會久到變成常駐雜訊。
@@ -2012,7 +2012,7 @@ function trtcOfficialRowsForJoin(rosterRows) {
 
 function trtcOfficialRosterSnapshot(model, rows, prior, day, nowEpoch, sourceRevision,
   sourceFrameKey = trtcOfficialFrameKey(rows), realignSec = TRTC_OFFICIAL_REALIGN_SEC) {
-  // 自我察覺重置（2026-08-17 使用者要求「迅速重置」）：這一輪若畫出「同一段軌道 ≥3 台車」
+  // 自我察覺重置：這一輪若畫出「同一段軌道 ≥3 台車」
   // 這種物理上不可能的畫面，就對那幾條線用同一輪的官方資料重跑一次、依當下官方名單重建。
   const roster = reduceOfficialRosterSelfHealing({ model, rows, prior, day, nowEpoch, sourceRevision,
     realignSec, crowdLimit: TRTC_OFFICIAL_CROWD_LIMIT, officialOnly: TRTC_OFFICIAL_ONLY });
@@ -2246,7 +2246,7 @@ async function trtcBoardPositionAnchors(env, rows, feedMode = 'official',
       details: identityAudit.rejectedNumberJumpDetails || [],
     }));
   }
-  // 小工具「再下一班」（2026-08-22 裁示）：只從在途官方名冊推導，推不出留白。
+  // 小工具「再下一班」：只從在途官方名冊推導，推不出留白。
   // 失敗只影響 next2 自己（回空陣列），絕不拖垮名冊與看板本體。
   let next2 = [];
   try { next2 = deriveSecondArrivals(model, resolved.rows, vehicles); }
@@ -3209,7 +3209,7 @@ async function fetchRevenueCatLifetimePurchases(uid, env, wantEntitlement, entit
   const lifetimeProductIds = plusLifetimeProductIds(env);
   if (!lifetimeProductIds.size) return { ok: true, purchases: { items: [] } };
   const selectedEnvironment = plusEnvironment(entitlementEnvironment);
-  // sandbox 終身只認 UID allowlist 裡的帳號。舊 TestFlight build 的 header 可偽造、也不查 UID，
+  // sandbox 的終身方案只對 UID allowlist 內的帳號生效。舊 TestFlight build 的 header 可偽造、也不查 UID，
   // 而 sandbox 購買不收錢；訂閱在 sandbox 會自行停止續訂，終身不會，不限縮就等於永久免費。
   // 放在這裡而不是 sandboxPlusRequested()，plus-status 與 webhook 兩條路才會同一套規則。
   if (selectedEnvironment === RC_ENV_SANDBOX && !plusSandboxAllowedUids(env).has(uid)) {
@@ -3723,7 +3723,7 @@ async function laUnbind(request, env) {
 // ── 捷運等車卡:交班與註銷 ────────────────────────────────────────────
 // 🔴 與 /api/la/bind 的三個刻意差異:
 //   (1) 不驗通行證。等車卡是免費功能(看板那顆「追蹤這站」對所有人都長出來),在這裡加一道
-//       身分閘門等於做出一個沒有人裁示過的定價決定,而且會變成「不給用也不說」的靜默 gate。
+//       身分閘門等於憑空做出一個尚未定案的定價決定,而且會變成「不給用也不說」的靜默 gate。
 //   (2) 沒有 uid ⇒ 沒有 per-uid 列數上限可修剪。防濫用靠限流(20/分鐘/IP)＋token 格式＋
 //       end_at 上限(灌進來的列最多活 3 小時就被 cron 的 DELETE 收掉)。
 //   (3) 交的是「哪一站、哪個方向、追到幾點」這三個純量,不是一整份表定資料——因為班次本身
@@ -3981,11 +3981,11 @@ function laFetchWithTimeout(url, init, timeoutMs = LA_APNS_TIMEOUT_MS) {
 // 照刪。5 的取法:cron 每分鐘一次 ⇒ 5 分鐘;設定錯誤的修復窗口遠長於此的話,被刪掉的那些列
 // 本來也已經沒有卡片可推了(APNs 對它們連續五分鐘回 Unregistered/BadDeviceToken)。
 const LA_FAIL_STREAK_MAX = 5;
-// 🔴 最終複審 A-I3(需 owner 裁示的政策旋鈕,刻意獨立成一顆具名常數以便一行改掉)
+// 🔴 最終複審 A-I3(屬於政策取捨的旋鈕,刻意獨立成一顆具名常數以便一行改掉)
 // 情境:traLive【整批】失效(TDX 掛掉/回 502)——不是「這台車沒有觀測資料」,是整輪台鐵列
 // 都拿不到觀測。兩個選項在這個情境下直接衝突:
 //   true (現況)＝退表定推算:卡片繼續前進,但站名從「觀測」偷偷變成「推算」,
-//        正面違反使用者的約束性決定「站名來自觀測,不來自推算」。
+//        正面違反硬性約束:站名只能取自觀測,不可由推算得出。
 //        最壞可見後果:實際誤點 30 分的車,卡片照表定往前跳 ⇒「還沒到宜蘭卻顯示羅東」。
 //   false      ＝凍住不動:站名停在最後一次觀測到的那一站,直到上游恢復。
 //        代價是卡片在上游故障期間看起來「壞掉了」(但它顯示的是最後一個【真的觀測到】的事實),
@@ -3997,7 +3997,7 @@ const LA_SCHED_FALLBACK_ON_UPSTREAM_DOWN = true;
 // 🔴 最終複審 A-I3:tra-live 的觀測時刻距今超過這麼久,就當成「本輪沒有當下的觀測」。
 // TDX 的 TrainLiveBoard 正常每 1–2 分鐘更新一次,300 秒(5 分鐘)是明顯異常而非抖動。
 const LA_LIVE_STALE_SEC = 300;
-// 🔴 上游整批失效時掛在卡片上的告知(使用者逐字核可,不要改寫)。做成【後端送字串】而不是
+// 🔴 上游整批失效時掛在卡片上的告知(文案已定稿,不要改寫)。做成【後端送字串】而不是
 // 布林旗標,是為了日後改文案不必重出 App。ContentState 那一欄是 Optional:正常時送 null。
 // 動態島展開區的短標寫死在 Widget 裡(空間太小塞不下這一句),兩邊刻意不共用同一份字串。
 const LA_NOTICE_UPSTREAM_DOWN = '即時資料中斷，位置為預估。實際動態請查台鐵官網';
@@ -4251,7 +4251,7 @@ async function laPushAll(env, ctx, baseUrl, half = null) {
       // 🔴 工項 A(2026-08-08)實作時查出的漏洞:liveDown 為真【不代表 t 是 undefined】。
       // traLive 上游掛掉時走「沿用舊快取」退路回 200 ＋ 一份【舊的】看板,那份看板裡照樣有
       // 這台車 ⇒ t 是 truthy ⇒ 舊碼走 laNextIdx、拿【舊觀測】算出與 last_idx 相同的索引
-      // ⇒「沒變就不推」⇒ 卡片整段斷線期間【凍住】,正面違反使用者裁示「不能讓火車凍住」,
+      // ⇒「沒變就不推」⇒ 卡片整段斷線期間【凍住】,正面違反斷線期間卡片仍須前進的規則,
       // 而且 LA_SCHED_FALLBACK_ON_UPSTREAM_DOWN=true 這顆旋鈕在真實斷線形態下根本沒被走到。
       // (既有的 P34 照不到,是因為它的舊快取裡剛好沒有那台車 ⇒ t 為 undefined。)
       // useObs 就是「這一列這一輪到底能不能用觀測」的唯一判準,索引與 obs/sched 計數共用它。
@@ -4383,7 +4383,7 @@ async function laPushAll(env, ctx, baseUrl, half = null) {
             colorOverride: identity ? String(identity.color || '') : null,
             transferWaiting,
             // 🔴 跟車卡進站軌道契約點 4:iOS 用這一發送出的 epoch 秒(不是 Date())在
-            // departedDate/arrivalDate 之間插補車的位置,鎖屏卡片的圖才會「照樣在中間跑」,
+            // departedDate/arrivalDate 之間插補車的位置,鎖屏卡片的圖才會持續在兩站之間移動,
             // 不必等每一發推播才挪一格。
             tick: now,
             carModelOverride,
@@ -4567,7 +4567,7 @@ async function metroWaitSources(env, baseUrl, systems, now) {
       const j = await r.json();
       // trtcLive 上游失敗時回的是 200＋board:[](軟失敗),不是 5xx ⇒ 只看 status 分不出來。
       // 這裡不另外判「整批失效」:board 空 ⇒ 每一列都挑不到班次 ⇒ 走 hold(不推也不收卡),
-      // 那正是缺訊時該有的行為(使用者裁示:缺訊只 hold)。
+      // 那正是缺訊時該有的行為(缺訊只 hold)。
       out.trtc = { ok: !!(j && Array.isArray(j.board)), board: (j && j.board) || [],
         crowdByNo: mwCrowdByNo(j && j.trains) };
     } catch (e) {
@@ -4689,7 +4689,7 @@ async function metroWaitPushAll(env, ctx, baseUrl, half = null) {
       }
       // 🔴 挑不到班次一律 hold(不推、也不收卡)。上游抖動、資料過舊、深夜空窗三者在這裡
       //    長得一模一樣,而把其中任何一種當成「該收卡」都會讓卡片在使用者還要等車的時候
-      //    憑空消失。使用者裁示:缺訊只 hold。
+      //    憑空消失。規則:缺訊只 hold。
       if (!picked.length) { held++; continue; }
       const state = mwContentState(row.sys, picked, src.crowdByNo, dataAt, now);
       if (half ? !mwApproachTickDue(prev, state, now) : !mwShouldPush(prev, state, now)) { unchanged++; continue; }
@@ -4927,10 +4927,10 @@ async function traWaitPushAll(env, ctx, baseUrl, half = null) {
 }
 
 // ══════════ 等車卡:半分鐘那一輪 ══════════
-// 2026-09-23 使用者裁示「那就改30秒吧」:等車卡進站軌道上的車(即時動態的圖不會自己走,只在收到推播時
+// 2026-09-23 起:等車卡進站軌道上的車(即時動態的圖不會自己走,只在收到推播時
 // 往前挪一格)從每分鐘挪一格改成每 30 秒挪一格。cron 的最小粒度是 1 分鐘(wrangler.jsonc 的
 // "* * * * *"),所以在【同一次執行內】等到第一輪起跑 +30 秒,再跑一輪只挪車的。
-// 🔴 成本邊界(說明給使用者的,每一條都有測試守著):
+// 🔴 成本邊界(每一條都有測試守著):
 //    · cron 次數不變:還是每分鐘一次,只是這一次多活 30 秒;
 //    · 上游呼叫零增加:第二輪吃第一輪交下來的那一份資料(handoff),不再呼叫 trtcLive／traLive;
 //    · 第二輪只推行駛段／進站窗內的車,優先度維持 5(laApnsSend),不動 Apple 的推播預算。
@@ -5079,7 +5079,7 @@ async function basemapSrc(request, env) {
 // 為什麼要有這條:L2(index.html 的 ofmWatch)判定 OpenFreeMap 載不出來時,App 會當場退回
 // Stadia raster、整個 session 都留在計費底圖上;網站則跳「街道底圖載入異常」提示。在此之前
 // 這件事只在使用者的 console 留一行 warn——全體使用者裡有多少人正在燒 Stadia,一個數字都沒有
-// (2026-09-03 使用者自己的手機在 WiFi 上就中過一次,重開才回到 OFM)。前端在 fail 那一刻
+// (實機在 WiFi 上就中過一次,重開才回到 OFM)。前端在 fail 那一刻
 // 打一發到這裡(index.html 的 ofmFailBeacon),這裡只做一件事:寫一筆 Analytics Engine 資料點。
 //
 // 寫進 USAGE(railisland_usage)而不是 TRAFFIC:TRAFFIC 本來就會按端點記到 basemap-fallback 的
@@ -6780,7 +6780,7 @@ async function bountySubmit(request, env) {
       " VALUES (?,?,?,?,?,?,?,?,NULL,?,'pending')"
     ).bind(id, actor, String(b.sys), String(b.lnId), String(b.trainNo), dir, String(b.tripDate),
       JSON.stringify(samples), now).run();
-    // 立刻回，前端當下蓋灰章（規格 §3：事後真相驗證 ＋ 即時灰章）
+    // 立刻回，前端當下蓋灰章（規格 §3：當下先蓋灰章，事後再驗證）
     return jsonRes({ ok: true, id, verdict: 'pending', accepted: samples.length, dropped }, 200, 'no-store');
   } catch (e) {
     return jsonRes({ error: 'submit_failed' }, 503, 'no-store');
@@ -6975,7 +6975,7 @@ function bountyL2(nowMs, firstClaimableAt) {
   return Math.min(5, Math.pow(1.2, Math.floor(days / 7)));
 }
 function bountyPointsOf(l1, l2) { return Math.max(1, Math.round(1 * Number(l1) * Number(l2))); }
-// 自動開關(規格 §1 拍板 1、§8):三個條件同時成立才置 1。讓「沒人領」自己說話,
+// 自動開關(規格 §1 第 1 項、§8):三個條件同時成立才置 1。讓「沒人領」自己說話,
 // 不用主觀決定哪一段該給錢。
 function bountyUnlocked(row, nowMs) {
   const capped = Number(row.l2_capped_at);
@@ -7301,7 +7301,7 @@ async function bountyVerifyCron(env) {
     await env.DELAY_DB.batch(trip.sampleIds.map(id =>
       upd.bind(v.verdict, now, v.qualityCode, v.rejectCode, segsJson, id)));
     if (v.verdict === 'suspect') continue;                    // 不給章、不計點、不計入門檻
-    // 🔴 unusable 與 ok 在點數上完全一樣：排除作弊就照給（規格 §1 拍板 3、§8）
+    // 🔴 unusable 與 ok 在點數上完全一樣：排除作弊就照給（規格 §1 第 3 項、§8）
     let earned = 0;
     const creditedKinds = new Map();
     for (const c of cov) {
@@ -7671,7 +7671,7 @@ async function ingestDelayHistory(env) {
 
 // ── 台鐵誤點統計自我檢查(掛每分鐘 cron,形狀同下面的 thsrSelfHeal)─────────────────
 // 為什麼要有這條:上面的每日誤點 ingest 一天只有一發(15 1 * * *＝台北 09:15);第二發
-// (15 4 * * *)是 owner 刻意停用的(同 thsrSelfHeal 那條註解講的第二發高鐵 cron,不得以任何
+// (15 4 * * *)已停用(同 thsrSelfHeal 那條註解講的第二發高鐵 cron,不得以任何
 // 形式加回 wrangler.jsonc)。2026-09-08~09-12 連五天,這一發在第一個 TDX 呼叫(取 token)就吃
 // HTTP 429、整發拋例外——實測 TDX token 端點是 Kong 限流「每個來源 IP 每分鐘 20 次」(回應標頭
 // x-ratelimit-limit-minute:20,換不同 client_id 計數照樣遞減),而 Cloudflare Workers 的出口
@@ -7694,7 +7694,7 @@ async function ingestDelayHistory(env) {
 // MAX_DATES_PER_RUN=3 天,每天遇 429 最多重試 1 次(fetchDelayDay)⇒ 每發最多 3×2=6 次
 // 歷史 API 請求。合計最壞情形 6 發×6 次＝36 次歷史 API 請求/天(全部遇到 429 重試);不計
 // 429 重試則是 6×3=18 次/天。TDX 公開規則是歷史服務 10 次呼叫＝1 點、用量到 105% 會硬斷線
-// (斷線會讓所有即時資料一起停擺),使用者已明確要求不要對 TDX 迴圈重打。
+// (斷線會讓所有即時資料一起停擺),所以不對 TDX 迴圈重打。
 // 挑 :37 而不是整點/:15/:30/:45 是為了避開熱門 cron 分鐘——TDX token 端點按來源 IP 限流,
 // Cloudflare Workers 的出口 IP 與其他客戶共用,常見的整點/:15/:30/:45 更可能撞到別的服務也在
 // 打的那一分鐘;這一步是推測,沒有實測驗證過。09:37 是 09:15 那發每日 cron 之後的第一個時刻,
@@ -7736,7 +7736,7 @@ async function delaySelfHeal(event, env) {
 const THSR_SCHED_BLOB_KEY = 'thsr_sched';
 // 抓「今天起幾天」。原本是 2 天(今天＋明天),緩衝只有一天:2026-08-16 那發 cron 拋例外沒寫入,
 // 8/16 靠 8/15 抓的『明天』撐過去、當天完全看不出異狀,到 8/17 就整份退回昨天的班表——
-// 週日班表拿來畫週一,16 班平日車次(含使用者回報的 1504)整批消失、41 班週日車次變成幽靈車。
+// 週日班表拿來畫週一,16 班平日車次(含車次 1504)整批消失、41 班週日車次變成幽靈車。
 // 拉到 7 天後,連續一週抓不到才會見底。實測 TDX 這支端點未來四週都給得出資料(2026-08-17 驗)。
 const THSR_SCHED_FETCH_DAYS = 7;
 const THSR_SCHED_KEEP_DAYS = 8;   // days 物件最多保留幾個日鍵(依 YYYYMMDD 字串序留最新)
@@ -7954,7 +7954,7 @@ async function ingestThsrSchedule(env) {
 }
 
 // ── 高鐵班表自我檢查(掛每分鐘 cron)────────────────────────────────────────────
-// 每日 ingest 一天只有一發(15 1 * * *＝台北 09:15);第二發(12:15)是 owner 2026-07-29 刻意停用的,
+// 每日 ingest 一天只有一發(15 1 * * *＝台北 09:15);第二發(12:15)已停用,
 // 所以那一發若拋例外或上游不通,整天就沒有補救——站上靜默退回舊日鍵,把昨天的班表當今天畫。
 // 這裡每 THSR_HEAL_EVERY_MIN 分鐘問一句「今天的日鍵在不在」,缺了就當場補抓(ingestThsrSchedule
 // 冪等:抓得到才寫,全失敗連碰都不碰既有 blob)。沒缺的成本＝一次 json_type 查詢,不打 TDX、不寫 D1。
@@ -8339,7 +8339,7 @@ export default {
       // 日子才會發生);不落後的日子只有一句 D1 讀取,零 TDX 呼叫。一天只有 DELAY_HEAL_SLOTS
       // 那 5 個固定時刻會真的檢查一次,其餘 tick 都在第一行就 return、不碰 D1(見 delaySelfHeal
       // 上方註解:固定時刻是為了讓「持續落後時的歷史 API 呼叫量」有上限)。每日誤點 ingest
-      // 只有一發(15 1 * * *)、第二發(15 4 * * *)是 owner 刻意停用的,不得以任何形式加回
+      // 只有一發(15 1 * * *)、第二發(15 4 * * *)已停用,不得以任何形式加回
       // wrangler.jsonc——這支自癒是那一發失敗/積欠時當天唯一的補救(見 2026-09-08~09-12 的
       // TDX token 429 事故)。
       const delayHealTask = delaySelfHeal(event, env).catch(e => {

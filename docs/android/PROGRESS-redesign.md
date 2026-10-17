@@ -37,7 +37,7 @@
 - `docs/android/_baseline-font-scale.txt`
 - `docs/android/_baseline-landscape.txt`
 
-> 🔴 **這兩份基準停在 `0514242` 那一輪，之後的「頂列收成一顆」那顆已經讓它們過期**：
+> 🔴 **這兩份基準停在 `0514242` 那一輪，之後頂列分頁併成單一按鈕的那次改動已經讓它們過期**：
 > `verify_font_scale` 多了一整個 TB 段（+329 條），A／X／Y 段的判準名稱也因為四顆分頁收合而改過
 > （`A1 正向對照:群組切換器量得到…`），`verify_landscape` 的 `L10` 改名成「分組切換」。
 > **派 Codex 之前要先在這棵樹重跑一次全矩陣重產這兩份檔**，否則 `comm -13` 會把「改過名字的判準」
@@ -103,7 +103,7 @@ FAIL 清單**逐項相同**＝環境條件，不是回歸。2026-08-27 就是這
 | 3 | `verify_merge_no_loss.mjs` 兩側聯集零缺 | ☑ | 對派工固定點 `75a64e4` exit 0；兩側聯集為函式 1179、id 365、更新紀錄 101、說明 29、方案 9、常數 311、URL 7，候選另多出台鐵等車說明（候選說明共 30） |
 | 4 | 平台適配（派工單第五節逐項） | ☑ | `nowrap` 與兩處牌面 `white-space` 均保留；台鐵等車卡已補 Android Now Bar／鎖屏對應及獨立使用說明；WebView／字級／停靠站牌已真機通過；官方 `@capacitor/app 8.1.1` 與可取消的 `rail:native-back` 浮層收合流程已納入正式候選包 |
 | 5 | 本機 gitignored 檔就位 | ☑ | 簽章、Firebase、release policy、授權底圖 key 與 RevenueCat Android `goog_…` public SDK key 均已就位；文件與驗收輸出只核對 key 的存在與長度，不洩露值 |
-| 6 | 網頁層四支腳本 | ☑ | 字級 1460/1460；TB 329/329；sheet 37/37；橫式 1021/1027 且 6 個 FAIL 皆在舊基準；半透明 157/210，新增紅全為派工單已核可的衛星殘差 |
+| 6 | 網頁層四支腳本 | ☑ | 字級 1460/1460；TB 329/329；sheet 37/37；橫式 1021/1027 且 6 個 FAIL 皆在舊基準；半透明 157/210，新增紅全為派工單列為可接受的衛星殘差 |
 | 7 | `RAIL_VERIFY_NATIVE=android npm run verify` | ☑ | exit 0；要求 Android native、Metro Core、版本 1.4.11、versionCode 16，全部通過 |
 | 8 | Gradle bundleRelease／assembleRelease | ☑ | 正式候選 `./gradlew clean bundleRelease assembleRelease`：BUILD SUCCESSFUL（388 tasks）；APK 通過 apksigner v2，AAB 通過 jarsigner，正式 RevenueCat Android public key 已進包 |
 | 9 | 模擬器／真機七項驗收 | ◐ | SM-A5460／Android 16 instrumentation 11/11；`v0827e` release APK 已覆蓋安裝且直式冷啟動正常。既有字級、群組鈕、半透明、停靠牌、縮放、橫式、觀察模式與音樂連網／飛航各 8 次皆已在同機驗過；本顆新增 v3／v4／v5 橫式與返回鍵實按因安裝後 ADB 連線中斷，尚待補最後一輪 |
@@ -117,9 +117,9 @@ FAIL 清單**逐項相同**＝環境條件，不是回歸。2026-08-27 就是這
 - Play Console 已唯讀確認最高上傳 `versionCode 15`，本顆維持 `versionCode 16`／`versionName 1.4.11`。
 - `worker.js`／`privacy.html` 已做語意聯集並通過 release gate；`terms.html` 沒有 merge 衝突。
 - 先前缺少的官方 `@capacitor/app` 與 RevenueCat Android `goog_…` public SDK key 已在第五節這顆正式候選包補齊；舊測試包的「不可上傳 Play」限制不再套用於 `v0827e`。返回鍵程式已完成，但仍須在 ADB 恢復後實按確認浮層先收、App 不退到背景。
-- `.gp-row` 真機實高約 124 physical px；450 dpi 對應約 **44dp**，低於 Android 建議的 48dp。依派工單不擅自改值；建議 iOS 判準另行核可後再一起改成 48dp。
-- 工作期間 `build/redesign-901` 在 12:35 又由派工固定點 `75a64e4` 前進到 `754fcac`，新增音樂、台鐵等站說明與 iOS 1.5.0 (80) 送審設定。Android 已因本輪實作的台鐵等車卡補上同內容說明；音樂則在使用者後續明確加派後納入。iOS 送審版號不在本輪 Android 範圍，未帶入。
-- 使用者已於同日明確加派音樂載貨；本輪只補指定的 `069c1d7` 與 `becb59c`，不帶入同分支後續的 iOS 1.5.0 (80) 送審版號。兩顆均以三方套用乾淨進入目前 merge，`index.html` 沒有整檔取單邊。
+- `.gp-row` 真機實高約 124 physical px；450 dpi 對應約 **44dp**，低於 Android 建議的 48dp。依派工單不擅自改值；建議待 iOS 判準確定後再一起改成 48dp。
+- 工作期間 `build/redesign-901` 在 12:35 又由派工固定點 `75a64e4` 前進到 `754fcac`，新增音樂、台鐵等站說明與 iOS 1.5.0 (80) 送審設定。Android 已因本輪實作的台鐵等車卡補上同內容說明；音樂則在後續加派後納入。iOS 送審版號不在本輪 Android 範圍，未帶入。
+- 同日已加派音樂載貨；本輪只補指定的 `069c1d7` 與 `becb59c`，不帶入同分支後續的 iOS 1.5.0 (80) 送審版號。兩顆均以三方套用乾淨進入目前 merge，`index.html` 沒有整檔取單邊。
 
 ## 四、本輪驗收摘要（2026-08-27）
 
@@ -127,7 +127,7 @@ FAIL 清單**逐項相同**＝環境條件，不是回歸。2026-08-27 就是這
 - `PORT=5261 node scripts/verify_font_scale.mjs`：exit 0，1460/1460。
 - `PORT=5261 node scripts/verify_sheet_sizes.mjs`：exit 0，37/37。
 - `PORT=5261 node scripts/verify_landscape.mjs`：exit 1，1021/1027；6 個 FAIL 全是既有 `L6/L7`，`comm -13` 對舊基準為空。
-- `PORT=5261 node scripts/verify_translucent_contrast.mjs`：exit 1，157/210；對 `23ac887` 同腳本控制組 162/210。候選新增的 8 個 FAIL 全在衛星底圖情境，符合「亮色 .55／暗色 .30」已核可殘差；非衛星有 3 個舊 FAIL 消失。
+- `PORT=5261 node scripts/verify_translucent_contrast.mjs`：exit 1，157/210；對 `23ac887` 同腳本控制組 162/210。候選新增的 8 個 FAIL 全在衛星底圖情境，符合派工單列為可接受的「亮色 .55／暗色 .30」殘差；非衛星有 3 個舊 FAIL 消失。
 - 含授權音樂／底圖的本機 Android 測試 build：exit 0；Widget parity 6/6、六個 iOS 自訂 plugin 均有 Android 對應、no-ship-regression 1834 identifiers 無缺、release check 全綠，輸出 178 files／146.3 MB；RevenueCat 使用假 public key，產物不可上傳 Play。
 - `RAIL_VERIFY_NATIVE=android RAIL_REQUIRE_NATIVE=1 RAIL_EXPECT_METRO_CORE=1 RAIL_EXPECT_APP_VERSION=1.4.11 RAIL_EXPECT_ANDROID_VERSION_CODE=16 npm run verify`：exit 0。
 - `node scripts/verify_tra_wait_core.mjs`：48/48；`node scripts/verify_tra_wait_push.mjs`：80/80；`node app/scripts/verify_tra_wait_ui.mjs`：89/89。

@@ -3,7 +3,7 @@
 // legacy-three 以明示的歷史車長探針保留原 production 基線回歸。所有基線數值不變。
 // FORMATION_PROBE=long 是 production 的相容別名，不再注入較長的產品外觀。
 // DATES=all 跑三日 × 兩種測量；TEST_DATE=YYYY-MM-DD 單跑完整產品，
-// 加 FORMATION_PROBE=legacy-three 才跑歷史測量。本輪禁止 UPDATE_BASELINE。
+// 加 FORMATION_PROBE=legacy-three 才跑歷史測量。UPDATE_BASELINE 會直接報錯，不准改寫既有基線。
 // 產物 output/overlap-families/<日期>-<測量>.json / .log / -families.json。
 // 120 秒閘門的退出碼不套到 4 秒取樣；仍檢查報告身分與每個家族，不允許新家族。
 import { spawnSync } from 'node:child_process';

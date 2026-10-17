@@ -5,7 +5,7 @@
 // 其中 12/16 是車停在端點站（既有註解說的折返落後），剩下 4 筆的 dest 都站在 path 那邊
 // （例：404 在景安、dir=1 南下，但 dest 迴龍在北、path 頭頂溪也在北 ⇒ dir 才是錯的那個）。
 // 所以「path 優先於 dir」是對的，而「離官方站碼兩站以外」在官方同時給出遠站 eta 時，
-// 依「位置不用準，時間一定要準」也是可接受的。判準不該寫成我猜的門檻。
+// 依時間必須準、位置可以放寬的原則，也是可接受的。判準不該寫成我猜的門檻。
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -33,7 +33,7 @@ const IDX = { 南勢角: 0, 景安: 1, 永安市場: 2, 頂溪: 3, 古亭: 4, �
     path: [{ name: '古亭', eta: NOW + 187 }, { name: '東門', eta: NOW + 382 }] });
   ok('stn 落後一段時採信 path，車放在頂溪→古亭',
     !!v && v.from === IDX.頂溪 && v.to === IDX.古亭, v ? `from=${v.from} to=${v.to}` : '沒建出來');
-  ok('到站時刻照抄官方 path 的 eta（時間一定要準）',
+  ok('到站時刻照抄官方 path 的 eta（時間必須準）',
     !!v && v.arrEpoch === NOW + 187, v ? String(v.arrEpoch - NOW) : '—');
 }
 // ── path 頭就是隔壁站 ⇒ from 必為官方站碼本身 ──────────────────────────────────

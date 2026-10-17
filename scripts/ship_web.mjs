@@ -126,7 +126,7 @@ try {
   // 查不到正式庫（exit 2）同樣擋下——驗不了不等於通過。
   const remoteSchema = spawnSync('node', [path.join(wt, 'scripts', 'verify_remote_schema.mjs')], { cwd: wt, encoding: 'utf8' });
   process.stdout.write(remoteSchema.stdout || ''); process.stderr.write(remoteSchema.stderr || '');
-  if (remoteSchema.status !== 0) fail('正式庫 schema 與 schema/*.sql 不一致或查不到——先補套 migration（要使用者 go）再出貨（單獨重跑：node scripts/verify_remote_schema.mjs）');
+  if (remoteSchema.status !== 0) fail('正式庫 schema 與 schema/*.sql 不一致或查不到——先補套 migration（正式庫寫入須先確認）再出貨（單獨重跑：node scripts/verify_remote_schema.mjs）');
 
   // ── 2.45 更新紀錄字數閘門（最近更新最多 8 條、每條 ≤90 字；完整歷史每條 ≤120 字）─────────────
   // 09-08、09-25 兩次超長都是推上 main 之後才被別的 session 抓到。09-26 先掛進 pre-push
@@ -168,7 +168,7 @@ try {
 
   // ── 2.5b i18n 瀏覽器驗收（Chromium＋WebKit，約 70 秒）──────────────────────
   // 2.5 是靜態掃描，看不到「畫出來的畫面」：切換語言後殘留前一種語言、App 的「更多」面板、法務頁、
-  // 手機四寬度的可見中文，都只有真的開瀏覽器才量得到(2026-09-19 使用者在 App 英日文實測回報的那一批，
+  // 手機四寬度的可見中文，都只有真的開瀏覽器才量得到(2026-09-19 App 英日文實測抓到的那一批，
   // 靜態掃描全綠)。這支此前沒有任何呼叫者，而且還要人先起一個 5178 的 server 才跑得動。
   // 🔴 洗掉繼承來的 RAIL_I18N_URL：有值時它改連既有 server、驗的可能是別棵樹（G0 會擋，但別讓它發生）。
   const i18nBrowser = spawnSync('node', [path.join(wt, 'scripts', 'verify_i18n.mjs')],
@@ -506,7 +506,7 @@ try {
     + '（單獨重跑：npm run check-tymc-kind）');
 
   // ── 2.9 北捷上游呼叫量閘門 ────────────────────────────────────────────────
-  // 2026-09-02 北捷來函「8 月三支 API 各逾 60 萬次、不似正常使用方式」之後補的。
+  // 2026-09-02 北捷來函指出 8 月三支 API 各逾 60 萬次呼叫、用量不尋常，之後補的。
   // 這裡守的是兩件會【靜默】退回去的事：營運窗外的閘門、CarWeight 的 60 秒節流。
   // 兩者都不影響畫面，所以任何回歸都不會被別的判準或人眼發現——只會在一個月後
   // 變成下一封信。同 2.7／2.8：這支此前沒有任何呼叫者（那條路徑的守門人一直是空的，
@@ -721,8 +721,8 @@ try {
   // 為什麼值得進出貨鏈:台鐵與阿里山林鐵的車次號碼大量重複(1、2、101、121…),而
   // data/tra_special_trains.json 是台鐵專屬——凡「拿車次／車型名／站名去 state.trains 撈」
   // 的地方漏了系統閘門,林鐵的車就會頂著台鐵具名列車的名字出現。issue#23(2026-08-04)只在
-  // specialOf() 補了閘門,這支腳本當時也只驗 specialOf;2026-09-08 使用者回報「點環島之星
-  // 會跑阿里山林鐵的車」,查出來是另外兩個消費端(護照收集章 dexCandidates、探索面板
+  // specialOf() 補了閘門,這支腳本當時也只驗 specialOf;2026-09-08 又出現同類症狀:點環島之星
+  // 竟跟到阿里山林鐵的車,查出來是另外兩個消費端(護照收集章 dexCandidates、探索面板
   // computeHighlights)各自繞過 specialOf 自己比對。**這支腳本先前不在任何 npm script、
   // 也不在本鏈上,等於不存在**——這正是第二個洞活了一個月沒人發現的原因,所以這次一起掛上。
   // 單引擎約 40 秒(含自己起 dev server)。

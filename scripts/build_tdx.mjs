@@ -479,7 +479,7 @@ function assemble({ id, name, color, ids, stations, parts, maps, freq, loop, est
   const shapes = shapeParts('NTDLRT_Shape.json');
   const maps = s2sMapsOpt('NTDLRT_S2STravelTime.json'); // TDX 無 S2S 檔
   // TDX 把 Y 字路網登記成單一 V 線 14 站序(…V09濱海沙崙→V10淡海新市鎮→V11崁頂→V28海大→V27沙崙→V26漁人碼頭),
-  // 整包餵 assemble 會讓綠山尾段(濱海沙崙→崁頂)變成折返毛刺被吃掉,V10/V11 只剩孤站(2026-07-11 使用者回報)。
+  // 整包餵 assemble 會讓綠山尾段(濱海沙崙→崁頂)變成折返毛刺被吃掉,V10/V11 只剩孤站。
   // → 拆成兩條實際營運線各自組裝(同 TRTC 新北投支線模式,共用同一包 shape 碎片,分岔在濱海沙崙旁的三角線)。
   const vAll = sol.get('V');
   const vGreen = vAll.filter(s => !['V28', 'V27', 'V26'].includes(s)); // 紅樹林→…→淡海新市鎮→崁頂

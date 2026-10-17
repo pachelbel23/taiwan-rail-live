@@ -168,7 +168,7 @@ const arrScan = await p.evaluate((STN) => {
 }, ARR_STN);
 const arrOf = r => r.gs.find(g => g.label === '抵達本站');
 const bad10a = arrScan.filter(r => !r.err && !r.term).filter(r => (arrOf(r)?.mins || []).some(v => v != null && v > 60));
-ok('D10a 非終點站的「抵達本站」組不得出現 60 分以上的班次（8/31 裁示 b 仍生效）',
+ok('D10a 非終點站的「抵達本站」組不得出現 60 分以上的班次',
   bad10a.length === 0, JSON.stringify(bad10a.map(r => [r.ex ? '展開' : '一般', r.name, arrOf(r).mins])));
 ok('D10b 正向對照：至少一站真的畫出「抵達本站」組（否則 D10a 是空過）',
   arrScan.some(r => !r.err && (arrOf(r)?.mins.length || 0) > 0),
@@ -364,7 +364,7 @@ ok('D11f 覆蓋率具名斷言：D11e 真的驗到多條支線，且「沒有專
 // 🔴 非支線的車不放進支線組。成追線只有追分（山線）與成功（海線）
 //    兩站，沒有任何一班車終點在它身上，走它的全是縱貫線直通車 ⇒ 它一班都不該落進支線組。
 //    修法前這裡是 28 列（追分／成功兩站的「往 成功」「往 追分」兩組）。
-ok('D11g 沒有專屬區間的連絡線（成追線）一班都不該落進支線組——不是支線的車不放支線裡',
+ok('D11g 沒有專屬區間的連絡線（成追線）一班都不該落進支線組——走它的全是縱貫線直通車，不屬於支線',
   d11.nNoExclusiveRows === 0, `${d11.nNoExclusiveRows} 列，例：` + JSON.stringify(d11.noExclusiveRows));
 // 🔴 終點是六家的車，組名不該寫成往內灣：組名取這一趟真正的終點站。
 //    修法前組名取的是支線的末端站，新竹「往 內灣」裡 41/46 班其實終到六家。

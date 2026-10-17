@@ -332,7 +332,7 @@ async function run(engineName, browser) {
   ok(tag('D4 站名／車次／車種／終點都帶齊'),
     !!pl && pl.station === '板橋' && pl.trainNo === target.no && !!pl.trainType && !!pl.dest,
     JSON.stringify(pl && { station: pl.station, trainNo: pl.trainNo, trainType: pl.trainType, dest: pl.dest }));
-  // 🔴 精度反向對照（派工原話：卡片渲染輸出絕不出現 mm:ss 倒數形式）。
+  // 🔴 精度反向對照（規則：渲染輸出裡不得有任何 mm:ss 形式的倒數）。
   //    payload 是卡片文字的唯一原料 ⇒ 這裡先擋一次：不可以有任何「秒數／倒數」欄位，
   //    也不可以有任何字串值長得像 m:ss。
   const badKeys = pl ? Object.keys(pl).filter(k => /sec(onds)?left|countdown|eta|remain|until|duration/i.test(k)) : ['no payload'];
@@ -341,7 +341,7 @@ async function run(engineName, browser) {
   ok(tag('D6 payload 沒有任何 mm:ss 形狀的字串值'), badVals.length === 0, `bad=${badVals.join(',') || '(無)'}`);
   ok(tag('D6b 上面兩條真的掃到了東西（正向對照）'),
     !!pl && Object.keys(pl).length >= 6, `keys=${Object.keys(pl || {}).length}`);
-  // ── 進站軌道（B 方案）欄位：期望值取【原始班表 data/tra_schedule.json】——那份只列停靠站，
+  // ── 進站軌道欄位：期望值取【原始班表 data/tra_schedule.json】——那份只列停靠站，
   //    上一站＝清單裡的前一格；產品走的是加密過（含通過站 stop:false）的 tr.stops 再往回跳過通過站，
   //    兩條路不共用任何一行（judgment 心得 29）。
   const rawTrain = rawTraSchedule.trains.find(t => String(t.train) === String(target.no));
@@ -457,7 +457,7 @@ async function run(engineName, browser) {
   //    前面 C1 之所以綠，是因為 live 剛啟用時 easedShift 會 snap 到官方值 ⇒ 兩者【恰好相等】，
   //    相等時任何判準都分不出實作讀的是哪一個（判準與被測差異同源＝零資訊）。
   //    把官方值從 7 分改成 20 分、【立刻】讀：raw 已經是 20，eased 還在往上爬。
-  //    使用者長期裁示是「官方值一律照抄」，所以卡上與選單上必須是 20。
+  //    規則是官方給的延誤值原樣顯示、不另做平滑，所以卡上與選單上必須是 20。
   await page.evaluate(() => traWaitClosePicker());
   traLiveOverride = {
     at: new Date(fakeNow() - 30000).toISOString(), srv: fakeNow(),

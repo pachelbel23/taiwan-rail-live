@@ -169,7 +169,7 @@ export function mwContentState(sys, rows, crowdByNo, dataAt, tickSec) {
 
 // staleDate:下一班的【到站瞬間】。視圖靠 isStale 把倒數翻成綠字「進站」
 // (MetroWaitActivity.swift:67),所以每一發推播都必須帶——推播的 content 會整包取代舊 content,
-// 少送這一項等於把卡片的「進站」語意拿掉,倒數歸零後會停在 0:00(那正是 08-14 真機回饋
+// 少送這一項等於把卡片的「進站」語意拿掉,倒數歸零後會停在 0:00(那正是實機上出現過、
 // 要修掉的殭屍卡)。分鐘級系統沒有秒級真值,用「現在＋N 分」當近似(與 App 開卡時
 // RailMetroWaitPlugin.swift:104 的算法同一套)。
 export function mwStaleDate(sys, rows, nowSec) {
@@ -202,7 +202,7 @@ function mwEtaChanged(prev, next) {
   if (pn) return false;
   return Math.abs(Number(prev) - Number(next)) >= MW_ETA_EPS_SEC;
 }
-// 進站窗:下一班離本站只剩「上一站→本站」這一段時,卡片上的進站軌道(B 方案)要畫車在路上。
+// 進站窗:下一班離本站只剩「上一站→本站」這一段時,卡片上的進站軌道要畫車在路上。
 // 鎖定畫面的圖不會自己動,車只在收到一發更新時往前挪——遲滯會讓準點的車整段一發都不推,
 // 車就黏在上一站直到翻成「進站」。所以窗內每 30 秒推一發(做法:
 // cron 每分鐘一輪,同一次執行內 +30 秒再跑一輪只挪車的,見 worker.js waitCardHalfMinute)。

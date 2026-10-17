@@ -1,4 +1,4 @@
-// A 版自然散光：每節車廂獨立衰減，差異固定在車廂上，不隨時間閃動。
+// 自然散光：每節車廂獨立衰減，差異固定在車廂上，不隨時間閃動。
 export const HALO_STOPS = [[0,1],[.18,.87],[.4,.5],[.64,.17],[.84,.025],[1,0]];
 export function haloNight(sun, dark = false) {
   if (!sun) return dark ? 1 : 0;

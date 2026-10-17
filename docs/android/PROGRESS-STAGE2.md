@@ -5,7 +5,7 @@
 ## 執行邊界與起始基線
 
 - 工作樹：`/Users/xuxiang/Code/軌島-Android`；分支 `feat/android-shell`，HEAD `c42c4ddf8729db62f8a535cf83f2d142308110da`（`c42c4dd feat(Android): 建立 Capacitor Android 殼——可編出 debug APK`）。
-- 起始 `git status --porcelain=v1 -uall` 只有 `?? docs/android/codex-prompt-stage2.md`；這是使用者提供的本輪派工檔，尚未 staging。本輪截至目前沒有執行任何 git 寫操作。
+- 起始 `git status --porcelain=v1 -uall` 只有 `?? docs/android/codex-prompt-stage2.md`；這是本輪的派工檔，尚未 staging。本輪截至目前沒有執行任何 git 寫操作。
 - `app/node_modules` 仍是 symlink：`app/node_modules -> /Users/xuxiang/Code/捷運小動畫/app/node_modules`；未執行 npm install／npm ci／rm。
 - 已完整讀取 `docs/android/PLATFORM-GAPS.md` 與 `docs/android/codex-prompt-stage2.md`；C-1 嚴格維持「先 Android 實測、後決定是否改碼」，目前未修改音量 class。
 
@@ -128,7 +128,7 @@
 - 程式化結果分別寫入 `docs/android/shots/ui-audit-360.json`、`ui-audit-375.json`、`ui-audit-414.json`、`ui-audit-768.json`。四組實際寬度均與要求一致；每組 12 個可見控件、`overlapCount=0`、`centerHitFailures=[]`、`touchFailures=[]`。
 - 每個控件都先以中心與四側共 5 點做 `elementFromPoint` 擁有者檢查，再以 ADB `input tap` 點實際裝置座標；逐項捕捉 `pointerdown`／`pointerup`／`click`，確認三種事件都回到同一控件。四組合計 48 次真實點擊全部通過。
 - `#randBtn` 與 `#nearBtn` 各有 `::after` 擴張熱區。每隔 2 CSS px 橫掃整列：360 寬分段為 `c5 139..239`、空隙 `241..247`、`c6 249..349`；375 為 `155..255`、空隙 `257..263`、`265..365`；414 為 `195..293`、空隙 `295..301`、`303..403`；768 為 `547..647`、空隙 `649..655`、`657..757`。兩顆按鈕的偽元素熱區沒有重疊或互搶。
-- 第一輪 360 掃描曾因 `Page.navigate` 讓長連線 WebSocket 隨 WebView 導頁關閉而 exit 13；改為 Android force-stop／start 後不再由 CDP 導頁。第二輪發現 live header 在逐項點擊期間重建節點，舊 audit key 失效而讓「高／捷」呈假陰性；改為每次實體點擊前重掃並對當下節點重新掛 key。依停損規則在第三輪前停下並取得使用者明確同意；第三輪 360 與後續三種寬度全數通過。AVD 曾在核准後退出，重啟同一個非 wipe AVD 後續跑，並非第三次相同 harness 邏輯失敗。
+- 第一輪 360 掃描曾因 `Page.navigate` 讓長連線 WebSocket 隨 WebView 導頁關閉而 exit 13；改為 Android force-stop／start 後不再由 CDP 導頁。第二輪發現 live header 在逐項點擊期間重建節點，舊 audit key 失效而讓「高／捷」呈假陰性；改為每次實體點擊前重掃並對當下節點重新掛 key。依停損規則在第三輪前停下，確認後才續跑；第三輪 360 與後續三種寬度全數通過。AVD 曾在停損停點之後退出，重啟同一個非 wipe AVD 後續跑，並非第三次相同 harness 邏輯失敗。
 - 414 的第一次 DPI 校準得到實際 415；只把 density 417 微調為 418，未改產品或 harness 判準，重跑後得到精確 414。全部完成後已執行 `wm density reset`，恢復 AVD 預設 420 dpi。
 
 ## F. 最終驗證
@@ -149,7 +149,7 @@
 - 診斷時發現 `app/capacitor.config.json` 的 `loggingBehavior: "production"` 並不是「只在開發版記錄」，而是正式版也會將 Capacitor plugin call/result 完整寫入 logcat，Firebase Authentication 回傳內容也會被序列化。已立即清空裝置 logcat，把設定改為 `none`，並在 `verify-release.mjs` 加入 fail-closed 閣門。
 - 修正後 `RAIL_ALLOW_SAFE_BUILD=1 npm run verify` exit 0；閣門的 `none` 正向與 `production` 負向樣本都通過。`npx cap copy android` 後重編 Debug APK，Gradle `BUILD SUCCESSFUL`；複蓋安裝後從 APK 讀回設定確認為 `none`，啟動 App 後只計數不輸出 payload 內容，`bridge_payload_log_lines=0`。診斷用 CDP forward、暫存探針與裝置日誌均已清除。
 - Cloudflare Observability 取得的精確根因為 `[plus-entitlement] account-delete entitlement deletion failed: google oauth 400`，證明還沒有走到 Firestore IAM，是 Google 拒絕 Worker 用 service-account JWT 換 token。使用者於 Worker Settings 的 Variables and Secrets 中，將 `FIRESTORE_PROJECT_ID`、`FIRESTORE_SERVICE_ACCOUNT_EMAIL`、`FIRESTORE_SERVICE_ACCOUNT_PRIVATE_KEY` 改為同一份 Firebase Admin service-account JSON 的對應欄位（私鑰為 Secret）並部署。
-- 設定修正後從 Android App 重跑同一條 Apple 重驗／撤銷／`account-delete`／Firebase user 刪除流程，使用者於 2026-08-05 確認「刪除成功」。Apple Android 撤銷與完整刪帳鏈由「後台阻斷」改列 PASS；未繞過後端單獨刪 Firebase user。
+- 設定修正後從 Android App 重跑同一條 Apple 重驗／撤銷／`account-delete`／Firebase user 刪除流程，2026-08-05 實測刪除成功。Apple Android 撤銷與完整刪帳鏈由「後台阻斷」改列 PASS；未繞過後端單獨刪 Firebase user。
 
 ## H. 正式授權底圖設定與 Android build（2026-08-09）
 
@@ -181,12 +181,12 @@
 - 權限自檢對共用 `.git/worktrees/軌島-Android` 與 `.git/objects` 的精確 `.wtest` 建立／刪除均 exit 0；沒有使用替代 index 或碰其他 worktree。
 - 指定 9 檔提交為 `fa10d427b6648573c6602871c3c1886a015b81aa`。commit 前 `git diff --cached --numstat` 與 commit 後 `git show --numstat HEAD` 完全一致：`capacitor.config.json` 1/1、`verify-release.mjs` 11/0、`PLATFORM-GAPS.md` 17/5、`PROGRESS-STAGE2.md` 34/0、audit script 176/0、三張 PNG binary、audit JSON 788/0；未 stage `.idea/`。
 - `git merge --no-edit main` 零衝突，merge commit 為 `641d7ce91187de55169d5abdadb1862bd7c6660b`。語意閘門全通過：`index.html:6363` 保留 `const nativeAndroid = android && IS_NATIVE_APP`，`:6367` 保留「系統設定→應用程式→軌島」，舊 `if (iOS || nativeApp)` 不存在，`:2945` 為 iOS-only `music-volume-unavailable`，`:6141` 與 `:17041` 分別仍是 `IS_NATIVE_APP`、`state._setDropMode` 定義；`app/capacitor.config.json:6` 仍為 `loggingBehavior: "none"`。`verify-release.mjs` 同時保留 logcat fail-closed gate（`:13,487`）、Android native assets 同步檢查（`:446`），以及 main 的 `assertPlusSandboxOff`／`assertPlusSandboxTestBuild`（`:48,61`）。
-- main 帶入的發行錨點已過期，依使用者指定改成臺北時間 2026-08-10 12:00；commit `17caea05212a18277e18a86c2bfba20d7951b947`，`revenuecat-config.js` numstat 1/1。沒有同步或驗證 iOS 日期；本輪範圍經使用者再次確認為 Android-only。
+- main 帶入的發行錨點已過期，改成臺北時間 2026-08-10 12:00；commit `17caea05212a18277e18a86c2bfba20d7951b947`，`revenuecat-config.js` numstat 1/1。沒有同步或驗證 iOS 日期；本輪範圍為 Android-only。
 
 ### Android 全鏈與版本
 
 - 合併前正式底圖產物為 `v0804g`；合併後 `RAIL_INCLUDE_LICENSED_BASEMAPS=1 npm run build` exit 0，輸出 `v0808a`、135 files、41.2 MB，接著 `npx cap copy android` exit 0。以 release verifier 的完整內容／政策閘門、但依 Android-only 範圍略過雙平台 native parity loop，檢查 exit 0；另以硬斷言逐一比對 `app/www` 與 `app/android/app/src/main/assets/public` 均為 `v0808a`，兩處都沒有 `v0804g`。
-- 原樣 `npm run verify` 會因未同步的 iOS native public 仍是 `v0804g` 而 fail closed；這不是 Android 失敗，也沒有為了讓指令變綠而覆寫 iOS。此偏離來自使用者明確指示「略過這同步，這邊只驗證 android」，故 Android 發行驗證改由上一項的完整 gates（略過 native 雙平台 loop）加 Android hard parity assertion 組成。
+- 原樣 `npm run verify` 會因未同步的 iOS native public 仍是 `v0804g` 而 fail closed；這不是 Android 失敗，也沒有為了讓指令變綠而覆寫 iOS。此偏離來自本輪範圍只含 Android、不含 iOS 同步，故 Android 發行驗證改由上一項的完整 gates（略過 native 雙平台 loop）加 Android hard parity assertion 組成。
 - JDK 21／Android SDK 下 `./gradlew assembleDebug` exit 0，246 tasks；44×44 修改後又完整重跑 build、Android copy 與 Gradle，三段再次 exit 0，APK 已覆蓋安裝至 `RailIsland_API35_Pixel7`。
 
 ### Pixel 7／API 35 回歸
@@ -209,7 +209,7 @@
 
 - 掃描 `main...feat/android-shell` 的全部新增／修改 blob：104 個 blob，其中 47 個 binary，共 9,506,012 bytes；每個 blob 都由 ref 取出後以 binary-safe 方式掃描，未倚賴 `git diff` 是否能展開。
 - 樣式命中數：Google API key shape 0、JWT-like token 0、client-secret marker 0、GitHub PAT prefix 0、Google OAuth token prefix 0；ignored `.env` 內兩把 client key 的實值比對各 0，過程未輸出實值。
-- 私鑰 PEM header 樣式的唯一命中為 `app/scripts/verify-release.mjs:491` 的 detector regex 常量，位於 `suspiciousSecretPatterns` 陣列。依使用者主線裁定：同檔同行在公開 main 已存在，屬「偵測規則掃到偵測規則」；全檔私鑰常見 base64 block prefix 0 命中，沒有新增私鑰內容。此一精確同檔同行假陽性獲准放行，其他命中仍維持 fail closed。為免掃描紀錄本身成為下一次字串假陽性，本段不重印 detector 的完整 regex。
+- 私鑰 PEM header 樣式的唯一命中為 `app/scripts/verify-release.mjs:491` 的 detector regex 常量，位於 `suspiciousSecretPatterns` 陣列。同檔同行在公開 main 已存在，屬偵測規則本身被掃到的假陽性；全檔私鑰常見 base64 block prefix 0 命中，沒有新增私鑰內容。此一精確同檔同行假陽性放行，其他命中仍維持 fail closed。為免掃描紀錄本身成為下一次字串假陽性，本段不重印 detector 的完整 regex。
 - 目視檢查 `basemap-stadia-light.png`、`basemap-stadia-dark.png`、`basemap-esri-satellite.png`、`keyboard-search-landscape.png`：前三張只有地圖／列車／底圖署名，第四張只有 App 橫向搜尋與系統鍵盤；均無金鑰、帳號或設定頁敏感內容。
 
 ### 分支 push 與版號／簽章設定 commit
@@ -222,7 +222,7 @@
 ### Android release build、簽章與內容
 
 - `RAIL_INCLUDE_LICENSED_BASEMAPS=1 npm run build` exit 0：`v0808a`、135 files、41.2 MB、線上底圖開啟；`npx cap copy android` exit 0。
-- 依使用者明確 Android-only 範圍，release verifier 跑完整內容／政策 gates 但略過雙平台 native parity loop，exit 0；另以硬斷言確認 `app/www` 與 Android assets 同為 `v0808a`、byte-identical，兩處 `v0804g` 均 0。沒有同步或修改 iOS assets。
+- 依 Android-only 範圍，release verifier 跑完整內容／政策 gates 但略過雙平台 native parity loop，exit 0；另以硬斷言確認 `app/www` 與 Android assets 同為 `v0808a`、byte-identical，兩處 `v0804g` 均 0。沒有同步或修改 iOS assets。
 - Gradle `bundleRelease` 與 `assembleRelease` 均 exit 0。重新建立正確 CN 的 JKS 後兩者再跑一次，`signReleaseBundle`／`packageRelease` 重新執行。AAB 13,690,942 bytes，APK 13,932,210 bytes。
 - APK `apksigner verify --print-certs` exit 0；DN 為 `CN=railisland-upload, OU=Mobile, O=軌島, L=台北, ST=台灣, C=TW`，SHA-256 certificate digest 為 `3836e4b4680ac9ec5ab4b10424a10bd5852dcfa7a06697bb985521f66ad58d21`。AAB `jarsigner -verify` exit 0 並回 `jar verified`；自簽憑證、無 timestamp 與 Zip/JarInputStream 差異為警告，沒有把警告隱藏或說成 CA 憑證。
 - `aapt dump badging`：package `tw.railisland.app`、versionName `1.4.1`、versionCode `1`。從 APK 單獨抽出的 `assets/public/revenuecat-config.js:26` 命中 `foundingLaunchAt: '2026-08-10T12:00:00+08:00'`。
@@ -258,7 +258,7 @@
 
 ### release、Android 回歸與 44×44
 
-- Android-only 完整鏈為 `RAIL_INCLUDE_LICENSED_BASEMAPS=1 npm run build`、`npx cap copy android`、`RAIL_VERIFY_NATIVE=android npm run verify`、Gradle `bundleRelease`／`assembleRelease`，均 exit 0。原樣 `npm run verify` 仍會對未同步的 iOS `v0804g` fail closed；這項 iOS native parity 依使用者裁定留給 iOS session，沒有改寫或同步 iOS 檔案。
+- Android-only 完整鏈為 `RAIL_INCLUDE_LICENSED_BASEMAPS=1 npm run build`、`npx cap copy android`、`RAIL_VERIFY_NATIVE=android npm run verify`、Gradle `bundleRelease`／`assembleRelease`，均 exit 0。原樣 `npm run verify` 仍會對未同步的 iOS `v0804g` fail closed；這項 iOS native parity 留給 iOS session，沒有改寫或同步 iOS 檔案。
 - release badging 維持 `tw.railisland.app`／`versionName=1.4.1`／`versionCode=1`；APK/AAB 使用 `CN=railisland-upload` 的同一憑證簽署，APK `apksigner verify` 與 AAB `jarsigner -verify` 通過。APK 內 `revenuecat-config.js` 的 founding anchor 仍為 `2026-08-10T12:00:00+08:00`。
 - fresh uninstall/install release APK 後 cold launch 正常；Firebase `[DEFAULT]` 初始化成功、無 AndroidRuntime crash。stage4 gate audit 綠；stage3 三底圖亮／暗／衛星各 8/8、重疊 0、裁切 0、中心命中失敗 0、`effectiveBelow44Controls=[]`。首次安裝 onboarding 會遮住 audit，真實關閉 onboarding 後重跑通過，沒有把 overlay 遮擋誤判成產品退化。
 
@@ -291,7 +291,7 @@
 ### v2 全鏈、簽章與內容
 
 - `npm run build:release` exit 0：`v0808a`、164 files、144.0 MB、音樂開啟、線上底圖開啟；`npx cap copy android` exit 0。`RAIL_VERIFY_NATIVE=android npm run verify` exit 0，訊息同為 `v0808a`／164 files／144.0 MB／音樂開啟／線上底圖開啟。
-- 原樣 `npm run verify` 仍因未同步的 iOS native public 是 `v0804g` 而 fail closed；依本輪 Android-only 裁定沒有修改 iOS，Android native parity 由上一項明確限定 Android 的 verifier 驗收。
+- 原樣 `npm run verify` 仍因未同步的 iOS native public 是 `v0804g` 而 fail closed；依本輪 Android-only 範圍沒有修改 iOS，Android native parity 由上一項明確限定 Android 的 verifier 驗收。
 - JDK 21 與既有 Android SDK 下，Gradle `bundleRelease`、`assembleRelease` 均 exit 0。AAB 為 `app/android/app/build/outputs/bundle/release/app-release.aab`，121,068,606 bytes，SHA-256 `bea1d637d4c4e6f5db475dd33def3235942b47bb27f3fcd6dc14912642b9c4e8`；APK 為 `app/android/app/build/outputs/apk/release/app-release.apk`，121,706,645 bytes，SHA-256 `4741172dc8676a224ce4510614c01a53a9c65c41106bb34c4f9d6957df7b9485`。
 - APK `apksigner verify --print-certs` 通過，AAB `jarsigner -verify` 回 `jar verified`；兩者皆為 upload certificate `CN=railisland-upload`、SHA-256 `3836e4b4680ac9ec5ab4b10424a10bd5852dcfa7a06697bb985521f66ad58d21`。AAB 的自簽／無 timestamp／Zip 警告如實保留，沒有誤報為 CA 簽章。
 - APK badging 為 `tw.railisland.app`／`versionName=1.4.1`／`versionCode=2`。APK 與 AAB 各含 29 個 MP3、各含 `window.RAIL_MUSIC_AVAILABLE=true`，並保留 `foundingLaunchAt: '2026-08-10T12:00:00+08:00'`；APK 的 `v0808a` 命中 1、`v0804g` 命中 0。

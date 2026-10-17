@@ -1,5 +1,5 @@
 // 高架幹線的微縮印象；不是特定車站或實際線形的重建。
-// 這是第一個「場景原型＋參數」：同一份幾何靠 params 長出不同的站，供沒有專屬場景的車款共用。
+// 這是第一個參數化的場景：同一份幾何靠 params 長出不同的站，供沒有專屬場景的車款共用。
 import * as THREE from '../vendor/three.module.js';
 import {createProps} from './props.js';
 

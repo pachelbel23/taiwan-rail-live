@@ -24,10 +24,10 @@ public struct MetroRow: Equatable {
     /// 只給 `resolveLine` 分辨「板南線與文湖線同時服務同一組站與終點」的那一種列用,
     /// 不作顯示用途——北捷的「車次」在文湖線其實是車廂編號,不是給人看的車次。
     public let trainNo: String?
-    /// 「再下一班」(2026-08-22 裁示):伺服端從【已發車在途】的官方名冊推導的第二班,
+    /// 「再下一班」:伺服端從【已發車在途】的官方名冊推導的第二班,
     /// 沿線累加行車＋停靠秒的投影值,不是官方站牌原文 ⇒ 畫面必須帶「約」字
     /// (MetroCountdown 對 approx 列一律走 .approxMinutes),絕不能畫成秒級倒數冒充官方精度。
-    /// 離峰第二班還沒發車時伺服端不給值 ⇒ 這裡就沒有這一列——留白是裁示的一部分,不是缺陷。
+    /// 離峰第二班還沒發車時伺服端不給值 ⇒ 這裡就沒有這一列——留白是刻意的設計,不是缺陷。
     public let approx: Bool
 
     public init(dest: String, etaEpoch: Double?, minutes: Int?, crowd: [Int]?, lineCode: String? = nil,
@@ -54,7 +54,7 @@ public enum MetroBoardModel {
         struct BoardRow: Decodable {
             let name: String; let dest: String; let eta: Double; let no: String?
             /// 伺服端推導的「再下一班」到站時刻(epoch 秒)。舊版 worker 沒有這個欄位 ⇒ nil,
-            /// 整個第二班功能自然不存在——小工具不做任何退路推算(裁示:推不出就留白)。
+            /// 整個第二班功能自然不存在——小工具不做任何退路推算(推不出就留白,這是規則)。
             let eta2: Double?
         }
         struct Train: Decodable { let no: String?; let stn: String?; let cars: [Int]? }
@@ -114,7 +114,7 @@ public enum MetroBoardModel {
                          crowd: (cars?.isEmpty == false) ? cars : nil,
                          lineCode: lineCode,
                          trainNo: b.no.flatMap { $0.isEmpty ? nil : $0 })))
-            // 「再下一班」合成列(2026-08-22 裁示:每條線每個方向至少兩班,第二班寫「約N分」)。
+            // 「再下一班」合成列(每條線每個方向至少兩班,第二班寫「約N分」)。
             // 🔴 lineCode 繼承第一班 join 出來的線別——伺服端保證第二班同線同向同終點,
             //    這是唯一能把忠孝復興 BL/BR 兩列的次班標對線色的來源(沒 join 到就 nil,
             //    由 resolveLine 的 {BL,BR}+無車號 ⇒ BR 規則接手,恰好也是對的那一半)。

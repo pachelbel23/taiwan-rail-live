@@ -1,7 +1,7 @@
 // 手機版權列「一條單行貼齊底緣、且每個授權來源仍然點得到」驗收（2026-08-29 新增）
 //
-// 起因：使用者實機（SM-A5460／Android 16／系統字級放大）回報「右下角地圖版權變成一大塊，
-// 直接蓋到速度調整的按鈕」。根因不是平台差異，是**底圖字串長度**——
+// 起因：實機（SM-A5460／Android 16／系統字級放大）上，右下角的版權文字撐成一整片，
+// 壓到了速度調整的按鈕。根因不是平台差異，是**底圖字串長度**——
 //   light/dark: '© OpenStreetMap © CARTO'（短）
 //   sat:        'Tiles © Esri — Source: Esri, Maxar, Earthstar Geographics'（長，index.html:29412）
 // 手機規則當時是 white-space:normal + max-width:calc(100vw-216px)，長字串就折成三行
@@ -12,7 +12,7 @@
 //   G1 前置閘門：長字串真的在場、data-fs 真的是這一格宣稱的那一檔（否則整批空過）
 //   G2 單行：版權列只佔一個 line box
 //   G3 高度＝一個行高（從 computed line-height 推導，不是常數）
-//   G4 與速度膠囊相交面積＝0  ← 使用者回報的那件事
+//   G4 與速度膠囊相交面積＝0  ← 起因的那個症狀
 //   G5 左下卡（#freqCard／#followPanel）在場時相交面積＝0，且 :has() 真的讓了位
 //      （反向對照：卡不在場時 max-width 必須是「沒讓位」那個值，否則「乾脆一直讓位」也會全綠）
 //   G6 貼齊底緣：版權列底緣到 tab bar 頂緣的距離 ≤ 一個行高（不是浮在半空）
@@ -98,7 +98,7 @@ async function cell(engine, browser, scale, w, withCard) {
   check(m.attr.h <= m.lineHeight * 1.2 + 0.5, `G3 ${tag} 高度＝一個行高`,
     `高 ${m.attr.h.toFixed(1)}px vs 行高 ${m.lineHeight}px（＝${(m.attr.h / m.lineHeight).toFixed(2)} 行）`);
 
-  // G4 使用者回報的那件事
+  // G4 起因的那個症狀
   check(m.controlsOverlap === 0, `G4 ${tag} 不壓到速度膠囊`, `相交 ${m.controlsOverlap?.toFixed(0)} px²`);
 
   // G5 跟隨卡讓位。判準全部是結構的：「讓到卡的右邊」與「沒卡時真的用滿」，
