@@ -45,6 +45,7 @@ function record(engine, scenario, detail = '') {
 }
 async function preparePage(context) {
   await context.addInitScript(() => localStorage.setItem('trainmap-howto-seen', '1'));
+  if (SLOW_NAV_MS > 0) await slowNavigation(context);
   const page = await context.newPage();
   const pageErrors = [];
   page.on('pageerror', error => pageErrors.push(error.message));
@@ -63,6 +64,39 @@ async function settle3d(page) {
     const r = window.railIslandIntegration;
     return !!r && !r.loading && (!!r.renderer || r.errors.length > 0);
   }, null, { timeout: 90_000 });
+}
+// 壓力模式（RAIL_I18N_SLOW_NAV_MS=<毫秒>，出貨鏈不設）：把機器忙時才偶發的換頁競態變成每次都發生。
+// 競態（2026-10-18，WebKit）：page.goto() 發出後、新文件回來之前，舊頁面還活著；這段時間它「才發出」的 fetch 會被當場拒絕，
+// 並記一筆「Fetch API cannot load … due to access control checks」，Playwright 轉成 pageerror（發出前已在途的請求不會記）。
+// 窗口等於新文件的回應時間；舊頁面的字型要等圖磚解析完才發出，機器忙時就落在窗口裡。
+// 所以只把字型「回應」壓慢重現不了，要讓舊頁面在窗口裡「才發出」請求：
+//   (1) 第二次起的文件請求晚 N 毫秒才放行，舊頁面在這段時間仍然活著；
+//   (2) 地圖載完後用公開 API 加一層要用 Noto Sans Italic 的符號圖層，讓 MapLibre 在固定時間點要一個新的字型範圍；
+//   (3) 字型（glyph）的 fetch 晚 N/2 毫秒才發出，落在 (1) 的窗口裡。
+const SLOW_NAV_MS = Number(process.env.RAIL_I18N_SLOW_NAV_MS || 0);
+const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+async function slowNavigation(context) {
+  await context.addInitScript(delay => {
+    const nativeFetch = window.fetch;
+    window.fetch = function (input, init) {
+      const url = typeof input === 'string' ? input : input?.url || String(input);
+      if (!/\/fonts\/[^/]+\/\d+-\d+\.pbf/.test(url)) return nativeFetch.apply(this, arguments);
+      return new Promise(resolve => setTimeout(resolve, delay)).then(() => nativeFetch.call(window, input, init));
+    };
+    const timer = setInterval(() => {
+      const map = window.__ofmGl;
+      if (!map?.isStyleLoaded()) return;
+      clearInterval(timer);
+      map.addSource('slow-nav', { type: 'geojson', data: { type: 'Point', coordinates: [121, 24] } });
+      map.addLayer({ id: 'slow-nav', type: 'symbol', source: 'slow-nav', layout: { 'text-field': 'x', 'text-font': ['Noto Sans Italic'] } });
+    }, 50);
+  }, SLOW_NAV_MS / 2);
+  const origin = new URL(BASE).origin;
+  let documents = 0;
+  await context.route(url => url.origin === origin && (url.pathname === '/' || url.pathname.endsWith('.html')), async route => {
+    if (route.request().isNavigationRequest() && ++documents > 1) await sleep(SLOW_NAV_MS);
+    await route.continue().catch(() => {});
+  });
 }
 async function setLanguage(page, lang) {
   await page.evaluate(value => window.__i18n.setLanguage(value), lang);
