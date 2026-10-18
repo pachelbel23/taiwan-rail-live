@@ -5,7 +5,8 @@
 //
 // 每條路徑都要過：經過的 way 與下面逐條覆核過的清單相同；不逆向走方向股道（track_directions.mjs 的 wrongOn）；
 // 進站段、出站段在停車點接得上，與同站對現行派車路徑的前一段、後一段也接得上（turnOK：道岔不倒車）。
-// 只登記進站段的組（和仁）沒有出站段可比，改檢查出貨路網裡以停車點為起點的路徑都接得上進站段，而且至少有一條。
+// 只有一段的組（和仁、金崙）沒有另一段可比，改檢查出貨路網裡以這一段終點為起點的路徑都接得上它，而且至少有一條
+//（終點是派車表已在用的雙向股道時，只比 arrivesLike 在那裡接得上的那幾條）。
 // 長度：側線要繞進繞出，出站段比該站對派車表最長的路徑長 0.146 m。跑段剖面的站間長取該站對「會畫的路徑」最長者
 // （maxPathM，點速才恆 ≤ 車種極速、不留容差），所以 build_tra_track_sections.mjs 與 overtake-sidings.js 都把這裡記的
 // overtakePaths 算進最長路徑；這裡只擋「比派車表最長的長超過 1 m」，免得一條側線把整個站對的剖面拉長。
@@ -14,6 +15,11 @@
 // network.json 的 paths，派車表沒派過車。它比該站對派車表最長的路徑長 0.786 m，overtake-sidings.js 的長度篩子
 // （路徑長 ≤ 最長路徑 + 1e-3）把整條「崇德停→和仁側線→和平」擋掉，和仁的待避車換不到另一股、兩車停／過同一股。
 // 這種路徑只登記進 extensions[].overtakePaths（paths 不重複補）；上面的檢查照過，路徑不在 paths 裡才補。
+//
+// 出站要回到正式停靠那一股的（金崙）：北上待避車停金崙側線（way 1175180550），下一站太麻里是正式停靠、節點固定在
+// 9267198334。那一股在 OSM 標 service=spur（約 302 m），純正線求不到路徑，改走 spur 又超過 YARD_CAP_M，所以出貨路網
+// 只有「側線→太麻里正線 9267198336」，待避車換不到側線、超越車從它身上穿過。這組的出站段（arrivesLike）只准走派車表
+// 已經走過、同樣停進這一股的那條路徑的 spur 段；出站接頭照它在停車點接得上的後一段檢查。
 //
 // 跑法：node scripts/extend_tra_overtake_sidings.mjs（就地改 rail-3d/physical/network.json；NETWORK=／OUT= 可換檔），
 // 之後 rail-3d/physical/level-profiles.json 只換 inputSha256 裡 network.json 的雜湊，
@@ -49,6 +55,15 @@ const SIDINGS = [{
     { from: 'estimated:tra_sched:崇德:1061049122:2', to: '5697429402', pair: ['崇德', '和仁'], mainline: 21022,
       ways: ['1061049122', '296584799', '197169804', '1467921332', '1467921333', '197169777', '197169766', '197169769', '1270414589', '197169775', '197169779', '231221449', '598634593'] },
   ],
+}, {
+  // 北上（瀧溪→金崙→太麻里）：只有出站段，進站段（瀧溪→金崙側線）出貨路網已有。arrivesLike＝派車表金崙正線→太麻里 9267198334。
+  name: '台鐵待避側線路徑（金崙）', date: '2026-10-19', source: 'OpenStreetMap（way 本來就在出貨路網；只補路徑）',
+  note: '同向待避換股用（rail-3d/physical/overtake-sidings.js）；派車表沒有派車。' + NOTE_TAIL,
+  station: '金崙', siding: '1175180550',
+  legs: [
+    { from: '10920235415', to: '9267198334', pair: ['金崙', '太麻里'], mainline: 21033, arrivesLike: 20083,
+      ways: ['1175180550', '1175180551', '81151560', '118296635', '118296633', '118296630', '146741674', '146741843', '146741726', '146741819', '146741832', '146741700', '146741871', '146741717', '146741677', '146741721', '146741823', '146741847', '146741876', '146741735', '146741910', '146741766', '146741678', '146741725', '81151575', '1175179822'] },
+  ],
 }];
 
 const todo = SIDINGS.filter(s => !net.extensions?.some(e => e.name === s.name));
@@ -62,6 +77,18 @@ for (const [, plan] of M.plans) {
   const sig = M.sigOf(plan);
   plan.pathIds.forEach((id, i) => { const k = [sig[i][0], sig[i + 1][0]].sort().join('|'); if (M.paths[id]) pairMax.set(k, Math.max(pairMax.get(k) || 0, M.paths[id].lengthM)); });
 }
+// arrivesLike 的組：求路徑時准走 spur／yard，但經過的 spur／yard 邊只能是 arrivesLike 那條派車路徑走過的。
+const spurRoute = (leg, clean) => {
+  const like = M.paths[leg.arrivesLike];
+  assert(like && like.to === leg.to, leg.pair.join('→') + ' arrivesLike 不是停進同一個節點的派車路徑');
+  const own = new Set(like.edgeIds), isYard = e => ['yard', 'spur'].includes(e.tags.service);
+  const edgeAllowed = (edge, from) => { const dom = clean.get(edge.wayId); return dom === undefined || (edge.a === from ? 1 : -1) === dom; };
+  const penalties = new Map(Object.values(M.edges).filter(isYard).map(e => [e.resource, e.length * 20]));
+  const r = M.g.shortestPath({ from: leg.from, to: leg.to, system: 'tra_sched', maxLength: like.lengthM * 1.25 + 300, edgeAllowed, allowYard: true, penalties });
+  if (!r) return null;
+  assert(r.edgeIds.every(id => !isYard(M.edges[id]) || own.has(id)), leg.pair.join('→') + ' 走了 arrivesLike 沒走過的 spur／yard');
+  return { id: M.register(r), lengthM: r.lengthM };
+};
 const neighbours = (id, side) => new Set(M.plans.flatMap(([, p]) => p.pathIds.flatMap((x, i) => x !== id ? [] : side < 0 ? (i ? [p.pathIds[i - 1]] : []) : (i + 1 < p.pathIds.length ? [p.pathIds[i + 1]] : []))));
 const extensions = [], fresh = new Set(), report = [];
 for (const s of todo) {
@@ -69,7 +96,7 @@ for (const s of todo) {
   const ids = s.legs.map(leg => {
     const main = M.paths[leg.mainline];
     assert(main && (main.from === leg.from || main.to === leg.to), leg.pair.join('→') + ' 對照的正線路徑端點不符');
-    const r = M.cleanRoute(leg.from, leg.to, main.lengthM, clean, new Map());
+    const r = M.cleanRoute(leg.from, leg.to, main.lengthM, clean, new Map()) ?? (leg.arrivesLike != null ? spurRoute(leg, clean) : null);
     assert(r, leg.pair.join('→') + ' 找不到順向路徑');
     const p = M.paths[r.id];
     assert.deepEqual([...new Set(p.edgeIds.map(e => M.edges[e].wayId))], leg.ways, leg.pair.join('→') + ' 經過的 way 與覆核清單不同');
@@ -82,8 +109,9 @@ for (const s of todo) {
   });
   if (ids.length > 1) assert(M.turnOK(ids[0], ids[1]), s.station + ' 進站段接不上出站段');
   else {
-    const out = Object.keys(M.paths).filter(id => M.paths[id]?.from === s.legs[0].to);
-    assert(out.length && out.every(id => M.turnOK(ids[0], id)), s.station + ' 進站段的停車點沒有出站路徑，或進站段接不上它們');
+    const like = s.legs[0].arrivesLike;
+    const out = Object.keys(M.paths).filter(id => M.paths[id]?.from === s.legs[0].to && (like == null || M.turnOK(like, id)));
+    assert(out.length && out.every(id => M.turnOK(ids[0], id)), s.station + ' 這一段的終點沒有可接的後一段，或接不上它們');
   }
   for (const prev of neighbours(s.legs[0].mainline, -1)) if (M.turnOK(prev, s.legs[0].mainline)) assert(M.turnOK(prev, ids[0]), s.station + ' 前一段 ' + prev + ' 接不上進站段');
   if (s.legs[1]) for (const next of neighbours(s.legs[1].mainline, 1)) if (M.turnOK(s.legs[1].mainline, next)) assert(M.turnOK(ids[1], next), s.station + ' 出站段接不上後一段 ' + next);
