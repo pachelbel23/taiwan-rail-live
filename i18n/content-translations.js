@@ -3807,10 +3807,10 @@ Object.assign(window.RAIL_I18N_MESSAGES.ja, {
   '臺南最後一天的重播：145 與 3782 改成柔和光暈；終點在臺南、保安的班次註明終點；同站或並排的兩班車不再疊在一起': '台南・地上鉄道最終日の再生：145列車と3782列車をやわらかな光で表示しました。台南・保安止まりの列車には終点を表示し、同じ駅に停まる列車や並んで走る列車が重ならないようにしました。',
 });
 
-// 2026-10-18 10/23 和仁預排待避改走側線（v1018e）。
+// 2026-10-19 10/22 金崙、10/23 和仁預排待避改走側線（和仁 v1018e，金崙 v1019a 併進同一條）。
 Object.assign(window.RAIL_I18N_MESSAGES.en, {
-  '修正 10/23 和仁站的待避：等車的列車和通過的列車，在立體地圖上不再停在同一條股道': 'Fixed the planned overtake at Heren on 10/23: the waiting train and the passing train no longer stop on the same track in the 3D map',
+  '修正 10/22 金崙站、10/23 和仁站的待避：等車的列車和通過的列車，在立體地圖上不再停在同一條股道': 'Fixed the planned overtakes at Jinlun on 10/22 and Heren on 10/23: the waiting train and the passing train no longer stop on the same track in the 3D map',
 });
 Object.assign(window.RAIL_I18N_MESSAGES.ja, {
-  '修正 10/23 和仁站的待避：等車的列車和通過的列車，在立體地圖上不再停在同一條股道': '10/23の和仁駅での待避を修正しました。待避する列車と通過する列車が、立体地図で同じ線路に止まらないようになりました',
+  '修正 10/22 金崙站、10/23 和仁站的待避：等車的列車和通過的列車，在立體地圖上不再停在同一條股道': '10/22の金崙駅と10/23の和仁駅での待避を修正しました。待避する列車と通過する列車が、立体地図で同じ線路に止まらないようになりました',
 });
