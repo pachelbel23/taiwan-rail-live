@@ -99,7 +99,8 @@ if (ref) {
   const sha = execFileSync('git', ['-C', root, 'rev-parse', ref], {encoding: 'utf8'}).trim();
   const showRaw = f => execFileSync('git', ['-C', root, 'show', `${sha}:${f}`], {maxBuffer: 256 * 1024 * 1024});
   const show = f => JSON.parse(showRaw(f));
-  const ext = net.extensions.at(-1), removed = new Set(ext.removedWays), changed = new Set([...ext.ways, ...Object.keys(ext.truncatedWays)]);
+  const ext = net.extensions.find(e => e.name === '臺南鐵路地下化第一階段（2026-10-17 通車）'); if (!ext) throw Error('network.json 找不到臺南地下化的 extension');
+  const removed = new Set(ext.removedWays), changed = new Set([...ext.ways, ...Object.keys(ext.truncatedWays)]);
   const bNet = show('rail-3d/physical/network.json');
   const touch = new Set([...bNet.ways.filter(w => removed.has(String(w.id)) || changed.has(String(w.id))), ...net.ways.filter(w => changed.has(String(w.id)))].flatMap(w => w.nodes));
   const region = new Set([...changed, ...removed]); for (const w of net.ways) if (w.nodes.some(n => touch.has(n))) region.add(String(w.id));

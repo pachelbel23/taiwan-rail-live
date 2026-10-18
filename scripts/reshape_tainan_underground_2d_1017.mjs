@@ -16,7 +16,7 @@ const sha = execFileSync('git', ['-C', root, 'rev-parse', ref], {encoding: 'utf8
 const raw = execFileSync('git', ['-C', root, 'show', `${sha}:data/tra.json`], {encoding: 'utf8', maxBuffer: 64 * 1024 * 1024});
 assert.equal(JSON.stringify(JSON.parse(raw)), raw, 'tra.json 序列化方式跟 JSON.stringify 不同');
 const tra = JSON.parse(raw), net = JSON.parse(fs.readFileSync('rail-3d/physical/network.json', 'utf8'));
-const ext = net.extensions.at(-1); assert.equal(ext.name, '臺南鐵路地下化第一階段（2026-10-17 通車）');
+const ext = net.extensions.find(e => e.name === '臺南鐵路地下化第一階段（2026-10-17 通車）'); assert(ext, '找不到臺南地下化的 extension');
 const ln = tra.lines.find(l => l.name.startsWith('縱貫線南段')); assert(ln, '找不到縱貫線南段');
 
 // 南下路徑的節點序列（推估停車點不是 OSM 節點，落在原本的兩個節點之間，不放進 shape）

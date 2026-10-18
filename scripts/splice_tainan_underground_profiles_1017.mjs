@@ -34,7 +34,7 @@ if (kind === 'integration') {
 const file = `rail-3d/physical/${kind === 'display' ? 'display' : 'level'}-profiles.json`;
 const base = show(file), full = JSON.parse(fs.readFileSync(file));
 const oldNet = show('rail-3d/physical/network.json'), net = JSON.parse(fs.readFileSync('rail-3d/physical/network.json'));
-const ext = net.extensions.at(-1); assert.equal(ext.name, '臺南鐵路地下化第一階段（2026-10-17 通車）', 'network.json 最後一筆 extension 不是臺南地下化');
+const ext = net.extensions.find(e => e.name === '臺南鐵路地下化第一階段（2026-10-17 通車）'); assert(ext, 'network.json 找不到臺南地下化的 extension');
 const removed = new Set(ext.removedWays), changed = new Set([...ext.ways, ...Object.keys(ext.truncatedWays)]);
 // 鄰接：跟新增、切短或拿掉的 way 共用任一節點（新舊兩份網路都算）
 const touchNodes = new Set([...oldNet.ways.filter(w => removed.has(String(w.id)) || changed.has(String(w.id))), ...net.ways.filter(w => changed.has(String(w.id)))].flatMap(w => w.nodes));

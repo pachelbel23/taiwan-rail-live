@@ -5,6 +5,7 @@
 //
 // 每條路徑都要過：經過的 way 與下面逐條覆核過的清單相同；不逆向走方向股道（track_directions.mjs 的 wrongOn）；
 // 進站段、出站段在停車點接得上，與同站對現行派車路徑的前一段、後一段也接得上（turnOK：道岔不倒車）。
+// 只登記進站段的組（和仁）沒有出站段可比，改檢查出貨路網裡以停車點為起點的路徑都接得上進站段，而且至少有一條。
 // 長度：側線要繞進繞出，出站段比該站對派車表最長的路徑長 0.146 m。跑段剖面的站間長取該站對「會畫的路徑」最長者
 // （maxPathM，點速才恆 ≤ 車種極速、不留容差），所以 build_tra_track_sections.mjs 與 overtake-sidings.js 都把這裡記的
 // overtakePaths 算進最長路徑；這裡只擋「比派車表最長的長超過 1 m」，免得一條側線把整個站對的剖面拉長。
@@ -80,6 +81,10 @@ for (const s of todo) {
     return r.id;
   });
   if (ids.length > 1) assert(M.turnOK(ids[0], ids[1]), s.station + ' 進站段接不上出站段');
+  else {
+    const out = Object.keys(M.paths).filter(id => M.paths[id]?.from === s.legs[0].to);
+    assert(out.length && out.every(id => M.turnOK(ids[0], id)), s.station + ' 進站段的停車點沒有出站路徑，或進站段接不上它們');
+  }
   for (const prev of neighbours(s.legs[0].mainline, -1)) if (M.turnOK(prev, s.legs[0].mainline)) assert(M.turnOK(prev, ids[0]), s.station + ' 前一段 ' + prev + ' 接不上進站段');
   if (s.legs[1]) for (const next of neighbours(s.legs[1].mainline, 1)) if (M.turnOK(s.legs[1].mainline, next)) assert(M.turnOK(ids[1], next), s.station + ' 出站段接不上後一段 ' + next);
   const overtakePaths = {};
