@@ -5630,6 +5630,7 @@
            內容 li 上限 8 條(li.grp 是標題不算)。 -->
       <ul class="foot-list foot-recent">
         <li class="grp">最近更新</li>
+        <li data-cl-of="trabindvariant1019"><span class="d">10/19</span><span>台鐵列車比平常多停或少停一站的日子（例如 9/28 的 136），立體地圖上不再退回示意線形，改沿實體股道行駛</span></li>
         <li data-cl-of="overtakeside1019"><span class="d">10/19</span><span>修正 10/22 金崙站、10/23 和仁站的待避：等車的列車和通過的列車，在立體地圖上不再停在同一條股道</span></li>
         <li data-cl-of="tainanglow1018"><span class="d">10/18</span><span>臺南最後一天的重播：145 與 3782 改成柔和光暈；終點在臺南、保安的班次註明終點；同站或並排的兩班車不再疊在一起</span></li>
         <li data-cl-of="tainanevents1018"><span class="d">10/18</span><span>臺南最後一天的重播：點「最後一夜」的事件，畫面留在臺南站，附上說明與報導連結；新增「臺南發車」</span></li>
@@ -5637,7 +5638,6 @@
         <li data-cl-of="thsrwindow"><span class="d">10/18</span><span>高鐵班表每天早上的更新若沒成功，當天稍後會自動再抓；官方資料若是空的，先保留原本的班表</span></li>
         <li data-cl-of="tainanug1017"><span class="d">10/17</span><span>臺南鐵路地下化 10/17 通車：大橋到保安改走地下，臺南站改停地下 4 股，平面與立體地圖的軌道都跟著換</span></li>
         <li data-cl-of="followspeed1014"><span class="d">10/14</span><span>修正跟車小卡在列車還停在月台時，時速就往上跳、提早 3 秒寫「行進中」</span></li>
-        <li data-cl-of="overtakeretime1011"><span class="d">10/11</span><span>修正台鐵同向列車預排待避時，等待的車有時白等好幾分鐘、有時後車才剛通過就開出；現在都在後車通過 30 秒後才出發</span></li>
       </ul>
       <!-- 第二層:完整歷史。刻意不掛 .foot-box 類名——placeFootBoxes() 用
            `.site-foot .foot-box` 搬移面板,巢狀同名會被當成另一個盒子一起搬走。 -->
@@ -5645,6 +5645,7 @@
         <summary>完整更新歷史（依主題分類）</summary>
         <ul class="foot-list">
         <li class="grp">路網與車站</li>
+        <li data-cl="trabindvariant1019"><span class="d">10/19</span><span>台鐵列車某天比平常多停或少停一站時（例如 8/30 的 6616、9/28 的 132 與 136），立體地圖上不再退回示意線形，改沿實體股道行駛，優先走這班平常的股道</span></li>
         <li data-cl="overtakeside1019"><span class="d">10/19</span><span>修正 10/22 金崙站、10/23 和仁站的預排待避：停下來等車的列車改走站內的側線，不再跟通過的列車在立體地圖上疊在同一條股道</span></li>
         <li data-cl="tainanglow1018"><span class="d">10/18</span><span>臺南地面鐵道最後一天的重播：145 與 3782 改成貼著車身的柔和光暈；終點是臺南、保安的班次，標籤註明終點；同站同時停兩班時改停不同股道，股道畫得太近的幾處也拉開，並排的兩車不再重疊；22:00 封鎖初期的列車照常畫出車身</span></li>
         <li data-cl="tainanevents1018"><span class="d">10/18</span><span>臺南地面鐵道最後一天的重播：點「最後一夜」時間軸的事件，畫面留在臺南站、不再跟車，臺南站的事件提前 25 秒；每一列附上說明與報導連結；新增「臺南發車」，「下一班到臺南」不再算臺南始發的車</span></li>
@@ -7010,7 +7011,8 @@ const RAIL_3D_BOOT_PARAMS = new URLSearchParams(location.search);
 // v1018d：10/16 重播頁的重點車改成主站式散光光暈、終點在畫面內的班次標籤註明終點、同站兩班停站重疊時換股（推估渡線）、股道間距太窄處推開到 3.8 m、封鎖初期同區間對向車照畫車身；主站只改更新紀錄。
 // v1018e：主站更新紀錄補 10/23 和仁預排待避改走側線的修正（資料在 v1018d 那批已併入）。
 // v1019a：路網補金崙側線到太麻里正式停靠股的出站段，10/22 6789 在金崙等 161 改停側線（111eed72）；更新紀錄把金崙併進和仁那一條。
-const BUILD = 'v1019a';
+// v1019b：台鐵同鍵、中途停靠型態不同的班往下借路徑、不退回示意線形，且把自己那份計畫留在模板候選裡（3bde26de、1a781914）；另併入待避窗口逐日掃描報告（28c906cd、7232d41e，不進網站產物）；更新紀錄加一條。
+const BUILD = 'v1019b';
 const LANDSCAPE_REQUESTED = new URLSearchParams(location.search).get('map') === 'landscape';
 const GARAGE_QUERY = new URLSearchParams(location.search).get('garage');
 // 輕量多語 runtime：繁中原文同時是安全 fallback，外語字典只存差異字串。

@@ -3814,3 +3814,11 @@ Object.assign(window.RAIL_I18N_MESSAGES.en, {
 Object.assign(window.RAIL_I18N_MESSAGES.ja, {
   '修正 10/22 金崙站、10/23 和仁站的待避：等車的列車和通過的列車，在立體地圖上不再停在同一條股道': '10/22の金崙駅と10/23の和仁駅での待避を修正しました。待避する列車と通過する列車が、立体地図で同じ線路に止まらないようになりました',
 });
+
+// 2026-10-19 台鐵同鍵增停／少停班沿實體股道行駛（v1019b）。
+Object.assign(window.RAIL_I18N_MESSAGES.en, {
+  '台鐵列車比平常多停或少停一站的日子（例如 9/28 的 136），立體地圖上不再退回示意線形，改沿實體股道行駛': 'On days when a TRA train stops at one more or one fewer station than usual (e.g. train 136 on 9/28), it no longer falls back to a schematic line in the 3D map and runs on the real tracks',
+});
+Object.assign(window.RAIL_I18N_MESSAGES.ja, {
+  '台鐵列車比平常多停或少停一站的日子（例如 9/28 的 136），立體地圖上不再退回示意線形，改沿實體股道行駛': '台鐵の列車がいつもより停車駅が1駅多い・少ない日（例：9/28の136列車）も、立体地図で模式的な線に戻らず、実際の線路を走るようになりました',
+});
