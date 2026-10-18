@@ -29,10 +29,22 @@ const lateNames=structuredClone(lateEnd);[lateNames.stops[pass].name,lateNames.s
 // 派車表若替同一車次存了兩版（日後重建時窗內兩版都在），取時刻最接近的那份。
 const shift=(t,sec)=>({...t,stops:t.stops.map(s=>({...s,arrSec:s.arrSec+sec,depSec:s.depSec+sec}))}),twinKey=physicalTrainKey(shift(tr,3600)),twin={plans:{...dispatch.plans,[twinKey]:{...entry[1],pathIds:entry[1].pathIds.toReversed(),stopSignature:physicalStopSignature(shift(tr,3600))}}};
 assert.equal(createPlanBinding(twin)(lateEnd).sourceKey,entry[0]);assert.equal(createPlanBinding(twin)(shift(lateEnd,3600)).sourceKey,twinKey,'同車次有兩份計畫時要取時刻最接近的那份');
-const skipped=structuredClone(tr);skipped.stops[stop].stop=false;skipped.stops[stop].depSec=skipped.stops[stop].arrSec;assert.equal(bind(skipped),null,'停靠改通過不可套舊派車');
-const added=structuredClone(tr);added.stops[pass].stop=true;added.stops[pass].depSec+=1;assert.equal(bind(added),null,'通過改停靠不可套舊派車');
+// 同鍵、中途停靠型態不同（9/28 的 136 增停新烏日型，首站發車與末站到站沒變）：不沿用這份計畫，照鍵變了的規則往下借路徑，
+// 要綁得到（不退示意線形）、待避一律歸零；原計畫帶待避也一樣。站序改變照舊不綁（下一條）。
+const borrowed=(r,t)=>!!r&&!['exact','derived-pass-times','retimed'].includes(r.basis)&&zeroHolds(r)&&r.plan.stopSignature===physicalStopSignature(t);
+const skipped=structuredClone(tr);skipped.stops[stop].stop=false;skipped.stops[stop].depSec=skipped.stops[stop].arrSec;assert.equal(physicalTrainKey(skipped),entry[0]);assert(borrowed(bind(skipped),skipped),`同鍵、停靠改通過要往下借路徑，實際 ${bind(skipped)?.basis}`);
+const added=structuredClone(tr);added.stops[pass].stop=true;added.stops[pass].depSec+=1;assert.equal(physicalTrainKey(added),entry[0]);assert(borrowed(bind(added),added),`同鍵、通過改停靠要往下借路徑，實際 ${bind(added)?.basis}`);
 const changedNames=structuredClone(tr);[changedNames.stops[pass].name,changedNames.stops[pass+1].name]=[changedNames.stops[pass+1].name,changedNames.stops[pass].name];assert.equal(bind(changedNames),null,'站序改變不可套舊路徑');
-const held=structuredClone(dispatch);held.plans[entry[0]].holds[pass].departure=30;assert.equal(createPlanBinding(held)(derived),null,'通過時間更新不可沿用舊待避');assert.equal(createPlanBinding(held)(changedStop),null,'改點不可沿用帶待避的舊計畫');const heldLate=createPlanBinding(held)(lateEnd);assert.notEqual(heldLate?.basis,'retimed','鍵變了、原計畫帶待避時不走 retimed');assert(zeroHolds(heldLate),'借路徑時不可帶上舊待避');
+const held=structuredClone(dispatch);held.plans[entry[0]].holds[pass].departure=30;assert.equal(createPlanBinding(held)(derived),null,'通過時間更新不可沿用舊待避');assert.equal(createPlanBinding(held)(changedStop),null,'改點不可沿用帶待避的舊計畫');const heldLate=createPlanBinding(held)(lateEnd);assert.notEqual(heldLate?.basis,'retimed','鍵變了、原計畫帶待避時不走 retimed');assert(zeroHolds(heldLate),'借路徑時不可帶上舊待避');assert(borrowed(createPlanBinding(held)(added),added),'同鍵、通過改停靠、原計畫帶待避：往下借路徑、待避歸零');
+// 同鍵、停靠型態不同，而原計畫標了不可給別班當模板（8/30 的 6616 增停雙溪型）：自己那份照樣是候選、同一套計分，
+// 結果要跟「這份沒有標記」時一樣；選中自己時帶上標記。分母是派車表裡每一份帶標記的台鐵計畫，至少要有一份選中自己才算考到。
+const selfRows=Object.entries(dispatch.plans).filter(([k,p])=>k.startsWith('tra_sched:')&&p.templateEligible===false&&p.pathIds.length===JSON.parse(p.stopSignature).length-1);let selfWins=0;
+for(const [k,p] of selfRows){const v=make([k,p]),i=v.stops.findIndex((s,j)=>j>0&&j<v.stops.length-1&&!s.stop),j=i>0?i:v.stops.findIndex((s,j)=>j>0&&j<v.stops.length-1);if(j<0)continue;
+ if(i>0){v.stops[j].stop=true;v.stops[j].depSec+=1;}else{v.stops[j].stop=false;v.stops[j].depSec=v.stops[j].arrSec;}assert.equal(physicalTrainKey(v),k);
+ const r=bind(v),ref=createPlanBinding({plans:{...dispatch.plans,[k]:{...p,templateEligible:undefined}}})(v);assert(borrowed(r,v),`${k}：同鍵、停靠型態不同要往下借路徑，實際 ${r?.basis}`);
+ assert.equal(r.sourceKey,ref?.sourceKey,`${k}：不可當模板的標記不可把自己那份排除在自己的候選外`);assert.deepEqual(r.plan.pathIds,ref.plan.pathIds);
+ if(r.sourceKey===k){selfWins++;assert.equal(r.plan.templateEligible,false,`${k}：選中自己那份要帶上不可當模板的標記`);}}
+assert(selfWins>0,`帶標記的 ${selfRows.length} 份計畫沒有一份在同鍵增停時選中自己，這條沒考到`);
 const onlyHeld={plans:{[entry[0]]:held.plans[entry[0]]}},extraHeld={...tr,train:'TEST-HELD-SOURCE'},fresh=createPlanBinding(onlyHeld)(extraHeld);assert.equal(fresh.basis,'route-template');assert(fresh.plan.holds.every(h=>h.arrival===0&&h.departure===0),'加開車不可繼承來源待避');assert.equal(onlyHeld.plans[entry[0]].holds[pass].departure,30,'不可改寫來源計畫');
 for(const plan of rows.slice(0,30)){const source=make(plan),extra={...source,train:'TEST-EXTRA-'+source.train,stops:source.stops.map(s=>({...s,arrSec:s.arrSec+77,depSec:s.depSec+77}))},r=bind(extra);assert.equal(r.basis,'route-template');assert.equal(r.plan.pathIds.length,extra.stops.length-1);assert(r.plan.holds.every(h=>!h.arrival&&!h.departure));assert.equal(r.plan.stopSignature,physicalStopSignature(extra));for(let i=1;i<r.plan.pathIds.length;i++)assert.equal(network.paths[r.plan.pathIds[i-1]].to,network.paths[r.plan.pathIds[i]].from,'借用路徑必須使用同一來源接頭');}
 const reverse={...tr,train:'TEST-REVERSE',stops:tr.stops.toReversed().map((s,i)=>({...s,arrSec:10000+i*120,depSec:10000+i*120+(s.stop?30:0)}))},reversePlan=bind(reverse);assert(reversePlan);const source=JSON.parse(dispatch.plans[reversePlan.sourceKey].stopSignature).map(s=>s[0].split(':')[1]);assert(source.some((_,start)=>reverse.stops.every((s,i)=>source[start+i]===s.name)),'反方向必須對到反向站序');
@@ -152,4 +164,4 @@ const ownMotion=createPhysicalMotion(network,null,dispatch),relayRows=Object.ent
  assert.equal(b?.basis,'exact',`${k}：用自己的停靠簽章要綁回自己，實際 ${b?.basis}`);assert.strictEqual(b.plan,p,`${k}：綁到的不是自己的計畫`);
  const w=maxJump(ownMotion,t,'（落成的計畫）');assert(w<1,`${k}：落成的計畫進出站最大跳動 ${w} m`);return `${t.train}（最大跳動 ${w.toFixed(3)} m）`;});
 console.log(`台鐵股道接力借路徑：${chainRows.join('、')}；joinable 與 canTurn 一致（接得上 ${joinTally.ok} 對、接不上 ${joinTally.no} 對）；派車表裡落成的接力專車計畫 ${relayRows.length} 份：${relayRows.join('、')||'（無）'}`);
-console.log(`台鐵股道綁定：通過時刻更新、改點沿用股道、停靠型態／待避防護、30 班加開模板、雙方向與未知路徑、派車表沒有的中途站略過檢查通過；派車表沒有的中途停靠站（${best.src.train} 次 ${s0[I].name}→${s0[K].name}，實體／示意 ${best.ratio.toFixed(4)}）停在投影點、兩截剖面長 ≥ 實體、點速 ≤ 剖面速度（${moving} 個取樣）；${day} 拿掉 ${X} 後不選它待避（原本在那裡待避 ${atX} 次，當天共 ${waits.length} 次）`);
+console.log(`台鐵股道綁定：通過時刻更新、改點沿用股道、停靠型態／待避防護（同鍵增停、原計畫不可當模板 ${selfRows.length} 份，選中自己 ${selfWins} 份）、30 班加開模板、雙方向與未知路徑、派車表沒有的中途站略過檢查通過；派車表沒有的中途停靠站（${best.src.train} 次 ${s0[I].name}→${s0[K].name}，實體／示意 ${best.ratio.toFixed(4)}）停在投影點、兩截剖面長 ≥ 實體、點速 ≤ 剖面速度（${moving} 個取樣）；${day} 拿掉 ${X} 後不選它待避（原本在那裡待避 ${atX} 次，當天共 ${waits.length} 次）`);

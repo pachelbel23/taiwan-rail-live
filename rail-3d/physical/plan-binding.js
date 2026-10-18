@@ -34,7 +34,7 @@ export function createPlanBinding(dispatch,{canJoin}={}){
  // 2D 地圖、看板、小工具照官方站序，不經過這裡。
  const knownOf=sys=>{let set=known.get(sys);if(!set){set=new Set();for(const [k,p] of Object.entries(dispatch.plans))if(k.startsWith(sys+':'))for(const s of JSON.parse(p.stopSignature))set.add(s[0]);known.set(sys,set);}return set;};
  const bind=tr=>{
-  const sys=tr.sys||tr.system,key=physicalTrainKey(tr),exact=dispatch.plans[key];
+  const sys=tr.sys||tr.system,key=physicalTrainKey(tr),exact=dispatch.plans[key];let self=null;
   if(exact){if(exact.pathIds.length!==tr.stops.length-1)return null;
    if(exact.stopSignature===physicalStopSignature(tr))return {plan:exact,basis:'exact'};
    if(sameDerivedPasses(exact,tr))return {plan:exact,basis:'derived-pass-times'};
@@ -42,7 +42,13 @@ export function createPlanBinding(dispatch,{canJoin}={}){
    // 高鐵當日班表只改了到離站時刻(同車次、同站序):沿用自己原本的股道,時間與待避一律用今天的。
    // 台鐵改點(2026-10-03 起埔心、樹林、桃園幾班提早，首站發車與末站到站不變所以同鍵)同樣沿用自己的股道，
    // 但停靠型態要相同、原計畫不得帶待避——待避是替舊時刻解的交會，歸零後可能重新互穿。
-   return sys==='thsr_sched'||sys==='tra_sched'&&noHolds(exact)&&sameStopPattern(exact,tr)?{basis:'retimed',sourceKey:key,plan:borrow(exact.pathIds,tr,exact)}:null;
+   if(sys==='thsr_sched'||sys==='tra_sched'&&noHolds(exact)&&sameStopPattern(exact,tr))return {basis:'retimed',sourceKey:key,plan:borrow(exact.pathIds,tr,exact)};
+   // 台鐵同鍵、中途停靠型態不同（首站發車與末站到站沒變的增停或少停，例：9/28 的 136 增停新烏日）：這份計畫不能沿用，
+   // 但不就此退回示意線形，往下照「鍵變了」同一套規則找自己的別份計畫、模板或接力（待避一律歸零）。停靠型態相同的照舊不綁。
+   // 這份計畫標了不可給別班當模板（例：落成的接力專車計畫）也照樣是自己的模板候選，跟其他模板同一套計分；
+   // 不放進來會改借別班的股道，把替這班驗收過的進路換掉（8/30 的 6616 借 6882，在臺北月台、頭城到礁溪壓到別班）。
+   if(sys!=='tra_sched'||sameStopPattern(exact,tr))return null;
+   self=exact;
   }
   // 台鐵改點改到首站發車或末站到站時鍵跟著變（2026-10-03 起 1248／1254 到基隆晚 1 分）：先找同車次、同站序、
   // 同停靠型態、不帶待避的自己的計畫，沿用自己驗收過的股道。借別班的路徑會把替這班修好的站場進路退回去
@@ -59,13 +65,14 @@ export function createPlanBinding(dispatch,{canJoin}={}){
   // 限定車種的站內股道（例如藍皮的非電化月台）不能被其他加開車借走。
   if(!templates.has(sys))templates.set(sys,Object.entries(dispatch.plans).filter(([k,p])=>k.startsWith(sys+':')&&p.templateEligible!==false).map(([key,plan])=>({key,plan,stops:JSON.parse(plan.stopSignature)})));
   const names=tr.stops.map(s=>stationKey(sys,s.name));let best=null;
-  for(const t of templates.get(sys))for(let start=0;start<=t.stops.length-names.length;start++){
+  const candidates=self?.templateEligible===false?[{key,plan:self,stops:JSON.parse(self.stopSignature)},...templates.get(sys)]:templates.get(sys);
+  for(const t of candidates)for(let start=0;start<=t.stops.length-names.length;start++){
    if(!names.every((name,i)=>t.stops[start+i][0]===name))continue;
    // 優先使用相同停靠型態、同長度區間；最後用穩定的來源 key 決勝，不依車輛接近而換軌。
    const mismatch=tr.stops.reduce((n,s,i)=>n+(i>0&&i<names.length-1&&((s.stop!==false)!==(t.stops[start+i][2]>t.stops[start+i][1]))?1:0),0),score=mismatch*10000+t.stops.length-names.length;
    if(!best||score<best.score||(score===best.score&&t.key<best.key))best={...t,start,score};
   }
-  if(best)return {basis:'route-template',sourceKey:best.key,plan:borrow(best.plan.pathIds.slice(best.start,best.start+names.length-1),tr)};
+  if(best)return {basis:'route-template',sourceKey:best.key,plan:borrow(best.plan.pathIds.slice(best.start,best.start+names.length-1),tr,best.plan===self&&self)};
   // 沒有一班既有計畫跑完整條路線的專車（2026-10-03 環島 6669 新左營→南迴→東線→臺北→山線→新左營、10-04 6509 花蓮→新左營）
   // 改成接力借：整條路線切成幾截、每截是某班既有計畫的連續切片，交接站前後兩截要接得上（canJoin：節點相同、道岔不倒車，
   // route-runtime.joinable）。挑法與上面單一模板同一順位：停靠型態不符最少優先——交接站兩側各算一次（前一截、下一截在那站
