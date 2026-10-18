@@ -83,6 +83,56 @@ async function assertLocale(browser, engine) {
   await close();
 }
 
+// 壓力模式（RAIL_FONT_SCALE_SLOW_NAV_MS=<毫秒>，出貨鏈與一般驗收不設）:把機器忙時才偶發的換頁競態變成每次都發生。
+// 競態（2026-10-18，WebKit）:page.reload() 發出後、新文件回來之前，舊頁面還活著；這段時間它「才發出」的 fetch 會被當場拒絕，
+// 並記一筆「Fetch API cannot load … due to access control checks」，Playwright 轉成 pageerror（發出前已在途的請求不會記，
+// Chromium 也不記）。窗口等於新文件的回應時間，機器忙時才拉得夠長。B7、D5 兩處重新載入都踩得到。
+// 所以只把回應壓慢重現不了，要讓舊頁面在窗口裡「才發出」請求:
+//   (1) 第二次起的文件請求晚 N 毫秒才放行，舊頁面在這段時間仍然活著；
+//   (2) 地圖載完後用公開 API 加一層要用 Noto Sans Italic 的符號圖層，讓 MapLibre 要一個新的字型範圍；
+//   (3) 字型（glyph）的 fetch 晚 N/2 毫秒才發出，落在 (1) 的窗口裡。
+const SLOW_NAV_MS = Number(process.env.RAIL_FONT_SCALE_SLOW_NAV_MS || 0);
+const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+async function slowNavigation(ctx) {
+  await ctx.addInitScript(delay => {
+    const nativeFetch = window.fetch;
+    window.fetch = function (input, init) {
+      const url = typeof input === 'string' ? input : input?.url || String(input);
+      if (!/\/fonts\/[^/]+\/\d+-\d+\.pbf/.test(url)) return nativeFetch.apply(this, arguments);
+      return new Promise(resolve => setTimeout(resolve, delay)).then(() => nativeFetch.call(window, input, init));
+    };
+    const timer = setInterval(() => {
+      const map = window.__ofmGl;
+      if (!map?.isStyleLoaded()) return;
+      clearInterval(timer);
+      map.addSource('slow-nav', { type: 'geojson', data: { type: 'Point', coordinates: [121, 24] } });
+      map.addLayer({ id: 'slow-nav', type: 'symbol', source: 'slow-nav', layout: { 'text-field': 'x', 'text-font': ['Noto Sans Italic'] } });
+    }, 50);
+  }, SLOW_NAV_MS / 2);
+  const origin = new URL(URL_BASE).origin;
+  let documents = 0;
+  await ctx.route(url => url.origin === origin && (url.pathname === '/' || url.pathname.endsWith('.html')), async route => {
+    if (route.request().isNavigationRequest() && ++documents > 1) await sleep(SLOW_NAV_MS);
+    await route.continue().catch(() => {});
+  });
+}
+
+// 重新載入（取代 page.reload）。換頁前的清場，兩層一起做（競態機制見 slowNavigation 上方的說明）:
+//   1. 等頁面安靜:立體圖層與底圖都載完，舊頁面不再有等著發出的載入；底圖是外部服務，連不上就載不完，
+//      所以逾時只警告、照常換頁，不讓閘門卡在別人的故障上；
+//   2. 經 about:blank 換走:離開 app 的窗口不含網路等待，從 about:blank 載目標頁時舊頁面已沒有任何程式在跑。
+// 只做第 1 層擋不住輪詢（metro snapshot 這類請求照樣會在窗口裡發出），所以第 2 層是必要的；
+// 「不准有 pageerror」的判準不變。網址取換頁前的 page.url()，與 reload 載入的是同一頁。
+async function reloadQuietly(page) {
+  const url = page.url();
+  await page.waitForFunction(() => {
+    const r = window.railIslandIntegration, map = window.__ofmGl;
+    return (!r || (!r.loading && (!!r.renderer || r.errors.length > 0))) && (!map || (map.loaded() && !map.isMoving()));
+  }, null, { timeout: 20_000, polling: 100 }).catch(() => console.warn('reloadQuietly:頁面 20 秒內沒安靜下來，照常換頁'));
+  await page.goto('about:blank');
+  await page.goto(url, { waitUntil: 'domcontentloaded' });
+}
+
 // desktop:true＝要桌面殼。🔴 光把 width 調寬【拿不到】桌面殼:index.html 的 MOBILE_MQ 是
 //   `(max-width:900px), (max-height:500px), (any-pointer:coarse) and (max-width:1400px)`,
 //   而 isMobile/hasTouch 讓 any-pointer 恆為 coarse ⇒ 1400px 以下的任何寬度都還是 mobile-shell+fs。
@@ -96,13 +146,17 @@ async function boot(browser, { width = 393, tier = 'std', query = '', scheme, na
     locale: PAGE_LOCALE,                          // 見檔頭「語系必須釘死」;與網址的 ?lang 兩道一起
     ...(scheme ? { colorScheme: scheme } : {}),   // 不傳＝沿用 Playwright 預設,既有各段行為不變
   });
+  if (SLOW_NAV_MS > 0) await slowNavigation(ctx);
   const page = await ctx.newPage();
   const errs = [];
   page.on('pageerror', e => errs.push(String(e)));
   await page.addInitScript(a => {
-    localStorage.setItem('trainmap-howto-seen', '1');                 // 首訪教學卡會蓋住地圖與頂列
-    localStorage.setItem('iabHintDismiss', String(Date.now() + 1e9)); // 內嵌瀏覽器提示同理
-    if (a.t !== 'std') localStorage.setItem('trainmap-fontscale', a.t);
+    // init script 連 about:blank（reloadQuietly 的中繼頁）也會跑，那裡存取 localStorage 會丟 SecurityError，所以要 try 包住
+    try {
+      localStorage.setItem('trainmap-howto-seen', '1');                 // 首訪教學卡會蓋住地圖與頂列
+      localStorage.setItem('iabHintDismiss', String(Date.now() + 1e9)); // 內嵌瀏覽器提示同理
+      if (a.t !== 'std') localStorage.setItem('trainmap-fontscale', a.t);
+    } catch {}
     // 只有原生殼會注入的旗標(末班車提醒鈴鐺靠它才出現);瀏覽器驗收要驗三顆鈕的版面時才傳
     if (a.native) for (const k of a.native) window[k] = true;
   }, { t: tier, native });
@@ -295,7 +349,7 @@ async function sectionB(browser, engine) {
     back.ui === '1' && back.fs === null && back.ls === 'std', JSON.stringify(back));
   ok(`B6b ${engine} 「更多」那一列顯示目前的階`, back.msVal === '標準', 'msVal=' + back.msVal);
   await page.tap('#msFontSeg button[data-v="large"]'); await page.waitForTimeout(300);
-  await page.reload({ waitUntil: 'domcontentloaded' });
+  await reloadQuietly(page);
   await page.waitForFunction(() => typeof state !== 'undefined' && state.ready, null, { timeout: 45000 }).catch(() => {});
   const again = await read();
   ok(`B7 ${engine} 重新載入後保留「大」`, again.ui === '1.25' && again.fs === 'large', JSON.stringify(again));
@@ -364,7 +418,7 @@ async function sectionD(browser, engine) {
   ok(`D3 ${engine} 開關【關】+ 同一個系統字級 → 退回標準(反向對照)`,
     offSt.fs === null && offSt.follow === false, JSON.stringify(offSt));
   ok(`D4 ${engine} 關掉的偏好寫進 localStorage`, offSt.lsFollow === '0', 'lsFollow=' + offSt.lsFollow);
-  await page.reload({ waitUntil: 'domcontentloaded' });
+  await reloadQuietly(page);
   await page.waitForFunction(() => typeof state !== 'undefined' && state.ready, null, { timeout: 45000 }).catch(() => {});
   await setSysFont(30);
   await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
@@ -3450,6 +3504,7 @@ const want = (process.env.SECTIONS || '').split(',').map(x => x.trim().toUpperCa
 const run = want.length ? want : Object.keys(ALL);
 for (const k of run) if (!ALL[k]) { console.error(`未知段別 ${k}`); process.exit(2); }
 if (want.length) console.log(`⚠ 只跑 ${run.join(',')} 段(SECTIONS 環境變數),這不是完整驗收`);
+if (SLOW_NAV_MS > 0) console.log(`⚠ 壓力模式 RAIL_FONT_SCALE_SLOW_NAV_MS=${SLOW_NAV_MS}:第二次起的換頁會被拖慢,只用來重現換頁競態,這不是正式驗收`);
 // ENGINES=webkit 之類的窄化只給突變測試用(跑一輪要分辨紅的是哪一發,不必兩個引擎各跑一次);
 // 正式驗收不要傳,傳了會像 SECTIONS 一樣印出警告。
 const ENG_ALL = [['chromium', chromium], ['webkit', webkit]];
