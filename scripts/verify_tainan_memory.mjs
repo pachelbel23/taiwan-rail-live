@@ -418,23 +418,31 @@ function checkObserved(){
  ok(data.trains.filter(t=>t.mark).length===cfg.marks.length,'重點車的數量不對');
  for(const m of cfg.marks){const t=byNo(m.train,m.serviceDate),want=m.mark==='last-ground'?lastExit.tr:m.mark==='last-south'?lastSouth.tr:null;
   ok(t&&t.mark===m.mark&&want===t,'重點車身分與逐站時刻不符：'+m.mark+' 設定 '+m.train+'，重算 '+want?.train+'，snapshot 裡 '+m.train+' 的 mark 是 '+(t?.mark??'（沒有）'));}
- // 反向的車：時段涵蓋它在區間內的時間；車身只蓋北上那組 way（不碰南下那組），而且經過臺南的西正線月台；
- // 換線的渡線一律在畫面外（畫面內就得標不確定），始發／終到站要對得上班表；走法經過的轉轍 OSM 都有
+ // 反向的車：時段涵蓋它在區間內的時間；車身只蓋北上那組 way（不碰南下那組），而且停過臺南的西正線月台；
+ // 例外是 snapshot.stationTracks 記的同站換股（在站內等對向車、改停同站另一股）：那一站停站前後 MOVE_SEC 秒內、離站 MOVE_M 公尺內，
+ // 車身可以蓋到南下那組 way（換過去的那股、進出它的道岔與推估渡線）；在臺南換股的，改成要停過換過去的那股。
+ // 換線的渡線一律在畫面外（畫面內就得標不確定），始發／終到站要對得上班表；走法經過的轉轍 OSM 都有（推估渡線的轉轍另計在 turnouts.inferred）
  // way id 在 snapshot.rails 是字串、在設定裡是數字，一律轉字串比。對照組：平常（官方封鎖前）的南下列車要蓋得到南下那組 way，否則這條檢查是空的。
  const southWays=new Set(SL.ways.south.map(String)),platformWay=String(SL.tainanPlatformWay),reversed=[];let southControl=0;
+ const moves=data.stationTracks?.moves||[],MOVE_SEC=180,MOVE_M=800,stationXY=new Map(data.stations.map(s=>[norm(s.name),[s.lon,s.lat]]));
+ const movedAt=(tr,t,p)=>moves.find(m=>m.trainId===tr.id&&m.arrSec-MOVE_SEC<=t&&t<=m.depSec+MOVE_SEC&&distanceM(p,stationXY.get(norm(m.station)))<=MOVE_M);
  for(let t=0;t<SL.officialSec;t+=60)for(const a of active[t])if(a.tr.direction==='南下'&&[...body(a.ri,a.s,lenOf.get(a.tr.id)).keys()].some(w=>southWays.has(w)))southControl++;
  ok(southControl>0,'南下那組 way 對不上任何平常的南下列車（設定的 way 清單或比對方式錯了）');
- for(const r of single.reversed){const tr=byId.get(r.trainId),x=uses.find(x=>x.tr===tr),stops=schedOf.get(tr.serviceDate+':'+tr.train).stops;let n=0,platform=false;
+ for(const r of single.reversed){const tr=byId.get(r.trainId),x=uses.find(x=>x.tr===tr),stops=schedOf.get(tr.serviceDate+':'+tr.train).stops;let n=0,platform=false,movedSec=0;
   ok(x&&tr.direction==='南下'&&r.startSec<=entry(x)&&exit(x)<=r.endSec,r.train+' 的反向時段沒有涵蓋它在單線區間內的時間');
-  for(let t=Math.max(0,r.startSec);t<=Math.min(86399,r.endSec);t++){const a=active[t].find(a=>a.tr===tr);if(!a)continue;n++;
-   for(const w of body(a.ri,a.s,lenOf.get(tr.id)).keys()){ok(!southWays.has(w),r.train+' 反向期間車身蓋到南下那組股道 '+w+'（'+hms(t)+'）');if(w===platformWay)platform=true;}}
-  ok(n>0&&platform,r.train+' 反向期間沒有經過臺南的西正線月台 '+platformWay);
+  const atTainan=moves.filter(m=>m.trainId===tr.id&&norm(m.station)===norm('臺南'));
+  for(let t=Math.max(0,r.startSec);t<=Math.min(86399,r.endSec);t++){const a=active[t].find(a=>a.tr===tr);if(!a)continue;n++;const mv=movedAt(tr,t,paths[a.ri].at(a.s).coordinate);let onSouth=false;
+   for(const w of body(a.ri,a.s,lenOf.get(tr.id)).keys()){if(southWays.has(w)&&mv)onSouth=true;else ok(!southWays.has(w),r.train+' 反向期間車身蓋到南下那組股道 '+w+'（'+hms(t)+'）');
+    if(w===platformWay||atTainan.some(m=>w===m.to.way&&m.arrSec<=t&&t<=m.depSec))platform=true;}
+   if(onSouth)movedSec++;}
+  ok(n>0&&platform,r.train+' 反向期間沒有停過臺南的西正線月台 '+platformWay+(atTainan.length?'或換股換過去的 '+atTainan.map(m=>m.to.way).join('、'):''));
   for(const end of ['start','end']){const c=r.crossovers?.[end];
    ok(c&&(c.kind==='crossover'?!inside([c.lon,c.lat])&&c.inView===false:c.kind==='origin'?end==='start'&&norm(c.station)===norm(stops[0].name):c.kind==='terminus'&&end==='end'&&norm(c.station)===norm(stops.at(-1).name)),
     r.train+' 的'+(end==='start'?'進入':'離開')+'反向位置在畫面內，或起訖站對不上班表');}
   ok(r.turnouts?.total>0&&r.turnouts.allCanTurn===true,r.train+' 的反向走法經過 OSM 沒有的轉轍');
+  ok(!(r.turnouts.inferred>0)||moves.some(m=>m.trainId===tr.id&&m.inferredCrossovers.length>0),r.train+' 的反向走法經過推估渡線，stationTracks 卻沒有它的換股');
   const where=c=>c.kind==='crossover'?c.segment+' 渡線（畫面外）':(c.kind==='origin'?'始發 ':'終到 ')+c.station+(c.inView?'（畫面內）':'（畫面外）');
-  reversed.push({train:r.train,from:hms(r.startSec),to:hms(r.endSec),drawnSec:n,enter:where(r.crossovers.start),leave:where(r.crossovers.end),turnouts:r.turnouts.total});}
+  reversed.push({train:r.train,from:hms(r.startSec),to:hms(r.endSec),drawnSec:n,enter:where(r.crossovers.start),leave:where(r.crossovers.end),turnouts:r.turnouts.total,...(movedSec&&{stationMoveSec:movedSec})});}
  const times=[...single.note.matchAll(/(\d{1,2}):(\d{2})/g)].map(m=>m[0].padStart(5,'0'));
  ok(times.includes(hm(fromSec))&&times.includes(hm(SL.officialSec))&&times.every(x=>x===hm(fromSec)||x===hm(SL.officialSec)),'singleLine.note 的時刻只能是官方封鎖與單線起點：'+times.join('、'));
  ok(!single.note.includes('實測'),'singleLine.note 不寫「實測」：單線前後的時段是依到站紀錄推算的');
@@ -501,16 +509,43 @@ function checkObserved(){
    if(g&&g.end===t-1&&g.covered===cov){g.end=t;g.maxOverlapM=Math.max(g.maxOverlapM,ovl);for(const w of ways)g.ways.add(w);for(const x of kinds)g.kinds.add(x);}
    else list.push({ids,start:t,end:t,covered:cov,maxOverlapM:ovl,ways:new Set(ways),kinds:new Set(kinds)});}}
  const all=[...groups.values()].flat().sort((a,b)=>a.start-b.start),uncovered=all.filter(g=>!g.covered),nameOf=g=>g.ids.map(id=>byId.get(id).train).join('/');
- ok(bodySec>0&&oppSec>0,'占用檢查沒有找到任何車身重疊（'+bodySec+' 秒）或封鎖後的對向共用股道（'+oppSec+' 秒），判準失明');
+ // 正向對照：bodySec＞0（真的量到車身重疊）、oppSec＞0（封鎖後量到對向兩班同一秒共用 way）。有同站換股的日子，換股就是為了讓同站不再重疊、
+ // 交會的對向車各停一股，兩個都可以是 0；改用三個對照：
+ //  (1) 鬼影：每 60 秒取一次，每班車和它自己 1 秒後的車身比，行進或停著都一定蓋到同一條 way 且沿線重疊——量得到才算 active／body 看得到車身；
+ //  (2) 單線：官方封鎖之後，至少一條 way 先後有兩個方向的列車經過（單線上對向列車走同一條線，只是錯開時間）——量得到才算方向與 way 對得上；
+ //  (3) 反事實：下面 10b 的每一筆換股，等的那班在重疊期間都停在換股前那股（不換就會疊）。
+ let ghostSec=0;const lateDirs=new Map();
+ if(data.stationTracks){for(let t=0;t<86399;t+=60)for(const a of active[t]){const b=active[t+1].find(x=>x.tr===a.tr);if(!b)continue;const P=body(a.ri,a.s,lenOf.get(a.tr.id)),Q=body(b.ri,b.s,lenOf.get(a.tr.id));
+ if([...P].some(([w,x])=>{const y=Q.get(w);return y&&Math.min(x[1],y[1])-Math.max(x[0],y[0])>0;}))ghostSec++;}
+  for(let t=SL.officialSec;t<86400;t+=5)for(const a of active[t])for(const w of body(a.ri,a.s,lenOf.get(a.tr.id)).keys())(lateDirs.get(w)||lateDirs.set(w,new Set()).get(w)).add(a.tr.direction);}
+ const bothWays=[...lateDirs].filter(([,d])=>d.size>1).map(([w])=>w);
+ ok(data.stationTracks?ghostSec>0&&bothWays.length>0:bodySec>0&&oppSec>0,'占用檢查沒有找到任何車身重疊（'+bodySec+' 秒；鬼影對照 '+ghostSec+' 次）或封鎖後的對向共用股道（'+oppSec+' 秒；封鎖後兩個方向都走過的 way '+bothWays.length+' 條），判準失明');
  ok(uncovered.length===0,'有沒標記的股道重疊：'+uncovered.slice(0,5).map(g=>nameOf(g)+' '+hms(g.start)+'–'+hms(g.end)+' '+[...g.kinds]+' way '+[...g.ways]).join('；'));
  for(const i of U.intervals.filter(i=>i.reason==='track-overlap'))ok((sharedSec.get([...i.trains].sort().join('|'))||[]).some(t=>i.start<=t&&t<=i.end),'track-overlap 時段裡兩車從沒共用同一條 way（不符 '+U.criterion+' 判準）：'+i.trainNos+' '+hms(i.start));
+ // 10b. 同站換股（snapshot.stationTracks，設定有 restation 的日子才有）：每一筆換股都要
+ //   ・理由成立：等的那班在同一站的停站時段與它重疊（逐站時刻），而且重疊期間那班的車身停在換股前那股（不換就會重疊）；
+ //   ・真的畫在換過去的那股：停站期間每一秒車身蓋到 to.way、不碰 from.way；
+ //   ・用到的推估渡線都在 crossovers 清單與 snapshot.rails 裡（tags.inferred=yes），rails 裡沒有清單外的推估股道。
+ //   正向對照：設定有 restation 就至少要有一筆換股。
+ const ST=data.stationTracks,stationMoves=[],inferredRails=data.rails.filter(r=>r.tags.inferred==='yes').map(r=>String(r.id));
+ if(cfg.restation)ok(ST&&ST.moves.length>0,'設定有同站換股，snapshot 卻沒有 stationTracks 或一筆換股都沒有（判準失明）');
+ ok(inferredRails.every(id=>ST?.crossovers.some(x=>x.id===id)),'snapshot.rails 有清單外的推估股道：'+inferredRails.filter(id=>!ST?.crossovers.some(x=>x.id===id)).join('、'));
+ for(const m of ST?.moves||[]){const tr=byId.get(m.trainId),o=byId.get(m.waitedFor.trainId),s=stopOf(tr,m.station),q=stopOf(o,m.station);
+  ok(s&&q&&s.arrSec===m.arrSec&&s.depSec===m.depSec&&q.arrSec===m.waitedFor.arrSec&&q.depSec===m.waitedFor.depSec&&s.arrSec<=q.depSec&&q.arrSec<=s.depSec,'換股的停站時段與逐站時刻不符，或兩班沒有同時在站：'+m.train+'／'+m.waitedFor.train+' '+m.station);
+  ok(m.from.way!==m.to.way&&m.inferredCrossovers.every(id=>ST.crossovers.some(x=>x.id===id)&&inferredRails.includes(id)),'換股的股道或推估渡線不對：'+m.train+' '+m.station);
+  let dwell=0,onTo=0,onFrom=0,blocked=0;
+  for(let t=m.arrSec;t<=m.depSec;t++){const a=active[t].find(a=>a.tr===tr);if(!a)continue;dwell++;const ws=body(a.ri,a.s,lenOf.get(tr.id));if(ws.has(m.to.way))onTo++;if(ws.has(m.from.way))onFrom++;}
+  for(let t=Math.max(m.arrSec,q?.arrSec??0);t<=Math.min(m.depSec,q?.depSec??-1);t++){const b=active[t].find(a=>a.tr===o);if(b&&body(b.ri,b.s,lenOf.get(o.id)).has(m.from.way))blocked++;}
+  ok(dwell>0&&onTo===dwell&&onFrom===0,'換股的班次停站時沒有停在換過去的那股：'+m.train+' '+m.station+'（'+onTo+'／'+dwell+' 秒在 '+m.to.way+'、'+onFrom+' 秒碰到 '+m.from.way+'）');
+  ok(blocked>0,'換股的理由不成立：'+m.waitedFor.train+' 和 '+m.train+' 同時在'+m.station+'的期間，沒有停在換股前那股 '+m.from.way+'（不換也不會疊）');
+  stationMoves.push({train:m.train,station:m.station,span:hms(m.arrSec)+'–'+hms(m.depSec),from:m.from.way,to:m.to.way,waitedFor:m.waitedFor.train,dwellSec:dwell,blockedSec:blocked,inferred:m.inferredCrossovers.length});}
  const byReason={};for(const i of U.intervals)byReason[i.reason]=(byReason[i.reason]||0)+1;
  return {stops:srcCount,observationRows:rowCount,scheduledTrains:TS.scheduledTrains.map(id=>byId.get(id).train),anchors,
   speed:{epsKmh:EPS_KMH,worst:{train:worst.train,kmh:worst.kmh,capKmh:worst.capKmh},byFormation:speedByFormation},
   singleLine:{from:hms(fromSec),to:hms(toSec),lastOverlap:LO.A.train+'/'+LO.B.train+' '+subName(LO.sub)+' 到 '+hms(lastEnd),lateOverlapsMarked:late.length,reversed,
    stationGaps:{checkedSec:gapSec,opposingInGapSec:gapHits.length,sectionPairs}},
   b1,events:trace,dwell:{checked:dwellChecked,notInView:dwellSkipped,maxMoveM:+dwellMove.toFixed(3),maxStationDistM:Math.round(dwellDist)},
-  occupancy:{routeSegments:segTotal,bodyOverlapSec:bodySec,opposingSharedWaySec:oppSec,groups:all.map(g=>({trains:nameOf(g),span:hms(g.start)+'–'+hms(g.end),kinds:[...g.kinds],ways:[...g.ways],maxOverlapM:+g.maxOverlapM.toFixed(1),covered:g.covered}))},
+  occupancy:{routeSegments:segTotal,bodyOverlapSec:bodySec,opposingSharedWaySec:oppSec,...(ST&&{ghostControl:ghostSec,bothDirectionWaysAfterClosure:bothWays,stationMoves}),groups:all.map(g=>({trains:nameOf(g),span:hms(g.start)+'–'+hms(g.end),kinds:[...g.kinds],ways:[...g.ways],maxOverlapM:+g.maxOverlapM.toFixed(1),covered:g.covered}))},
   uncertainty:{criterion:U.criterion,intervals:U.intervals.length,byReason}};
 }
 const observed=cfg.timing==='observed'?checkObserved():null;

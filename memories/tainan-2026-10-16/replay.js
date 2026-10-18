@@ -93,23 +93,48 @@ try{
  // 標籤上的來源旗標：整班沒有即時動態紀錄＝「無即時動態紀錄」；其餘看 anchorStop（臺南那一列，沒經過臺南的班次看第一列）的來源：實測／內插／推定／表定。
  // 起點站沒有到站，那一列的 src 記的是開車時刻的來源（看板紀錄的誤點分鐘推出來的＝推定）。沒有來源就不掛旗標，不預設成實測。
  function trainFlag(tr){if(tr.timing==='scheduled')return {key:'sched',text:'無即時動態紀錄'};if(!tr.timing)return null;const k=anchorStop(tr)?.src;return SRC[k]?{key:k,text:SRC[k]}:null;}
- function trainLabel(tr){const e=document.createElement('span'),main=document.createElement('span'),flag=trainFlag(tr);e.className='map-label train-label'+(MARK_LABEL[tr.mark]?' mark-'+tr.mark:'');main.className='lt';main.textContent=MARK_LABEL[tr.mark]?MARK_LABEL[tr.mark](tr):tr.train+' '+tr.direction;e.append(main);
+ // 終點是畫面裡的車站（data.stations：大橋、臺南、保安）的班次，標籤加「・終點○○」：重建的軌跡到站那一秒就結束，車會在月台上消失，先講明它開到這站為止。
+ const viewStations=new Set(data.stations.map(s=>s.name.replace('台','臺'))),terminalOf=tr=>{const s=tr.stops.at(-1),n=s?.name.replace('台','臺');return s?.end==='terminal'&&viewStations.has(n)?n:null;};
+ function trainLabel(tr){const e=document.createElement('span'),main=document.createElement('span'),flag=trainFlag(tr),end=terminalOf(tr);e.className='map-label train-label'+(MARK_LABEL[tr.mark]?' mark-'+tr.mark:'');main.className='lt';main.textContent=(MARK_LABEL[tr.mark]?MARK_LABEL[tr.mark](tr):tr.train+' '+tr.direction)+(end?'・終點'+end:'');e.append(main);
   if(MARK_LABEL[tr.mark])e.dataset.mark=tr.mark;if(flag){const f=document.createElement('span');f.className='flag flag-'+flag.key;f.textContent=flag.text;e.append(f);e.dataset.src=flag.key;}
   $('labels').append(e);const item={e,coordinate:null};labels.push(item);return item;}
- // 重點車的車身外圈光暈：每節車一個略大於車身的半透明外殼（只畫背面，車身擋住的部分不蓋色，只露出一圈邊）＋車底一片放射狀光斑。
- // 外圈厚度維持約 3 個像素（updateGlow 每幀依視野換算），拉到全線也看得到。
- const glowTex=(()=>{const c=document.createElement('canvas');c.width=c.height=64;const g=c.getContext('2d'),r=g.createRadialGradient(32,32,3,32,32,32);r.addColorStop(0,'rgba(255,255,255,.9)');r.addColorStop(.6,'rgba(255,255,255,.4)');r.addColorStop(1,'rgba(255,255,255,0)');g.fillStyle=r;g.fillRect(0,0,64,64);const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;return t;})(),glows=[];
- function addGlow(cars,parts,tr){const south=tr.mark==='last-south',color=south?'#d8453f':'#ffb300',shellMat=new THREE.MeshBasicMaterial({color,transparent:true,opacity:.42,side:THREE.BackSide,depthWrite:false}),floorMat=new THREE.MeshBasicMaterial({map:glowTex,color,transparent:true,opacity:.9,depthWrite:false}),shellGeo=new THREE.BoxGeometry(1,1,1),floorGeo=new THREE.PlaneGeometry(1,1);
-  const list=cars.map((car,i)=>{const shell=new THREE.Mesh(shellGeo,shellMat),floor=new THREE.Mesh(floorGeo,floorMat);shell.renderOrder=floor.renderOrder=5;car.add(shell,floor);return {shell,floor,len:parts[i].lengthM||20,w:tr.formation.widthM||2.9,h:3.9};});
-  const entry={train:tr.id,list};glows.push(entry);return entry;}
- function updateGlow(mpp){const t=Math.max(.4,3*mpp);for(const g of glows)for(const c of g.list){c.shell.scale.set(c.len+2*t,c.w+2*t,c.h+t);c.shell.position.z=(c.h+t)/2-.1;c.floor.scale.set(c.len+4*t,c.w+4*t,1);c.floor.position.z=.06;}}
+ // 重點車的光暈，照主站列車光暈的散光做（rail-3d/integration/train-halo-style.js 的 HALO_STOPS 與 scatterCar、train-halo.js 的深度做法；封存目錄不引用主站檔，寫在這裡）：
+ // 每節車兩片畫面上的橢圓柔光，透明度由中心往外漸淡到 0、沒有邊；第二片大一些、淡一些、往一側偏。大小、偏移、角度每節車固定一組（照車序算，不隨時間閃動）。
+ // 主站的光是給遠看的小車用的，範圍大而淡；這裡是兩班重點車，橢圓外加的像素（GLOW_PAD_X／GLOW_PAD_Y）比主站小、濃度（GLOW_ALPHA）比主站高，光貼著車身。
+ // 橢圓以畫面像素計、每幀照鏡頭重算（updateGlow），怎麼縮放、轉向、調仰角都一樣大；中心對準車身半高（離車底 GLOW_Z）。四個角投回離車底 GLOW_PLANE 的水平面上：高過月台雨棚頂（5.2 m），雨棚不會把光切出一條硬邊的色帶；比它高的天橋與建物照深度擋住它，地面也不會切掉它。
+ // 柔光排在不透明物件裡、車身之前畫（renderOrder 1；車身 2），車身整個蓋過去：車身不會被染色，光只露在車身四周。
+ // 混色只混顏色、不動畫布的 alpha（blendSrcAlpha 0、blendDstAlpha 1）：畫布帶 alpha 通道，照顏色那組係數混會讓光暈處的畫布變半透明，透出頁面底色，紅光變成粉白。
+ // 貼圖直接算像素（RGB 全白，只有 alpha 照 HALO_STOPS 由中心淡出）：用 canvas 漸層當貼圖時，WebKit 畫出的光暈裡有一顆顆暗點，Chrome 沒有；改成直接算之後兩邊都沒有。
+ const HALO_STOPS=[[0,1],[.18,.87],[.4,.5],[.64,.17],[.84,.025],[1,0]],GLOW_Z=1.75,GLOW_PLANE=5.4,GLOW_ALPHA=.55,GLOW_PAD_X=16,GLOW_PAD_Y=24,glows=[],glowV=new THREE.Vector3(),glowO=new THREE.Vector3(),glowD=new THREE.Vector3();let glowMesh=null;
+ const haloVar=k=>[k,k+17,k+31,k+53].map(n=>{const x=Math.sin((n+1)*12.9898+7.2)*43758.5453;return x-Math.floor(x);});
+ const glowTex=(()=>{const N=128,px=new Uint8Array(N*N*4);for(let y=0;y<N;y++)for(let x=0;x<N;x++){const r=Math.hypot(x+.5-N/2,y+.5-N/2)/(N/2),k=HALO_STOPS.findIndex(([at])=>at>=r),[a0,a1]=k<=0?[HALO_STOPS[0],HALO_STOPS[0]]:[HALO_STOPS[k-1],HALO_STOPS[k]],i=(y*N+x)*4;
+ px[i]=px[i+1]=px[i+2]=255;px[i+3]=k<0?0:Math.round(255*(a1[0]===a0[0]?a1[1]:a0[1]+(a1[1]-a0[1])*(r-a0[0])/(a1[0]-a0[0])));}
+ const t=new THREE.DataTexture(px,N,N,THREE.RGBAFormat);t.magFilter=THREE.LinearFilter;t.minFilter=THREE.LinearMipmapLinearFilter;t.generateMipmaps=true;t.needsUpdate=true;return t;})();
+ function addGlow(cars,parts,tr){const entry={train:tr.id,color:new THREE.Color(tr.mark==='last-south'?'#d8453f':'#ffb300'),cars,list:cars.map((car,k)=>({n:haloVar(k),len:parts[k].lengthM||20})),w:tr.formation.widthM||2.9,visible:true};glows.push(entry);return entry;}
+ function glowBuffers(){const n=2*glows.reduce((a,g)=>a+g.cars.length,0),geo=new THREE.BufferGeometry(),uv=new Float32Array(n*8),idx=[];for(let i=0;i<n;i++){uv.set([0,0,1,0,0,1,1,1],i*8);idx.push(4*i,4*i+1,4*i+2,4*i+2,4*i+1,4*i+3);}
+  geo.setAttribute('position',new THREE.BufferAttribute(new Float32Array(n*12),3).setUsage(THREE.DynamicDrawUsage));geo.setAttribute('uv',new THREE.BufferAttribute(uv,2));geo.setAttribute('color',new THREE.BufferAttribute(new Float32Array(n*16),4).setUsage(THREE.DynamicDrawUsage));geo.setIndex(idx);
+  glowMesh=new THREE.Mesh(geo,new THREE.MeshBasicMaterial({map:glowTex,vertexColors:true,side:THREE.DoubleSide,depthWrite:false,blending:THREE.CustomBlending,blendSrc:THREE.SrcAlphaFactor,blendDst:THREE.OneMinusSrcAlphaFactor,blendSrcAlpha:THREE.ZeroFactor,blendDstAlpha:THREE.OneFactor}));glowMesh.frustumCulled=false;glowMesh.renderOrder=1;scene.add(glowMesh);}
+ const glowScreen=(x,y,z)=>{glowV.set(x,y,z).project(camera);return {x:(glowV.x*.5+.5)*width,y:(-glowV.y*.5+.5)*height,z:glowV.z};};
+ function updateGlow(){if(!glowMesh)glowBuffers();const geo=glowMesh.geometry,pos=geo.attributes.position.array,col=geo.attributes.color.array;let n=0;camera.getWorldDirection(glowD);
+  const emit=(x,y,ang,rx,ry,alpha,z,color)=>{const cs=Math.cos(ang),sn=Math.sin(ang);[[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([u,v],j)=>{const px=x+u*rx*cs-v*ry*sn,py=y+u*rx*sn+v*ry*cs;glowO.set(px/width*2-1,1-py/height*2,-1).unproject(camera);const t=(z-glowO.z)/glowD.z;
+   pos.set([glowO.x+t*glowD.x,glowO.y+t*glowD.y,z],(4*n+j)*3);col.set([color.r,color.g,color.b,alpha],(4*n+j)*4);});n++;};
+  for(const g of glows){if(!g.visible||!models.get(g.train).group.visible)continue;const c=g.cars.map(car=>({x:car.position.x,y:car.position.y,z:car.position.z+GLOW_Z,a:car.rotation.z})),p=c.map(v=>glowScreen(v.x,v.y,v.z)),last=c.length-1;
+   // 編組兩端往外延半節車長，當第一節／最後一節的「前一節」「後一節」（同 train-halo.js）；只有一節車就沿車身方向延。
+   const out=(i,j)=>{const a=c[i],L=g.list[i].len/2,d=j==null?null:Math.hypot(a.x-c[j].x,a.y-c[j].y)||1,ux=j==null?Math.cos(a.a):(a.x-c[j].x)/d,uy=j==null?Math.sin(a.a):(a.y-c[j].y)/d;return glowScreen(a.x+ux*L,a.y+uy*L,a.z);};
+   const before=out(0,last?1:null),after=last?out(last,last-1):(()=>{const a=c[0],L=g.list[0].len/2;return glowScreen(a.x-Math.cos(a.a)*L,a.y-Math.sin(a.a)*L,a.z);})();
+   let radius=2.5;c.forEach((v,i)=>{if(p[i].z<-1||p[i].z>1)return;for(const s of [-1,1])for(const dz of [.1-GLOW_Z,3.5-GLOW_Z]){const q=glowScreen(v.x-Math.sin(v.a)*s*g.w/2,v.y+Math.cos(v.a)*s*g.w/2,v.z+dz);radius=Math.max(radius,Math.hypot(q.x-p[i].x,q.y-p[i].y));}});radius=Math.min(26,radius);
+   c.forEach((v,k)=>{const q=p[k],a=p[k-1]||before,b=p[k+1]||after;if(![q,a,b].every(s=>s.z>=-1&&s.z<=1))return;
+    const dx=b.x-a.x,dy=b.y-a.y,ang=Math.atan2(dy,dx),spacing=Math.max(1,Math.hypot(dx,dy)/2),[n0,n1,n2,n3]=g.list[k].n,rx=spacing*(1.1+n0*.22)+GLOW_PAD_X,ry=(radius*1.25+GLOW_PAD_Y)*(.84+n1*.38),side=(n2-.5)*ry*.34,
+     x=q.x-Math.sin(ang)*side,y=q.y+Math.cos(ang)*side,alpha=GLOW_ALPHA*Math.min(1,spacing/rx);
+    const plane=v.z-GLOW_Z+GLOW_PLANE;emit(x,y,ang+(n3-.5)*.2,rx,ry,alpha,plane,g.color);emit(x-Math.sin(ang)*ry*.22,y+Math.cos(ang)*ry*.22,ang-.12,rx*1.3,ry*1.45,alpha*.34,plane,g.color);});}
+  geo.setDrawRange(0,n*6);glowMesh.visible=n>0;if(n){geo.attributes.position.needsUpdate=true;geo.attributes.color.needsUpdate=true;}}
  // 依真實比例重排編組：每輛用該車型的連結器間距（pitchM）首尾相接，以編組中心為基準置中；車體不拉伸。
  // 逐輛網格與轉向來自 catalog 的 formations（EP 集電弓車、機車端客車…），輛數必須與封存班表的編組一致。
  // listedFor＝車序是照哪個方向的領頭車排的（EMU3000 1 號車在屏東／高雄端＝南下領頭）；反方向就整列倒過來、每輛轉 180°。
  function arrange(tr){const rule=fleet.formations[tr.formation.id];if(!rule||rule.cars.length!==tr.formation.parts.length)throw Error('缺少編組規則：'+tr.formation.id);
   const cars=rule.listedFor&&tr.direction!==rule.listedFor?rule.cars.slice().reverse().map(c=>({mesh:c.mesh,flip:!c.flip})):rule.cars;
   const parts=cars.map(c=>({mesh:c.mesh,flip:c.flip,lengthM:fleet.meshes[c.mesh].pitchM,offsetM:0}));let front=parts.reduce((a,c)=>a+c.lengthM,0)/2;for(const c of parts){c.offsetM=front-c.lengthM/2;front-=c.lengthM;}return parts;}
- for(const tr of data.trains){const group=new THREE.Group(),parts=arrange(tr),cars=parts.map(part=>{const car=new THREE.Group(),mesh=new THREE.Mesh(lodGeo.far.get(part.mesh),carMaterial);mesh.userData.mesh=part.mesh;if(part.flip)mesh.rotation.z=Math.PI;car.add(mesh);group.add(car);return car;});group.visible=false;scene.add(group);models.set(tr.id,{group,cars,parts,label:trainLabel(tr),glow:MARK_LABEL[tr.mark]?addGlow(cars,parts,tr):null});}
+ for(const tr of data.trains){const group=new THREE.Group(),parts=arrange(tr),cars=parts.map(part=>{const car=new THREE.Group(),mesh=new THREE.Mesh(lodGeo.far.get(part.mesh),carMaterial);mesh.userData.mesh=part.mesh;mesh.renderOrder=2;if(part.flip)mesh.rotation.z=Math.PI;car.add(mesh);group.add(car);return car;});group.visible=false;scene.add(group);models.set(tr.id,{group,cars,parts,label:trainLabel(tr),glow:MARK_LABEL[tr.mark]?addGlow(cars,parts,tr):null});}
  // 近景／遠景切換：只換每輛車的 geometry（catalog.lod 有門檻，中間帶保持現狀，避免縮放時來回跳）。
  const setLod=next=>{if(next===state.lod)return;state.lod=next;for(const m of models.values())for(const car of m.cars){const mesh=car.children[0];mesh.geometry=lodGeo[next].get(mesh.userData.mesh);}};
  const byArrival=[...data.trains].filter(tr=>tr.stops.length).sort((a,b)=>anchorStop(a).arrSec-anchorStop(b).arrSec);
@@ -196,7 +221,7 @@ $('slToggle').onclick=()=>{const b=$('slToggle');b.setAttribute('aria-expanded',
  // 兩排之下連「說明」鈕都放不下時（例：568×320 打開最後一夜，場景只剩約 300 px 寬），框改放到最後一排最後一顆按鈕的右邊，上緣讓出上面那幾排。
  // 展開而且正在跟車時，框的上緣再往下讓出一條帶子，放得下被跟那班的標籤＋整班車＋SL_CAR_GAP（車身用 followReach 的最壞外框），liftFollow 把整班車放進這條帶子；框至少留摘要列＋一行說明（可捲）。
  // slBand：說明文字顯示中才有。bandTop＝標籤那一欄（場景中線兩側）最低的按鈕下緣，沒有按鈕就是場景頂端；boxTop／boxL／boxR＝說明框。座標都相對場景左上角。
- // SL_CAR_GAP：車身外框下緣離說明框上緣至少 8 px。兩班重點車外圍有光暈（updateGlow：殼往外約 3 px、地面光約 6 px，投影到畫面縱向約 4 px），8 px 讓光暈也不碰框，另留 2 px 給像素取整。
+ // SL_CAR_GAP：車身外框下緣離說明框上緣至少 8 px，含 2 px 給像素取整。兩班重點車的光暈（updateGlow）沒有邊、越往外越淡，伸進框裡的外圍被框的底色（95% 不透明）蓋住，不另讓位。
  const SL_GAP=10,SL_CAR_GAP=8,SL_LABEL_W=200;let slBand=null,slKey='';
  // 被跟那班在目前鏡頭下、車頭朝任何方位時，車身離跟車點（編組中心的地面）在畫面上最遠多少 px：up 往上、down 往下。
  // R＝各輛中心離編組中心的距離＋該輛 boundingBox 的水平半對角線，取最大；up＝R·sin(仰角)＋車頂高·cos(仰角)，down＝R·sin(仰角)−車底高·cos(仰角)，再乘每公尺像素（車輛離地 0.16 m 不到 0.2 px，不計）。
@@ -233,10 +258,13 @@ $('slToggle').onclick=()=>{const b=$('slToggle');b.setAttribute('aria-expanded',
   const dy=(height/2-g)/ppm;if(dy<=0)return;const up=new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld,1),h=Math.max(.1,Math.hypot(up.x,up.y));target.addScaledVector(up,-dy/(h*h));target.z=0;}
  for(const e of document.querySelectorAll('[data-fill]')){if(e.dataset.fill==='singleFrom'&&single)e.textContent=clock(single.fromSec).slice(0,5);if(e.dataset.fill==='scheduled'){const n=[...new Set(data.trains.filter(t=>t.timing==='scheduled').map(t=>t.train))].sort();if(n.length)e.textContent=n.join('、');}}
  // ── 字幕：不確定時段依 reason 分兩種寫法；單線雙向說明在場景裡另外顯示 ──
- const reasonsOf=id=>{const r=new Set();for(const i of uncertainty.intervals)if(state.sec>=i.start&&state.sec<=i.end&&i.trains.includes(id))r.add(i.reason||'track-overlap');return r.size?r:new Set(['track-overlap']);},TAIL=' 次暫以車次標記呈現；位置仍依重建的時刻推演。';
+ // 不確定時段收不收車身（draw 每幀）：封鎖初期「同一區間同時有對向車」的時段（single-line-unresolved，basis＝section-overlap）照常畫車身，
+ // 兩班照一般股道畫在不同股上、車身不重疊，只是實際走哪一股不確定（標籤虛線、字幕講明）；其餘時段（兩車畫在同一股上）收起車身、只留原位置的車次標記。
+ const drawsBody=i=>i.reason==='single-line-unresolved'&&i.basis==='section-overlap';
+ const reasonsOf=id=>{const r=new Set();for(const i of uncertainty.intervals)if(state.sec>=i.start&&state.sec<=i.end&&i.trains.includes(id))r.add(drawsBody(i)?'single-line-drawn':i.reason||'track-overlap');return r.size?r:new Set(['track-overlap']);},TAIL=' 次暫以車次標記呈現；位置仍依重建的時刻推演。',DRAWN_TAIL=' 次照一般股道畫出，實際走哪一股不確定。';
  function captionText(pending){
-  if(pending.length){const g={'single-line-unresolved':[],'track-overlap':[]};for(const t of pending)for(const r of reasonsOf(t.id))(g[r]||g['track-overlap']).push(t.train);
-   return [g['single-line-unresolved'].length&&'封鎖初期股道安排不明：'+g['single-line-unresolved'].join('、')+TAIL,g['track-overlap'].length&&'股道安排待確認：'+g['track-overlap'].join('、')+TAIL].filter(Boolean).join(' ');}
+  if(pending.length){const g={'single-line-drawn':[],'single-line-unresolved':[],'track-overlap':[]};for(const t of pending)for(const r of reasonsOf(t.id))(g[r]||g['track-overlap']).push(t.train);
+   return [g['single-line-drawn'].length&&'封鎖初期股道安排不明：'+g['single-line-drawn'].join('、')+DRAWN_TAIL,g['single-line-unresolved'].length&&'封鎖初期股道安排不明：'+g['single-line-unresolved'].join('、')+TAIL,g['track-overlap'].length&&'股道安排待確認：'+g['track-overlap'].join('、')+TAIL].filter(Boolean).join(' ');}
   const follow=data.trains.find(t=>t.id===state.follow);
   if(follow)return [follow.train+' 次',MARK_NAME[follow.mark],follow.formation.caption,follow.timing==='scheduled'?'無即時動態紀錄，照表定時刻':follow.timing?'時刻依即時動態紀錄重建':'依封存班表推演'].filter(Boolean).join(' · ');
   return '封存 '+data.trains.length+' 班 · 時刻依即時動態紀錄重建，非 GPS 軌跡；區間車與莒光號的編組為推估。';}
@@ -281,10 +309,10 @@ $('slToggle').onclick=()=>{const b=$('slToggle');b.setAttribute('aria-expanded',
  let last=performance.now(),lastSecond=-1,shownFollow=null;const active=[];
  // rAF 的時間戳可能比 last（宣告當下的 performance.now()）早一點：dt 不小於 0，免得第一幀把 22:00:00 倒退成 21:59:59。
  function draw(now){requestAnimationFrame(draw);const dt=Math.max(0,Math.min(.1,(now-last)/1000));last=now;if(document.hidden)return;if(state.nearReady)setLod(span<fleet.lod.nearBelowSpan?'near':span>fleet.lod.farAboveSpan?'far':state.lod);if(state.playing&&!$('details').open)state.sec=(state.sec+dt*state.speed)%86400;active.length=0;
-  const uncertain=new Set(uncertainty.intervals.filter(i=>state.sec>=i.start&&state.sec<=i.end).flatMap(i=>i.trains));
-  for(const tr of data.trains){const m=models.get(tr.id),p=sample(tr,state.sec);m.group.visible=!!p&&!uncertain.has(tr.id);m.label.coordinate=p?.coordinate||null;m.label.e.classList.toggle('uncertain',uncertain.has(tr.id));m.label.e.classList.toggle('following',state.follow===tr.id);if(!p)continue;const poses=formationPoses(p.path,p.s,1,m.parts,()=>.16);if(!poses){m.group.visible=false;m.label.coordinate=null;continue;}active.push({id:tr.id,train:tr.train,direction:tr.direction,route:p.route,s:p.s,coordinate:p.coordinate,trackUncertain:uncertain.has(tr.id)});poses.forEach((pose,i)=>{const xy=world(pose.coordinate);m.cars[i].position.set(...xy,pose.height);m.cars[i].rotation.z=pose.angle;});if(state.follow===tr.id){target.set(...world(p.coordinate),0);liftFollow(m);view();}}
+  const atNow=uncertainty.intervals.filter(i=>state.sec>=i.start&&state.sec<=i.end),uncertain=new Set(atNow.flatMap(i=>i.trains)),bodyless=new Set(atNow.filter(i=>!drawsBody(i)).flatMap(i=>i.trains));
+  for(const tr of data.trains){const m=models.get(tr.id),p=sample(tr,state.sec);m.group.visible=!!p&&!bodyless.has(tr.id);m.label.coordinate=p?.coordinate||null;m.label.e.classList.toggle('uncertain',uncertain.has(tr.id));m.label.e.classList.toggle('following',state.follow===tr.id);if(!p)continue;const poses=formationPoses(p.path,p.s,1,m.parts,()=>.16);if(!poses){m.group.visible=false;m.label.coordinate=null;continue;}active.push({id:tr.id,train:tr.train,direction:tr.direction,route:p.route,s:p.s,coordinate:p.coordinate,trackUncertain:uncertain.has(tr.id)});poses.forEach((pose,i)=>{const xy=world(pose.coordinate);m.cars[i].position.set(...xy,pose.height);m.cars[i].rotation.z=pose.angle;});if(state.follow===tr.id){target.set(...world(p.coordinate),0);liftFollow(m);view();}}
   const occupied=[];for(const l of labels){if(!l.coordinate){l.e.hidden=true;continue;}const xy=world(l.coordinate),p=new THREE.Vector3(...xy,7).project(camera),x=(p.x*.5+.5)*width,y=(-p.y*.5+.5)*height;const visible=p.z>=-1&&p.z<=1&&x>0&&x<width&&y>55&&y<height-30;l.e.hidden=!visible;if(visible){l.e.style.transform=`translate(${x}px,${y}px) translate(-50%,-100%)`;if(!l.e.classList.contains('train-label')){const b=l.e.getBoundingClientRect();if(occupied.some(a=>b.left<a.right&&b.right>a.left&&b.top<a.bottom&&b.bottom>a.top))l.e.hidden=true;else occupied.push(b);}}}
-  updateGlow(span/Math.max(1,height));renderer.render(scene,camera);state.frames++;
+  updateGlow();renderer.render(scene,camera);state.frames++;
   // 每個整秒、或跟車對象換了（下拉選單、時間軸事件、拖曳取消跟車）就更新字幕、單線說明與跟車卡。
   if(Math.floor(state.sec)!==lastSecond||shownFollow!==state.follow){lastSecond=Math.floor(state.sec);shownFollow=state.follow;updateTime();$('running').textContent='區間內 '+active.length+' 班';const pending=active.filter(t=>t.trackUncertain);$('caption').textContent=captionText(pending);$('caption').classList.toggle('uncertain',!!pending.length);refreshSingleLine();refreshCard();}}
  // 可重現的驗收介面：封存資料、時間與車廂沿軌座標均可核對，無外部寫入。
