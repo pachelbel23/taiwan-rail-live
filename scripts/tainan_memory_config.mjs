@@ -76,6 +76,18 @@ const CONFIGS = {
       },
       tainanPlatformWay: 1176543136,
     },
+    // 股道間距（build 的 trackSpacing）：minM 取車寬 2.9 m 加約 0.9 m 間隙；道岔共用節點 turnoutM 內不推。
+    trackSpacing: {minM: 3.8, turnoutM: 45, maxAngleDeg: 20, rounds: 6},
+    // 同站換股（build 的 restation）：選班站裡兩班停同一個停車點、停站時間重疊時，停得久的那班換到同站另一股。
+    // 股道資料裡西正線在臺南站只接到 C，C 與東側兩股（B 東正線、A 側線）之間沒有渡線；
+    // 這裡在站的兩端各補一條推估的渡線，端點是兩線上既有的節點（a 西正線、b 東側）：南端在月台南方約 300–400 m，
+    // 北端從北側道岔接到西正線，約在月台北方 460–500 m。只給換股用，單線反向的進出不走這兩條。
+    restation: {
+      crossovers: [
+        {id: 'inferred-crossover-tainan-south', a: '3534650726', b: '10931293093'},
+        {id: 'inferred-crossover-tainan-north', a: '3534689391', b: '1240617684'},
+      ],
+    },
     // 時間軸裡的官方事項（觀測類由 build 從重建結果算，不寫在這裡）。text 不含時刻，頁面自己從 t 顯示。
     officialEvents: [
       {id: 'east-line-closed', t: 79200, text: '東正線封鎖', kind: 'official'},

@@ -70,7 +70,7 @@ if(data.singleLine){
  for(const i of intervals){const u=single.find(u=>same(u,i)&&u.start<=i.end&&i.start<=u.end);
   if(u){u.start=Math.min(u.start,i.start);u.end=Math.max(u.end,i.end);u.mergedTrackOverlap=true;}else rest.push({...i,reason:'track-overlap'});}
  intervals=[...single,...rest].sort((a,b)=>a.start-b.start||a.end-b.end);
- basis+='單線雙向期間另列 build 推得、股道上放不下的對向重疊與車身占用（reason＝single-line-unresolved）。';
+ basis+='單線雙向期間另列 build 推得、股道上放不下的對向重疊與車身占用（reason＝single-line-unresolved）；其中 basis＝section-overlap（同一區間同時有對向車）的時段，頁面照一般股道畫出兩班車的車身，其餘只顯示車次標記。';
 }
 const text=JSON.stringify({schema:1,date:data.date,...(AMB&&{criterion:AMB.criterion}),basis,intervals},null,2)+'\n',file=path.join(dir,'uncertainty.json');
 if(CHECK){

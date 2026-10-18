@@ -3798,3 +3798,11 @@ Object.assign(window.RAIL_I18N_MESSAGES.en, {
 Object.assign(window.RAIL_I18N_MESSAGES.ja, {
   '臺南最後一天的重播：點「最後一夜」的事件，畫面留在臺南站，附上說明與報導連結；新增「臺南發車」': '台南・地上鉄道最終日の再生：「最後の夜」の出来事を押すと、画面は台南駅のまま、説明と報道へのリンクが表示されます。「台南始発」ボタンを追加しました。',
 });
+
+// 2026-10-18 10/16 重播頁：重點車改成柔和光暈、終點標籤、同站換股與股道間距修正、車身不再重疊（v1018d）。
+Object.assign(window.RAIL_I18N_MESSAGES.en, {
+  '臺南最後一天的重播：145 與 3782 改成柔和光暈；終點在臺南、保安的班次註明終點；同站或並排的兩班車不再疊在一起': 'Tainan last-day replay: trains 145 and 3782 now have a soft glow; trains ending at Tainan or Bao’an show their terminus; trains at the same station or running side by side no longer overlap',
+});
+Object.assign(window.RAIL_I18N_MESSAGES.ja, {
+  '臺南最後一天的重播：145 與 3782 改成柔和光暈；終點在臺南、保安的班次註明終點；同站或並排的兩班車不再疊在一起': '台南・地上鉄道最終日の再生：145列車と3782列車をやわらかな光で表示しました。台南・保安止まりの列車には終点を表示し、同じ駅に停まる列車や並んで走る列車が重ならないようにしました。',
+});

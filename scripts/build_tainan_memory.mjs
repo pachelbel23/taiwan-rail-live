@@ -64,6 +64,31 @@ const passObsFile=readPassObs(repoFile('data/tra_pass_obs.json'))||{};
 const track=readRepo('data/tra.json'),pack=readRepo('rail-3d/physical/network.json'),profiles=readRepo('rail-3d/physical/display-profiles.json');
 const dispatch=readRepo('rail-3d/physical/dispatch.json'),manifest=readRepo('rail-3d/assets/blender-map-v1/manifest.json');
 
+// ── 股道間距（設定的 trackSpacing）：頁面車寬約 2.9 m，兩股中心距不到 minM 時，並排的兩車會貼住或疊到；股道資料有幾處比這更窄。
+// 場景範圍內的節點離另一條近乎平行（夾角小於 maxAngleDeg）的 way 不到 minM，就沿垂直方向推到 minM；
+// 兩條 way 在 turnoutM 內有共用節點（道岔）的不推，岔區本來就從 0 漸寬。同一節點在每條 way 的座標一起改，拓撲不變；
+// path 的 lengthM 不重算（每點推不到 1.5 m，長度差在公分級）。在綁股道之前做，路線與 rails 都用推過的座標。沒有設定的日子不動。
+const spacingMoves=(()=>{const S=cfg.trackSpacing;if(!S)return [];
+ const o=cfg.origin,sx=111320*Math.cos(o[1]*Math.PI/180),toM=c=>[(c[0]-o[0])*sx,(c[1]-o[1])*111320],toLL=p=>[+(p[0]/sx+o[0]).toFixed(7),+(p[1]/111320+o[1]).toFixed(7)];
+ const B=cfg.bounds,inB=c=>c[0]>=B[0]&&c[0]<=B[2]&&c[1]>=B[1]&&c[1]<=B[3],cos=Math.cos(S.maxAngleDeg*Math.PI/180);
+ const ways=pack.ways.filter(w=>w.system==='tra_sched'&&w.tags?.railway==='rail'&&w.coordinates.some(inB)),P=new Map(),member=new Map(),start=new Map();
+ for(const w of ways)w.nodes.forEach((id,i)=>{id=String(id);if(!P.has(id)){P.set(id,toM(w.coordinates[i]));start.set(id,w.coordinates[i]);}(member.get(id)||member.set(id,new Set()).get(id)).add(String(w.id));});
+ const byId=new Map(ways.map(w=>[String(w.id),w.nodes.map(String)]));
+ const nearest=(p,ns)=>{let best=null;for(let i=0;i+1<ns.length;i++){const a=P.get(ns[i]),b=P.get(ns[i+1]),dx=b[0]-a[0],dy=b[1]-a[1],L=Math.hypot(dx,dy);if(!L)continue;
+  const t=Math.max(0,Math.min(1,((p[0]-a[0])*dx+(p[1]-a[1])*dy)/(L*L))),q=[a[0]+t*dx,a[1]+t*dy],d=Math.hypot(p[0]-q[0],p[1]-q[1]);if(!best||d<best.d)best={d,q,u:[dx/L,dy/L]};}return best;};
+ const dirs=id=>[...member.get(id)].map(w=>{const ns=byId.get(w),i=ns.indexOf(id),a=P.get(ns[Math.max(0,i-1)]),b=P.get(ns[Math.min(ns.length-1,i+1)]),L=Math.hypot(b[0]-a[0],b[1]-a[1]);return L&&[(b[0]-a[0])/L,(b[1]-a[1])/L];}).filter(Boolean);
+ const moved=new Map();
+ for(let round=0;;round++){if(round===S.rounds)throw Error('股道間距推了 '+S.rounds+' 輪還沒收斂');let n=0;
+  for(const id of [...P.keys()]){let p=P.get(id);if(!inB(start.get(id)))continue;
+   for(const [w,ns] of byId){if(member.get(id).has(w))continue;const h=nearest(p,ns);if(!h||h.d>=S.minM-1e-6||h.d<0.05)continue;
+    if(dirs(id).some(v=>Math.abs(v[0]*h.u[0]+v[1]*h.u[1])<cos))continue;
+    if(ns.some(x=>[...member.get(x)].some(m=>member.get(id).has(m))&&Math.hypot(P.get(x)[0]-p[0],P.get(x)[1]-p[1])<S.turnoutM))continue;
+    const k=S.minM/h.d;p=[h.q[0]+(p[0]-h.q[0])*k,h.q[1]+(p[1]-h.q[1])*k];P.set(id,p);n++;
+    (moved.get(id)||moved.set(id,{node:id,ways:[...member.get(id)].sort(),awayFrom:new Set()}).get(id)).awayFrom.add(w);}}
+  if(!n)break;}
+ for(const w of pack.ways)w.nodes.forEach((id,i)=>{if(moved.has(String(id)))w.coordinates[i]=toLL(P.get(String(id)));});
+ return [...moved.values()].map(m=>{const a=toM(start.get(m.node)),b=P.get(m.node);return {...m,awayFrom:[...m.awayFrom].sort(),shiftM:+Math.hypot(b[0]-a[0],b[1]-a[1]).toFixed(2)};});})();
+
 // 營運日 → 密化班表（前一日跨午夜的班次用那一天當時的版本）。
 const schedFiles=new Map(),sched={};
 for(const day of [cfg.previous,cfg.date]){
@@ -187,6 +212,15 @@ function customPlan(tr,pathIds){const idx=reducedIdx(tr),view={...tr,stops:idx.m
 // ── 股道工具（單線反向用） ──
 const topo=(()=>{const ways=pack.ways.filter(w=>w.system==='tra_sched'),nodes={};for(const w of ways)w.nodes.forEach((id,i)=>nodes[id]=w.coordinates[i]);
  return makeTopology({nodes,nodeTags:pack.nodeTags,systemByWay:Object.fromEntries(ways.map(w=>[w.id,w.system])),ways});})();
+// 推估渡線（設定的 restation.crossovers）：股道資料在站內缺渡線時（臺南：西正線 C 與東側兩股之間沒有），在站的兩端各補一條，
+// 接在既有節點上、追加到 pack.ways 尾端（不動既有 way 的索引），跟著畫進 rails。單線反向用的 topo 不含這些渡線，
+// 換股與轉轍檢查用含渡線的 topoX；沒有設定的日子 topoX 就是 topo，產出不變。
+const RS=cfg.restation||null;
+for(const x of RS?.crossovers||[]){const [a,b]=[x.a,x.b].map(String),ca=topo.nodes.get(a)?.coordinate,cb=topo.nodes.get(b)?.coordinate;if(!ca||!cb)throw Error('推估渡線的端點不在股道資料裡：'+x.id);
+ pack.ways.push({id:x.id,system:'tra_sched',tags:{railway:'rail',service:'crossover',usage:'main',name:'縱貫線',gauge:'1067',electrified:'contact_line',voltage:'25000',inferred:'yes'},nodes:[a,b],coordinates:[ca,cb]});}
+const topoX=RS?.crossovers?.length?(()=>{const ways=pack.ways.filter(w=>w.system==='tra_sched'),nodes={};for(const w of ways)w.nodes.forEach((id,i)=>nodes[id]=w.coordinates[i]);
+ return makeTopology({nodes,nodeTags:pack.nodeTags,systemByWay:Object.fromEntries(ways.map(w=>[w.id,w.system])),ways});})():topo;
+const inferredWays=new Set((RS?.crossovers||[]).map(x=>String(x.id)));
 const wayIndex=new Map(pack.ways.map((w,i)=>[String(w.id),i]));
 const walkNodes=rec=>{const ids=[];for(const [wi,start,count] of rec.walk){const w=pack.ways[wi],sign=Math.sign(count);for(let j=0;j<Math.abs(count);j++){const i=start+j*sign,a=i+(sign<0?1:0),b=i+(sign>0?1:0);if(!ids.length)ids.push(String(w.nodes[a]));ids.push(String(w.nodes[b]));}}return ids;};
 const walkWays=rec=>new Set(rec.walk.map(([wi])=>wi));
@@ -283,6 +317,75 @@ function reverseChain(ti,trains,plans,paths){
  return {ti,secSegs,best:cands[0],alternatives:cands.map(c=>({e:c.e,x:c.x,count:c.slice.count,conflicts:c.conflicts.length,lengthM:Math.round(c.length)}))};
 }
 
+// ── 同站換股：照表定綁到的股道沒算到改點後的待避（區間車在站內等自強號超車），單線反向的車也都綁在西正線月台。
+// 選班站裡兩班停在同一個停車點、停站時間重疊，就把停得較久的那班（等車的那班）換到同站另一個停車點。
+// 候選：同站其他停車點裡，派車表的股道資料有同方向路徑進得去、也出得來的。進站沿原路徑走到離停車點 THROAT_M 內最晚還轉得過去的
+// 節點，出站接回原路徑上離站 THROAT_M 內最早接得上的節點；轉轍要 topology 認可，渡線用股道資料既有的，加上設定裡的推估渡線（topoX）。
+// 換過去的停車點在這班停站前後 STATION_MARGIN 秒內不能有別班；等車的那班換不了就換另一班，兩班都換不了就停。
+const THROAT_M=1200,STATION_MARGIN=60,STATIONS=new Set(cfg.selection.stations.map(norm));
+const stopNodes=new Map([...STATIONS].map(n=>[n,[...topo.nodes.values()].filter(x=>x.tags.railway==='stop'&&norm(x.tags.name||'')===n).map(x=>x.id).sort()]));
+const expandWalk=walk=>walk.flatMap(([wi,s,c])=>Array.from({length:Math.abs(c)},(_,j)=>c>0?[wi,s+j,1]:[wi,s-j,-1]));
+const packWalk=edges=>{const walk=[];for(const [wi,i,d] of edges){const last=walk.at(-1);
+ if(last&&last[0]===wi&&d>0&&last[2]>0&&last[1]+last[2]===i)last[2]++;else if(last&&last[0]===wi&&d<0&&last[2]<0&&last[1]+last[2]===i)last[2]--;else walk.push([wi,i,d]);}return walk;};
+const edgeLen=([wi,i])=>topoX.edges.get(pack.ways[wi].id+':'+i).length;
+// 停車點 y 能不能給 dir 方向停：派車表的股道資料要有從上游進 y、從 y 往下游出去的路徑；回傳進站與出站的方向，給最短路徑的端點方向用。
+function stopAccess(y,dir){const s=dir==='北上'?1:-1,lat=id=>nodeCoord(id)[1];let inVec=null,outVec=null,group=null;
+ for(const p of Object.values(pack.paths)){if(p.system!=='tra_sched')continue;
+  if(!inVec&&p.to===y&&(lat(y)-lat(p.from))*s>0){const n=walkNodes(p);inVec=headingOf(n.at(-2),n.at(-1));group??=p.toGroup;}
+  if(!outVec&&p.from===y&&(lat(p.to)-lat(y))*s>0){const n=walkNodes(p);outVec=headingOf(n[0],n[1]);group??=p.fromGroup;}
+  if(inVec&&outVec)break;}
+ return inVec&&outVec?{inVec,outVec,group}:null;}
+// 進站：保留原路徑到 N[j-1]，從 N[j-1] 沿原路徑走一段到 N[j]（N[j] 的轉向交給 canTurn 判斷）再找到 y 的最短路徑。
+function spliceIn(base,y,acc){const E=expandWalk(base.walk),N=walkNodes(base);let tail=0;
+ for(let j=E.length-1;j>=1;j--){tail+=edgeLen(E[j]);if(tail>THROAT_M)break;
+  const sp=topoX.shortestPath({from:N[j-1],to:y,system:'tra_sched',startVector:headingOf(N[j-1],N[j]),endVector:acc.inVec,maxLength:tail+edgeLen(E[j-1])+600});
+  if(!sp||sp.nodeIds[1]!==N[j])continue;
+  const edges=[...E.slice(0,j-1),...expandWalk(walkFromPath(sp))];
+  return {from:base.from,to:y,fromGroup:base.fromGroup,toGroup:acc.group,system:'tra_sched',lengthM:edges.reduce((t,e)=>t+edgeLen(e),0),preference:0,walk:packWalk(edges)};}
+ return null;}
+// 出站：從 y 找到原路徑 N[j+1] 的最短路徑，最後一段要是原路徑的 N[j]→N[j+1]，之後照原路徑。
+function spliceOut(base,y,acc){const E=expandWalk(base.walk),N=walkNodes(base);let head=0;
+ for(let j=1;j<E.length;j++){head+=edgeLen(E[j-1]);if(head>THROAT_M)break;
+  const sp=topoX.shortestPath({from:y,to:N[j+1],system:'tra_sched',startVector:acc.outVec,endVector:headingOf(N[j],N[j+1]),maxLength:head+edgeLen(E[j])+600});
+  if(!sp||sp.nodeIds.at(-2)!==N[j])continue;
+  const edges=[...expandWalk(walkFromPath(sp)),...E.slice(j+1)];
+  return {from:y,to:base.to,fromGroup:acc.group,toGroup:base.toGroup,system:'tra_sched',lengthM:edges.reduce((t,e)=>t+edgeLen(e),0),preference:0,walk:packWalk(edges)};}
+ return null;}
+// 選班站各停車點上每一班的停站時段（當天秒）。
+function stopWindows(trains,plans,paths){const at=new Map();
+ for(const [i,v] of selected.entries()){const tr=trains[i],{pathIds,idx}=plans[i];
+  idx.forEach((si,k)=>{const s=tr.stops[si];if(!STATIONS.has(norm(s.name)))return;const node=k?paths[pathIds[k-1]].to:paths[pathIds[0]].from;
+   (at.get(node)||at.set(node,[]).get(node)).push({i,k,node,a:s.arrSec+v.offset,b:s.depSec+v.offset});});}
+ return at;}
+const sidingOf=y=>+topoX.nodes.get(y).edges.some(e=>e.tags.service==='siding');
+function restation(trains,plans,paths,addPath){const moves=[];
+ for(let round=0;round<40;round++){const at=stopWindows(trains,plans,paths);let hit=null;
+  for(const list of at.values()){list.sort((x,y)=>x.a-y.a||x.i-y.i);
+   for(let p=0;p<list.length&&!hit;p++)for(let q=p+1;q<list.length&&!hit;q++)if(list[p].a<list[q].b&&list[q].a<list[p].b)hit=[list[p],list[q]];
+   if(hit)break;}
+  if(!hit)return moves;
+  // 停得較久的先換；一樣久就換後到的。
+  const order=hit.slice().sort((x,y)=>(y.b-y.a)-(x.b-x.a)||y.a-x.a);let move=null;
+  for(const w of order){const tr=trains[w.i],{pathIds}=plans[w.i],station=norm(tr.stops[plans[w.i].idx[w.k]].name),cands=[];
+   for(const y of stopNodes.get(station)){if(y===w.node)continue;const acc=stopAccess(y,dirOf(tr,0,tr.stops.length-1));if(!acc)continue;
+    if((at.get(y)||[]).some(o=>o.i!==w.i&&o.a<w.b+STATION_MARGIN&&w.a-STATION_MARGIN<o.b))continue;
+    const recIn=w.k?spliceIn(paths[pathIds[w.k-1]],y,acc):null,recOut=w.k<pathIds.length?spliceOut(paths[pathIds[w.k]],y,acc):null;
+    if(w.k&&!recIn||w.k<pathIds.length&&!recOut)continue;
+    cands.push({y,recIn,recOut,length:(recIn?.lengthM||0)+(recOut?.lengthM||0)});}
+   // 官方封鎖東正線之後換股，先停側線：東側的正線那股算在封鎖範圍裡。其餘照進出路徑總長取短的。
+   const late=w.a>=SL.officialSec;cands.sort((a,b)=>(late?sidingOf(b.y)-sidingOf(a.y):0)||a.length-b.length||(a.y<b.y?-1:1));
+   if(cands.length){move={w,other:hit.find(x=>x!==w),...cands[0]};break;}}
+  const name=x=>selected[x.i].key;
+  if(!move)throw Error('同站兩班停同一個停車點、時間重疊，另一股也排不進去：'+hit.map(name).join('、')+' 在 '+trains[hit[0].i].stops[plans[hit[0].i].idx[hit[0].k]].name);
+  const {w,other,y,recIn,recOut}=move,segs=[];
+  if(recIn){const id=addPath(recIn);plans[w.i].pathIds[w.k-1]=id;segs.push([w.k-1,recIn,id]);}
+  if(recOut){const id=addPath(recOut);plans[w.i].pathIds[w.k]=id;segs.push([w.k,recOut,id]);}
+  const way=n=>String(pack.ways.find(x=>x.nodes.map(String).includes(n)&&x.system==='tra_sched')?.id??'');
+  moves.push({i:w.i,k:w.k,trainId:name(w),train:String(trains[w.i].train),station:trains[w.i].stops[plans[w.i].idx[w.k]].name,arrSec:Math.round(w.a),depSec:Math.round(w.b),
+   from:{node:w.node,way:way(w.node)},to:{node:y,way:way(y),siding:!!sidingOf(y)},waitedFor:{trainId:name(other),train:String(trains[other.i].train),arrSec:Math.round(other.a),depSec:Math.round(other.b)},
+   inferredCrossovers:[...new Set(segs.flatMap(([,rec])=>rec.walk.map(([wi])=>String(pack.ways[wi].id)).filter(id=>inferredWays.has(id))))],segs});}
+ throw Error('同站換股沒有收斂');}
+
 // ── 主流程：重建 → 綁股道 → 單線反向 → 點速檢查；超速的班次換模式重來 ──
 function assemble(modes){
  const built=buildAll(modes),{trains,ctx}=built,plans=basePlans.map(b=>({pathIds:b.pathIds.slice(),idx:b.idx}));
@@ -297,6 +400,13 @@ function assemble(modes){
    if(km>sum+1e-9){for(let i=a;i<b;i++)tr.stops[i].physKm=seg[i-a]*km/sum;c.physKm.push({from:tr.stops[a].name,to:tr.stops[b].name,profileKm:+sum.toFixed(4),pathKm:+km.toFixed(4)});}});
   if(c.physKm.length)ctx.__reassign(tr);
  }
+ // 同站換股在單線反向之後：反向車在西正線月台與對向車重疊時，也由這一步換股。反向車換到的路段同步寫回它的反向路徑（turnoutsOf 逐段檢查轉轍）。
+ const moves=RS?restation(trains,plans,pack2.paths,rec=>{const id=nextId++;pack2.paths[id]=rec;customIds.add(id);return id;}):[];
+ for(const m of moves){const tr=trains[m.i],{idx}=plans[m.i],c=chains.find(c=>c.ti===m.i);m.physKm=[];
+  for(const [k,rec,id] of m.segs){const a=idx[k],b=idx[k+1],km=rec.lengthM/1000,seg=Array.from(ctx.__segKm(tr.stops)).slice(a,b),sum=seg.reduce((t,x)=>t+x,0);
+   if(km>sum+1e-9){for(let i=a;i<b;i++)tr.stops[i].physKm=seg[i-a]*km/sum;m.physKm.push({from:tr.stops[a].name,to:tr.stops[b].name,profileKm:+sum.toFixed(4),pathKm:+km.toFixed(4)});}
+   if(c&&k>=c.best.firstK&&k<c.best.firstK+c.best.recs.length){c.best.recs[k-c.best.firstK]=rec;c.newIds[k-c.best.firstK]=id;}}
+  if(m.physKm.length)ctx.__reassign(tr);}
  const dispatch2={...dispatch,plans:{...dispatch.plans}};
  for(const [i,tr] of trains.entries()){const {key,plan}=customPlan(tr,plans[i].pathIds);dispatch2.plans[key]=plan;}
  const motion=createPhysicalMotion(pack2,profiles,dispatch2),geo=createRouteRuntime(pack2,profiles),joins=[];
@@ -310,7 +420,7 @@ function assemble(modes){
     if(ds!=null){const kmh=Math.abs(ds)/.5*3.6;if(kmh>max)max=kmh;if(inside([p.lon,p.lat])&&kmh>maxIn)maxIn=kmh;if(kmh>cap+1e-6)over.push({t:t+v.offset,kmh:+kmh.toFixed(2)});}}
    prev=p;}
   return {cap,max,maxIn,over};});
- return {...built,plans,single,chains,pack2,motion,speed,joins};
+ return {...built,plans,single,chains,moves,pack2,motion,speed,joins};
 }
 const modes=new Map(selected.map(v=>[v.key,'observed'])),rounds=[];let A;
 for(let round=0;;round++){
@@ -320,7 +430,7 @@ for(let round=0;;round++){
  if(bad.some(i=>A.items[i].mode==='scheduled'))throw Error('表定時刻也超速（股道或剖面問題，不是重建時刻）：'+JSON.stringify(rounds.at(-1)));
  for(const i of bad){const k=selected[i].key;modes.set(k,A.items[i].mode==='observed'?'no-knots':'scheduled');}
 }
-const {trains,items,ctx,plans,single,chains,motion}=A;
+const {trains,items,ctx,plans,single,chains,moves,motion}=A;
 // 剖面有沒有真的通過實測折點：index.html 的 buildObsProfile 對折點之間的平均速度設上限，超過就丟折點，丟光就退回梯形，
 // 通過站改由梯形回填，不留任何紀錄。tainan_actuals.py 的折點閘門讓重建時刻本身過得了那道上限；這裡複驗畫面範圍內每顆折點的
 // 回填時刻與重建時刻相差 ≤1 秒（剖面把折點時刻取整到秒），不符就停，不讓偏掉的時刻帶著實測標籤出貨。
@@ -473,15 +583,16 @@ const endOf=(c,end)=>{const S=trains[c.ti].stops,idx=plans[c.ti].idx,has=end==='
  const st=S[idx[end==='in'?c.best.firstK:c.best.lastK+1]];return {kind:end==='in'?'origin':'terminus',station:st.name,inView:inside([st.lon,st.lat])};};
 const crossovers=chains.map(c=>({c,start:endOf(c,'in'),end:endOf(c,'out')}));
 for(const x of crossovers)for(const e of [x.start,x.end])if(e.kind==='crossover'&&e.inView)throw Error('反向渡線落在畫面範圍內（'+selected[x.c.ti].key+' '+e.segment+'）：渡線位置不明，要標不確定，不能直接畫');
-// 反向路線經過的每個分岔節點（同系統鄰點 ≥ 3）在哪裡換 way：轉轍要是股道資料既有、topology.canTurn 認可的，不自建連接。
-const neighborCount=n=>new Set(topo.nodes.get(n).edges.filter(e=>e.system==='tra_sched').map(e=>e.a===n?e.b:e.a)).size;
+// 反向路線經過的每個分岔節點（同系統鄰點 ≥ 3）在哪裡換 way：轉轍要 topology.canTurn 認可；除了設定裡的推估渡線（inferred），不自建連接。
+const neighborCount=n=>new Set(topoX.nodes.get(n).edges.filter(e=>e.system==='tra_sched').map(e=>e.a===n?e.b:e.a)).size;
 function turnoutsOf(c){const seq=[];
  for(const rec of c.best.recs)for(const [wi,start,count] of rec.walk){const w=pack.ways[wi],sign=Math.sign(count);
   for(let j=0;j<Math.abs(count);j++){const i=start+j*sign;seq.push({a:String(w.nodes[i+(sign<0?1:0)]),b:String(w.nodes[i+(sign>0?1:0)]),edge:w.id+':'+i,way:String(w.id)});}}
  const out=[];
  for(let k=1;k<seq.length;k++){const x=seq[k-1],y=seq[k];if(x.b!==y.a)throw Error('反向路線不連續：'+selected[c.ti].key+' '+x.b+'→'+y.a);if(x.way===y.way||neighborCount(y.a)<3)continue;
-  const e1=topo.edges.get(x.edge),e2=topo.edges.get(y.edge),p=nodeCoord(y.a);
-  out.push({node:y.a,lon:+p[0].toFixed(6),lat:+p[1].toFixed(6),inView:inside(p),fromWay:x.way,toWay:y.way,osmTag:topo.nodes.get(y.a).tags?.railway||null,canTurn:!!(e1&&e2&&topo.canTurn(x.a,y.a,y.b,e1,e2))});}
+  const e1=topoX.edges.get(x.edge),e2=topoX.edges.get(y.edge),p=nodeCoord(y.a);
+  out.push({node:y.a,lon:+p[0].toFixed(6),lat:+p[1].toFixed(6),inView:inside(p),fromWay:x.way,toWay:y.way,osmTag:topoX.nodes.get(y.a).tags?.railway||null,canTurn:!!(e1&&e2&&topoX.canTurn(x.a,y.a,y.b,e1,e2)),
+   ...(inferredWays.has(x.way)||inferredWays.has(y.way)?{inferred:true}:{})});}
  if(out.some(t=>!t.canTurn))throw Error('反向路線經過股道資料沒有的轉轍：'+selected[c.ti].key+' '+out.filter(t=>!t.canTurn).map(t=>t.node).join(','));
  return out;}
 const turnouts=new Map(chains.map(c=>[c.ti,turnoutsOf(c)]));
@@ -503,17 +614,22 @@ const subsLate=[...new Set(single.late.slice().sort((x,y)=>y.end-x.end).map(o=>o
 const meetDrawn=occRev.filter(h=>h.kind==='opposing'&&h.drawn.length),followDrawn=occRev.filter(h=>h.kind==='following'&&h.drawn.length);
 const noteParts=['官方公告 '+hm(SL.officialSec)+' 起封鎖東正線。'];
 if(subsLate.length)noteParts.push('依到站紀錄推算，'+hm(single.fromSec)+' 前'+subsLate.join('、')+'仍有對向列車同時在區間內，所以 '+hm(single.fromSec)+' 前照一般股道畫，對向重疊的時段標「封鎖初期股道安排不明」。');
+// 官方封鎖東正線之後換股的班次（restation，與換股時「先停側線」同一個門檻）：在站內等對向車的那班改停同站另一股。
+const lateMoves=moves.filter(m=>m.arrSec>=SL.officialSec),lateNos=new Set(lateMoves.map(m=>m.train));
 noteParts.push(hm(single.fromSec)+' 起'+SL.section.join('—')+'只剩一條線：站與站之間同一時間只有一個方向的列車，對向列車在車站交會；南下列車畫在西正線（平常的北上股道）上反向行駛'
- +(straddleNos.length?'；'+straddleNos.join('、')+' 在 '+hm(single.fromSec)+' 前已進入區間、之後才離開，整段都畫在西正線上':'')+'。');
+ +(straddleNos.length?'；'+straddleNos.join('、')+' 在 '+hm(single.fromSec)+' 前已進入區間、之後才離開，'+(straddleNos.some(n=>lateNos.has(n))?'站與站之間':'整段')+'都畫在西正線上':'')+'。');
+if(lateMoves.length)noteParts.push(lateMoves.map(m=>m.train+' 在'+m.station+'等 '+m.waitedFor.train+' 時，改停同站的'+(m.to.siding?'側線':'另一股')).join('；')
+ +(lateMoves.some(m=>m.inferredCrossovers.length)?'；進出'+(lateMoves.every(m=>m.to.siding)?'側線':'那一股')+'用的渡線，股道資料裡沒有，是推估補上的':'')+'。');
 if(meetDrawn.length)noteParts.push(meetDrawn.every(h=>!h.place.includes('→'))?'對向列車同時停在同一座車站、資料分不出各停哪一股的時段，同樣標示。':'對向列車在單線上位置重疊、資料解不開的時段，同樣標示。');
 if(followDrawn.length)noteParts.push('同向列車車身在畫面上重疊的時段，同樣標示。');
-// 渡線都在畫面外（上面已檢查）；畫面內的轉轍都是股道資料既有的，走哪一股仍是推定。
+// 單線進出的渡線都在畫面外（上面已檢查）；畫面內的轉轍除了換股用的推估渡線，都是股道資料既有的，走哪一股仍是推定。
 noteParts.push('南下列車換到西正線、再換回東正線的位置都在畫面外；畫面內各站走哪一股，是依股道資料推定的走法。東正線對應南下那組股道，這一點也是推定。');
 const singleLine={fromSec:single.fromSec,toSec:single.toSec,section:SL.section,note:noteParts.join(''),basis:slBasis,
  officialSec:SL.officialSec,fullClosureSec:SL.fullClosureSec,lastOverlapEndSec:Math.ceil(single.lastOverlapEnd),
  reversed:crossovers.map(({c,start,end})=>{const tr=trains[c.ti],idx=plans[c.ti].idx,[a,b]=revRange(c);return {trainId:selected[c.ti].key,train:String(tr.train),
   from:tr.stops[idx[c.best.firstK]].name,to:tr.stops[idx[c.best.lastK+1]].name,startSec:a,endSec:b,enteredBeforeFrom:single.straddle.includes(c.ti),crossovers:{start,end},
-  turnouts:{total:turnouts.get(c.ti).length,inView:turnouts.get(c.ti).filter(t=>t.inView).length,allCanTurn:turnouts.get(c.ti).every(t=>t.canTurn)},
+  turnouts:{total:turnouts.get(c.ti).length,inView:turnouts.get(c.ti).filter(t=>t.inView).length,allCanTurn:turnouts.get(c.ti).every(t=>t.canTurn),
+   ...(RS?{inferred:turnouts.get(c.ti).filter(t=>t.inferred).length}:{})},
   ways:[...new Set(c.best.recs.flatMap(r=>r.walk.map(([wi])=>String(pack.ways[wi].id))))],
   conflicts:c.best.conflicts.map(x=>({...x,start:Math.round(x.start),end:Math.round(x.end)}))};}),
  unresolved};
@@ -550,8 +666,11 @@ const info=readRepo('data/tra_station_info.json'),stations=['大橋','台南','�
 const rails=pack.ways.filter(w=>w.system==='tra_sched'&&w.tags?.railway==='rail'&&w.coordinates.some(inside)).map(w=>({id:w.id,tags:w.tags,coordinates:w.coordinates}));
 const context=readRepo('prototypes/tiny-trains/blender/tainan-memory-v1/context-source.json');
 const features=context.elements.filter(e=>e.geometry&&((e.tags?.highway&&!['footway','path','steps','cycleway','service'].includes(e.tags.highway))||e.tags?.railway==='platform'||e.tags?.building)).map(e=>({id:e.id,tags:e.tags,coordinates:e.geometry.map(p=>[p.lon,p.lat])}));
+// 同站換股的紀錄（只在設定有 restation 的日子）：誰在哪一站從哪一股換到哪一股、等的是哪一班、用到哪幾條推估渡線。
+const stationTracks=RS?{crossovers:RS.crossovers.map(x=>({id:x.id,a:String(x.a),b:String(x.b)})),
+ moves:moves.map(m=>({trainId:m.trainId,train:m.train,station:m.station,arrSec:m.arrSec,depSec:m.depSec,from:m.from,to:m.to,waitedFor:m.waitedFor,inferredCrossovers:m.inferredCrossovers}))}:null;
 const snapshot={schema:1,date:cfg.date,timezone:'Asia/Taipei',bounds:cfg.bounds,origin:cfg.origin,startSec:0,endSec:86399,stepSec:1,defaultSec:cfg.defaultSec,
- stations,rails,routes,trains:outTrains,features,events,singleLine,timingSource,sources,note:cfg.note};
+ stations,rails,routes,trains:outTrains,features,events,singleLine,...(stationTracks?{stationTracks}:{}),timingSource,sources,note:cfg.note};
 fs.mkdirSync(out,{recursive:true});
 fs.writeFileSync(path.join(out,'snapshot.json'),JSON.stringify(snapshot));
 fs.writeFileSync(path.join(out,'source-schedule.json'),JSON.stringify({date:cfg.date,
@@ -571,13 +690,14 @@ const byType=new Map();for(const [i] of selected.entries()){const k=outTrains[i]
 const keyed=o=>({...o,a:selected[o.a].key,b:selected[o.b].key});
 const report={date:cfg.date,trains:outTrains.length,overnight:outTrains.filter(t=>t.serviceDate!==cfg.date).length,
  directions:Object.fromEntries(['北上','南下'].map(d=>[d,outTrains.filter(t=>t.direction===d).length])),routes:routes.length,
- samples:outTrains.reduce((n,t)=>n+t.spans.reduce((x,s)=>x+s.s.length,0),0),rounds,fallbacks,
+ samples:outTrains.reduce((n,t)=>n+t.spans.reduce((x,s)=>x+s.s.length,0),0),rounds,fallbacks,...(cfg.trackSpacing&&{trackSpacing:spacingMoves}),
  modes:Object.fromEntries(['observed','no-knots','scheduled'].map(m=>[m,items.filter(x=>x.mode===m).length])),
  knots:items.reduce((n,x)=>n+x.knots,0),knotCheck,droppedKnots:items.flatMap((x,i)=>x.dropped.map(d=>selected[i].key+' '+d)),unmatchedStops:items.flatMap((x,i)=>x.unmatched.map(d=>selected[i].key+' '+d)),
  heldPass:items.flatMap((x,i)=>x.held.map(h=>({train:selected[i].key,station:h.stop.name,arr:h.arr+selected[i].offset,dep:h.dep+selected[i].offset}))),
  speedByType:[...byType].map(([k,xs])=>{xs.sort((x,y)=>x-y);return {type:k,n:xs.length,min:+xs[0].toFixed(1),p50:+xs[xs.length>>1].toFixed(1),max:+xs.at(-1).toFixed(1)};}),
  speedTop:selected.map((v,i)=>({key:v.key,max:+A.speed[i].max.toFixed(2),maxInView:+A.speed[i].maxIn.toFixed(2),cap:A.speed[i].cap})).sort((x,y)=>y.max/y.cap-x.max/x.cap).slice(0,10),
  bindings:Object.fromEntries([...new Set(basePlans.map(b=>b.basis))].map(b=>[b,basePlans.filter(x=>x.basis===b).length])),joinsNotChecked:A.joins,
+ ...(stationTracks?{stationTracks:{...stationTracks,physKm:moves.map(m=>({train:m.trainId,physKm:m.physKm}))}}:{}),
  formations:formRows,formationDiff:formRows.filter(r=>r.id!==r.plainId||r.cars!==r.plainCars),
  single:{fromSec:single.fromSec,toSec:single.toSec,overlapsNear:single.overlaps.filter(o=>o.end>SL.officialSec-1800).map(keyed),afterFrom:single.after.map(keyed),
   chains:chains.map(c=>({train:selected[c.ti].key,e:c.best.e,x:c.best.x,slice:c.best.slice,physKm:c.physKm,alternatives:c.alternatives})),
