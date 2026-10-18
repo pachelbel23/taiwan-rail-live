@@ -18,10 +18,13 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = join(ROOT, 'output/overtake-window');
-const md5 = f => createHash('md5').update(readFileSync(join(ROOT, f))).digest('hex');
+// 只為報告留輸入指紋；缺檔記 null，不讓報告腳本本身變成班表上架的失敗點。
+const md5 = f => { try { return createHash('md5').update(readFileSync(join(ROOT, f))).digest('hex'); } catch { return null; } };
 const addDays = (d, n) => new Date(Date.parse(`${d}T00:00:00Z`) + n * 864e5).toISOString().slice(0, 10);
 const today = process.env.SCAN_FROM || new Date(Date.now() + 8 * 3600e3).toISOString().slice(0, 10);
-const sched = JSON.parse(readFileSync(join(ROOT, 'data/tra_schedule_dense.json'), 'utf8'));
+let sched;
+try { sched = JSON.parse(readFileSync(join(ROOT, 'data/tra_schedule_dense.json'), 'utf8')); }
+catch (e) { console.log(`⚠ 讀不到 data/tra_schedule_dense.json（${e.message}），這次沒有掃描`); process.exit(0); }
 let days = Object.keys(sched.dates || {}).filter(d => d >= today).sort();
 if (process.env.SCAN_DAYS) days = days.slice(0, Number(process.env.SCAN_DAYS));
 mkdirSync(OUT, { recursive: true });
@@ -59,6 +62,6 @@ for (const x of red) {
   console.log(`\n紅 ${x.day}：台北 ${x.blocksShipFrom} 00:00 起 ship-web 會擋出貨（log ${x.log}）`);
   for (const f of x.fails) console.log(`  ${f}`);
 }
-console.log(`\n${red.length ? `窗口裡 ${red.length} 天會紅：${red.map(x => x.day).join('、')}` : broken.length ? '跑完的日子裡沒有會紅的' : '窗口裡沒有會紅的日子'}；報告 ${join(OUT, 'report.json')}`);
+console.log(`\n${!rows.length ? `⚠ 班表裡沒有 ${today} 起的日子，這次沒有掃描` : red.length ? `窗口裡 ${red.length} 天會紅：${red.map(x => x.day).join('、')}` : broken.length ? '跑完的日子裡沒有會紅的' : '窗口裡沒有會紅的日子'}；報告 ${join(OUT, 'report.json')}`);
 if (broken.length) console.log(`⚠ 報告不完整：${broken.map(x => x.day).join('、')} 這 ${broken.length} 天閘門沒跑完，看各天的 log`);
 process.exit(0);
