@@ -11603,6 +11603,10 @@ function applyRunProfile(s, k0, k1, rp, runKm) {
 const OVERTAKE_LOOKAHEAD_KM = 25;             // 待避站到預測追上點最遠回看距離
 const OVERTAKE_CLEAR_SEC = 30;                // 後車通過後的放行間隔
 const OVERTAKE_MAX_WAIT_SEC = 600;            // 超過十分鐘不是近距離追越，交給既有防追撞邊界
+// 這幾筆待避在立體地圖上換不了股，規劃時不選：6789 是借別班路徑的專列，金崙出站固定從正線走到太麻里的指定股道，
+// 金崙的兩條側線在路網裡接不到那一股，待避車只能和超越車停／過同一股。選站照舊往前回找，其他車次與其他站不受影響；
+// 路網補上對應的順向路徑後移除。每筆＝[待避車車次, 站名, 後車車次]。
+const OVERTAKE_NO_WAIT = [['6789', '金崙', '161']];
 function clearPlannedOvertakes(trains) {
   for (const tr of trains) for (const st of (tr.stops || [])) {
     // applySchedSystems 可能在同一頁因切群組重跑；每次都先回到密化班表剛載入的通過時刻，
@@ -11708,7 +11712,8 @@ function planSameDirectionOvertakes(trains, union, sections, tracks, banned = ne
           }
           if (lookKm > OVERTAKE_LOOKAHEAD_KM) break;
           const lead = fst.arrSec - st.arrSec;
-          if (st.stop !== false || lead < need || banned.has(keyOf(L) + ':' + lc + ':' + F.train)) continue;
+          if (st.stop !== false || lead < need || banned.has(keyOf(L) + ':' + lc + ':' + F.train)
+              || OVERTAKE_NO_WAIT.some(([l, n, f]) => l === String(L.train) && n === st.name && f === String(F.train))) continue;
           if (tracked && !tracked.has(traSectionKey(st.name, st.name).split('|')[0])) continue;
           const dep = fst.depSec + OVERTAKE_CLEAR_SEC;
           if (dep - st.arrSec > OVERTAKE_MAX_WAIT_SEC) continue;

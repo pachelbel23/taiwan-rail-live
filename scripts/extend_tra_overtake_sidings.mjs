@@ -9,21 +9,29 @@
 // （maxPathM，點速才恆 ≤ 車種極速、不留容差），所以 build_tra_track_sections.mjs 與 overtake-sidings.js 都把這裡記的
 // overtakePaths 算進最長路徑；這裡只擋「比派車表最長的長超過 1 m」，免得一條側線把整個站對的剖面拉長。
 //
+// 路徑已在出貨路網、只差登記的（和仁）：崇德停靠點→和仁側線（way 598634593，OSM service=siding）的進站段本來就在
+// network.json 的 paths，派車表沒派過車。它比該站對派車表最長的路徑長 0.786 m，overtake-sidings.js 的長度篩子
+// （路徑長 ≤ 最長路徑 + 1e-3）把整條「崇德停→和仁側線→和平」擋掉，和仁的待避車換不到另一股、兩車停／過同一股。
+// 這種路徑只登記進 extensions[].overtakePaths（paths 不重複補）；上面的檢查照過，路徑不在 paths 裡才補。
+//
 // 跑法：node scripts/extend_tra_overtake_sidings.mjs（就地改 rail-3d/physical/network.json；NETWORK=／OUT= 可換檔），
-// 之後重跑 node scripts/build_tra_track_sections.mjs、npm run build-run-profiles、npm run build-manifest。
-// 🔴 重新打包 network.json 之後要再跑一次；用 extensions 記錄判斷是否已補入，重跑無害。
+// 之後 rail-3d/physical/level-profiles.json 只換 inputSha256 裡 network.json 的雜湊，
+// 再重跑 node scripts/build_tra_track_sections.mjs、npm run build-run-profiles、npm run build-manifest。
+// 🔴 重新打包 network.json 之後要再跑一次；每組（一站一筆）用 extensions 的 name 判斷是否已補入，重跑無害。
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
 import { makeDirectionModel } from './lib/track_directions.mjs';
 
-const NAME = '台鐵待避側線路徑（南平）';
 const file = process.env.NETWORK || 'rail-3d/physical/network.json', out = process.env.OUT || file;
 const net = JSON.parse(fs.readFileSync(file, 'utf8'));
-if (net.extensions?.some(e => e.name === NAME)) { console.log('已補入', NAME); process.exit(0); }
 const dispatch = JSON.parse(fs.readFileSync('rail-3d/physical/dispatch.json', 'utf8'));
 
-// 南下（林榮新光→南平→鳳林）停側線上的推估停車點；mainline＝同一站對現行派車的正線路徑（接頭對照用）。
+// 一站一組，name 是 extensions 裡的冪等記號。mainline＝同一站對現行派車的正線路徑（接頭對照用）。
+const NOTE_TAIL = 'overtakePaths＝路徑編號→[前站, 後站]，build_tra_track_sections.mjs 與 overtake-sidings.js 把它們算進該站對的最長路徑。';
 const SIDINGS = [{
+  // 南下（林榮新光→南平→鳳林）停側線上的推估停車點。
+  name: '台鐵待避側線路徑（南平）', date: '2026-09-29', source: 'OpenStreetMap（way 本來就在出貨路網；只補路徑）',
+  note: '同向待避換股用（rail-3d/physical/overtake-sidings.js）；派車表沒有派車。' + NOTE_TAIL,
   station: '南平', stop: 'estimated:tra_sched:南平:1175170157:2', siding: '1175170157',
   legs: [
     { from: '7026780284', to: 'estimated:tra_sched:南平:1175170157:2', pair: ['林榮新光', '南平'], mainline: 4440,
@@ -31,7 +39,20 @@ const SIDINGS = [{
     { from: 'estimated:tra_sched:南平:1175170157:2', to: '10920130434', pair: ['南平', '鳳林'], mainline: 3868,
       ways: ['1175170157', '1021846206', '1021846207', '1021846208', '1021846210', '1175170155', '1175170154', '1175170151'] },
   ],
+}, {
+  // 南下（崇德→和仁→和平）：只有進站段，出站段（和仁側線→和平）出貨路網已有、長度也在篩子內。
+  name: '台鐵待避側線路徑（和仁）', date: '2026-10-18', source: 'OpenStreetMap（way 與路徑本來就在出貨路網；只登記）',
+  note: '同向待避換股用（rail-3d/physical/overtake-sidings.js）；路徑本來就在出貨路網、派車表沒有派車，這裡只登記。' + NOTE_TAIL,
+  station: '和仁', siding: '598634593',
+  legs: [
+    { from: 'estimated:tra_sched:崇德:1061049122:2', to: '5697429402', pair: ['崇德', '和仁'], mainline: 21022,
+      ways: ['1061049122', '296584799', '197169804', '1467921332', '1467921333', '197169777', '197169766', '197169769', '1270414589', '197169775', '197169779', '231221449', '598634593'] },
+  ],
 }];
+
+const todo = SIDINGS.filter(s => !net.extensions?.some(e => e.name === s.name));
+for (const s of SIDINGS) if (!todo.includes(s)) console.log('已補入', s.name);
+if (!todo.length) process.exit(0);
 
 const M = makeDirectionModel({ net, dispatch });
 const { clean } = M.classify();
@@ -41,8 +62,8 @@ for (const [, plan] of M.plans) {
   plan.pathIds.forEach((id, i) => { const k = [sig[i][0], sig[i + 1][0]].sort().join('|'); if (M.paths[id]) pairMax.set(k, Math.max(pairMax.get(k) || 0, M.paths[id].lengthM)); });
 }
 const neighbours = (id, side) => new Set(M.plans.flatMap(([, p]) => p.pathIds.flatMap((x, i) => x !== id ? [] : side < 0 ? (i ? [p.pathIds[i - 1]] : []) : (i + 1 < p.pathIds.length ? [p.pathIds[i + 1]] : []))));
-const overtakePaths = {}, report = [];
-for (const s of SIDINGS) {
+const extensions = [], fresh = new Set(), report = [];
+for (const s of todo) {
   assert.equal(net.ways.find(w => String(w.id) === s.siding)?.tags?.service, 'siding', s.station + ' 側線 way 不在路網或不是 siding');
   const ids = s.legs.map(leg => {
     const main = M.paths[leg.mainline];
@@ -50,24 +71,22 @@ for (const s of SIDINGS) {
     const r = M.cleanRoute(leg.from, leg.to, main.lengthM, clean, new Map());
     assert(r, leg.pair.join('→') + ' 找不到順向路徑');
     const p = M.paths[r.id];
-    assert(!net.paths[r.id], leg.pair.join('→') + ' 已有同一條路徑 ' + r.id);
     assert.deepEqual([...new Set(p.edgeIds.map(e => M.edges[e].wayId))], leg.ways, leg.pair.join('→') + ' 經過的 way 與覆核清單不同');
     assert.equal(M.wrongOn(p, clean).length, 0, leg.pair.join('→') + ' 逆向走方向股道');
     const max = pairMax.get(leg.pair.map(n => 'tra_sched:' + n).sort().join('|'));
     assert(max > 0 && p.lengthM - max < 1, `${leg.pair.join('→')} ${p.lengthM.toFixed(3)} m 比派車表最長 ${max} m 長超過 1 m`);
-    report.push(`${leg.pair.join('→')} 路徑 ${r.id}：${p.lengthM.toFixed(3)} m（正線 ${main.lengthM.toFixed(3)}、派車表最長 ${max.toFixed(3)}）`);
+    if (!net.paths[r.id]) fresh.add(r.id);
+    report.push(`${leg.pair.join('→')} 路徑 ${r.id}：${p.lengthM.toFixed(3)} m（正線 ${main.lengthM.toFixed(3)}、派車表最長 ${max.toFixed(3)}）${fresh.has(r.id) ? '' : '，出貨路網既有'}`);
     return r.id;
   });
-  assert(M.turnOK(ids[0], ids[1]), s.station + ' 進站段接不上出站段');
+  if (ids.length > 1) assert(M.turnOK(ids[0], ids[1]), s.station + ' 進站段接不上出站段');
   for (const prev of neighbours(s.legs[0].mainline, -1)) if (M.turnOK(prev, s.legs[0].mainline)) assert(M.turnOK(prev, ids[0]), s.station + ' 前一段 ' + prev + ' 接不上進站段');
-  for (const next of neighbours(s.legs[1].mainline, 1)) if (M.turnOK(s.legs[1].mainline, next)) assert(M.turnOK(ids[1], next), s.station + ' 出站段接不上後一段 ' + next);
+  if (s.legs[1]) for (const next of neighbours(s.legs[1].mainline, 1)) if (M.turnOK(s.legs[1].mainline, next)) assert(M.turnOK(ids[1], next), s.station + ' 出站段接不上後一段 ' + next);
+  const overtakePaths = {};
   s.legs.forEach((leg, i) => { overtakePaths[ids[i]] = leg.pair; });
+  extensions.push({ name: s.name, source: s.source, date: s.date, overtakePaths, note: s.note });
 }
-for (const id of Object.keys(overtakePaths)) net.paths[id] = M.newPaths[id];
-net.extensions = [...(net.extensions || []), {
-  name: NAME, source: 'OpenStreetMap（way 本來就在出貨路網；只補路徑）', date: '2026-09-29', overtakePaths,
-  note: '同向待避換股用（rail-3d/physical/overtake-sidings.js）；派車表沒有派車。overtakePaths＝路徑編號→[前站, 後站]，'
-    + 'build_tra_track_sections.mjs 與 overtake-sidings.js 把它們算進該站對的最長路徑。',
-}];
+for (const id of fresh) net.paths[id] = M.newPaths[id];
+net.extensions = [...(net.extensions || []), ...extensions];
 fs.writeFileSync(out, JSON.stringify(net));
-console.log(report.join('\n') + `\n補入 ${Object.keys(overtakePaths).length} 條路徑 → ${out}`);
+console.log(report.join('\n') + `\n登記 ${extensions.length} 組、補入 ${fresh.size} 條新路徑 → ${out}`);

@@ -242,7 +242,7 @@
    "effectiveDateField": null,
    "geometrySource": null,
    "coordinateBasis": null,
-   "checksum": "d273088c33de631b49cee0f365441b11"
+   "checksum": "844f6bb56b27eea327bf6c275ef68b0e"
   },
   "data/tra_schedule_dense.json": {
    "sourceDescription": "時刻表來源：https://ods.railway.gov.tw/tra-ods-web/ods/download/dataResource/railway_schedule/JSON/list 清單頁，抓取今天(2026-10-16)起連續 14 天中實際發佈得到的 14 天（2026-10-16…2026-10-2",
@@ -287,7 +287,7 @@
    "effectiveDateField": null,
    "geometrySource": null,
    "coordinateBasis": null,
-   "checksum": "c524793e6c30489cc4cb5e80a401dc2e"
+   "checksum": "015d679b4882c0545efe75c3ed04487f"
   },
   "data/track_lines.geojson": {
    "sourceDescription": "由 data/{tra,thsr_track,afr,trtc,tymc,ntdlrt,ntalrt,sanying,krtc,tmrt}.json 的 lines[].shape 與 lines[].stations 轉成 GeoJSON([lon,lat],小數 6 位),scripts/build_track_g",
