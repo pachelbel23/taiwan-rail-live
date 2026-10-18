@@ -166,7 +166,7 @@ try {
   process.stdout.write(i18n.stdout || ''); process.stderr.write(i18n.stderr || '');
   if (i18n.status !== 0) fail('i18n 稽核未過——補齊 en/ja 再出貨（單獨重跑：npm run check-i18n）');
 
-  // ── 2.5b i18n 瀏覽器驗收（Chromium＋WebKit，約 70 秒）──────────────────────
+  // ── 2.5b i18n 瀏覽器驗收（Chromium＋WebKit）──────────────────────────────
   // 2.5 是靜態掃描，看不到「畫出來的畫面」：切換語言後殘留前一種語言、App 的「更多」面板、法務頁、
   // 手機四寬度的可見中文，都只有真的開瀏覽器才量得到(2026-09-19 App 英日文實測抓到的那一批，
   // 靜態掃描全綠)。這支此前沒有任何呼叫者，而且還要人先起一個 5178 的 server 才跑得動。
