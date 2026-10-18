@@ -44,7 +44,9 @@ function record(engine, scenario, detail = '') {
   console.log(`✓ ${engine} · ${scenario}${detail ? ` · ${detail}` : ''}`);
 }
 async function preparePage(context) {
-  await context.addInitScript(() => localStorage.setItem('trainmap-howto-seen', '1'));
+  // init script 連 about:blank（leaveApp 的中繼頁）也會跑，那裡存取 localStorage 會丟 SecurityError，所以要 try 包住
+  await context.addInitScript(() => { try { localStorage.setItem('trainmap-howto-seen', '1'); } catch {} });
+  if (SLOW_NAV_MS > 0) await slowNavigation(context);
   const page = await context.newPage();
   const pageErrors = [];
   page.on('pageerror', error => pageErrors.push(error.message));
@@ -63,6 +65,55 @@ async function settle3d(page) {
     const r = window.railIslandIntegration;
     return !!r && !r.loading && (!!r.renderer || r.errors.length > 0);
   }, null, { timeout: 90_000 });
+}
+async function settleMap(page) {
+  // 底圖是外部服務：連不上就載不完。逾時只當作沒等到、照常換頁，不讓閘門卡在別人的故障上（leaveApp 的第 2 層仍擋得住）。
+  await page.waitForFunction(() => {
+    const map = window.__ofmGl;
+    return !!map && map.loaded() && !map.isMoving();
+  }, null, { timeout: 20_000, polling: 100 }).catch(() => console.warn('settleMap：底圖 20 秒內沒載完，照常換頁'));
+}
+// 換頁前的清場，兩層一起做（競態機制見 slowNavigation 上方的說明）：
+//   1. settle3d＋settleMap：立體圖層與底圖都載完，舊頁面不再有等著發出的載入；
+//   2. 經 about:blank 換走：離開 app 的窗口不含網路等待，從 about:blank 載目標頁時舊頁面已沒有任何程式在跑。
+// 只等某一個載入器（例如 settle3d）會一個換一個，所以不能只做第 1 層；「不准有 pageerror」的判準不變。
+async function leaveApp(page) {
+  await settle3d(page);
+  await settleMap(page);
+  await page.goto('about:blank');
+}
+// 壓力模式（RAIL_I18N_SLOW_NAV_MS=<毫秒>，出貨鏈不設）：把機器忙時才偶發的換頁競態變成每次都發生。
+// 競態（2026-10-18，WebKit）：page.goto() 發出後、新文件回來之前，舊頁面還活著；這段時間它「才發出」的 fetch 會被當場拒絕，
+// 並記一筆「Fetch API cannot load … due to access control checks」，Playwright 轉成 pageerror（發出前已在途的請求不會記）。
+// 窗口等於新文件的回應時間；舊頁面的字型要等圖磚解析完才發出，機器忙時就落在窗口裡。
+// 所以只把字型「回應」壓慢重現不了，要讓舊頁面在窗口裡「才發出」請求：
+//   (1) 第二次起的文件請求晚 N 毫秒才放行，舊頁面在這段時間仍然活著；
+//   (2) 地圖載完後用公開 API 加一層要用 Noto Sans Italic 的符號圖層，讓 MapLibre 在固定時間點要一個新的字型範圍；
+//   (3) 字型（glyph）的 fetch 晚 N/2 毫秒才發出，落在 (1) 的窗口裡。
+const SLOW_NAV_MS = Number(process.env.RAIL_I18N_SLOW_NAV_MS || 0);
+const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+async function slowNavigation(context) {
+  await context.addInitScript(delay => {
+    const nativeFetch = window.fetch;
+    window.fetch = function (input, init) {
+      const url = typeof input === 'string' ? input : input?.url || String(input);
+      if (!/\/fonts\/[^/]+\/\d+-\d+\.pbf/.test(url)) return nativeFetch.apply(this, arguments);
+      return new Promise(resolve => setTimeout(resolve, delay)).then(() => nativeFetch.call(window, input, init));
+    };
+    const timer = setInterval(() => {
+      const map = window.__ofmGl;
+      if (!map?.isStyleLoaded()) return;
+      clearInterval(timer);
+      map.addSource('slow-nav', { type: 'geojson', data: { type: 'Point', coordinates: [121, 24] } });
+      map.addLayer({ id: 'slow-nav', type: 'symbol', source: 'slow-nav', layout: { 'text-field': 'x', 'text-font': ['Noto Sans Italic'] } });
+    }, 50);
+  }, SLOW_NAV_MS / 2);
+  const origin = new URL(BASE).origin;
+  let documents = 0;
+  await context.route(url => url.origin === origin && (url.pathname === '/' || url.pathname.endsWith('.html')), async route => {
+    if (route.request().isNavigationRequest() && ++documents > 1) await sleep(SLOW_NAV_MS);
+    await route.continue().catch(() => {});
+  });
 }
 async function setLanguage(page, lang) {
   await page.evaluate(value => window.__i18n.setLanguage(value), lang);
@@ -498,7 +549,7 @@ async function navigatorDetection(browser, engine) {
       await page.waitForFunction(value => document.documentElement.lang === value, lang);
       assert(await hint.isHidden(), `${locale} 按切換後提示沒收起來`);
       assert(await page.evaluate(() => localStorage.getItem('trainmap-language')) === lang, `${locale} 沒存語言偏好`);
-      await settle3d(page);
+      await leaveApp(page);
       await page.goto(BASE, { waitUntil: 'domcontentloaded' });
       await page.waitForFunction(() => window.__i18n?.catalogReady && typeof state !== 'undefined' && state.ready, null, { timeout: 90_000 });
       assert(await page.getAttribute('html', 'lang') === lang, `${locale} 切換後重新整理沒有保持 ${lang}`);
@@ -515,7 +566,7 @@ async function navigatorDetection(browser, engine) {
       await hint.waitFor({ state: 'visible', timeout: 15_000 });
       await second.page.locator('#langHintClose').click();
       assert(await hint.isHidden(), `${locale} 按 × 後提示沒收起來`);
-      await settle3d(second.page);
+      await leaveApp(second.page);
       await second.page.goto(BASE, { waitUntil: 'domcontentloaded' });
       await second.page.waitForFunction(() => window.__i18n?.catalogReady && typeof state !== 'undefined' && state.ready, null, { timeout: 90_000 });
       await second.page.waitForTimeout(2500);
@@ -738,6 +789,7 @@ async function mobileScenario(browser, engine, width) {
     const rideCjkLabels = rideA11y.labels.filter(label => /[\u3000-\u30ff\u3400-\u9fff\uff00-\uffef]/.test(label));
     assert(rideCjkLabels.length === 0, `${engine} ${width}px 護照 sheet 英文 aria-label 夾中日文或全形字元（共 ${rideA11y.labels.length} 個）：${rideCjkLabels.slice(0, 5).join(' ｜ ')}`);
 
+    await leaveApp(page);
     await page.goto(BASE, { waitUntil: 'domcontentloaded' });
     await page.waitForFunction(() => window.__i18n?.catalogReady && typeof state !== 'undefined' && state.ready, null, { timeout: 90_000 });
     assert(await page.getAttribute('html', 'lang') === 'en', `${width}px 無 query 重整未保留手動英文`);
