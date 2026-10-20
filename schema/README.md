@@ -17,6 +17,7 @@
 | `0011_journey_share.sql` | ✅ **權威** | 短效整段旅程分享 `journey_shares`。只保存最新狀態與（使用者另行同意時）最新一筆手機座標，不保存位置歷史；公開讀取 id 與編輯憑證分離，最長 12 小時失效。**所有環境都要跑。** |
 | `0012_la_journey_handoff.sql` | ✅ **權威** | 跟車即時動態的跨車轉乘計畫。替既有 `la_bindings` 增加 `journey_state`，讓同一張鎖屏卡可在轉乘站由來源列車交棒給已選班次。**所有環境都要跑。** 🔴 正式庫漏套到 **2026-09-24 00:17** 才補。 |
 | `0013_tra_wait_prev_dep.sql` | ✅ **權威** | 台鐵等站卡的進站軌道版面：替 `tra_wait_bindings` 補 `prev_dep_sec`（上一個停靠站的表定發車時刻），伺服器據此在「上一站→本站」那段每分鐘推一發讓卡片上的車往前挪。**所有環境都要跑，新環境＝`0010` + `0013`。** |
+| `0014_trackside.sql` | 權威 | 軌道邊卡片的 `trackside_bindings`；清單只保存車次、系統、時刻與隔日標記，時間欄位一律毫秒。獨立於既有卡片表，部署新版 Worker 前先套用。 |
 
 ## 套用到正式庫
 
@@ -28,6 +29,7 @@ arch -arm64 node ./node_modules/wrangler/bin/wrangler.js d1 execute DELAY_DB --r
 arch -arm64 node ./node_modules/wrangler/bin/wrangler.js d1 execute DELAY_DB --remote --file=schema/0011_journey_share.sql
 arch -arm64 node ./node_modules/wrangler/bin/wrangler.js d1 execute DELAY_DB --remote --file=schema/0012_la_journey_handoff.sql
 arch -arm64 node ./node_modules/wrangler/bin/wrangler.js d1 execute DELAY_DB --remote --file=schema/0013_tra_wait_prev_dep.sql
+arch -arm64 node ./node_modules/wrangler/bin/wrangler.js d1 execute DELAY_DB --remote --file=schema/0014_trackside.sql
 ```
 
 （`npx wrangler` 在這台機器是壞的，一律用上面的完整寫法。）

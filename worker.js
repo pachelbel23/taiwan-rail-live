@@ -17,6 +17,10 @@ import {
   twDelayFor, twEtaSec, twContentState, twShouldPush, twShouldEnd, twNextEndAt,
   twRunWindow, twRunTickDue, TW_MAX_TRACK_SEC,
 } from './scripts/tra_wait_core.mjs';
+import {
+  TS_TOKEN_RE, TS_END_SLACK_MS, tsValidateBind,
+  tsDelays, tsUpcoming, tsContentState, tsEndState, tsShouldPush, tsShouldEnd, tsStaleDateSec,
+} from './scripts/trackside_core.mjs';
 import { BUS_TRANSFER_SCHEMA, resolveBusLegVehicles, resolveBusRouteStops, resolveStationN1 } from './scripts/bus_transfer_core.mjs';
 import {
   BUS_STOP_INDEX_SCHEMA, busSearchMatch, nextTwoByRoute, parseBusStopIndexLine,
@@ -3720,6 +3724,60 @@ async function laUnbind(request, env) {
   return jsonRes({ ok: true }, 200, 'no-store');
 }
 
+// 軌道邊卡片：只保存通過清單，付費身分與限流沿用跟車卡。
+const TS_MAX_ROWS_PER_UID = 3;
+async function tracksideBind(request, env) {
+  if (request.method !== 'POST') return jsonRes({ error: 'method not allowed' }, 405, 'no-store');
+  if (await rateLimited(env.LA_LIMITER, request, true)) return jsonRes({ error: 'rate_limited' }, 429, 'no-store');
+  let body;
+  try { body = await request.json(); }
+  catch { return jsonRes({ error: 'bad_json' }, 400, 'no-store'); }
+  const nowMs = Date.now();
+  const validated = tsValidateBind(body, nowMs);
+  if (!validated.ok) return jsonRes({ error: validated.error }, 400, 'no-store');
+  const { token, passes, endMs, tickMode } = validated.value;
+  let uid;
+  if (env.LA_TEST_BEARER && request.headers.get('Authorization') === `Bearer ${env.LA_TEST_BEARER}`) {
+    uid = 'local-test';
+  } else {
+    const check = await checkPlusEntitlement(request, env);
+    if (!check.ok) return jsonRes({ error: check.error }, check.status, 'no-store');
+    uid = check.uid;
+  }
+  try {
+    await env.DELAY_DB.prepare(
+      'INSERT INTO trackside_bindings (token,uid,passes,tick_mode,end_ms,expire_ms,bound_ms)' +
+      ' VALUES (?,?,?,?,?,?,?) ON CONFLICT(token) DO UPDATE SET' +
+      ' uid=excluded.uid, passes=excluded.passes, tick_mode=excluded.tick_mode,' +
+      ' end_ms=excluded.end_ms, expire_ms=excluded.expire_ms, bound_ms=excluded.bound_ms,' +
+      ' last_state=NULL, fail_streak=0'
+    ).bind(token, uid, JSON.stringify(passes), tickMode, endMs, endMs + TS_END_SLACK_MS, nowMs).run();
+    // token 只驗格式，限制每個帳號列數以避免大量無效 token 佔滿推播預算。
+    // 重綁保留 apns_env：環境屬於 token，與清單無關。
+    await env.DELAY_DB.prepare(
+      'DELETE FROM trackside_bindings WHERE uid=? AND token NOT IN' +
+      ' (SELECT token FROM trackside_bindings WHERE uid=? ORDER BY bound_ms DESC, token DESC LIMIT ?)'
+    ).bind(uid, uid, TS_MAX_ROWS_PER_UID).run();
+    return jsonRes({ ok: true }, 200, 'no-store');
+  } catch {
+    return jsonRes({ error: 'bind_failed' }, 503, 'no-store');
+  }
+}
+
+async function tracksideUnbind(request, env) {
+  if (request.method !== 'POST') return jsonRes({ error: 'method not allowed' }, 405, 'no-store');
+  if (await rateLimited(env.LA_LIMITER, request, true)) return jsonRes({ error: 'rate_limited' }, 429, 'no-store');
+  let body;
+  try { body = await request.json(); }
+  catch { return jsonRes({ ok: true }, 200, 'no-store'); }
+  // 冪等解除綁定；token 本身為不可猜中的解除憑證。
+  if (body && TS_TOKEN_RE.test(String(body.token))) {
+    try { await env.DELAY_DB.prepare('DELETE FROM trackside_bindings WHERE token=?').bind(String(body.token)).run(); }
+    catch { /* D1 暫時不可用時，仍由到期清理兜底。 */ }
+  }
+  return jsonRes({ ok: true }, 200, 'no-store');
+}
+
 // ── 捷運等車卡:交班與註銷 ────────────────────────────────────────────
 // 🔴 與 /api/la/bind 的三個刻意差異:
 //   (1) 不驗通行證。等車卡是免費功能(看板那顆「追蹤這站」對所有人都長出來),在這裡加一道
@@ -4763,17 +4821,17 @@ const TW_TICK_BUDGET_MS = 30000;
 // 這一輪要用的官方即時動態。走 traLive 的雙層快取(邊緣＋isolate 記憶體)＋ in-flight 去重
 // ⇒ 與 laPushAll 在同一 tick 各要一次也只會打上游一次(見 traLiveInflight)。
 // _src=cron:不計入用量分析(同 laPushAll,否則每分鐘一筆合成的假前景資料)。
-async function traWaitLive(env, ctx, baseUrl) {
+async function traWaitLive(env, ctx, baseUrl, tag = 'tw-push') {
   try {
     const r = await traLive(new Request(baseUrl + '/api/tra-live?_src=cron'), env, ctx);
     const j = await r.json();
     if (!r.ok || !Array.isArray(j && j.trains)) {
-      console.error(`[cron tw-push] tra-live 不可用(status=${r.status}),本輪全部列拿不到官方誤點`);
+      console.error(`[cron ${tag}] tra-live 不可用(status=${r.status}),本輪全部列拿不到官方誤點`);
       return null;
     }
     return j;
   } catch (e) {
-    console.error('[cron tw-push] tra-live 取得失敗,本輪全部列拿不到官方誤點:', String((e && e.message) || e));
+    console.error(`[cron ${tag}] tra-live 取得失敗,本輪全部列拿不到官方誤點:`, String((e && e.message) || e));
     return null;
   }
 }
@@ -4965,6 +5023,120 @@ function metroWaitPushWithHalf(env, ctx, baseUrl, sleep) {
 function traWaitPushWithHalf(env, ctx, baseUrl, sleep) {
   return waitCardHalfMinute('tw-push', () => traWaitPushAll(env, ctx, baseUrl),
     half => traWaitPushAll(env, ctx, baseUrl, half), sleep);
+}
+
+// 軌道邊卡片獨立重算清單，共用 APNs、JWT、熔斷與半分鐘排程。
+const TS_ROW_LIMIT = 300;
+// 與其他推播並行；保留半分鐘輪與收尾的牆鐘預算。
+const TS_TICK_BUDGET_MS = 30000;
+async function tracksidePushAll(env, ctx, baseUrl, half = null) {
+  const tag = half ? 'ts-push 半分鐘' : 'ts-push';
+  if (!env.APNS_KEY_P8 || !env.DELAY_DB) {
+    console.error(`[cron ${tag}] APNS_KEY_P8 或 DELAY_DB 未設定,cron 本輪整支跳過`);
+    return { sent: 0, ended: 0, dropped: 0, handoff: null };
+  }
+  const nowMs = Date.now();
+  const deadlineMs = half ? half.deadlineMs : nowMs + TS_TICK_BUDGET_MS;
+  if (!half) await env.DELAY_DB.prepare('DELETE FROM trackside_bindings WHERE expire_ms < ?').bind(nowMs).run();
+  const rs = await env.DELAY_DB.prepare('SELECT * FROM trackside_bindings ORDER BY end_ms ASC LIMIT ?')
+    .bind(TS_ROW_LIMIT + 1).all();
+  let rows = rs.results || [];
+  if (rows.length > TS_ROW_LIMIT) {
+    console.error(`[cron ${tag}] 列數觸頂:本輪 ${rows.length}>${TS_ROW_LIMIT},只處理最快到期的前 ${TS_ROW_LIMIT} 列`);
+    rows = rows.slice(0, TS_ROW_LIMIT);
+  }
+  if (!rows.length) return { sent: 0, ended: 0, dropped: 0, handoff: null };
+  const live = half ? half.live : await traWaitLive(env, ctx, baseUrl, 'ts-push');
+  const { delays, delayAtMs } = tsDelays(live, nowMs);
+  const jwt = await laJwt(env);
+  let sent = 0, ended = 0, dropped = 0, unchanged = 0, attempted = 0, apnsRetried = 0, processed = 0;
+  let budgetExhausted = false, notReached = 0;
+  const permFailCandidates = [];
+  for (let ri = 0; ri < rows.length; ri++) {
+    if (Date.now() > deadlineMs) { budgetExhausted = true; notReached = rows.length - ri; break; }
+    const row = rows[ri];
+    processed++;
+    try {
+      let prev = null;
+      try {
+        prev = row.last_state ? JSON.parse(row.last_state) : null;
+        if (typeof prev !== 'object' || Array.isArray(prev)) prev = null;
+      } catch { prev = null; }
+      if (half && !prev) { unchanged++; continue; }
+      let passes;
+      try {
+        passes = JSON.parse(row.passes);
+        if (!Array.isArray(passes)) throw new Error('bad_passes');
+      } catch {
+        // 不記 JSON 解析錯誤內容，以免把清單帶進 log。
+        console.error(`[cron ${tag}] 清單無法解析 token=${String(row.token).slice(0, 8)}…`);
+        if (!half) await env.DELAY_DB.prepare('DELETE FROM trackside_bindings WHERE token=?').bind(row.token).run();
+        continue;
+      }
+      const ups = tsUpcoming(passes, delays, delayAtMs, nowMs);
+      const why = tsShouldEnd(nowMs, row.end_ms, ups);
+      if (why) {
+        if (half) { unchanged++; continue; }
+        await metroWaitPushEnd(env, jwt, row, tsEndState(prev, nowMs), Math.floor(nowMs / 1000), why, 'ts-push');
+        await env.DELAY_DB.prepare('DELETE FROM trackside_bindings WHERE token=?').bind(row.token).run();
+        ended++;
+        continue;
+      }
+      const state = tsContentState(ups, delayAtMs, nowMs);
+      if (!tsShouldPush(prev, state, row.tick_mode)) { unchanged++; continue; }
+      attempted++;
+      const body = { aps: { timestamp: Math.floor(nowMs / 1000), event: 'update', 'content-state': state } };
+      const staleDate = tsStaleDateSec(state);
+      if (staleDate != null) body.aps['stale-date'] = staleDate;
+      const r = await laApnsSend(env, jwt, row.token, body, row.apns_env);
+      if (r.retried) apnsRetried++;
+      if (r.ok) {
+        await env.DELAY_DB.prepare('UPDATE trackside_bindings SET last_state=?, apns_env=?, fail_streak=0 WHERE token=?')
+          .bind(JSON.stringify(state), r.envName, row.token).run();
+        sent++;
+        continue;
+      }
+      if (half) {
+        console.error(`[cron ${tag}] APNs 非 2xx(不記失敗次數,留給每分鐘那一輪): status=${r.status} reason=${r.reason || '(無法解析)'} env=${r.envName} token=${String(row.token).slice(0, 8)}…`);
+        continue;
+      }
+      const failStreak = (Number(row.fail_streak) || 0) + 1;
+      await env.DELAY_DB.prepare('UPDATE trackside_bindings SET fail_streak=? WHERE token=?').bind(failStreak, row.token).run();
+      console.error(`[cron ts-push] APNs 非 2xx: status=${r.status} reason=${r.reason || '(無法解析)'} env=${r.envName}${r.retried ? '(已試過另一個環境)' : ''} token=${String(row.token).slice(0, 8)}…`);
+      if (r.status === 403 && !laJwtReset()) console.error('[cron ts-push] 403 但 provider token 仍在 20 分鐘冷卻期內,本輪沿用快取的 JWT');
+      if (LA_PERM_FAIL_REASONS.has(r.reason)) permFailCandidates.push({ token: row.token, streak: failStreak });
+    } catch (e) {
+      console.error(`[cron ${tag}] 單列處理失敗(不影響其他列)token=${String(row.token).slice(0, 8)}… :`, e?.name || 'Error');
+    }
+  }
+  if (budgetExhausted) {
+    console.error(`[cron ${tag}] 本輪預算用盡:已用 ${Date.now() - nowMs} 毫秒(截止 ${deadlineMs - nowMs} 毫秒),rows=${rows.length} 中還有 ${notReached} 列本輪未處理`);
+  }
+  if (half) {
+    console.log(`[cron ${tag}] tick 完成: rows=${rows.length} attempted=${attempted} sent=${sent} ended=0 unchanged=${unchanged} dropped=0 apnsRetry=${apnsRetried}${budgetExhausted ? ` budgetExhausted(未處理 ${notReached} 列)` : ''}`);
+    return { sent, ended: 0, dropped: 0, handoff: null };
+  }
+  // 與既有推播共用永久失敗熔斷門檻，避免設定錯誤時整批刪卡。
+  const breakerRatio = attempted ? permFailCandidates.length / attempted : 0;
+  const breakerTripped = (attempted >= LA_BREAKER_MIN_ATTEMPTED && breakerRatio >= LA_BREAKER_RATIO)
+                      || (attempted >= LA_BREAKER_ALL_FAIL_MIN && permFailCandidates.length === attempted);
+  const toDelete = breakerTripped ? permFailCandidates.filter(c => c.streak >= LA_FAIL_STREAK_MAX) : permFailCandidates;
+  const heldBack = permFailCandidates.length - toDelete.length;
+  if (breakerTripped) {
+    console.error(`[cron ts-push] 熔斷觸發:本輪 ${permFailCandidates.length}/${attempted} 列回報永久失敗 reason,暫緩刪除其中 ${heldBack} 列(連續失敗輪數 ${JSON.stringify(permFailCandidates.map(c => c.streak))},上限 ${LA_FAIL_STREAK_MAX})`);
+  }
+  for (const c of toDelete) {
+    await env.DELAY_DB.prepare('DELETE FROM trackside_bindings WHERE token=?').bind(c.token).run();
+    dropped++;
+  }
+  console.log(`[cron ts-push] tick 完成: rows=${rows.length} attempted=${attempted} sent=${sent} ended=${ended} unchanged=${unchanged} dropped=${dropped} apnsRetry=${apnsRetried}${heldBack ? ` heldBack=${heldBack}(熔斷)` : ''}${budgetExhausted ? ` budgetExhausted(未處理 ${notReached} 列)` : ''}`);
+  // 換班依時間推進，即時資料為 null 仍需把工作交給半分鐘輪。
+  return { sent, ended, dropped, handoff: processed ? { live } : null };
+}
+
+function tracksidePushWithHalf(env, ctx, baseUrl, sleep) {
+  return waitCardHalfMinute('ts-push', () => tracksidePushAll(env, ctx, baseUrl),
+    half => tracksidePushAll(env, ctx, baseUrl, half), sleep);
 }
 // 跟車卡進站軌道契約:行駛中的列每分鐘推一發還不夠(圖不會自己動),比照等車卡加半分鐘那一輪
 // ——第一輪把 live/liveDown/liveAgeSec 與 now 交下去(見 laPushAll 的 handoff),第二輪零上游
@@ -6301,7 +6473,7 @@ const APP_ORIGINS = new Set(['capacitor://localhost', 'https://localhost']);
 // 不可以改成「全部放行」——擋掉的是「隨手對唯讀端點打 POST」這類探測,而那正是最便宜的防線。
 // ⚠️ 這道門的粒度是「路徑」不是「方法」：列進來等於該路徑的所有非 GET 方法都到得了處理函式。
 // /api/pass-admin 正是需要這樣（POST 匯入、DELETE 清批），它自己在函式內分派方法、未知的回 405。
-const API_POST_ALLOWED = new Set(['/api/account-delete', '/api/bounty-claim', '/api/bounty-submit', '/api/bounty-merge', '/api/revenuecat-webhook', '/api/la/bind', '/api/la/unbind', '/api/metro-wait/bind', '/api/metro-wait/unbind', '/api/tra-wait/bind', '/api/tra-wait/unbind', '/api/pass-claim', '/api/pass-admin', '/api/journey-share']);
+const API_POST_ALLOWED = new Set(['/api/account-delete', '/api/bounty-claim', '/api/bounty-submit', '/api/bounty-merge', '/api/revenuecat-webhook', '/api/la/bind', '/api/la/unbind', '/api/metro-wait/bind', '/api/metro-wait/unbind', '/api/tra-wait/bind', '/api/tra-wait/unbind', '/api/trackside/bind', '/api/trackside/unbind', '/api/pass-claim', '/api/pass-admin', '/api/journey-share']);
 // /api 端點白名單——只給流量埋點的 blob 用(不是路由閘門,路由在 fetch 裡)。不在名單內一律記成
 // 'other',否則隨便打 /api/<亂數> 就能把 blob 基數炸開。新增端點時要一起加進來。
 const API_ENDPOINTS = new Set([
@@ -6310,6 +6482,7 @@ const API_ENDPOINTS = new Set([
   'delay-stats', 'delay-history', 'thsr-schedule', 'thsr-freeseat', 'thsr-seat', 'station-events', 'today-board', 'basemap-token', 'basemap-session', 'basemap-src', 'basemap-fallback', 'account-delete',
   'bounty-board', 'bounty-claim', 'bounty-submit', 'bounty-me', 'bounty-merge', 'plus-status', 'revenuecat-webhook',
   'la/bind', 'la/unbind', 'metro-wait/bind', 'metro-wait/unbind', 'tra-wait/bind', 'tra-wait/unbind', 'pass-claim', 'pass-admin',
+  'trackside/bind', 'trackside/unbind',
 ]);
 
 function addAppCors(headers, origin) {
@@ -8325,6 +8498,12 @@ export default {
         return { error: String((e && e.message) || e) };
       });
       if (ctx && typeof ctx.waitUntil === 'function') ctx.waitUntil(twTask);
+      // 第四條推播迴圈，並行起跑。
+      const tsTask = tracksidePushWithHalf(env, ctx, 'https://railisland.tw').catch(e => {
+        console.error('[cron ts-push] 失敗:', (e && e.stack) || String(e));
+        return { error: String((e && e.message) || e) };
+      });
+      if (ctx && typeof ctx.waitUntil === 'function') ctx.waitUntil(tsTask);
       // 高鐵班表自我檢查:與帳本、推播都無關,自帶 .catch ⇒ 不可能改變 scheduled 的成功/失敗契約
       // (同 hazardTask/laTask)。絕大多數 tick 會在第一行就 return(不到檢查週期),不碰 D1。
       const thsrHealTask = thsrSelfHeal(event, env).catch(e => {
@@ -8369,6 +8548,7 @@ export default {
         await laTask;
         await mwTask;
         await twTask;
+        await tsTask;
         await journeySharePruneTask;
         // 同理 await:北捷營運窗外(約 01:00–06:00)trtcLedgerScheduled 會立刻早退,handler 一 return
         // 就可能把 waitUntil 截斷——而 05:00–06:00 正是自癒該把今天班表準備好的時段。
@@ -8513,6 +8693,8 @@ export default {
     else if (url.pathname === '/api/metro-wait/unbind') res = await metroWaitUnbind(request, env);
     else if (url.pathname === '/api/tra-wait/bind') res = await traWaitBind(request, env);
     else if (url.pathname === '/api/tra-wait/unbind') res = await traWaitUnbind(request, env);
+    else if (url.pathname === '/api/trackside/bind') res = await tracksideBind(request, env);
+    else if (url.pathname === '/api/trackside/unbind') res = await tracksideUnbind(request, env);
     else res = await env.ASSETS.fetch(request);
     const h = new Headers(res.headers);
     for (const [k, v] of Object.entries(SEC_HEADERS)) h.set(k, v);
@@ -8647,6 +8829,8 @@ export const _mw = { metroWaitPushAll, metroWaitPushWithHalf, metroWaitBind, met
 // 台鐵等站卡推播鏈導出,理由與 _mw 完全相同(D1／APNs／tra-live 三個 IO)。
 // 見 scripts/verify_tra_wait_push.mjs。
 export const _tw = { traWaitPushAll, traWaitPushWithHalf, traWaitBind, traWaitUnbind, TW_TICK_BUDGET_MS };
+// 本機 D1 與假 APNs 驗收入口。
+export const _ts = { tracksideBind, tracksideUnbind, tracksidePushAll, tracksidePushWithHalf, TS_TICK_BUDGET_MS };
 // 純函式與端點/cron 導出,供離線回歸測試 import(scripts/verify_thsr_schedule.mjs)。
 // thsrConvertDaily/thsrBuildStationMap/thsrSelectServedDay/thsrKeyToMs 是純函式,可直接餵 fixture。
 // fetchThsrDaily/thsrStationMap/ingestThsrSchedule/thsrSchedule 會碰 D1/ASSETS/網路,測試要自備

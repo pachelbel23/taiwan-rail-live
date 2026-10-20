@@ -78,7 +78,9 @@ check(r.status === 204 && blobs(r.pt)[0] === 'app', `App 的 CORS preflight 也�
 // ── 3. 端點白名單 vs 路由，不准漂移 ─────────────────────────────────────────
 console.log('\n===== 端點白名單 vs 路由 =====');
 const src = readFileSync(new URL('../worker.js', import.meta.url), 'utf8');
-const routed = [...new Set([...src.matchAll(/url\.pathname === '\/api\/([a-z-]+)'/g)].map(m => m[1]))];
+const routed = [...new Set([...src.matchAll(/url\.pathname === '\/api\/([a-z/-]+)'/g)].map(m => m[1]))];
+check(['trackside/bind', 'trackside/unbind'].every(ep => routed.includes(ep)),
+  '軌道邊綁定與解除端點納入路由及流量分類檢查');
 check(routed.length >= 12, `從 worker.js 撈到 ${routed.length} 個路由端點（<12 就是這支的抓法失效了，先修抓法）`);
 for (const ep of routed) {
   const q = ep === 'metro-live' ? '?sys=tymc' : ep === 'ntmetro-live' ? '?sys=ntdx' : ep === 'delay-history' ? '?train=1234' : '';
