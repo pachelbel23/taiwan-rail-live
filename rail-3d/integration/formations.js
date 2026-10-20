@@ -24,6 +24,8 @@ export const FORMATIONS={
   mingri:estimated('mingri',[17,...repeat(5,20)],2.9,'推估機車 1 輛＋客車 5 輛；鳴日廚房與包車可能採其他編組'),
   star:estimated('e500',[17,...repeat(6,20)],2.9,'推估機車 1 輛＋客車 6 輛；當班掛車數未提供'),
   forest:estimated('dl25',[10,...repeat(5,12)],2,'以林鐵包車資料推估機車 1 輛＋客車 5 輛；本線、園區支線與專列實際編組可能不同'),
+  // ↑ 真車一律畫成 DL25(林鐵真車現有做法,見 baseFormation 的 afr_sched 分支)。自製列車選 dl38/dl39/dl45
+  // 時各自換車模,不共用這個物件——見下面 ownForestFormation。
   wenhu:spec('wenhu',repeat(4,13.78),2.54,'路線標準編組'),
   c321:spec('c321',repeat(6,23.5),3.2,'路線標準編組'),
   c381:spec('c381',repeat(6,23.5),3.2,'路線標準編組'),
@@ -39,7 +41,36 @@ export const FORMATIONS={
   ankeng:spec('ankeng',repeat(5,34.45/5),2.65,'路線標準 5 分節；單節長度示意',{articulated:true}),
   caf:spec('caf',repeat(5,34/5),2.65,'路線標準 5 分節；CAF 代表外觀、長度約值',{articulated:true}),
 };
+// 自製列車:modelId 有值就用那款車,排在系統/車種推斷之前。
+// 林鐵四款(含 dl25)不走 FORMATIONS.forest——那個物件的 id 寫死 dl25,四款都借會全部畫成同一顆車模。
+const OWN_FOREST_IDS=['dl25','dl38','dl39','dl45'];
+// modelId 直接命中既有標準編組(37 款自製車型裡有 14 款跟真車共用同一顆外觀)。
+const OWN_TRAIN_STANDARD={dr1000:'dr1000',emu800:'commuter',haifeng:'haifeng',shanlan:'shanlan',e200:'chukuang',
+  blue:'blue',temu1000:'taroko',temu2000:'puyuma',e1000:'pp',e500:'star',emu3000:'emu3000',dr3100:'dr3100',
+  mingri:'mingri','700t':'700t'};
+// 其餘 modelId 沒有已知標準編組,一律三節代表外觀;countBasis:'unknown' 讓 formationFor 在
+// 'actual' 模式也自動縮成三節(跟真車那邊"當班編組待確認"共用同一條路徑,不必另外判斷)。
+// 單節的機車(蒸汽機車 ck124/ct273/dt668)在 assembleFormation 裡補兩節 bluecoach,跟 garage-model.js
+// createConsist 的 `if(parts.length===1)` 那一行一致——電力機車/柴電機車的 manifest 模板已經自帶
+// 兩節莒光號客車,不需要這個補丁,但走同一段程式碼並不會被誤觸(parts.length 不等於 1)。
+const OWN_LOCO_HAULED=['ck124','ct273','dt668','e300','e400','r200','r150','r180','dhl100','r100','r20'];
+// 每個 modelId 只建一次 spec 物件並快取——formationFor/modelFor 都用物件identity 當快取鍵(WeakMap),
+// 每幀重建新字面量會讓下游快取整條失效,自製車每幀都要重算 assembleFormation(白算,3D 效能歷來的坑)。
+const ownFormationCache=new Map();
+function ownFormation(id){
+  let f=ownFormationCache.get(id);
+  if(!f){
+    if(OWN_FOREST_IDS.includes(id))f=estimated(id,[10,...repeat(5,12)],2,'以林鐵包車資料推估機車 1 輛＋客車 5 輛；本線、園區支線與專列實際編組可能不同');
+    else{const std=OWN_TRAIN_STANDARD[id];
+      if(std)f=FORMATIONS[std];
+      else{const lengths=OWN_LOCO_HAULED.includes(id)?[17,20,20]:repeat(3,20);
+        f={id,lengths,widthM:2.9,quality:'三節代表外觀；自製列車沒有官方編組資料',countBasis:'unknown',lengthKnown:false};}}
+    ownFormationCache.set(id,f);
+  }
+  return f;
+}
 function baseFormation(v){
+  if(v.modelId)return ownFormation(v.modelId);
   if(v.systemId==='thsr_sched')return FORMATIONS['700t'];
   if(v.systemId==='tra_sched'){
     const cn=v.carName||'',stock=v.stockId;
@@ -90,8 +121,12 @@ export function tripDirection(tr,count,loop=false){if(!Array.isArray(tr))return 
 export function assembleFormation(spec,catalog){
   const template=catalog.models[spec.id];if(!template)throw Error('缺少列車外觀 '+spec.id);
   let lengths=spec.lengths;
+  // 單節機車(目前只有蒸汽機車 ck124/ct273/dt668)比照 garage-model.js 的 createConsist 補兩節 bluecoach,
+  // 不是寫死家族清單——哪一款是單節,看 manifest 的 parts 長度,跟 createConsist 判斷同一件事同一種方式。
+  // 🔴 變數故意不叫 parts:下面另有一個同名的 const parts(組出最終車廂資料),撞名會靜默覆蓋。
+  const srcParts=template.parts.length===1?[template.parts[0],{mesh:'bluecoach',flip:false},{mesh:'bluecoach',flip:false}]:template.parts;
   // 鉸接外觀原本有長短節，照原節比例分配已知總長；短編組拿首、中、尾，不塞入三整列輕軌。
-  const sources=spec.articulated?(spec.compact?[template.parts[0],template.parts[2],template.parts[4]]:template.parts):lengths.map((_,i)=>i===0?template.parts[0]:i===lengths.length-1?template.parts.at(-1):template.parts[1]);
+  const sources=spec.articulated?(spec.compact?[srcParts[0],srcParts[2],srcParts[4]]:srcParts):lengths.map((_,i)=>i===0?srcParts[0]:i===lengths.length-1?srcParts.at(-1):srcParts[1]);
   if(spec.articulated){const full=template.parts.map(p=>{const m=catalog.meshes[p.mesh];return m.max[0]-m.min[0];}),scale=(spec.compact?FORMATIONS[spec.id].lengths:spec.lengths).reduce((a,b)=>a+b,0)/full.reduce((a,b)=>a+b,0);lengths=sources.map(p=>{const m=catalog.meshes[p.mesh];return (m.max[0]-m.min[0])*scale;});}
   // 鉸接輕軌的無轉向架車節，網格底部原本就比整列軌面高。這些 section 是從同一個
   // 完整模型切出來的，Z 仍共用同一座標系；不能在載入時把每節的 minZ 各自歸零。

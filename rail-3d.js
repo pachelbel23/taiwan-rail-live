@@ -85,6 +85,21 @@
         add(id,pos,{systemId:tr.sys,routeId:route?.routeId||null,route,color:tr.color||'#438477',publicLabel:String(tr.train),typeName:tr.typeName,carName:tr.carName,stockId:specialOf(tr)?.stock?.id||null,branchId:specialOf(tr)?.branch?.id||null,namedId:specialOf(tr)?.named?.id||null,chainageM:pos.physical?pos.chainageM:Number.isFinite(g?.d)?g.d*1000:null,railDirection:pos.physical?pos.railDirection:null,formationFacing:pos.formationFacing||1,
           sourceKind:'timetable',direction:g?.dir??null,followed:state.followTrain===tr},{tr});
       }
+      // 自製列車:另外掃一輪,條件跟 2D(ownTrainDraw2D)一樣——系統有載入、chip 開著,
+      // 正在跟著它時不管 chip。實體股道借用不必額外接線:trainPos()內部的
+      // window.railIslandPhysical.sample()對任何 tr 物件一視同仁,自製車形狀比照真車。
+      if(!state.collectMap)for(const tr of state.myTrains||[]){
+        const followed=state.followTrain===tr;
+        if(!followed&&!(ownTrainOnTab(tr.sys)&&state.ownTrainShow))continue;
+        const pos=trainPos(tr,state.simSec);if(!pos)continue;
+        const g=trainSeg(tr,state.simSec-liveDelaySec(tr)-blockHoldSec(tr));
+        const route=pos.physical?pos.route:g?.ln?lineRecord(g.ln,tr.sys):null;
+        const id=[tr.sys,day,tr.train,tr.stops[0]?.depSec,tr.stops.at(-1)?.arrSec].join(':');
+        add(id,pos,{systemId:tr.sys,routeId:route?.routeId||null,route,color:tr.color,publicLabel:tr.label,typeName:tr.typeName,carName:tr.carName,
+          modelId:tr.modelId,ownTrain:true,haloOn:state.ownTrainAppearance.haloOn,haloSizeMul:OWN_TRAIN_SIZE_MUL[state.ownTrainAppearance.haloSize]||1,
+          chainageM:pos.physical?pos.chainageM:Number.isFinite(g?.d)?g.d*1000:null,railDirection:pos.physical?pos.railDirection:null,formationFacing:pos.formationFacing||1,
+          sourceKind:'timetable',direction:g?.dir??null,followed},{tr});
+      }
     }
     for(const ln of pools){
       if(state.mode!=='sched'&&!state.visible.has(ln.id))continue;

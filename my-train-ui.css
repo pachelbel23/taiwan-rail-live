@@ -1,0 +1,177 @@
+/* 自製列車:面板、事件列、排班表單樣式。
+   2D 地圖上的自製車用 canvas 直接畫,不靠這裡;這裡只管面板、事件列與排班表單的樣式。
+
+
+   掛載方式:[data-mt-panel] 是 #followPanel 的直接子節點,不是
+   另起的浮動容器——手機版 bottom sheet 的定位、寬度、body.fs 那一整套全部繼承自
+   .follow-panel,這裡只管面板內部排版。真車專屬列由 index.html 的 .fp-own 規則
+   (只留 .fp-head 與 [data-mt-panel])整批藏掉;收合/展開沿用 #fpClose 加在
+   .follow-panel 上的 .fp-min class,我們不自己 toggle class、不自己做收合鈕,
+   只在檔尾寫「.fp-min 時面板只留頭列」的規則。 */
+
+[data-mt-panel] { font-variant-numeric: tabular-nums; }
+
+[data-mt-panel] .mt-head { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; min-width: 0; }
+[data-mt-panel] .mt-badge {
+  flex: none; font-size: calc(10.5px * var(--uis)); font-weight: 900; letter-spacing: 1px;
+  color: var(--red); border: 1.5px solid var(--red); border-radius: 6px; padding: 1px 6px;
+}
+[data-mt-panel] .mt-name {
+  font-size: calc(15px * var(--ui)); font-weight: 900; color: var(--ink-strong);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0;
+}
+
+/* 小字說明:字級與顏色比照 .ri-formation-caption,但另立一個 class 不沿用它——那個 class
+   在放空模式與面板縮小時會整行藏起來,這裡展開時要一律顯示。縮小時的隱藏交給
+   檔尾 .fp-min 規則統一處理,不重複寫在這裡。 */
+[data-mt-panel] .mt-caption { margin-top: 2px; font-size: calc(11px * var(--uis)); font-weight: 700; color: var(--muted); }
+
+[data-mt-panel] .mt-body { margin-top: 7px; display: grid; gap: 5px; }
+[data-mt-panel] .mt-row { font-size: calc(12.5px * var(--uis)); color: var(--ink); }
+
+[data-mt-panel] .mt-next {
+  display: flex; align-items: baseline; gap: 6px; margin-top: 3px;
+  border-top: 1px dashed var(--line-faint); padding-top: 6px;
+}
+[data-mt-panel] .mt-next .lbl { font-size: calc(10.5px * var(--uis)); color: var(--faint); font-weight: 800; letter-spacing: 1px; flex: none; }
+[data-mt-panel] .mt-next .stn { font-size: calc(13.5px * var(--ui)); font-weight: 900; color: var(--ink-strong); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+[data-mt-panel] .mt-next .eta { margin-left: auto; font-size: calc(12px * var(--ui)); font-weight: 700; color: var(--navy); white-space: nowrap; flex: none; }
+
+[data-mt-panel] .mt-stops {
+  margin-top: 4px; max-height: 132px; overflow-y: auto; overscroll-behavior: contain;
+  border-top: 1px dashed var(--line-faint); padding-top: 4px;
+  scrollbar-width: thin; scrollbar-color: var(--line) transparent;
+}
+[data-mt-panel] .mt-stop { display: flex; justify-content: space-between; gap: 8px; font-size: calc(11.5px * var(--uis)); color: var(--ink); padding: 2px 0; }
+[data-mt-panel] .mt-stop-pass { color: var(--faint); font-style: italic; }
+[data-mt-panel] .mt-stop-done { opacity: .55; }
+[data-mt-panel] .mt-stop-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+[data-mt-panel] .mt-stop-time { flex: none; }
+
+/* 事件列:整趟都留、可往回捲;照本趟秒數排序,新的一條插到正確位置。 */
+[data-mt-panel] .mt-events {
+  margin-top: 6px; max-height: 120px; overflow-y: auto; overscroll-behavior: contain;
+  border-top: 1px dashed var(--line-faint); padding-top: 4px;
+  scrollbar-width: thin; scrollbar-color: var(--line) transparent;
+}
+[data-mt-panel] .mt-ev { display: flex; gap: 8px; font-size: calc(11.5px * var(--uis)); color: var(--ink); padding: 2px 0; }
+[data-mt-panel] .mt-ev-t { flex: none; color: var(--faint); font-weight: 700; font-variant-numeric: tabular-nums; }
+[data-mt-panel] .mt-ev-x { min-width: 0; overflow-wrap: anywhere; }
+[data-mt-panel] .mt-ev-empty { font-size: calc(11px * var(--uis)); color: var(--faint); padding: 2px 0; }
+[data-mt-panel] .mt-ev-empty[hidden] { display: none; }
+
+[data-mt-panel] .mt-appearance,
+[data-mt-panel] .mt-actions { margin-top: 8px; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+
+[data-mt-panel] .mt-btn {
+  min-height: max(44px, calc(38px * var(--uit))); font-family: inherit; font-size: calc(11.5px * var(--uis)); font-weight: 800;
+  color: var(--navy); background: var(--bg-stage); border: 1.5px solid var(--line); border-radius: 8px;
+  cursor: pointer; padding: 4px 6px;
+}
+[data-mt-panel] .mt-btn:active { background: var(--paper); }
+[data-mt-panel] .mt-btn-danger { color: var(--red); border-color: var(--red); }
+
+/* 收合(.fp-min,由 #fpClose 加在 .follow-panel 上——不是我們自己 toggle):面板只留頭列
+   (「自製」徽章＋名字),其餘全部藏起來;點膠囊本體展開沿用既有機制,這裡不再另做收合鈕。 */
+.follow-panel.fp-min [data-mt-panel] { margin: 0; }
+.follow-panel.fp-min [data-mt-panel] > *:not(.mt-head) { display: none; }
+.follow-panel.fp-min [data-mt-panel] .mt-name { max-width: 90px; }
+/* 共用殼的 × 透明熱區原本只有 44×38；只在自製車狀態補足 44px，避免改動真車卡排版。 */
+.follow-panel.fp-own .fp-head .fp-close::after { height: 44px; top: -15px; }
+.follow-panel.fp-own .fp-end { min-width: 44px; min-height: 44px; }
+/* 手機全螢幕的護照 sheet 沒有 scrim；一般真車卡可以縮短讓位，但自製列車完整卡會從
+   畫面頂端一路蓋到 sheet，連時鐘徽章都點不到。只藏 .stage 上的浮動自製卡；若卡被搬入
+   .board .uni-slot 做統合排版，不會命中這條，仍保留在 board 內。關閉 sheet 就自動恢復。 */
+body.mobile-shell.fs.sheet-open .stage > .follow-panel.fp-own { display: none; }
+
+/* 排班表單:獨立 <dialog>,疊在車庫上面(top layer,不受 .stage 堆疊脈絡封頂)。
+   手機(MOBILE_MQ 三段條件同 JS 常數逐字抄)貼底,含 safe-area;桌面置中卡片。 */
+#mtForm {
+  border: 0; border-radius: var(--r-l); padding: 0; margin: auto;
+  width: min(420px, calc(100vw - 32px)); max-height: min(640px, 85vh);
+  color: var(--ink); background: var(--paper); overflow: hidden;
+}
+/* display:flex 只在 [open] 時套用——沒有這個限定詞,規則會蓋過瀏覽器內建的
+   dialog:not([open]){display:none},關掉之後表單其實還在(桌面在畫面外、手機被地圖蓋住),
+   裡面的控件仍抓得到焦點、還能被鍵盤/程式化操作送出。 */
+#mtForm[open] { display: flex; flex-direction: column; }
+#mtForm::backdrop { background: rgba(0, 0, 0, .45); }
+#mtForm .mt-f-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid var(--line); flex: none; }
+#mtForm .mt-f-title { font-size: 16px; font-weight: 900; }
+#mtForm .mt-f-x { border: 0; background: transparent; font-size: 20px; line-height: 1; color: var(--muted); min-width: 44px; min-height: 44px; }
+#mtForm .mt-f-model { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-bottom: 1px dashed var(--line-faint); flex: none; }
+#mtForm .mt-f-thumb { width: 64px; height: 40px; object-fit: contain; border-radius: var(--r-s); background: var(--bg-stage); }
+#mtForm .mt-f-mname { display: block; font-weight: 800; font-size: 14px; }
+#mtForm .mt-f-msys { display: block; font-size: 12px; color: var(--muted); }
+#mtForm .mt-f-body { overflow-y: auto; padding: 12px 16px; display: grid; gap: 10px; min-height: 0; }
+#mtForm .mt-f-lbl { display: grid; gap: 4px; font-size: 12px; font-weight: 700; color: var(--muted); position: relative; }
+#mtForm .mt-f-in, #mtForm .mt-f-num {
+  font: inherit; font-size: 16px; color: var(--ink); background: var(--bg-stage);
+  border: 1.5px solid var(--line); border-radius: var(--r-m); padding: 9px 10px; width: 100%; min-height: 44px; box-sizing: border-box;
+}
+#mtForm .mt-f-num { width: 72px; }
+#mtForm .mt-f-time { display: flex; gap: 10px; }
+#mtForm .mt-f-timewrap { display: grid; gap: 4px; }
+#mtForm .mt-f-timelbl { font-size: 12px; font-weight: 700; color: var(--muted); }
+#mtForm .mt-f-sug {
+  /* overflow grid item 的 auto min-size 會變成 0；桌面 420x640 對話框因此曾把建議列
+     壓到只剩 4px clientHeight，44px 的列雖有 layout rect，中心卻落在下一欄。至少保留
+     一列＋邊框，空間不足時交給外層 .mt-f-body 捲動。 */
+  position: relative; margin-top: -6px; min-height: 46px; max-height: 160px; overflow-y: auto;
+  border: 1px solid var(--line); border-radius: var(--r-m); background: var(--paper);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, .12);
+}
+#mtForm .mt-f-sug[hidden] { display: none; }
+#mtForm .mt-f-sug-row { display: block; width: 100%; text-align: left; padding: 9px 12px; border: 0; background: transparent; font: inherit; font-size: 14px; color: var(--ink); min-height: 44px; }
+#mtForm .mt-f-sug-row:hover, #mtForm .mt-f-sug-row:focus-visible { background: var(--bg-stage); }
+#mtForm .mt-f-route { font-size: 13px; color: var(--muted); }
+#mtForm .mt-f-via, #mtForm .mt-f-dir, #mtForm .mt-f-pattern { display: flex; gap: 6px; flex-wrap: wrap; }
+#mtForm .mt-f-via[hidden], #mtForm .mt-f-dir[hidden] { display: none; }
+#mtForm .mt-f-via button, #mtForm .mt-f-dir button, #mtForm .mt-f-pattern button {
+  flex: 1 1 auto; min-height: 44px; border: 1.5px solid var(--line); border-radius: var(--r-m);
+  background: var(--bg-stage); color: var(--ink); font: inherit; font-size: 13px; font-weight: 700; padding: 6px 10px;
+}
+#mtForm .mt-f-via button[hidden] { display: none; }
+#mtForm .mt-f-via button[aria-pressed="true"], #mtForm .mt-f-dir button[aria-pressed="true"], #mtForm .mt-f-pattern button[aria-pressed="true"] { background: var(--red); border-color: var(--red); color: #fff; }
+#mtForm .mt-f-preview { font-size: 13px; font-weight: 700; color: var(--navy); min-height: 1em; }
+#mtForm .mt-f-reason { font-size: 12px; color: var(--red); min-height: 1em; }
+/* 車牌顏色:5 個圓形色鈕橫排,選中用外框+內圈雙重描邊標示(不能整顆填紅,
+   會蓋掉色鈕本來要展示的顏色)。5 顆在 375px 版面下逐一量過不會橫向溢出(#mtForm 內容寬約 311px)。 */
+#mtForm .mt-f-colors[hidden] { display: none; }
+#mtForm .mt-f-colorlbl { display: block; font-size: 12px; font-weight: 700; color: var(--muted); margin-bottom: 4px; }
+#mtForm .mt-f-colorbtns { display: flex; gap: 6px; }
+#mtForm .mt-f-color {
+  flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 3px;
+  border: 1.5px solid transparent; border-radius: var(--r-m); background: transparent; padding: 4px 2px;
+  font: inherit; cursor: pointer; min-height: 44px;
+}
+#mtForm .mt-f-color[hidden] { display: none; }
+#mtForm .mt-f-color i {
+  display: block; width: 22px; height: 22px; border-radius: 50%; box-sizing: border-box;
+  border: 1.5px solid var(--line); background: var(--c);
+}
+#mtForm .mt-f-color span {
+  font-size: 10px; font-weight: 700; color: var(--muted); white-space: nowrap; overflow: hidden;
+  text-overflow: ellipsis; max-width: 100%;
+}
+#mtForm .mt-f-color[aria-pressed="true"] { border-color: var(--red); }
+#mtForm .mt-f-color[aria-pressed="true"] i { border: 2px solid var(--red); }
+/* 名字字數計數(5 字上限):疊在名字欄位標籤那一行右側,#mtForm .mt-f-lbl 本來就是
+   position:relative,不必再多包一層。 */
+#mtForm .mt-f-namecount { position: absolute; top: 0; right: 0; font-size: 11px; font-weight: 700; color: var(--muted); }
+#mtForm .mt-f-namecount.mt-f-namecount-over { color: var(--red); }
+#mtForm .mt-f-foot { display: flex; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--line); flex: none; }
+#mtForm .mt-f-foot .mt-btn { flex: 1; min-height: 44px; font-size: 14px; }
+#mtForm .mt-btn-accent { background: var(--red); border-color: var(--red); color: #fff; }
+#mtForm .mt-btn-accent:disabled { opacity: .45; }
+
+@media (max-width: 900px), (max-height: 500px), (any-pointer: coarse) and (max-width: 1400px) {
+  #mtForm {
+    position: fixed; inset: auto 0 0 0; margin: 0; width: 100%; max-width: none;
+    /* 高度上限 92dvh:留太少餘裕時,.mt-f-body(grid)一旦內容剛好塞滿可視高度,起訖站
+       建議列(.mt-f-sug,overflow-y:auto)那個 grid row 會被瀏覽器擠壓到只剩邊框高度,
+       建議列本身仍照全高定位、疊到下一個欄位底下——手觸點得到的其實是下一格,不是建議列。 */
+    max-height: 92dvh; border-radius: var(--r-l) var(--r-l) 0 0;
+  }
+  #mtForm .mt-f-foot { padding-bottom: max(12px, env(safe-area-inset-bottom)); }
+}

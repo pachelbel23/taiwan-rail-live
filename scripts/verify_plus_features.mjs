@@ -257,6 +257,9 @@ const REQUIRED = [
     // 照樣綠燈。改成整條件式一起比對:少了 `&& !plusIsActive()` 這整條 regex 就不成立。
     check: () => /if \(!reason\.startsWith\('logout'\) && !plusIsActive\(\)\) return false;/.test(SRC),
   },
+  { needle: '自製列車', check: () => fnBodyContains(SRC, 'ownTrainRequire', 'plusIsActive()')
+    && fnBodyContains(SRC, 'ownTrainRequire', "plusRequire('my-train'")
+    && fnBodyContains(SRC, 'ownTrainRebuild', 'plusIsActive()') },
   { needle: '行程分享', check: () => fnBodyContains(SRC, 'tripShareVisible', 'plusIsActive()') },
   {
     needle: '配樂',
@@ -316,6 +319,7 @@ const GATE_CALL_SITES = (GATE_SRC.match(/\bplusRequire\s*\(/g) || []).length
 // (功能整個不存在 ⇒ 沒有東西要揭露)。旗標一旦翻成 true,T1G 那條就會要求它補上 needle。
 const GATE_DISCLOSURE = {
   takeout: { needle: '已儲存清單' },
+  'my-train': { needle: '自製列車' },
 };
 
 // ══════════ T0:Step 0 新符號 plusIsActive() 本身的正確性(既有 5 支腳本沒有專門測到這個符號) ══════════

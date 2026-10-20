@@ -120,6 +120,7 @@
     $('.g-date').textContent=demo?tr('展示模式・不計入收藏'):row.date?tr('首次入庫：{date}',{date:row.date}):'';
     const action=$('.g-cta');action.hidden=!row.rule||demo;action.textContent=row.rule.category==='progress'?tr('查看旅程護照'):tr(row.owned?'再陪它跑一趟':'開始收集');
     action.onclick=()=>{const rule=row.rule;close();host.launch(rule);};
+    ownTrainDetail(row);
     $('.g-source-body').replaceChildren();
     for(const text of [tr('模型製作：軌島（Q 版示意）'),tr('收藏的是紀念模型，不代表曾搭乘這個實際車型或車號。'),tr('外觀依公開照片參考繪製；照片僅連結，未作為模型貼圖。')]) {
       const p=document.createElement('p');p.textContent=text;$('.g-source-body').append(p);
@@ -131,6 +132,47 @@
     }
     if(loadedId!==row.id||loadedMode!==mode)loadSelected();
     requestDraw();
+  }
+  // ── 自製列車:按鈕與狀態只看 host 給的資料,本檔不讀儲存。──
+  // 展示模式一律不顯示:展示車不是真的入庫(同上面 g-cta 在展示模式藏起來的理由)。
+  // 名字只用 textContent 放進去,而且元素標了 data-i18n-skip:名字剛好是字典鍵時也不會被翻譯。
+  function ownTrainDetail(row) {
+    const plan=$('.mt-g-plan'),note=$('.mt-g-note'),mine=$('.mt-g-mine'),status=$('.mt-g-status'),view=$('.mt-g-view');
+    plan.hidden=note.hidden=mine.hidden=true;plan.onclick=null;view.onclick=null;
+    const api=host.plan?.();
+    if(!api||demo)return;
+    const fam=api.familyStatus(row.model.family);
+    const drivable=fam==='drivable'&&!!api.MODELS[row.id];
+    if(row.owned&&(drivable||fam==='metro'||fam==='coach')){
+      plan.hidden=false;plan.textContent=tr('自己排一班');plan.disabled=!drivable;
+      if(drivable)plan.onclick=()=>host.ownTrainSchedule(row.id);
+      else{note.hidden=false;note.textContent=fam==='metro'?tr('捷運路線下一版開放'):tr('客車要有車頭牽引，編組組裝還沒開放');}
+    }
+    const card=host.ownTrainCard?.()||null;
+    if(!card||card.modelId!==row.id||card.issue==='model_gone')return;
+    if(card.issue==='pass_required'){
+      mine.hidden=false;status.textContent=tr('自製列車需要通行證；你的 {name} 存檔已保留',{name:card.name});
+      view.textContent=tr('去看它');view.setAttribute('data-mt-g','view');view.onclick=()=>host.ownTrainView();
+    }else if(card.issue==='station_gone'){
+      mine.hidden=false;status.textContent=tr('你排的 {name} 要重新排：起站或訖站已經不在站點資料裡',{name:card.name});
+      view.textContent=tr('重新排');view.setAttribute('data-mt-g','replan');view.onclick=()=>host.ownTrainReplan();
+    }else if(card.issue){
+      // 其他排班失敗原因(路線資料變動等)比照 station_gone,給重新排+通用原因,不讓車悄悄消失卻沒有任何提示。
+      mine.hidden=false;status.textContent=tr('你排的 {name} 要重新排：路線資料有變動',{name:card.name});
+      view.textContent=tr('重新排');view.setAttribute('data-mt-g','replan');view.onclick=()=>host.ownTrainReplan();
+    }else if(card.from&&card.to){
+      mine.hidden=false;status.textContent=tr('你的 {name} 每天 {time} 從{from}開往{to}',{name:card.name,time:card.time,from:card.from,to:card.to});
+      view.textContent=tr('去看它');view.setAttribute('data-mt-g','view');view.onclick=()=>host.ownTrainView();
+    }
+  }
+  function ownTrainHint() {
+    const el=$('.mt-g-hint');
+    el.classList.remove('mt-g-warn');
+    el.hidden=!host.plan?.()||demo;
+    if(el.hidden)return;
+    const card=host.ownTrainCard?.()||null;
+    if(card&&card.issue==='model_gone'){el.classList.add('mt-g-warn');el.textContent=tr('你排的 {name} 要重新排：車款已經不在車庫目錄裡',{name:card.name});}
+    else el.textContent=tr('通行證專屬：已入庫的車可以自己排班上地圖');
   }
   function chooseModel(id) {
     selected=id;$('.g-model-select').value=id;
@@ -176,6 +218,7 @@
     $('.g-demo').hidden=!demo;
     $('.g-demo-off').textContent=tr('回到我的車庫');
     $('.g-catalog').textContent=tr('館藏模型 {count} 款',{count:rows.length});
+    ownTrainHint();
     if(!rows.some(r=>r.id===selected))selected=rows.find(r=>r.owned)?.id||rows.find(r=>r.rule)?.id;
     showGrid();
   }
@@ -186,13 +229,14 @@
     dialog.innerHTML=`<header class="g-top"><span class="g-brand">RAIL ISLAND / COLLECTION</span><button class="g-close" autofocus>${esc(tr('回到地圖'))} ↗</button></header>
       <main class="g-main"><div class="g-heading"><h1 id="garageTitle">${esc(tr('我的車庫'))}</h1>
       <div class="g-progress"><strong class="g-count">0</strong><span class="g-total"></span><progress max="1" value="0"></progress><span>${esc(tr('可收集車款'))}</span></div></div>
+      <p class="mt-g-hint" data-mt-g="hint" hidden data-i18n-skip></p>
       <div class="g-demo" hidden><span>${esc(tr('展示模式・不計入收藏'))}</span><button class="g-demo-off"></button></div>
       <div class="g-filters"><div class="g-tabs">${[['all','全部車款'],['owned','已入庫'],['pending','待收集']].map(([id,text])=>`<button data-filter="${id}" aria-pressed="${filter===id}">${esc(tr(text))}</button>`).join('')}</div>
       <label class="g-picker"><span>${esc(tr('選擇車款'))}</span><select class="g-model-select"></select></label></div>
       <div class="g-empty" hidden><p class="g-empty-text"></p><button class="g-reset">${esc(tr('查看所有車款'))}</button><button class="g-demo-start">${esc(tr('看看展示車庫'))}</button></div>
       <section class="g-showcase" aria-label="${esc(tr('車型展示'))}"><div class="g-stage"><div class="g-scene-bar"><div class="g-scene-tabs">${[['model','近看小車'],['loop','環形試跑'],['track','海岸行旅']].map(([id,label])=>`<button data-view="${id}" aria-pressed="${mode===id}">${esc(tr(label))}</button>`).join('')}</div><button class="g-reverse" hidden aria-pressed="false" title="${esc(tr('反向行駛'))}" aria-label="${esc(tr('反向行駛'))}">⇄</button></div><div class="g-viewport"><canvas class="g-view" tabindex="0" role="img"></canvas><div class="g-zoom"><button class="g-zoom-in" title="${esc(tr('放大場景'))}" aria-label="${esc(tr('放大場景'))}">+</button><output class="g-zoom-level" aria-label="${esc(tr('縮放比例'))}">100%</output><button class="g-zoom-out" title="${esc(tr('縮小場景'))}" aria-label="${esc(tr('縮小場景'))}">−</button></div></div><div class="g-fallback" hidden>${esc(tr('這個裝置暫時無法顯示 3D，收藏紀錄與來源仍可查看。'))}</div>
       <div class="g-stage-foot"><span class="g-view-hint"></span><div class="g-controls"><button class="g-left" title="${esc(tr('向左旋轉'))}" aria-label="${esc(tr('向左旋轉'))}">↶</button><button class="g-auto" aria-label="${esc(tr('自動旋轉'))}" aria-pressed="false">▷</button><button class="g-right" title="${esc(tr('向右旋轉'))}" aria-label="${esc(tr('向右旋轉'))}">↷</button><button class="g-up" title="${esc(tr('提高視角'))}" aria-label="${esc(tr('提高視角'))}">↑</button><button class="g-down" title="${esc(tr('降低視角'))}" aria-label="${esc(tr('降低視角'))}">↓</button><button class="g-reset-view" title="${esc(tr('重設視角'))}" aria-label="${esc(tr('重設視角'))}">⌂</button><button class="g-retry" hidden aria-label="${esc(tr('重新載入小車'))}">↻</button></div></div></div>
-      <div class="g-detail"><span class="g-status"></span><h2 class="g-name"></h2><p class="g-system"></p><p class="g-reason"></p><p class="g-goal"></p><p class="g-date"></p><button class="g-cta"></button><details class="g-sources"><summary>${esc(tr('車型與來源'))} ↗</summary><div class="g-source-body"></div></details></div></section>
+      <div class="g-detail"><span class="g-status"></span><h2 class="g-name"></h2><p class="g-system"></p><p class="g-reason"></p><p class="g-goal"></p><p class="g-date"></p><button class="g-cta"></button><button class="mt-g-plan" type="button" data-mt-g="schedule" hidden></button><p class="mt-g-note" data-mt-g="note" hidden></p><div class="mt-g-mine" hidden><p class="mt-g-status" data-mt-g="status" data-i18n-skip></p><button class="mt-g-view" type="button" data-mt-g="view"></button></div><details class="g-sources"><summary>${esc(tr('車型與來源'))} ↗</summary><div class="g-source-body"></div></details></div></section>
       <p class="g-result" role="status" aria-live="polite"></p><div class="g-grid"></div>
       <footer class="g-footer"><span class="g-catalog"></span> · ${esc(tr('模型製作：軌島（Q 版示意）'))}<br>${esc(tr('進度沿用旅程護照；62 款小車都有收集條件，既有車種章自動帶入。'))}<br>${esc(tr('收藏的是紀念模型，不代表曾搭乘這個實際車型或車號。'))}</footer></main>`;
 

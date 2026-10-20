@@ -148,6 +148,26 @@ literalKeys.push(...discoveryBox.window.RailDiscovery.scenes.flatMap(s => [s.tit
 // 立體設定與編組說明同樣是首頁文案，不能因為移到獨立模組而漏查。
 literalKeys.push(...[...garageSource.matchAll(/\btr\(\s*(['"])((?:\\.|(?!\1).)*)\1/g)].map(m => m[2]));
 literalKeys.push('完乘 {count} 趟','累積旅程 {count} 公里','收集 {count} 座車站','取得 {count} 枚支線章');
+// 自製列車:my-train-ui.js 透過 host.t(...)／formCtx.host.t(...) 呼叫翻譯,不是 t(/tr(——
+// 跟 garageSource 那行接的是同一份字典,語法不同所以另開一條 regex,不能沿用上面那條。
+const myTrainUiSource = fs.readFileSync(path.join(root, 'my-train-ui.js'), 'utf8');
+literalKeys.push(...[...myTrainUiSource.matchAll(/\bhost\.t\(\s*(['"])((?:\\.|(?!\1).)*)\1/g)].map(m => m[2]));
+// 下面這批是查表值經變數才丟進 host.t(表.欄)（FORM_REASON／HALO_LABEL／SIZE_LABEL／PATTERN_LABEL／
+// VIA_LABEL／FORM_LABELS）或三元運算式（openForm 的表單標題、formRecompute 的名字提示），regex 抓不到
+// 字面值，比照上面 rail3d/platform 的「補成第一級來源」手法手動列出（VIA_LABEL 的山線/海線已有翻譯，
+// 重複列出不影響，Set 會去重)。
+literalKeys.push(
+  '起訖站不能相同', '這兩站之間目前找不到路線', '請選擇起訖站', '這個停站方式現在不能用',
+  '出發時間不對', '車款目前無法使用', '存檔失敗，請再試一次',
+  '光環：開', '光環：關', '大小：標準', '大小：大', '大小：特大',
+  '站站停', '只停大站', '直達', '山線', '海線',
+  '起站', '訖站', '時', '分', '名字', '取消', '發車',
+  '幫它取個名字吧', '名字最多 5 個字', '編輯這班車', '重新排', '自己排一班',
+  // 發車時間標籤、環島順行／逆行（FORM_LABELS／DIR_LABEL）、超過一天的原因（FORM_REASON）；
+  // 車牌色鈕標籤與色盤類別名稱（FORM_LABELS.colorlabel、host.t(色盤鍵)）。
+  '每天發車時間', '順行', '逆行', '全程超過 24 小時，換個停站方式或方向試試',
+  '車牌顏色', '自強', '莒光/復興', '區間車', '區間快', '其他', '阿里山號', '神木線', '沼平線', '祝山線',
+);
 const rail3dSource = fs.readFileSync(path.join(root, 'rail-3d.js'), 'utf8');
 literalKeys.push(...[...rail3dSource.matchAll(/\bt\(\s*(['"])((?:\\.|(?!\1).)*)\1/g)].map(m => m[2]));
 literalKeys.push('其他設定','觀看設定','關閉觀看設定','觀看設定分類','觀看','視角','地圖','列車','標示','導覽','畫面');

@@ -108,10 +108,20 @@
 
 /* 橫向小螢幕也把車體留在第一屏，說明可接著往下讀。 */
 @media(max-height:500px) and (min-width:600px){#trainGarage .g-top{padding-top:6px;padding-bottom:6px}#trainGarage .g-main{padding-top:10px}#trainGarage .g-heading{margin-bottom:8px}#trainGarage h1{font-size:24px}#trainGarage .g-progress strong{font-size:24px}#trainGarage progress{display:none}#trainGarage .g-progress>span:last-child{margin-left:8px}#trainGarage .g-filters{margin-bottom:10px;gap:8px}#trainGarage .g-picker{flex-basis:0}#trainGarage .g-showcase{grid-template-columns:1.4fr 1fr}#trainGarage .g-stage{align-self:start}#trainGarage .g-view{height:144px}#trainGarage .g-stage-foot{padding:0 12px 8px}#trainGarage .g-detail{padding:16px}}
-@media(max-height:500px) and (min-width:600px){#trainGarage .g-main{display:flex;flex-direction:column}#trainGarage .g-heading{order:0}#trainGarage .g-filters{order:1}#trainGarage .g-empty{order:2}#trainGarage .g-showcase{order:3}#trainGarage .g-demo{order:4;margin-top:12px}#trainGarage .g-result{order:5}#trainGarage .g-grid{order:6}#trainGarage .g-footer{order:7}}
+@media(max-height:500px) and (min-width:600px){#trainGarage .g-main{display:flex;flex-direction:column}#trainGarage .g-heading{order:0}#trainGarage .g-filters{order:1}#trainGarage .g-empty{order:2}#trainGarage .g-showcase{order:3}#trainGarage .mt-g-hint{order:4}#trainGarage .g-demo{order:4;margin-top:12px}#trainGarage .g-result{order:5}#trainGarage .g-grid{order:6}#trainGarage .g-footer{order:7}}
 
 #trainGarage .g-viewport{position:relative}
 #trainGarage .g-zoom{position:absolute;right:12px;top:12px;display:flex;flex-direction:column;align-items:center;gap:2px;border:1px solid var(--g-line);border-radius:12px;background:var(--g-card);overflow:hidden}
 #trainGarage .g-zoom button{width:44px;min-height:44px;padding:0;border:0;background:transparent;font:22px ui-sans-serif,sans-serif}
 #trainGarage .g-zoom button:disabled{opacity:.35;cursor:default}
 #trainGarage .g-zoom-level{font:10px ui-monospace,monospace;color:var(--g-muted);pointer-events:none}
+/* 自製列車。按鈕至少 44px 高:verify_train_garage.mjs 的 auditControls 以 43.5px 為下限。 */
+#trainGarage .mt-g-plan,#trainGarage .mt-g-view{min-height:44px;border-radius:10px;padding:10px 16px;line-height:1.5;border:1px solid var(--g-accent);background:transparent;color:var(--g-ink);font:inherit}
+#trainGarage .mt-g-plan{margin-left:8px}
+#trainGarage .mt-g-plan:disabled{opacity:.5;cursor:not-allowed}
+#trainGarage .mt-g-note{font-size:13px;color:var(--g-muted);margin:10px 0 0}
+#trainGarage .mt-g-mine{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:12px}
+#trainGarage .mt-g-mine[hidden]{display:none}
+#trainGarage .mt-g-status{flex:1 1 180px;margin:0;font-size:14px;color:var(--g-ink);overflow-wrap:anywhere}
+#trainGarage .mt-g-hint{font-size:13px;color:var(--g-muted);margin:0 0 14px}
+#trainGarage .mt-g-hint.mt-g-warn{color:var(--g-accent);font-weight:700}

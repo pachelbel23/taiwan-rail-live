@@ -6,7 +6,9 @@ export function haloNight(sun, dark = false) {
   return 1 - t*t*(3-2*t);
 }
 const colors = new Map();
-export function haloPalette(color, night) {
+// opts.warmMix===false(自製列車專用):深夜只免顏色的暖色混合,strength/alpha 仍照 night 走——
+// 不能靠傳 night=0 代替,那樣連亮度、透明度都會一起變成全場最淡。
+export function haloPalette(color, night, opts) {
   let rgb = colors.get(color);
   if (!rgb) {
     let hex = /^#[0-9a-f]{3}([0-9a-f]{3})?$/i.test(color) ? color.slice(1) : '438477';
@@ -14,7 +16,8 @@ export function haloPalette(color, night) {
     rgb = hex.match(/../g).map(c=>parseInt(c,16)/255); colors.set(color,rgb);
   }
   const warm = [1,198/255,109/255];
-  return {rgb:rgb.map((c,i)=>c+(warm[i]-c)*night),strength:.7+.3*night,alpha:(.16+.03*night)*(.7+.3*night)};
+  const mixed = opts && opts.warmMix === false ? rgb : rgb.map((c,i)=>c+(warm[i]-c)*night);
+  return {rgb:mixed,strength:.7+.3*night,alpha:(.16+.03*night)*(.7+.3*night)};
 }
 const variations = [];
 function variation(k) {
@@ -31,15 +34,65 @@ export function scatterCar(before, p, after, radius, k, alpha, emit) {
 }
 
 // 遠景車牌／圓點共用小型貼圖，畫面更新只 drawImage，不逐車建立漸層。
+// 快取鍵要帶 opts:自製車跟同色真車若共用同一把 color+bucket 鍵,會拿到對方畫好的(暖色混合不同)貼圖。
 const sprites = new Map();
-export function haloSprite(color, night) {
-  const bucket=Math.round(night*20),key=color+':'+bucket;
+export function haloSprite(color, night, opts) {
+  const bucket=Math.round(night*20),own=opts&&opts.warmMix===false?'own':'',size=(opts&&opts.size)||1,key=color+':'+bucket+':'+own+':'+size;
   if (sprites.has(key)) return sprites.get(key);
   const canvas=document.createElement('canvas');canvas.width=canvas.height=128;
-  const ctx=canvas.getContext('2d'),palette=haloPalette(color,bucket/20),rgb=palette.rgb.map(c=>Math.round(c*255)).join(',');
+  const ctx=canvas.getContext('2d'),palette=haloPalette(color,bucket/20,opts),rgb=palette.rgb.map(c=>Math.round(c*255)).join(',');
   function cloud(x,y,rx,ry,alpha) { ctx.save();ctx.translate(x,y);ctx.scale(rx,ry);
     const g=ctx.createRadialGradient(0,0,0,0,0,1);for(const [at,a]of HALO_STOPS)g.addColorStop(at,`rgba(${rgb},${a})`);
     ctx.fillStyle=g;ctx.globalAlpha=alpha;ctx.fillRect(-1,-1,2,2);ctx.restore(); }
-  cloud(61,65,48,44,palette.alpha*1.3);cloud(68,59,59,54,palette.alpha*.42);
+  cloud(61,65,48*size,44*size,palette.alpha*1.3);cloud(68,59,59*size,54*size,palette.alpha*.42);
   if(sprites.size>=256)sprites.delete(sprites.keys().next().value);sprites.set(key,canvas);return canvas;
+}
+// 自製列車名牌:光環關著時,3D 近看改畫這個——長相跟真車 2D 車牌一致
+// (台鐵/林鐵＝實心圓角藥丸,高鐵＝兩端尖頭白底橘框),不再是舊版的洋紅底白虛線框。只靠光環/名字
+// 辨識這是自製車,車牌本身完全比照真車(見 my-train-plan.js 的車牌顏色段與 index.html drawTag/drawHSRTag)。
+// 這張貼圖是離線產生(沒有 map 畫面可比對),沒有 index.html 的 pal() 可用;外框固定用淺色系那組
+// (#fffdf6,同 MAP_PAL.light.tagOutline 的值)而不隨底圖主題變化——這張貼圖背後是任意 3D 場景像素,
+// 不像 2D 車牌背後只有三種底圖色版之一,本來就沒有「正確跟著哪個主題」這回事,固定一色是刻意簡化
+// 不是漏做。
+const HSR_ORANGE_3D = '#E85D0D';
+const TAG_OUTLINE_3D = '#fffdf6';
+// 跟 index.html 的 textColorFor 同一條公式(含同一個門檻值 150);兩個獨立的 script 執行環境
+// (這裡是動態 import 的 ES module)不共用函式,故意留一份小拷貝而不是隱性依賴全域函式。
+function textColorFor3D(hex) {
+  const m = /^#([0-9a-f]{6})$/i.exec(String(hex || ''));
+  if (!m) return '#fff';
+  const n = parseInt(m[1], 16), r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+  return (0.299 * r + 0.587 * g + 0.114 * b) > 150 ? '#111' : '#fff';
+}
+const nameplates = new Map();
+// isHSR:布林,決定畫哪一種牌形——快取鍵要帶這個,否則同一個 label+color 撞到不同牌形會拿錯貼圖。
+export function nameplateSprite(label, color, isHSR) {
+  const key = (isHSR ? 'hsr' : 'std') + ':' + color + ':' + label;
+  if (nameplates.has(key)) return nameplates.get(key);
+  const canvas = document.createElement('canvas'); canvas.width = 256; canvas.height = 80;
+  const ctx = canvas.getContext('2d');
+  ctx.font = '700 30px system-ui, "PingFang TC", "Microsoft JhengHei", sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  const textWidth = ctx.measureText(label).width, padX = 22, w = Math.min(240, Math.max(70, textWidth + padX * 2)), h = 52,
+    x = (256 - w) / 2, y = (80 - h) / 2, midY = 40;
+  if (isHSR) {
+    // 比照 index.html drawHSRTag 的比例(HSR_NOSE/TAG_H = 5/15):兩端尖角、白底橘框橘字。
+    const nose = h / 3, x0 = x, x1 = x + w, y0 = y, y1 = y + h;
+    ctx.beginPath();
+    ctx.moveTo(x0, y0); ctx.lineTo(x1, y0); ctx.lineTo(x1 + nose, midY);
+    ctx.lineTo(x1, y1); ctx.lineTo(x0, y1); ctx.lineTo(x0 - nose, midY);
+    ctx.closePath();
+    ctx.fillStyle = '#fffdf6'; ctx.fill();
+    ctx.lineWidth = 3; ctx.strokeStyle = HSR_ORANGE_3D; ctx.stroke();
+    ctx.fillStyle = HSR_ORANGE_3D; ctx.fillText(label, 128, midY + 1);
+  } else {
+    const rx = h / 2; // 藥丸牌：圓角半徑＝牌高一半，跟 2D drawTag（rx 7.5／TAG_H 15）同比例
+    ctx.beginPath(); ctx.moveTo(x + rx, y); ctx.arcTo(x + w, y, x + w, y + h, rx); ctx.arcTo(x + w, y + h, x, y + h, rx);
+    ctx.arcTo(x, y + h, x, y, rx); ctx.arcTo(x, y, x + w, y, rx); ctx.closePath();
+    ctx.fillStyle = color; ctx.fill();
+    ctx.lineWidth = 3; ctx.strokeStyle = TAG_OUTLINE_3D; ctx.stroke();
+    ctx.fillStyle = textColorFor3D(color); ctx.fillText(label, 128, y + h / 2 + 1);
+  }
+  if (nameplates.size >= 8) nameplates.delete(nameplates.keys().next().value); nameplates.set(key, canvas);
+  return canvas;
 }

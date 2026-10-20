@@ -58,6 +58,7 @@ put('scripts/verify_engine_adapter.mjs', 'console.log("engine");\n');
 put('scripts/check_voice.mjs', 'console.log("voice");\n');
 put('docs/voice-rules.json', '{"version":1}\n');
 put('scripts/verify_fail.mjs', 'console.log("fail");\n');
+put('scripts/verify_my_train_walkthrough.mjs', 'console.log("walkthrough-v1");\n');
 put('scripts/verify_night_design.mjs', 'console.log("night-v1");\n');
 put('scripts/verify_helpers/env-helper.mjs', 'export const importedEnv = process.env.IMPORTED_AUDIT;\n');
 put('scripts/verify_env.mjs', `import { importedEnv } from './verify_helpers/env-helper.mjs';
@@ -159,6 +160,25 @@ runner = make({ sha: 'c'.repeat(40) });
 const alphaChanged = run(runner, 'verify_alpha.mjs');
 const betaSame = run(runner, 'verify_beta.mjs');
 ok('閘門的相對 import 變動時，只重跑那道', calls === 4 && !String(alphaChanged.stdout).includes('帳本命中') && String(betaSame.stdout).includes('帳本命中'), `calls=${calls}`);
+
+// 自製列車 walkthrough 是一般產品 gate（不是 ALWAYS_RUN）：同一份輸入可複用，但 gate 本身
+// 被加牙或修判準時必須換 identity 重跑，不能因產品碼沒變沿用舊綠燈。
+const walkLedger = path.join(tmp, 'my-train-walk-ledger.json');
+let walkCalls = 0;
+const walkSpawn = (_command, _args, options = {}) => {
+  walkCalls++;
+  return { status: 0, signal: null, stdout: options.encoding ? 'green' : Buffer.from('green'),
+    stderr: options.encoding ? '' : Buffer.alloc(0) };
+};
+const runWalk = sha => createGateRunner({ root: tmp, ledgerPath: walkLedger, sha, spawnSync: walkSpawn })
+  .run('node', [path.join(tmp, 'scripts', 'verify_my_train_walkthrough.mjs')], { cwd: tmp, encoding: 'utf8' });
+runWalk('w1'.repeat(20));
+const walkCached = runWalk('w2'.repeat(20));
+put('scripts/verify_my_train_walkthrough.mjs', 'console.log("walkthrough-v2");\n');
+const walkChanged = runWalk('w3'.repeat(20));
+ok('自製列車 walkthrough：同輸入可複用，gate 自身變動必重跑', walkCalls === 2
+  && String(walkCached.stdout).includes('帳本命中') && !String(walkChanged.stdout).includes('帳本命中'),
+  `calls=${walkCalls}`);
 
 put('index.html', index({ recent: '更新紀錄已改' }));
 runner = make({ sha: 'd'.repeat(40) });

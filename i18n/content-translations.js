@@ -1407,6 +1407,7 @@
         { date: 'Jul 2026', text: 'Added the nationwide view, Alishan Forest Railway, branch lines, station boards and live TRA delay correction.' }
       ]},
       { name: 'Following and collecting', items: [
+        { date: 'Sep 2026', text: 'Added custom trains: schedule your own run with a collected TRA, High Speed Rail, or Alishan Forest Railway train, with a halo and size to customize, and follow it like a real one.' },
         { date: 'Aug 2026', text: 'Added wait-for-train cards, subscription sync, journey sharing and more reliable follow controls.' },
         { date: 'Jul 2026', text: 'Added Journey Passport, achievements, station stamps, route completion and the collection map.' }
       ]},
@@ -1424,6 +1425,7 @@
         { date: '2026年7月', text: '台湾全土表示、阿里山林業鉄路、支線、駅案内、台湾鉄路のリアルタイム遅延補正を追加しました。' }
       ]},
       { name: '追跡とコレクション', items: [
+        { date: '2026年9月', text: '自作列車を追加しました。収集した台湾鉄路・台湾高速鉄道・阿里山森林鉄道の列車で自分のダイヤを組み、オーラや大きさを変えて、実車と同じように追跡できます。' },
         { date: '2026年8月', text: '列車待ちカード、サブスクリプション同期、旅程共有、追跡操作の安定化を追加しました。' },
         { date: '2026年7月', text: '旅程パスポート、実績、駅スタンプ、路線完乗、収集マップを追加しました。' }
       ]},
@@ -3112,6 +3114,154 @@ Object.assign(window.RAIL_I18N_MESSAGES.en, {
 Object.assign(window.RAIL_I18N_MESSAGES.ja, {
   '跟車前進時，沿途建築的透視線條會持續更新，不必等列車靠站才一次出現': '列車の追跡中も沿線の建物の透視線が更新され続け、停車したときにまとめて表示されることはなくなりました。',
 });
+
+// 2026-09-23 自製列車:翻譯、說明中心與更新紀錄新增的字串。
+Object.assign(window.RAIL_I18N_MESSAGES.en, {
+  "確定要刪除「{name}」？": "Delete “{name}”?",
+  "從 {station} 發車": "Departed {station}",
+  "抵達 {station}": "Arrived at {station}",
+  "{kind} {train} 從旁通過": "{kind} {train} passed by",
+  "自製": "Custom",
+  "這會取代原本的 {name}": "This will replace your current “{name}”.",
+  "自己排一班": "Schedule your own run",
+  "捷運路線下一版開放": "Metro routes coming in a future update",
+  "客車要有車頭牽引，編組組裝還沒開放": "Passenger cars need a locomotive—consist building isn't available yet",
+  "你排的 {name} 要重新排：起站或訖站已經不在站點資料裡": "Your {name} needs replanning: the origin or destination station is no longer in the station data",
+  "重新排": "Replan",
+  "你排的 {name} 要重新排：路線資料有變動": "Your {name} needs replanning: the route data has changed",
+  "你的 {name} 每天 {time} 從{from}開往{to}": "Your {name} runs every day at {time}, from {from} to {to}",
+  "去看它": "Follow it",
+  "你排的 {name} 要重新排：車款已經不在車庫目錄裡": "Your {name} needs replanning: this model is no longer in the garage catalog",
+  "已入庫的車可以自己排一班開出去跑": "Cars you've collected can run their own scheduled service",
+  "你自己排的班次，不在官方時刻表上": "The run you scheduled yourself—not on the official timetable",
+  "跑起來就會記下停靠與交會": "Events appear once it's running—stops and meets.",
+  "逐站時刻": "Stop-by-stop schedule",
+  "事件紀錄": "Event log",
+  "編輯": "Edit",
+  "刪除": "Delete",
+  "通過": "Pass",
+  "經過 {n} 站・{km} 公里": {
+    "one": "Passes {n} station · {km} km",
+    "other": "Passes {n} stations · {km} km"
+  },
+  "中途停 {n} 站": {
+    "one": "stops at {n} station along the way",
+    "other": "stops at {n} stations along the way"
+  },
+  "中途不停站": "no stops along the way",
+  "預估 {arr} 抵達・全程約 {dur} 分・{stops}": "Arrives around {arr} · about {dur} min · {stops}",
+  "起訖站不能相同": "Origin and destination can't be the same",
+  "這兩站之間目前找不到路線": "No route found between these two stations right now",
+  "請選擇起訖站": "Choose an origin and destination",
+  "這個停站方式現在不能用": "This stopping pattern isn't available right now",
+  "出發時間不對": "Departure time isn't valid",
+  "車款目前無法使用": "This model isn't available right now",
+  "存檔失敗，請再試一次": "Couldn't save—please try again",
+  "光環：開": "Halo: On",
+  "光環：關": "Halo: Off",
+  "大小：標準": "Size: Standard",
+  "大小：大": "Size: Large",
+  "大小：特大": "Size: Extra large",
+  "站站停": "All stops",
+  "只停大站": "Major stops only",
+  "直達": "Express",
+  "起站": "Origin",
+  "訖站": "Destination",
+  "時": "Hr",
+  "分": "Min",
+  "名字": "Name",
+  "發車": "Depart",
+  "幫它取個名字吧": "Give it a name",
+  "名字最多 5 個字": "Name can be up to 5 characters",
+  "編輯這班車": "Edit this run"
+});
+
+Object.assign(window.RAIL_I18N_MESSAGES.ja, {
+  "確定要刪除「{name}」？": "「{name}」を削除しますか？",
+  "從 {station} 發車": "{station}を発車",
+  "抵達 {station}": "{station}に到着",
+  "{kind} {train} 從旁通過": "{kind} {train}が通過",
+  "自製": "自作",
+  "這會取代原本的 {name}": "現在の「{name}」を置き換えます。",
+  "自己排一班": "自分でダイヤを組む",
+  "捷運路線下一版開放": "地下鉄路線は次回のアップデートで対応予定",
+  "客車要有車頭牽引，編組組裝還沒開放": "客車は機関車が必要です。編成の組み立てはまだ利用できません",
+  "你排的 {name} 要重新排：起站或訖站已經不在站點資料裡": "「{name}」は再設定が必要です。起点または終点の駅データが見つかりません。",
+  "重新排": "組み直す",
+  "你排的 {name} 要重新排：路線資料有變動": "「{name}」は再設定が必要です。路線データが変更されました。",
+  "你的 {name} 每天 {time} 從{from}開往{to}": "「{name}」は毎日{time}に{from}から{to}へ出発します",
+  "去看它": "追いかける",
+  "你排的 {name} 要重新排：車款已經不在車庫目錄裡": "「{name}」は再設定が必要です。この車両はもう車庫カタログにありません。",
+  "已入庫的車可以自己排一班開出去跑": "収集済みの車両は自分でダイヤを組んで走らせられます",
+  "你自己排的班次，不在官方時刻表上": "自分で組んだダイヤです。公式時刻表には載っていません",
+  "跑起來就會記下停靠與交會": "走り出すとイベントが記録されます―停車やすれ違いなど。",
+  "逐站時刻": "各駅の時刻",
+  "事件紀錄": "イベント記録",
+  "編輯": "編集",
+  "刪除": "削除",
+  "通過": "通過",
+  "經過 {n} 站・{km} 公里": "{n}駅を経由・{km}km",
+  "中途停 {n} 站": "途中{n}駅に停車",
+  "中途不停站": "途中無停車",
+  "預估 {arr} 抵達・全程約 {dur} 分・{stops}": "到着予定{arr}・所要約{dur}分・{stops}",
+  "起訖站不能相同": "起点と終点は同じにできません",
+  "這兩站之間目前找不到路線": "この2駅の間の経路が見つかりません",
+  "請選擇起訖站": "起点と終点を選んでください",
+  "這個停站方式現在不能用": "この停車パターンは現在選べません",
+  "出發時間不對": "出発時刻が正しくありません",
+  "車款目前無法使用": "この車両は現在利用できません",
+  "存檔失敗，請再試一次": "保存に失敗しました。もう一度お試しください",
+  "光環：開": "オーラ：オン",
+  "光環：關": "オーラ：オフ",
+  "大小：標準": "大きさ：標準",
+  "大小：大": "大きさ：大",
+  "大小：特大": "大きさ：特大",
+  "站站停": "各駅停車",
+  "只停大站": "主要駅のみ",
+  "直達": "直行",
+  "起站": "起点",
+  "訖站": "終点",
+  "時": "時",
+  "分": "分",
+  "名字": "名前",
+  "發車": "発車",
+  "幫它取個名字吧": "名前を付けてください",
+  "名字最多 5 個字": "名前は5文字までです",
+  "編輯這班車": "このダイヤを編集"
+});
+
+
+// 2026-09-23 自製列車:說明中心「自製列車」一節。
+Object.assign(window.RAIL_I18N_MESSAGES.en, {
+  "自製列車": "Custom trains",
+  "車庫裡已入庫的台鐵、高鐵、林鐵列車，都可以自己排一班路線、選停站方式、車牌顏色與名字，每天照那個時刻在地圖上跑——這班車是你自己排的，不在官方時刻表上。": "Any TRA, High Speed Rail, or Alishan Forest Railway train you’ve collected in the garage can run a route you schedule—pick how it stops, choose a plate color, give it a name, and it runs at the same time every day. It’s the run you scheduled yourself—not on the official timetable.",
+  "「我的車庫」→ 已入庫的車款卡片上按「自己排一班」": "My garage → on a collected car’s card, tap “Schedule your own run”",
+  "選起訖站、停站方式（站站停／只停大站／直達）與出發時間，取個名字": "Pick the origin and destination, how it stops (All stops / Major stops only / Express), a departure time, and a name",
+  "按「發車」——地圖跟著它跑，面板上會記下停靠哪些站、和哪些真車交會": "Tap “Depart”—it starts running on the map, and the panel logs which stations it stops at and which real trains it meets",
+  "之後從車庫按「去看它」隨時回來看；同時只能有一班，排新的一班會取代原本那班": "Tap “Follow it” from the garage anytime after that; only one custom run goes at a time, so scheduling a new one replaces the old one",
+  "台鐵、高鐵、林鐵目前開放，捷運與輕軌、純客車還不能排。跟著這班車時，面板下方可以切換光環開關與大小（標準／大／特大），方便截圖分享。號誌閉塞看不到這班車，可能會跟真車疊在一起或穿過去——這是虛構班次本來就有的限制。": "TRA, High Speed Rail, and the Alishan Forest Railway are open for now; metro, light rail, and locomotive-less passenger cars aren’t yet. While you’re following it, switch the halo on/off and its size (Standard / Large / Extra large) from the panel—handy for screenshots. Block signals can’t see this train, so it may overlap or pass through real ones; that’s just how a made-up run works.",
+  "製": "DIY"
+});
+
+Object.assign(window.RAIL_I18N_MESSAGES.ja, {
+  "自製列車": "自作列車",
+  "車庫裡已入庫的台鐵、高鐵、林鐵列車，都可以自己排一班路線、選停站方式、車牌顏色與名字，每天照那個時刻在地圖上跑——這班車是你自己排的，不在官方時刻表上。": "車庫に集めた台湾鉄路・台湾高速鉄道・阿里山森林鉄道の列車なら、自分でルートを決め、停車パターンとプレートの色を選んで名前を付ければ、毎日同じ時刻に地図上を走ります。自分で組んだダイヤです。公式時刻表には載っていません。",
+  "「我的車庫」→ 已入庫的車款卡片上按「自己排一班」": "「マイ車庫」→ 収蔵済みの車両カードで「自分でダイヤを組む」をタップ",
+  "選起訖站、停站方式（站站停／只停大站／直達）與出發時間，取個名字": "起点・終点、停車パターン（各駅停車／主要駅のみ／直行）、出発時刻を選んで名前を付ける",
+  "按「發車」——地圖跟著它跑，面板上會記下停靠哪些站、和哪些真車交會": "「発車」をタップ――地図上を走り始め、どの駅に停まったか、どの実在の列車とすれ違ったかがパネルに記録される",
+  "之後從車庫按「去看它」隨時回來看；同時只能有一班，排新的一班會取代原本那班": "その後は車庫の「追いかける」でいつでも見に行ける。同時に走らせられるのは1本だけで、新しく組むと今のダイヤと入れ替わる",
+  "台鐵、高鐵、林鐵目前開放，捷運與輕軌、純客車還不能排。跟著這班車時，面板下方可以切換光環開關與大小（標準／大／特大），方便截圖分享。號誌閉塞看不到這班車，可能會跟真車疊在一起或穿過去——這是虛構班次本來就有的限制。": "台湾鉄路・台湾高速鉄道・阿里山森林鉄道は今すぐ利用可能。メトロ・ライトレール、機関車のない客車はまだ組めません。追いかけている間はパネル下部でオーラのオン／オフと大きさ（標準／大／特大）を切り替えられ、スクリーンショットに便利です。閉塞信号はこの列車を認識しないため、実在の列車と重なったりすり抜けたりすることがあります――これは架空のダイヤならではの制約です。",
+  "製": "製"
+});
+
+// 2026-09-23 自製列車:公開更新紀錄第一層條目。
+Object.assign(window.RAIL_I18N_MESSAGES.en, {
+  "新增「自製列車」：車庫裡已入庫的台鐵、高鐵、林鐵列車（純客車除外），都能自己排一班路線、選停站方式、車牌顏色與名字，每天固定時間在地圖上跑一趟": "New Custom trains: any TRA, High Speed Rail, or Alishan Forest Railway train you’ve collected in the garage (except unpowered coaches) can run a route you schedule—pick how it stops, choose a plate color, give it a name, and it runs at the same time every day."
+});
+
+Object.assign(window.RAIL_I18N_MESSAGES.ja, {
+  "新增「自製列車」：車庫裡已入庫的台鐵、高鐵、林鐵列車（純客車除外），都能自己排一班路線、選停站方式、車牌顏色與名字，每天固定時間在地圖上跑一趟": "「自作列車」を追加。車庫に集めた台湾鉄路・台湾高速鉄道・阿里山森林鉄道の列車（動力のない客車を除く）で、自分でルートを決め、停車パターンとプレートの色を選んで名前を付ければ、毎日同じ時刻に地図上を走ります。"
+});
 // 2026-09-23 捷運等車卡進站前每分鐘對時：第一層「最近更新」會顯示這句，同步補 en/ja。
 Object.assign(window.RAIL_I18N_MESSAGES.en, {
   'iPhone 捷運等車卡在列車進站前約 4 分鐘內，每分鐘跟官方即時資訊對一次時': 'On iPhone, the metro waiting card now re-syncs its countdown with official real-time data every minute during the last 4 minutes or so before the train arrives'
@@ -3204,6 +3354,23 @@ Object.assign(window.RAIL_I18N_MESSAGES.en, {
 });
 Object.assign(window.RAIL_I18N_MESSAGES.ja, {
   '護照成就章與收集章，滑鼠停上去只會出現說明卡，不再多跳出瀏覽器的小提示框；用鍵盤按 Tab 移到章上也會打開說明卡，收集章按 Enter 等於點一下': 'パスポートの実績バッジとコレクションスタンプにマウスを乗せたとき、説明カードだけが表示され、ブラウザのツールチップが重ねて出なくなりました。キーボードのTabでバッジやスタンプに移動しても説明カードが開きます。コレクションスタンプはEnterでクリックと同じ操作になります',
+});
+// 2026-09-25 自製列車車牌顏色改款：車牌只能選自己系統的色盤，新增色盤類別名稱與表單「車牌顏色」標籤的翻譯。
+Object.assign(window.RAIL_I18N_MESSAGES.en, {
+  '自強': 'Tze-Chiang',
+  '莒光/復興': 'Chu-Kuang / Fu-Hsing',
+  '區間車': 'Local',
+  '區間快': 'Local Express',
+  '其他': 'Other',
+  '車牌顏色': 'Plate color',
+});
+Object.assign(window.RAIL_I18N_MESSAGES.ja, {
+  '自強': '自強号',
+  '莒光/復興': '莒光号・復興号',
+  '區間車': '区間車',
+  '區間快': '区間快車',
+  '其他': 'その他',
+  '車牌顏色': 'プレートの色',
 });
 // 2026-09-25 iPad 橫向／手機橫放「觀看」鈕浮在畫面中間：第一層更新紀錄那條的 en/ja（第二層正本一律走 RAIL_I18N_CHANGELOG）。
 Object.assign(window.RAIL_I18N_MESSAGES.en, {
@@ -3417,6 +3584,20 @@ Object.assign(window.RAIL_I18N_MESSAGES.en, {
 });
 Object.assign(window.RAIL_I18N_MESSAGES.ja, {
   '立體建築剛出現的縮放範圍內，切換亮暗外觀後會保留「透視顯示」的透明度，不再突然變得不透明': '立体建物が表示され始めるズーム域で明暗テーマを切り替えても、選んだ「透視」の透明度を保ち、建物が急に不透明にならないようにしました。',
+});
+// 2026-09-26 自製列車表單：發車時間標籤、環島順行／逆行選項、全程超過一天的提示。
+// 順行＝台鐵定義的逆時針（西部南下、東部北上），逆行相反（my-train-plan.js 的 loopDirs 註解）。
+Object.assign(window.RAIL_I18N_MESSAGES.en, {
+  '每天發車時間': 'Departs daily at',
+  '順行': 'Counterclockwise',
+  '逆行': 'Clockwise',
+  '全程超過 24 小時，換個停站方式或方向試試': 'This run would take over 24 hours. Try another stopping pattern or direction.',
+});
+Object.assign(window.RAIL_I18N_MESSAGES.ja, {
+  '每天發車時間': '毎日の発車時刻',
+  '順行': '順行（反時計回り）',
+  '逆行': '逆行（時計回り）',
+  '全程超過 24 小時，換個停站方式或方向試試': '全行程が24時間を超えます。停車パターンか方向を変えてみてください。',
 });
 // 2026-09-27 北捷紅線與三鶯線改用 TDX 官方新線形：第一層更新紀錄那條的 en/ja。
 Object.assign(window.RAIL_I18N_MESSAGES.en, {
@@ -3821,4 +4002,32 @@ Object.assign(window.RAIL_I18N_MESSAGES.en, {
 });
 Object.assign(window.RAIL_I18N_MESSAGES.ja, {
   '台鐵列車比平常多停或少停一站的日子（例如 9/28 的 136），立體地圖上不再退回示意線形，改沿實體股道行駛': '台鐵の列車がいつもより停車駅が1駅多い・少ない日（例：9/28の136列車）も、立体地図で模式的な線に戻らず、実際の線路を走るようになりました',
+});
+
+// 自製列車通行證說明及跨系統方向翻譯。
+Object.assign(window.RAIL_I18N_MESSAGES.en, {
+  "自製列車：把車庫裡的車排班開上地圖、取名字": "Custom trains: schedule and name a train from your garage to run on the map",
+  "通行證內容：台鐵列車的誤點履歷（回溯 90 天的逐日紀錄）、自製列車（把車庫裡的車排班開上地圖、取名字）、收藏與完乘紀錄跨裝置雲端同步、行程分享、跟車配樂（音樂跟著你在看的那班車與當下時間換情境；免費的背景音樂不受影響）、匯入 Google Maps 已儲存清單、非跟車時的衛星高解析圖磚，以及 Android 16 即時資訊與 Samsung Now Bar 的跟車鎖定畫面進度。": "Pass features include 90 days of daily TRA delay history; custom trains (schedule and name a train from your garage to run on the map); cloud sync for favorites and completion records; journey sharing; the train soundtrack (the music follows the train you are watching and the time of day — the free background music is unaffected); importing Google Maps saved lists; high-resolution satellite tiles when not following a train; and follow progress on the lock screen through Android 16 Live Updates and the Samsung Now Bar.",
+  "通行證內容：台鐵列車的誤點履歷（回溯 90 天的逐日紀錄）、自製列車（把車庫裡的車排班開上地圖、取名字）、收藏與完乘紀錄跨裝置雲端同步、行程分享、跟車配樂（音樂跟著你在看的那班車與當下時間換情境；免費的背景音樂不受影響）、匯入 Google Maps 已儲存清單、非跟車時的衛星高解析圖磚，以及 iOS 17.6 以上可用的跟車鎖定畫面與動態島即時動態。": "Pass features include 90 days of daily TRA delay history; custom trains (schedule and name a train from your garage to run on the map); cloud sync for favorites and completion records; journey sharing; the train soundtrack (the music follows the train you are watching and the time of day — the free background music is unaffected); importing Google Maps saved lists; high-resolution satellite tiles when not following a train; and follow Live Activities on the Lock Screen and Dynamic Island on iOS 17.6 or later.",
+  "需要通行證。車庫裡已入庫的台鐵、高鐵、林鐵列車，都可以自己排一班路線、選停站方式、車牌顏色與名字，每天照那個時刻在地圖上跑——這班車是你自己排的，不在官方時刻表上。": "A Pass is required. Any TRA, High Speed Rail, or Alishan Forest Railway train you’ve collected in the garage can run a route you schedule—pick how it stops, choose a plate color, give it a name, and it runs at the same time every day. It’s the run you scheduled yourself—not on the official timetable.",
+  "通行證失效後，自製列車存檔會留在這台裝置，但不會上地圖，也不能新建或編輯；再次取得通行證後會恢復。": "If your Pass becomes inactive, custom-train saves stay on this device, but trains leave the map and cannot be created or edited. They return when your Pass is active again.",
+  "通行證失效後，自製列車存檔會留在這台裝置，但不會上地圖，也不能新建或編輯；再次取得通行證後會恢復。台鐵、高鐵、林鐵目前開放，捷運與輕軌、純客車還不能排。跟著這班車時，面板下方可以切換光環開關與大小（標準／大／特大），方便截圖分享。號誌閉塞看不到這班車，可能會跟真車疊在一起或穿過去——這是虛構班次本來就有的限制。": "If your Pass becomes inactive, custom-train saves stay on this device, but trains leave the map and cannot be created or edited. They return when your Pass is active again.TRA, High Speed Rail, and the Alishan Forest Railway are open for now; metro, light rail, and locomotive-less passenger cars aren’t yet. While you’re following it, switch the halo on/off and its size (Standard / Large / Extra large) from the panel—handy for screenshots. Block signals can’t see this train, so it may overlap or pass through real ones; that’s just how a made-up run works.",
+  "新增通行證專屬「自製列車」：把車庫已入庫的台鐵、高鐵、林鐵列車排班、取名字，每天在地圖上跑；跟車時可開關光環、調整大小，方便截圖分享": "New Pass-exclusive Custom trains: schedule and name a collected TRA, High Speed Rail or Alishan Forest Railway train to run daily on the map. Toggle and resize its halo while following it for screenshots.",
+  "自製列車需要通行證；你的 {name} 存檔已保留": "Custom trains require a Pass; your save for {name} has been kept",
+  "通行證專屬：已入庫的車可以自己排班上地圖": "Pass exclusive: schedule a collected train to run on the map",
+  "台鐵順行": "Counterclockwise",
+  "台鐵逆行": "Clockwise"
+});
+Object.assign(window.RAIL_I18N_MESSAGES.ja, {
+  "自製列車：把車庫裡的車排班開上地圖、取名字": "自作列車：車庫の列車にダイヤと名前を付けて地図上を走らせる",
+  "通行證內容：台鐵列車的誤點履歷（回溯 90 天的逐日紀錄）、自製列車（把車庫裡的車排班開上地圖、取名字）、收藏與完乘紀錄跨裝置雲端同步、行程分享、跟車配樂（音樂跟著你在看的那班車與當下時間換情境；免費的背景音樂不受影響）、匯入 Google Maps 已儲存清單、非跟車時的衛星高解析圖磚，以及 Android 16 即時資訊與 Samsung Now Bar 的跟車鎖定畫面進度。": "パスには、台湾鉄路の過去90日の日別遅延履歴、自作列車（車庫の列車にダイヤと名前を付けて地図上を走らせる）、お気に入りと完乗記録の端末間同期、旅程共有、追跡サウンドトラック（見ている列車と時刻に合わせて場面が切り替わります。無料のBGMには影響しません）、Googleマップ保存済みリストの読み込み、列車追跡中以外の高解像度衛星地図、Android 16のライブアップデートとSamsung Now Barでのロック画面追跡表示が含まれます。",
+  "通行證內容：台鐵列車的誤點履歷（回溯 90 天的逐日紀錄）、自製列車（把車庫裡的車排班開上地圖、取名字）、收藏與完乘紀錄跨裝置雲端同步、行程分享、跟車配樂（音樂跟著你在看的那班車與當下時間換情境；免費的背景音樂不受影響）、匯入 Google Maps 已儲存清單、非跟車時的衛星高解析圖磚，以及 iOS 17.6 以上可用的跟車鎖定畫面與動態島即時動態。": "パスには、台湾鉄路の過去90日の日別遅延履歴、自作列車（車庫の列車にダイヤと名前を付けて地図上を走らせる）、お気に入りと完乗記録の端末間同期、旅程共有、追跡サウンドトラック（見ている列車と時刻に合わせて場面が切り替わります。無料のBGMには影響しません）、Googleマップ保存済みリストの読み込み、列車追跡中以外の高解像度衛星地図、iOS 17.6以降のロック画面／Dynamic Island追跡ライブ表示が含まれます。",
+  "需要通行證。車庫裡已入庫的台鐵、高鐵、林鐵列車，都可以自己排一班路線、選停站方式、車牌顏色與名字，每天照那個時刻在地圖上跑——這班車是你自己排的，不在官方時刻表上。": "パスが必要です。車庫に集めた台湾鉄路・台湾高速鉄道・阿里山森林鉄道の列車なら、自分でルートを決め、停車パターンとプレートの色を選んで名前を付ければ、毎日同じ時刻に地図上を走ります。自分で組んだダイヤです。公式時刻表には載っていません。",
+  "通行證失效後，自製列車存檔會留在這台裝置，但不會上地圖，也不能新建或編輯；再次取得通行證後會恢復。": "パスが無効になっても、自作列車の保存データはこの端末に残ります。ただし地図には表示されず、新規作成・編集もできません。パスが再び有効になると復元されます。",
+  "通行證失效後，自製列車存檔會留在這台裝置，但不會上地圖，也不能新建或編輯；再次取得通行證後會恢復。台鐵、高鐵、林鐵目前開放，捷運與輕軌、純客車還不能排。跟著這班車時，面板下方可以切換光環開關與大小（標準／大／特大），方便截圖分享。號誌閉塞看不到這班車，可能會跟真車疊在一起或穿過去——這是虛構班次本來就有的限制。": "パスが無効になっても、自作列車の保存データはこの端末に残ります。ただし地図には表示されず、新規作成・編集もできません。パスが再び有効になると復元されます。台湾鉄路・台湾高速鉄道・阿里山森林鉄道は今すぐ利用可能。メトロ・ライトレール、機関車のない客車はまだ組めません。追いかけている間はパネル下部でオーラのオン／オフと大きさ（標準／大／特大）を切り替えられ、スクリーンショットに便利です。閉塞信号はこの列車を認識しないため、実在の列車と重なったりすり抜けたりすることがあります――これは架空のダイヤならではの制約です。",
+  "新增通行證專屬「自製列車」：把車庫已入庫的台鐵、高鐵、林鐵列車排班、取名字，每天在地圖上跑；跟車時可開關光環、調整大小，方便截圖分享": "パス限定の「自作列車」を追加。車庫に集めた台湾鉄路・台湾高速鉄道・阿里山森林鉄道の列車にダイヤと名前を付け、毎日地図上を走らせます。追跡中はスクリーンショット用に光輪の表示と大きさを調整できます。",
+  "自製列車需要通行證；你的 {name} 存檔已保留": "自作列車にはパスが必要です。{name} の保存データは残っています",
+  "通行證專屬：已入庫的車可以自己排班上地圖": "パス限定：車庫に集めた列車にダイヤを付けて地図上を走らせる",
+  "台鐵順行": "順行（反時計回り）",
+  "台鐵逆行": "逆行（時計回り）"
 });

@@ -1100,6 +1100,13 @@
   }
   .bus-journey-panel[hidden] { display: none !important; }
   body.fs .bus-journey-panel { width: calc(300px * var(--ui)); max-height: calc(100dvh - 160px); }
+  /* 跟自製列車時:面板沿用 #followPanel 這個殼——收合(.fp-min)、手機定位、#fpEnd
+     都直接繼承,只把真車專屬的列藏起來。用 :not() 而不是逐一列 id:以後新增的真車列預設也藏,
+     不會因為漏改而漏出去。還原只要拿掉 .fp-own。 */
+  .follow-panel.fp-own > *:not(.fp-head):not([data-mt-panel]) { display: none !important; }
+  .follow-panel.fp-own .fp-head > .kind,
+  .follow-panel.fp-own .fp-head > .spd,
+  .follow-panel.fp-own .fp-head > b { display: none !important; }
   .follow-panel .fp-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
   .follow-panel .fp-head .dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
   .follow-panel .fp-head b { font-size: calc(15px * var(--ui)); color: var(--ink-strong); }
@@ -1178,6 +1185,8 @@
     cursor: pointer; display: none; flex: none;
   }
   .follow-panel.fp-min .fp-end { display: inline-block; }
+  /* 自製車面板展開時也要有「結束跟車」:真車展開時靠 × 收合、收合後才露出「結束」 */
+  .follow-panel.fp-own .fp-end { display: inline-block; }
   /* ── 捷運幽靈車跟隨的輕量資訊卡(freq 模式) ── */
   .freq-card {
     position: absolute; left: 12px; bottom: 86px; z-index: 650;
@@ -5054,6 +5063,7 @@
 <link rel="stylesheet" href="./rail-3d.css">
 <link rel="stylesheet" href="./rail-platform.css">
 <link rel="stylesheet" href="./train-garage.css">
+<link rel="stylesheet" href="./my-train-ui.css">
 </head>
 <body>
 <!-- 自製圖示母片:只存路徑、不存顏色；各處以 <use> 繼承 currentColor。 -->
@@ -5622,7 +5632,7 @@
 
   <footer class="site-foot">
     <details class="foot-box">
-      <summary><span>更新紀錄</span><span class="foot-sub">最後更新：2026/10/19</span></summary>
+      <summary><span>更新紀錄</span><span class="foot-sub">最後更新：2026/10/20</span></summary>
       <!-- 第一層是「最近更新」的檢視,不是正本:每一條都用 data-cl-of 指向第二層某條的 data-cl。
            要把一條擠出第一層之前,它的正本必須已經在第二層存在——2026-08-03 就踩過一次:8/1 的
            衛星計費那條只活在第一層(第二層只有一句夾在 7/25 條目裡、日期對不上的附帶說明),
@@ -5630,6 +5640,7 @@
            內容 li 上限 8 條(li.grp 是標題不算)。 -->
       <ul class="foot-list foot-recent">
         <li class="grp">最近更新</li>
+        <li data-cl-of="ownmaketrain0923"><span class="d">10/20</span><span>新增通行證專屬「自製列車」：把車庫已入庫的台鐵、高鐵、林鐵列車排班、取名字，每天在地圖上跑；跟車時可開關光環、調整大小，方便截圖分享</span></li>
         <li data-cl-of="trabindvariant1019"><span class="d">10/19</span><span>台鐵列車比平常多停或少停一站的日子（例如 9/28 的 136），立體地圖上不再退回示意線形，改沿實體股道行駛</span></li>
         <li data-cl-of="overtakeside1019"><span class="d">10/19</span><span>修正 10/22 金崙站、10/23 和仁站的待避：等車的列車和通過的列車，在立體地圖上不再停在同一條股道</span></li>
         <li data-cl-of="tainanglow1018"><span class="d">10/18</span><span>臺南最後一天的重播：145 與 3782 改成柔和光暈；終點在臺南、保安的班次註明終點；同站或並排的兩班車不再疊在一起</span></li>
@@ -5637,7 +5648,6 @@
         <li data-cl-of="tainanmemory1016"><span class="d">10/18</span><span>新增臺南地面鐵道最後一天（10/16）的重播：依當天實際的到站紀錄重現 226 班列車，可調時間、加速、跟車</span></li>
         <li data-cl-of="thsrwindow"><span class="d">10/18</span><span>高鐵班表每天早上的更新若沒成功，當天稍後會自動再抓；官方資料若是空的，先保留原本的班表</span></li>
         <li data-cl-of="tainanug1017"><span class="d">10/17</span><span>臺南鐵路地下化 10/17 通車：大橋到保安改走地下，臺南站改停地下 4 股，平面與立體地圖的軌道都跟著換</span></li>
-        <li data-cl-of="followspeed1014"><span class="d">10/14</span><span>修正跟車小卡在列車還停在月台時，時速就往上跳、提早 3 秒寫「行進中」</span></li>
       </ul>
       <!-- 第二層:完整歷史。刻意不掛 .foot-box 類名——placeFootBoxes() 用
            `.site-foot .foot-box` 搬移面板,巢狀同名會被當成另一個盒子一起搬走。 -->
@@ -5866,6 +5876,7 @@
         <li data-cl="metrowidgetfree1005"><span class="d">10/5</span><span>捷運小工具的多站與「自動（最近的站）」改為所有人免費，不再需要通行證；iPhone 與 Android 更新到新版 App 後生效</span></li>
         <li data-cl="rideexpire0930"><span class="d">9/30</span><span>「我上車了」後沒按下車，搭的車又從班表消失（週五夜車過午夜、連假加班車）時，過了抵達時間會自動下車；跟著別班車時按「搭乘中」也能直接下車（謝謝網友回報）</span></li>
         <li data-cl="followalign0926"><span class="d">9/30</span><span>iPhone 點列車後左下跟車卡的車次與時速對齊：9/26 展開的卡片改成同一條基線；9/30 收合成膠囊時，車次與時速不再貼在上緣、比圓點和「結束」高一截，四樣排在同一條中線上，三種字級與深色外觀都一樣（謝謝網友回報）</span></li>
+        <li data-cl="ownmaketrain0923"><span class="d">10/20</span><span>新增通行證專屬「自製列車」：把車庫已入庫的台鐵、高鐵、林鐵列車排班、取名字，每天在地圖上跑；跟車時可開關光環、調整大小，方便截圖分享</span></li>
         <li data-cl="followcard0929"><span class="d">9/29</span><span>App 鎖定畫面的跟車卡：Android 的台鐵、高鐵進站軌道現在會畫出列車；iPhone 改成車頭、中間車、車尾三節；開卡當下就有列車；從車站看板點還沒發車的車，會停在現在並立刻開卡倒數</span></li>
         <li data-cl="fpnextwrap0926"><span class="d">9/26</span><span>跟車卡的「下一站」遇到較長的站名（例如英文介面的長榮大學、科工館）會換行顯示全名，整張卡不再能左右拖動、左邊被切掉；放空模式的精簡小卡維持一行，放不下的以「…」收尾</span></li>
         <li data-cl="followcard0925"><span class="d">9/25</span><span>跟車小卡：跟車時切換語言，車種、起訖、準點率和立體列車的編組說明會立刻換過來；虛構 8888 的「虛構」跟寶可夢列車一樣疊在車次上方，手機上的關閉鈕不再擠到第二行；第一次跟車時「車頭鎖定：開啟」的提示，不再被旁邊的空白提示框蓋掉最後一個字</span></li>
@@ -6555,6 +6566,8 @@
 <script src="./bus-transfer-ui.js"></script>
 <script src="./train-garage-catalog.js"></script>
 <script src="./train-garage.js"></script>
+<script src="./my-train-plan.js"></script>
+<script src="./my-train-ui.js"></script>
 <script src="./rail-discovery.js"></script>
 <script src="./night-map.js"></script>
 <script src="./night-board.js"></script>
@@ -6965,6 +6978,8 @@
 //         通過車穿越停靠車 3560→2714；方向逆行段維持 35，不動時刻、way/node 與既有高程特例。
 // v0927f：方向修復器與站區修復器共用具名進路保護；完整 F1→F2 重跑兩輪固定，既有高程解不重算。
 // v0927g：建築層重裝後立即套回 3D 透視偏好，修正 MapLibre zoom 13～13.8 切主題時透明度從 .24 跳回 .30／.72。
+// v0927h：新增自製列車——車庫裡的台鐵、高鐵、林鐵列車可以自己排每日班次，選路線、停站方式、車牌顏色與五字內名字；
+//         跟車面板提供光環與事件列。環島路線可選順／逆行，全程超過 24 小時會阻擋，藍皮普快的南迴與非南迴停站分別使用對應中位數。
 // v0927h：北捷紅線（R／R_XBT）與三鶯線改用 TDX 2026-09-27 官方線形；三鶯線碎片先以 chainExact() 按相同端點串鏈。
 // v0928a：高雄輕軌看板按順逆行各保留班次，以實際後續停靠站提示方向，終點不再冒充方向。
 // v0928b：保留彎道速限，補回長跑段抵站前追越的官方停靠窗，避免多餘的提早待避。
@@ -7012,7 +7027,8 @@ const RAIL_3D_BOOT_PARAMS = new URLSearchParams(location.search);
 // v1018e：主站更新紀錄補 10/23 和仁預排待避改走側線的修正（資料在 v1018d 那批已併入）。
 // v1019a：路網補金崙側線到太麻里正式停靠股的出站段，10/22 6789 在金崙等 161 改停側線（111eed72）；更新紀錄把金崙併進和仁那一條。
 // v1019b：台鐵同鍵、中途停靠型態不同的班往下借路徑、不退回示意線形，且把自己那份計畫留在模板候選裡（3bde26de、1a781914）；另併入待避窗口逐日掃描報告（28c906cd、7232d41e，不進網站產物）；更新紀錄加一條。
-const BUILD = 'v1019b';
+// v1020a：併入通行證專屬的自製列車；更新紀錄改成這次上線的一條。
+const BUILD = 'v1020a';
 const LANDSCAPE_REQUESTED = new URLSearchParams(location.search).get('map') === 'landscape';
 const GARAGE_QUERY = new URLSearchParams(location.search).get('garage');
 // 輕量多語 runtime：繁中原文同時是安全 fallback，外語字典只存差異字串。
@@ -7176,11 +7192,18 @@ function i18nTranslateTree(root = document.body) {
   try { i18nTranslateTreeWalk(root, snap); } finally { I18N_TREE_PASS = false; }
 }
 function i18nTranslateTreeWalk(root, snap) {
+  // data-i18n-skip:節點自己或任何祖先帶著它,整棵跳過(文字與下面那圈屬性都跳)。
+  // 使用者取的名字可能剛好等於字典的鍵(例如把自製列車取名叫「區間車」),被換掉就不是他取的名字了。
+  // 整頁沒有這個屬性時完全不呼叫 closest(),不讓沒用到的頁面多付走訪成本。
+  const hasSkip = !!(root.querySelector && root.querySelector('[data-i18n-skip]'))
+    || !!(root.nodeType === 1 && root.hasAttribute && root.hasAttribute('data-i18n-skip'));
+  const skipped = el => hasSkip && !!(el && el.closest && el.closest('[data-i18n-skip]'));
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
   let node;
   while ((node = walker.nextNode())) {
     const parent = node.parentElement;
     if (!parent || /^(SCRIPT|STYLE|NOSCRIPT|TEXTAREA)$/.test(parent.tagName)) continue;
+    if (skipped(parent)) continue;
     let source = I18N_TEXT_SOURCE.get(node);
     // 記下的原文只在「這個節點上次是我們寫的」時才算數；被別的程式就地改過字，就重新認一次，
     // 認不出來就放手——不可以拿舊原文把別人剛寫的字蓋回去。
@@ -7197,6 +7220,7 @@ function i18nTranslateTreeWalk(root, snap) {
   }
   const elements = root.nodeType === 1 ? [root, ...root.querySelectorAll('*')] : [...root.querySelectorAll('*')];
   for (const el of elements) {
+    if (skipped(el)) continue;
     let saved = I18N_ATTR_SOURCE.get(el);
     for (const attr of I18N_TREE_ATTRS) {
       if (!el.hasAttribute(attr)) continue;
@@ -7665,7 +7689,24 @@ const state = {
                      // 🔴 與 metroWait【互斥】:鎖屏上只留一張等候卡(原生 RailWaitCards.endAll 收兩種),
                      //    JS 這半由 waitCardsDropOther() 保持同步,否則看板鈕會停在「結束追蹤」而卡早就沒了
   _metroLiveRaw: {}, // pollMetroLive 最近一次原始回應快取:sys → {at,rows,receivedAt},供等車卡取官方分鐘(不另發 fetch)
+  myTrains: [], ownTrainIssue: null, ownTrainShow: true, // 自製列車
+  ownTrainAppearance: { haloOn: true, haloSize: 'std' }, _ownTrainHits: [],
 };
+// 自製列車:使用者自己排的班,永遠不進 state.trains,唯一判斷式 isMyTrain。
+function isMyTrain(tr) { return !!(tr && tr.mine === true); }
+const OWN_TRAIN_SIZE_MUL = { std: 1, lg: 1.6, xl: 2.5 };
+function ownTrainOnTab(sys) {
+  return state.mode === 'sched' && (state.schedSystems || []).some(s => s.id === sys);
+}
+function ownTrainTabFor(sys) { return sys === 'thsr_sched' ? 'hsr' : 'tra'; }
+function ownTrainClassOf(tr, sysId) {
+  const sys = sysId || tr.sys;
+  if (sys === 'thsr_sched') return 'hsr';
+  if (sys === 'afr_sched') return 'afr';
+  const cn = tr.carName || '';
+  for (const [re] of PERF_RULES) if (re.test(cn)) return re.source;
+  return 'type:' + tr.typeName;
+}
 let M = null, cv, ctx; // M=地圖引擎適配層(見下)
 // ==== ENGINE ADAPTER START ====
 // 地圖引擎適配層 M。非引擎專屬程式碼只准經 M 碰地圖——守門人
@@ -7979,10 +8020,13 @@ document.getElementById('trainHaloRow').onclick = () => {
 };
 syncTrainHaloUI();
 import('./rail-3d/integration/train-halo-style.js').then(m => { trainHaloStyle = m; }).catch(e => console.warn('列車光環載入失敗', e));
-function drawTrainHalo(p, color) {
-  if (!trainHaloEnabled || !trainHaloStyle) return;
+function drawTrainHalo(p, color, opts) {
+  // opts.own(自製列車專用):「更多」選單的列車光環開關只管真車,兩個開關互不影響——
+  // 自製車的開關已經在呼叫端(ownTrainDraw2D)判斷過,這裡不能再讓 trainHaloEnabled 二次擋下來。
+  if (!trainHaloStyle) return;
+  if (!(opts && opts.own) && !trainHaloEnabled) return;
   const night = trainHaloStyle.haloNight(window.railIslandSunlight?.current, state.mapDark && state.basemap !== 'landscape');
-  const sprite = trainHaloStyle.haloSprite(color, night);
+  const sprite = trainHaloStyle.haloSprite(color, night, opts);
   ctx.drawImage(sprite, p.x - 32, p.y - 32, 64, 64);
 }
 // 明亮外觀預設維持均勻照明；暗色外觀預設依播放時間顯示日夜光影。
@@ -10826,6 +10870,7 @@ const PERF_BY_TYPE = { // carName 未中時退 typeName
 // 同一個估值 1.5(研究筆記裡柴聯自強那列本來就是「估 DR1000 近似」)。
 const PERF_DR1000 = { a: 1.5, b: 2.448, v: 110 };
 function resolvePerf(tr) {
+  if (tr && tr.perf) return tr.perf; // 自製列車帶自己的性能列(真車沒有這個欄位)
   if (isHSR(tr)) return PERF_HSR;
   if (isDr1000(tr)) return PERF_DR1000;
   const cn = tr.carName || '';
@@ -10853,6 +10898,7 @@ const SPEED_ZONES = [
 // 台鐵 106-02-17 行車電報 111:普悠瑪(TEMU2000)在 R≤600 地點按傾斜式限速標再減 10,
 // 故普悠瑪自成一級;太魯閣(TEMU1000)未被該電報點名,沿用傾斜式標示值。
 function speedZoneClassOf(tr) {
+  if (tr.zoneClass) return tr.zoneClass; // 自製列車照車款給
   const cn = tr.carName || '';
   return /\(普/.test(cn) ? 'puyuma' : /\(太/.test(cn) ? 'tilting' : 'regular';
 }
@@ -11991,7 +12037,7 @@ const _blockSideSign = new Map();            // 上一幀給過的號誌:相位�
 const _blockSideRole = new Map();            // 已經定案的讓位角色:同一對車沒散開就不重新分配
 let _blockSim = null;
 function blockKeyOf(tr) { return (tr.sys || '') + ':' + tr.train; } // 跨系統車次會撞號,不能只用車次
-function blockHoldSec(tr) { return _blockHold.size && BLOCK_SYS[tr.sys] ? (_blockHold.get(blockKeyOf(tr)) || 0) : 0; }
+function blockHoldSec(tr) { if (isMyTrain(tr)) return 0; return _blockHold.size && BLOCK_SYS[tr.sys] ? (_blockHold.get(blockKeyOf(tr)) || 0) : 0; } // 自製車看不到閉塞
 // 前車不在停站區間,卻實質停在這一段的起點或終點停靠站上:規則 (1) 的「停站中」,一樣不算障礙。
 // 停靠站後面接一段被拉長的跑段時,車會從站心以不到 5km/h 慢慢爬出去:6652 在七堵是到開同秒(沒有停站
 // 區間),爬出站心 100m 花了兩分半;6011 在造橋停完兩分多鐘的站才開始爬(造橋→豐富 5.9 公里排了 35 分鐘),
@@ -12465,7 +12511,7 @@ function assignSchedShapePathsFor(trains, lines) {
     // 都比真車早開最多一分鐘 —— 取那一分的中點 +30 秒。只動離站不動到站:到站時刻是使用者拿來
     // 對錶的錨,不能移;跑段時間因此縮 30 秒,中段速度自然往上修一點(與惰行段同向)。
     // dep0 保留原值 ⇒ 本函式重跑(換系統、重貼軌)不會累加。終點站與通過站沒有離站行為,不動。
-    if (isHSR(tr)) for (let i = 0; i < s.length - 1; i++) {
+    if (isHSR(tr) && !isMyTrain(tr)) for (let i = 0; i < s.length - 1; i++) {
       if (s[i].stop === false) continue;
       if (s[i].dep0 == null) s[i].dep0 = s[i].depSec;
       s[i].depSec = s[i].dep0 + HSR_DEP_MID_SEC;
@@ -12477,6 +12523,323 @@ function assignSchedShapePathsFor(trains, lines) {
       tr.sys === 'tra_sched' ? speedZoneClassOf(tr) : null,   // 彎道速限目前只有台鐵有官方值
       tr.sys === 'tra_sched' && state.runProfiles ? state.runProfiles[tr.train] : null);
   }
+}
+
+// 自製列車:各系統資料存取,供 ownTrainRebuild 與 MyTrainUI 的表單/面板共用。
+function systemData(sys) {
+  const s = state.systems.find(x => x.id === sys);
+  const data = (s && s.data) || {};
+  return { lines: (s && s._track && s._track.lines) || [], trains: data.trains || [], denseTrains: data._denseTrains || data.trains || [] };
+}
+// host 物件給 MyTrainUI／TrainGarage 用。
+// 與清單匯入共用通行證流程；關閉通行證功能的環境沿用直接開啟行為。
+function ownTrainRequire(onGranted) {
+  if (!PLUS_ENABLED || plusIsActive()) return true;
+  MyTrainUI.closeForm();
+  window.TrainGarage?.close();
+  plusRequire('my-train', onGranted);
+  return false;
+}
+// 所有帳務資格寫入後重建地圖列車；停用只撤下執行時資料，保留本機存檔。
+function ownTrainEntitlementSync() {
+  if (!state.ready || !window.MyTrainUI || !window.MyTrainPlan) return;
+  const followingOwn = isMyTrain(state.followTrain);
+  ownTrainRebuild();
+  if (PLUS_ENABLED && !plusIsActive()) {
+    MyTrainUI.closeForm();
+  }
+  // 重驗仍持證時接上重建後的列車，保留模擬時鐘與鏡頭位置。
+  if (followingOwn) {
+    const rec = state.myTrains[0];
+    if (rec) { state.followTrain = rec; state.followId = rec.train; ownTrainPanelUpdate(rec); }
+    else clearFollow();
+  }
+  window.TrainGarage?.refresh();
+  buildToggles();
+  draw();
+}
+function ownTrainHost() {
+  return {
+    t, lang: I18N_LANG, dark: state.mapDark, plan: () => MyTrainPlan,
+    requireAccess: ownTrainRequire,
+    systemData, stnClassMap: () => state.stnClassMap, classOf: ownTrainClassOf, buildProfile,
+    catalog: () => window.RailGarageCatalog,
+    owned: modelId => MyTrainPlan.familyStatus((window.RailGarageCatalog?.[modelId] || {}).family) === 'drivable',
+    simSec: () => state.simSec, fmtHM, stationName, trainTypeName,
+    onDepart: ownTrainFormDone,
+    // 面板掛在既有 #followPanel 裡:收合(.fp-min)、手機定位、結束跟車(#fpEnd)全部沿用真車那一套
+    mountNode: () => document.getElementById('followPanel'),
+    onEdit: () => { if (typeof ownTrainOpenForm === 'function') ownTrainOpenForm(state.myTrains[0]); },
+    onDelete: ownTrainDelete,
+    onEndFollow: () => clearFollow(),
+    onAppearance: ownTrainSetAppearance,
+  };
+}
+// 刪除:確認後刪掉,正在跟就順便結束跟車。
+function ownTrainDelete() {
+  if (!ownTrainRequire(() => ownTrainDelete())) return false;
+  const rec = state.myTrains[0];
+  if (!rec) return false;
+  if (!confirm(t('確定要刪除「{name}」？', { name: rec.label }))) return false;
+  const cur = MyTrainUI.load();
+  if (!MyTrainUI.save({ v: 1, appearance: cur.appearance, train: null })) {
+    showToast(escHtml(t('存檔失敗，請再試一次')));
+    return false;
+  }
+  ownTrainLogReset(null); // 刪除時清空事件列
+  ownTrainRebuild();
+  if (state.followTrain && isMyTrain(state.followTrain)) clearFollow();
+  buildToggles();
+  draw();
+  return true;
+}
+// 外觀:面板只回報新值,存檔與重畫都在這裡,避免兩邊各寫一次 localStorage。
+function ownTrainSetAppearance(next) {
+  if (!ownTrainRequire(() => ownTrainSetAppearance(next))) return false;
+  const cur = MyTrainUI.load();
+  const appearance = {
+    haloOn: !(next && next.haloOn === false),
+    haloSize: next && OWN_TRAIN_SIZE_MUL[next.haloSize] ? next.haloSize : 'std',
+  };
+  if (!MyTrainUI.save({ v: 1, appearance, train: cur.train })) {
+    showToast(escHtml(t('存檔失敗，請再試一次')));
+    return false;
+  }
+  state.ownTrainAppearance = appearance;
+  draw();
+  if (state.followTrain && isMyTrain(state.followTrain)) ownTrainPanelUpdate(state.followTrain); // 鈕上的字當下就換
+  return true;
+}
+// 發車:新排或重新排都走這裡,一律新識別碼、清空事件列、關車庫、跟上去(面板由 setFollow 內的
+// showFollowPanel 自動打開,見 ownTrainPanelShow)。已經有一班時的取代確認在 ownTrainSchedule 已經問過。
+function ownTrainDepart(train) {
+  if (!ownTrainRequire(() => ownTrainDepart(train))) return false;
+  const cur = MyTrainUI.load();
+  if (!MyTrainUI.save({ v: 1, appearance: cur.appearance, train })) return false;
+  ownTrainRebuild();
+  ownTrainLogReset(train.id);
+  window.TrainGarage?.close();
+  ownTrainFollow();
+  buildToggles();
+  draw();
+  return true;
+}
+// 編輯:id 沿用 preset,只改名字時事件列保留,其他改動清空、從改過的這班重新開始。
+// 正在跟這班車時,state.myTrains[0] 換成新物件要跟著換;只改名字不撥鐘、不移鏡頭(nameOnly 分支)。
+function ownTrainEdit(train, opts) {
+  if (!ownTrainRequire(() => ownTrainEdit(train, opts))) return false;
+  const nameOnly = !!(opts && opts.nameOnly);
+  const cur = MyTrainUI.load();
+  if (!MyTrainUI.save({ v: 1, appearance: cur.appearance, train })) return false;
+  ownTrainRebuild();
+  if (!nameOnly) ownTrainLogReset(train.id);
+  const rec = state.myTrains[0];
+  if (rec && state.followTrain && isMyTrain(state.followTrain)) {
+    if (nameOnly) { state.followTrain = rec; state.followId = rec.train; ownTrainPanelUpdate(rec); }
+    else ownTrainFollow({});
+  }
+  buildToggles();
+  draw();
+  return true;
+}
+// 表單發車鈕的統一出口(host.onDepart):mode==='edit' 走編輯,新排/重新排都走 ownTrainDepart。
+// 回傳存檔是否成功——my-train-ui.js 的 formSubmit 靠這個回傳值決定要不要關表單,
+// 原本沒有 return,表單一律當成功關掉,存檔失敗使用者完全看不出來。
+function ownTrainFormDone(train, meta) {
+  return (meta && meta.mode === 'edit') ? ownTrainEdit(train, { nameOnly: !!meta.nameOnly }) : ownTrainDepart(train);
+}
+// 面板「編輯」鈕的入口(host.onEdit 呼叫):帶入儲存裡的原始選擇,失效的站表單自己判斷留空。
+function ownTrainOpenForm(rec) {
+  if (!ownTrainRequire(() => ownTrainOpenForm(rec))) return false;
+  const saved = window.MyTrainUI ? MyTrainUI.load().train : null;
+  if (!saved) return false;
+  MyTrainUI.openForm(ownTrainHost(), { modelId: saved.modelId, preset: saved, mode: 'edit' });
+  return true;
+}
+// 跟自製車:看「它的系統此刻有沒有載入」,不看頁籤名字。
+// 切群組會把模擬時鐘撥回現在,所以一定要先切、再 setFollow,否則 setFollow 的撥鐘會被蓋掉。
+function ownTrainFollow(opts = {}) {
+  if (!ownTrainRequire(() => ownTrainFollow(opts))) return false;
+  if (!state.myTrains[0]) return false;
+  if (!ownTrainOnTab(state.myTrains[0].sys)) {
+    const g = GROUPS.find(x => x.id === ownTrainTabFor(state.myTrains[0].sys));
+    // loadSchedGroup 直接呼叫,不經 selectGroup(state.group 已經是 tra 時它會直接 return 什麼都不做)
+    if (g) loadSchedGroup(g, null);
+  }
+  // 切群組會重建 state.myTrains,上面那個 record 已經是舊物件,要重新取
+  const rec = state.myTrains[0];
+  if (!rec) return false;
+  setFollow(rec, false, !!opts.noJump, { keepNow: !!opts.keepNow });
+  return true;
+}
+// 自製列車的跟車面板:掛進 #followPanel,真車專屬的列由 .fp-own 一次藏掉(見該 class 的 CSS)。
+function ownTrainPanelShow(tr) {
+  const fp = document.getElementById('followPanel');
+  if (!fp) return;
+  if (state.mode !== 'sched') { fp.hidden = true; closeRideBox(); syncFollowOnClass(); return; }
+  closeRideBox(); // 上一班真車挑到一半的下車站選單要收掉,否則 body.ride-picking 會留著
+  // 從真車直接點自製車(同頁籤不經 clearFollow):上一班真車的東西要在這裡收掉——
+  // 列車 sheet 開著的話 body.train-open 會把這張面板藏住;介紹卡上的☆、誤點履歷吃的是 state.followTrain,
+  // 留著就會把自製車寫進收藏、把識別碼送去誤點履歷;即時動態 laSync 對自製車整個不做,不收就一直掛在鎖定畫面。
+  closeTrainSheet();
+  const tc = document.getElementById('trainCard'); if (tc) tc.hidden = true;
+  if (_laKey) laStop(window.RAIL_NATIVE_LIVEACTIVITY);
+  // 具名真車會把前綴排版 class 留在共用殼上；自製車沒有前綴，切過來時必須明確清掉。
+  fp.classList.remove('fp-named');
+  fp.classList.add('fp-own');
+  const dot = document.getElementById('fpDot'); if (dot) dot.style.background = tr.color;
+  MyTrainUI.mountPanel(tr, ownTrainHost());
+  fp.hidden = false;
+  syncOwnTrainFollowCompactA11y();
+  syncFollowOnClass();
+  MyTrainUI.updatePanel(tr, ownTrainHost(), state.ownTrainLog);
+}
+function ownTrainPanelUpdate(tr) {
+  const fp = document.getElementById('followPanel');
+  if (!fp || fp.hidden || !tr) return;
+  syncOwnTrainFollowCompactA11y();
+  MyTrainUI.updatePanel(tr, ownTrainHost(), state.ownTrainLog);
+}
+// 離開跟車:拆面板、把殼還原成真車那一套(下一次跟真車時 showFollowPanel 會自己重算各列)
+function ownTrainPanelHide() {
+  const fp = document.getElementById('followPanel');
+  if (fp) {
+    fp.classList.remove('fp-own');
+    if (fp.hasAttribute('data-mt-compact-a11y')) {
+      fp.removeAttribute('data-mt-compact-a11y');
+      fp.removeAttribute('tabindex');
+      fp.removeAttribute('aria-label');
+    }
+  }
+  try { MyTrainUI.unmountPanel(); } catch (e) {}
+}
+// ── 自製車事件列────────────────────────────────────────
+// 不限跟車、不限頁籤都記;只在記憶體,頁面關掉就沒了(跟真車一樣)。rel＝距離本趟發車幾秒。
+// state.ownTrainLog = { trainId, tripDay, items:[{ rel, simT, kind, key, text }], lastSimSec, lastWallMs, ver }
+// trainId 換了(取代成另一班)就整個重開;ver 每動一次加一,面板靠它判斷要不要重畫。
+function ownTrainLogReset(trainId) {
+  const ver = state.ownTrainLog ? state.ownTrainLog.ver + 1 : 1;
+  state.ownTrainLog = { trainId: trainId || null, tripDay: null, items: [], lastSimSec: null, lastWallMs: null, lastSpd: null, ver };
+}
+// 這一趟是哪天發的車:只讀台北牆鐘,不讀 state.wallDay(頁面放背景時它不會更新,回前景第一拍還是昨天)
+function ownTrainTripDay(depSec) {
+  const yesterday = new Date(Date.now() - 86400e3).toLocaleDateString('sv', { timeZone: 'Asia/Taipei' });
+  return MyTrainPlan.tripDay(depSec, nowSecOfDay(), todayStr(), yesterday);
+}
+function ownTrainPushEvent(kind, key, text, rel, simT, meta) {
+  const log = state.ownTrainLog;
+  if (!log) return -1;
+  const idx = MyTrainPlan.addEvent(log.items, { rel, simT, kind, key, text, meta: meta || null });
+  if (idx >= 0) log.ver++;
+  return idx;
+}
+function ownTrainScan() {
+  const rec = state.myTrains && state.myTrains[0];
+  if (!rec) return;
+  if (!state.ownTrainLog || state.ownTrainLog.trainId !== rec.train) ownTrainLogReset(rec.train);
+  const log = state.ownTrainLog;
+  const nowMs = performance.now();
+  // 牆鐘間隔封頂 5 秒:頁面放背景、回前景時兩次掃描隔了好幾分鐘,時鐘重錨到現在——那是跳動不是
+  // 連續前進;不封頂的話 60 倍速會被當成連續,一拍補算幾千步交會。
+  // 倍速是 speedMult×SCHED_K(tickCore 推 simSec 的那個量);state.speed 是捷運合成車速(km/h),不是倍速。
+  // 取這一拍與上一拍的較大者:從 60× 拉回 1× 的那半秒其實是用 60× 走的,只看現在會被誤判成跳動。
+  const spdNow = state.speedMult * SCHED_K;
+  const wallDt = log.lastWallMs == null ? NaN : Math.min(5, (nowMs - log.lastWallMs) / 1000);
+  const span = MyTrainPlan.scanSpan(log.lastSimSec, state.simSec, wallDt, Math.max(spdNow, log.lastSpd || 0));
+  log.lastSimSec = state.simSec; log.lastWallMs = nowMs; log.lastSpd = spdNow;
+  const s = rec.stops, dep0 = s[0].depSec, dur = s[s.length - 1].arrSec - dep0;
+  const relTo = MyTrainPlan.tripRel(state.simSec, dep0);
+  const relFrom = span.continuous ? MyTrainPlan.tripRel(span.from, dep0) : NaN;
+  // 新的一趟:走過發車點,或車在路上而還沒有發車日/這一拍是跳動(背景過夜、隔天回前景)。發車日一樣就是重看,接著用。
+  if (MyTrainPlan.tripDayCheck(span.continuous, relFrom, relTo, dur, log.tripDay)) {
+    const day = ownTrainTripDay(dep0);
+    if (day !== log.tripDay) { log.items.length = 0; log.tripDay = day; log.ver++; }
+  }
+  if (!span.continuous) return; // 任何跳動都只移掃描起點:不補、不插說明
+  if (relFrom === relTo) return; // 時鐘停著:這一拍沒有新走過的時段
+  for (const ev of MyTrainPlan.stopEventsBetween(rec, relFrom, relTo)) {
+    const station = stationName(ev.name, rec.sys);
+    const text = ev.kind === 'depart' ? t('從 {station} 發車', { station })
+      : ev.kind === 'arrive' ? t('抵達 {station}', { station }) : t('停靠 {station}', { station });
+    ownTrainPushEvent(ev.kind, ev.key, text, ev.rel, (dep0 + ev.rel) % 86400, { station: ev.name });
+  }
+  // 交會與從旁通過只在它的系統載入時比:要比的同系統真車這時才在 state.trains 裡
+  if (!ownTrainOnTab(rec.sys)) return;
+  const spans = relFrom <= relTo ? [[relFrom, relTo]] : [[relFrom, 86400], [0, relTo]];
+  for (const [a, b] of spans) {
+    const lo = Math.max(0, a), hi = Math.min(dur, b);
+    if (lo <= hi) ownTrainScanMeets(rec, dep0, lo, hi);
+  }
+}
+// 交會／從旁通過:以 5 模擬秒為一步,判斷照 scanFollowEvents 真車那一套(450 公尺、方向相反＝交會;
+// 自己停站時同方向的真車經過＝從旁通過)。不說「待避禮讓」:自製車不受號誌管,沒有真的在讓車。
+function ownTrainScanMeets(rec, dep0, lo, hi) {
+  const steps = [];
+  let minLat = 90, maxLat = -90, minLon = 180, maxLon = -180;
+  for (let rel = lo; ; rel += 5) {
+    const r = Math.min(rel, hi), tAbs = dep0 + r;
+    const myP = trainPos(rec, tAbs);
+    if (myP) {
+      const dw = dwellInfoOf(rec, tAbs);
+      const myQ = trainPos(rec, dw ? dw.st.depSec + 30 : tAbs + 30) || myP;
+      steps.push({ rel: r, simT: tAbs % 86400, p: myP, mvx: myQ.lon - myP.lon, mvy: myQ.lat - myP.lat, dw: !!dw });
+      minLat = Math.min(minLat, myP.lat); maxLat = Math.max(maxLat, myP.lat);
+      minLon = Math.min(minLon, myP.lon); maxLon = Math.max(maxLon, myP.lon);
+    }
+    if (rel >= hi) break;
+  }
+  if (!steps.length) return;
+  // 粗篩:這段時間內最多能跑多遠(以 100 m/s 算)加 600 公尺,範圍外的真車整班跳過,不逐步算位置
+  const pad = 0.006 + (hi - lo) * 0.0009;
+  const midT = steps[steps.length >> 1].simT;
+  for (const o of state.trains) {
+    if (o.sys !== rec.sys || isMyTrain(o)) continue;
+    const pm = trainPos(o, midT);
+    if (!pm || pm.lat < minLat - pad || pm.lat > maxLat + pad || pm.lon < minLon - pad || pm.lon > maxLon + pad) continue;
+    for (const st of steps) {
+      const p = trainPos(o, st.simT); if (!p) continue;
+      if (Math.abs(p.lat - st.p.lat) > 0.006 || Math.abs(p.lon - st.p.lon) > 0.006) continue;
+      if (haversineKm(st.p, p) > 0.45) continue;
+      const q = trainPos(o, st.simT + 30) || p;
+      const ovx = q.lon - p.lon, ovy = q.lat - p.lat;
+      if (Math.hypot(ovx, ovy) < 1e-7) continue; // 對方也停著,不記
+      const dot = st.mvx * ovx + st.mvy * ovy;
+      const vals = { kind: trainTypeName(o.typeName), train: o.train };
+      if (st.dw && dot > 0) ownTrainPushEvent('pass', String(o.train), t('{kind} {train} 從旁通過', vals), st.rel, st.simT,
+        { train: String(o.train), typeName: o.typeName || '' });
+      else if (dot < 0) ownTrainPushEvent('meet', String(o.train), t('與 {kind} {train} 交會', vals), st.rel, st.simT,
+        { train: String(o.train), typeName: o.typeName || '' });
+    }
+  }
+}
+// 自製列車重算的系統/路線/跑時快取:同一系統的圖、跑時統計只算一次,同頁籤重用。
+const _ownTrainCache = new Map();
+function ownTrainRebuild() {
+  const saved = MyTrainUI.load();
+  state.ownTrainAppearance = saved.appearance;
+  if ((PLUS_ENABLED && !plusIsActive()) || !saved.train) { state.myTrains = []; state.ownTrainIssue = null; return; }
+  const sys = saved.train.sys, sd = systemData(sys);
+  let cache = _ownTrainCache.get(sys);
+  if (!cache) { cache = {}; _ownTrainCache.set(sys, cache); }
+  if (!cache.graph) cache.graph = MyTrainPlan.buildGraph(sd.lines, sys);
+  if (!cache.stats) cache.stats = MyTrainPlan.buildRunStats(sys, sd.denseTrains, ownTrainClassOf, cache.graph);
+  const ctx = { lines: sd.lines, trains: sd.trains, denseTrains: sd.denseTrains, stnClassMap: state.stnClassMap,
+    classOf: ownTrainClassOf, buildProfile, catalog: window.RailGarageCatalog,
+    graph: cache.graph, stats: cache.stats };
+  const result = MyTrainPlan.planTrain(saved.train, ctx);
+  if (!result.ok) {
+    // 不管什麼原因都設 issue,不再只挑 station_gone/model_gone——資料更新後
+    // no_path/sys_mismatch/same 這類原因以前會讓車悄悄從地圖上消失,車庫卡片卻什麼提示都沒有。
+    state.ownTrainIssue = { reason: result.reason, name: saved.train.name };
+    state.myTrains = [];
+    return;
+  }
+  // 開機時 applySchedSystems 可能還沒跑過,state._segStats 尚未初始化;先補一份空的,
+  // 稍後 applySchedSystems 自己會整個重置,不影響真車統計。
+  if (!state._segStats) state._segStats = { onShape: 0, straight: 0, bridged: 0 };
+  assignSchedShapePathsFor([result.record], sd.lines);
+  state.myTrains = [result.record];
+  state.ownTrainIssue = null;
 }
 
 // 載入一組 sched 系統(1=單一,2=台鐵+高鐵同框):合併列車/軌道/車站/車種,各打系統標記,
@@ -13882,6 +14245,7 @@ function drawSched(w, h, paintDecoTrains) {
     });
   }
   flushTrainPaint(); // 捷運＋台鐵＋高鐵的車一起排序後畫:交叉口依真實高低,其餘維持原順序
+  ownTrainDraw2D(); // 自製列車獨立一輪繪製,畫在真車上面
   // 站名標籤:大站先取位、字級隨站等、蓋在列車上層;錨點放軌道側邊(法線方向)——
   // 列車沿軌道跑就壓不到字,標籤與車號牌位置都固定不動(對列車做避讓會讓牌亂跳,已撤)
   ctx.textAlign = 'center';
@@ -13922,6 +14286,50 @@ function drawSched(w, h, paintDecoTrains) {
   // 台糖園區名:排在站名之後參與同一套避讓(站名優先),放記號正下方
   for (const s of sugarLbls) tryLabel(s.cp.x, s.cp.y + 24, t(s.pk.name), '600 10.5px ', 3, s.cp.detailOpacity);
   document.getElementById('count').textContent = t('{n} 班奔跑中', { n: i18nNumber(n) }, n);
+}
+
+// 自製列車 2D 繪製:獨立一輪,畫在真車上面。只在它的系統有畫、chip 開著時畫;
+// 正在跟著它時例外,不讓鏡頭跟著一台看不見的車。車牌／圓點借真車的 drawTag／drawDot／drawHSRTag／drawHSRDot
+// (長相跟真車完全一樣);光環由第三個參數傳自製車自己的開關 haloOn(own:true 不看全域
+// trainHaloEnabled),兩套開關不會互相蓋過。
+function ownTrainDraw2D() {
+  const rec = state.myTrains[0];
+  if (!rec) return;
+  const followed = state.followTrain === rec;
+  if (!followed && !(ownTrainOnTab(rec.sys) && state.ownTrainShow)) return;
+  const pos = trainPos(rec, state.simSec);
+  if (!pos) return;
+  const cp = mapDetailPoint([pos.lat, pos.lon]);
+  const w = cv.width / state.dpr, h = cv.height / state.dpr;
+  if (!(cp.x >= -40 && cp.x <= w + 40 && cp.y >= -20 && cp.y <= h + 20)) return;
+  const opacity = cp.detailOpacity ?? 1;
+  if (opacity <= 0) return;
+  // 3D 車模接手時比照真車（drawSched 的 hasModel）不畫 2D 牌，否則近景會同時出現 3D 名牌與 2D 牌；點選交給 3D 車模。
+  if (window.railIslandIntegration?.hasModel({ tr: rec })) return;
+  const showTag = M.getZoom() >= 11;
+  const label = rec.label;
+  const hsr = isHSR(rec);
+  if (rec._tagW == null || rec._tagWLabel !== label) {
+    ctx.font = '700 10px ' + FONT; rec._tagW = ctx.measureText(label).width + TAG_PAD; rec._tagWLabel = label;
+  }
+  const mul = OWN_TRAIN_SIZE_MUL[state.ownTrainAppearance.haloSize] || 1;
+  // 命中框沿用真車 trainMarkBox() 同一條公式(自製車命中判定要跟真車一致)。
+  const hitW = showTag ? (hsr ? rec._tagW + (HSR_TAG_PAD - TAG_PAD) + HSR_NOSE * 2 : rec._tagW) : DOT_HIT;
+  state._ownTrainHits.push({ x: cp.x, y: cp.y, tr: rec,
+    w: hitW * mul, h: (showTag ? TAG_H : DOT_HIT) * mul });
+  ctx.save();
+  try {
+    ctx.globalAlpha = opacity;
+    if (mul !== 1) { ctx.translate(cp.x, cp.y); ctx.scale(mul, mul); ctx.translate(-cp.x, -cp.y); }
+    // 不再手畫虛線藥丸/圓點,一律借真車那四支共用畫牌函式——車牌長相跟真車完全一樣,
+    // 只靠光環／名字辨識這是自製車。
+    const halo = state.ownTrainAppearance.haloOn ? { own: true, warmMix: false } : false;
+    if (showTag) {
+      hsr ? drawHSRTag(cp, label, halo) : drawTag(cp, label, rec.color, textColorFor(rec.color), halo);
+    } else {
+      hsr ? drawHSRDot(cp, halo) : drawDot(cp, rec.color, halo);
+    }
+  } finally { ctx.restore(); }
 }
 
 function drawFollowMarker(p, tr) {
@@ -14150,12 +14558,12 @@ const TAG_PAD = 10;       // 台鐵牌:文字寬 + 這個內距
 const HSR_TAG_PAD = 13;   // 高鐵牌本體內距(比台鐵寬)
 const HSR_NOSE = 5;       // 高鐵牌左右各一個尖角,兩側都超出牌本體
 const DOT_HIT = 12;       // 圓點模式的命中框邊長(drawDot 外圈 r=6)
-function drawTag(p, label, bg, fg) {
+function drawTag(p, label, bg, fg, halo) {
   const opacity = p.detailOpacity ?? 1;
   if (opacity <= 0) return;
   ctx.save(); ctx.globalAlpha = opacity;
   try {
-    drawTrainHalo(p, bg);
+    if (halo !== false) drawTrainHalo(p, bg, halo);
     // textAlign 必須自己設:draw() 每幀結尾重設為 start,靠環境值會讓車號從中心點往右起筆(偏右半個字寬)
     ctx.font = '700 10px ' + FONT; ctx.textBaseline = 'middle'; ctx.textAlign = 'center';
     const pw = ctx.measureText(label).width + TAG_PAD, ph = TAG_H, rx = 7.5;
@@ -14217,12 +14625,12 @@ function drawFreqTag(p, ln, tr, fg) {
   if (k) drawTymcKindTag(p, k, ln.color, fg); else drawTag(p, ln.abbr, ln.color, fg);
 }
 
-function drawDot(p, color) {
+function drawDot(p, color, halo) {
   const opacity = p.detailOpacity ?? 1;
   if (opacity <= 0) return;
   ctx.save(); ctx.globalAlpha = opacity;
   try {
-    drawTrainHalo(p, color);
+    if (halo !== false) drawTrainHalo(p, color, halo);
     if (state.mapDark && state.basemap !== 'sat' && state.basemap !== 'landscape') {
       ctx.save();
       ctx.fillStyle = color; ctx.globalAlpha = opacity * (.12); ctx.beginPath(); ctx.arc(p.x,p.y,11,0,7); ctx.fill();
@@ -14470,12 +14878,12 @@ function drawTrail(getPos, head, color, sh) {
 // 高鐵列車專屬外觀:兩端尖頭的白底子彈輪廓＋橘框橘字(仿 700T/N700 白車身橘帶),
 // 一眼與台鐵的實心圓角車號牌區分——台鐵橘系(莒光/自強)與高鐵橘同色也不會認錯。
 const HSR_ORANGE = '#E85D0D';
-function drawHSRTag(p, label) {
+function drawHSRTag(p, label, halo) {
   const opacity = p.detailOpacity ?? 1;
   if (opacity <= 0) return;
   ctx.save(); ctx.globalAlpha = opacity;
   try {
-    drawTrainHalo(p, HSR_ORANGE);
+    if (halo !== false) drawTrainHalo(p, HSR_ORANGE, halo);
     ctx.font = '700 10px ' + FONT; ctx.textBaseline = 'middle'; ctx.textAlign = 'center';
     const pw = ctx.measureText(label).width + HSR_TAG_PAD, ph = TAG_H, nose = HSR_NOSE;
     const x0 = p.x - pw / 2, x1 = p.x + pw / 2, y0 = p.y - ph / 2, y1 = p.y + ph / 2;
@@ -14488,12 +14896,12 @@ function drawHSRTag(p, label) {
     ctx.fillStyle = HSR_ORANGE; ctx.fillText(label, p.x, p.y + 0.5);
   } finally { ctx.restore(); }
 }
-function drawHSRDot(p) {
+function drawHSRDot(p, halo) {
   const opacity = p.detailOpacity ?? 1;
   if (opacity <= 0) return;
   ctx.save(); ctx.globalAlpha = opacity;
   try {
-    drawTrainHalo(p, HSR_ORANGE);
+    if (halo !== false) drawTrainHalo(p, HSR_ORANGE, halo);
     ctx.beginPath(); ctx.arc(p.x, p.y, 6, 0, 7);
     ctx.fillStyle = HSR_ORANGE; ctx.globalAlpha = opacity * (0.2); ctx.fill(); ctx.globalAlpha = opacity * (1);
     ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(Math.PI / 4); // 白底菱形＋橘框,低倍率也與台鐵圓點區分
@@ -16478,6 +16886,7 @@ function accountForgetIdentity() {
   // 必須自己重新握手一次,不能繼承上一個人的落地結論。
   if (state.plus) { state.plus.active = false; state.plus.entitlementEnvironment = ''; state.plus.founding = false; state.plus.pkgMonthly = null; state.plus.pkgAnnual = null; state.plus.mgmtUrl = ''; state.plus.adapter = null; state.plus.afterUnlock = null; state.plus.cloudSyncReady = false; state.plus.cloudSyncPromise = null; state.plus.cloudSyncConfirmedAt = null; state.plus.pkgLifetime = null; state.plus.pkgLifetimeUpgrade = null; state.plus.ownership = 'unknown'; state.plus.everPaid = false; state.plus.subRenewing = false; state.plus.subStore = ''; state.plus.subManageUrl = ''; }
   musicReconcileMode();   // 資格變了就把配樂模式對齊(付費池 ⇄ 免費隨機)
+  ownTrainEntitlementSync();
   // 🔴 2026-08-16:身分沒了＝這台裝置的資格沒了,小工具那顆旗標必須跟著收回。漏了這一行就是
   //    登出後自動選站與多站閘門仍然開著的症狀——App 這側已經歸零,
   //    App Group／SharedPreferences 那側卻停在 true(見 metroWidgetSyncPlus 上方說明)。
@@ -16851,6 +17260,7 @@ async function plusReconcileEntitlement(opts) {
       if (data && typeof data.active === 'boolean') {
         p.active = data.active;
         musicReconcileMode();   // 資格變了就把配樂模式對齊(付費池 ⇄ 免費隨機)
+        ownTrainEntitlementSync();
         plusSetEnvironment(p, p.active && data.environment === 'sandbox' && PLUS_SANDBOX_OK
           ? 'sandbox' : (p.active ? 'production' : ''));
         metroWidgetSyncPlus(p.active); // 2026-08-16:拿到明確答案就同步小工具旗標(見 metroWidgetSyncPlus)
@@ -17174,6 +17584,7 @@ function plusApplyCustomerInfo(info) {
   const p = plusState();
   p.active = plusActiveFrom(info);
   musicReconcileMode();   // 資格變了就把配樂模式對齊(付費池 ⇄ 免費隨機)
+  ownTrainEntitlementSync();
   plusSetEnvironment(p, plusEnvironmentFrom(info));
   p.founding = p.active && foundingFrom(info);
   p.mgmtUrl = (info && info.managementURL) || p.mgmtUrl || '';
@@ -17315,6 +17726,7 @@ function plusRender() {
   // 永遠拿不到,清單不能無條件宣傳——到期後這一項直接從陣列消失,不留半吊子的「限期」措辭。
   const feats = [
     '<b>台鐵列車的誤點履歷（逐日紀錄，回溯 90 天）</b>',
+    '自製列車：把車庫裡的車排班開上地圖、取名字',
     // 🔴 捷運小工具的多站與「自動（最近的站）」2026-10-05 起對所有人免費,不在這份清單上
     //    (MetroBoardIntent.freeStationLimit = nil、Android MULTI_STATION_NEEDS_PASS = false)。
     //    即時資訊不設付費門檻是資料授權的條件,要把小工具功能放回這裡之前先查授權。
@@ -17480,6 +17892,7 @@ async function plusRefresh() {
         if (data && typeof data.active === 'boolean') {
           p.active = data.active;
           musicReconcileMode();   // 資格變了就把配樂模式對齊(付費池 ⇄ 免費隨機)
+          ownTrainEntitlementSync();
           plusSetEnvironment(p, p.active && data.environment === 'sandbox' && PLUS_SANDBOX_OK
             ? 'sandbox' : (p.active ? 'production' : ''));
           metroWidgetSyncPlus(p.active); // 2026-08-16:拿到明確答案就同步小工具旗標(見 metroWidgetSyncPlus)
@@ -17508,6 +17921,7 @@ async function plusRefresh() {
       const info = infoR.value;
       p.active = plusActiveFrom(info);
       musicReconcileMode();   // 資格變了就把配樂模式對齊(付費池 ⇄ 免費隨機)
+      ownTrainEntitlementSync();
       plusSetEnvironment(p, plusEnvironmentFrom(info));
       p.founding = p.active && foundingFrom(info);
       p.mgmtUrl = (info && info.managementURL) || '';
@@ -17571,6 +17985,7 @@ async function plusPurchase(kind) {
     const info = result && (result.customerInfo || result);
     p.active = plusActiveFrom(info);
     musicReconcileMode();   // 資格變了就把配樂模式對齊(付費池 ⇄ 免費隨機)
+    ownTrainEntitlementSync();
     plusSetEnvironment(p, plusEnvironmentFrom(info));
     p.founding = p.active && foundingFrom(info);
     p.mgmtUrl = (info && info.managementURL) || p.mgmtUrl || '';
@@ -17619,6 +18034,7 @@ async function plusRestore() {
     const info = result && (result.customerInfo || result);
     p.active = plusActiveFrom(info);
     musicReconcileMode();   // 資格變了就把配樂模式對齊(付費池 ⇄ 免費隨機)
+    ownTrainEntitlementSync();
     plusSetEnvironment(p, plusEnvironmentFrom(info));
     p.founding = p.active && foundingFrom(info);
     p.mgmtUrl = (info && info.managementURL) || p.mgmtUrl || ''; plusApplyOwnership(p, info); accountRender();
@@ -18091,6 +18507,7 @@ function draw() {
   else detailArea = null;
   ctx.clearRect(0, 0, w, h);
   state._trainHits = [];
+  state._ownTrainHits = [];
   state._freqHits = [];
   state._crossHits = [];
   state._sugarHits = [];
@@ -18198,6 +18615,16 @@ function tickCore(now) {
     if (renderNow) updateFollowCamera(); // 省電時降 30fps 置中(讀絕對位置,不積分,半速置中仍平順)
     state._evClock = (state._evClock || 0) + dt;
     if (state._evClock >= 0.5) { state._evClock = 0; scanFollowEvents(); }
+  }
+  // 自製車事件列不限跟車、不限頁籤都記:跟上面同一個 0.5 秒節拍,但不放進它的條件
+  if (state.myTrains && state.myTrains.length) {
+    state._ownEvClock = (state._ownEvClock || 0) + dt;
+    if (state._ownEvClock >= 0.5) {
+      state._ownEvClock = 0; ownTrainScan();
+      // 面板每 0.5 秒至少更新一次:updateFollowCamera 在發車前、抵達後都不會走到 updateFollowPanel,
+      // 只靠它的話「抵達」那條、發車前的倒數都停在畫面上不動
+      if (state.followTrain && isMyTrain(state.followTrain)) ownTrainPanelUpdate(state.followTrain);
+    }
   }
   if (renderNow && state.freqFollow) updateFreqFollowCamera(); // 捷運幽靈車跟隨(各捷運分頁+全台同框):每幀置中+更新卡
   // 查詢答案區(I-2 修正輪):原本節拍跟 simSec 差值掛鉤,高倍速/時光機時 simSec 一幀跳超過 1 秒,
@@ -18311,6 +18738,14 @@ function buildToggles() {
     (state.trackLines || []).forEach(l => { if (!l.aux) chip(routeName(l.name, l.sys), l.color, state.trackVisible, l.id, 'rt'); }); // aux=連絡線(成追線),常駐顯示不出票根
   } else {
     state.lines.forEach(l => chip(routeName(l.name, l._sys), l.color, state.visible, l.id));
+  }
+  if (state.myTrains.length) { // 自製列車 chip:不受車種篩選影響,只受自己的開關管,不記憶
+    const el = document.createElement('div');
+    el.className = 'chip' + (state.ownTrainShow ? '' : ' off');
+    el.dataset.otn = 'chip';
+    el.innerHTML = `<span class="dot" style="--c:${state.myTrains[0].color || 'var(--red)'}"></span>${escHtml(t('自製'))}`;
+    el.onclick = () => { state.ownTrainShow = !state.ownTrainShow; el.classList.toggle('off', !state.ownTrainShow); };
+    box.appendChild(el);
   }
 }
 
@@ -19056,7 +19491,9 @@ function setFollow(tr, isAuto, noJump, opts) {
   syncPanFence(); // 台鐵/高鐵起跟:確保平移硬牆維持開啟(跟車不再解牆,見 syncPanFence 註解;冪等)
   // 深連結帶模擬時間:對方打開時車在同一位置
   // 真全螢幕中不寫網址列:Safari 對 fullscreen 中的 replaceState 會踢出全螢幕,且全螢幕本來就看不到網址列
-  try { if (!document.fullscreenElement) history.replaceState(null, '', '?train=' + encodeURIComponent(tr.train) + '&t=' + fmtHM(state.simSec)); } catch (e) {}
+  // 自製列車不寫識別碼:只留模擬時間。不是「跳過不寫」而是「改寫成只有時間」——
+  // 跳過的話,先跟真車再點自製車時網址會殘留上一班真車的車次,跟畫面上跟的車對不上。
+  try { if (!document.fullscreenElement) history.replaceState(null, '', isMyTrain(tr) ? '?t=' + fmtHM(state.simSec) : '?train=' + encodeURIComponent(tr.train) + '&t=' + fmtHM(state.simSec)); } catch (e) {}
   const first = tr.stops[0], last = tr.stops[tr.stops.length - 1];
   // 換車先清:上一班的跨午夜例外不得殘留。跨午夜班一律標記,**不綁在下面兩個撥鐘分支裡**——
   // 「先拖時刻尺到發車後(車已在跑)、才點跟隨」時兩個分支都不觸發,但那條路徑照樣會播過 00:00,
@@ -19128,6 +19565,7 @@ function restoreFollowSpeed() {
 }
 
 function clearFollow() {
+  ownTrainPanelHide(); // 自製列車面板:結束跟車就拆掉,並把 #followPanel 這個殼還原給真車
   uniResetCollapse(); // 收合中結束跟車:旗標歸零,並把收合時收起來的看板當場還回去(見該函式註解)
   uniPrimed = false;
   unmountUniCard(); // 整合卡:跟車結束 ⇒ 分頁列消失、跟車卡搬回原位(設計 D3)
@@ -21374,6 +21812,7 @@ document.addEventListener('click', e => {
 
 // 地圖下方的列車資訊卡:介紹+服務標記,旅程日誌由 renderFollowEvents 填
 function renderTrainCard(tr) {
+  if (isMyTrain(tr)) { document.getElementById('trainCard').hidden = true; return; } // 自製列車沒有介紹卡
   const it = trainIntro(tr);
   state._tcNamed = it.named || null; // 每秒比對用:依日期輪替的具名列車換了營運日就重畫(見 _liveClock)
   const first = tr.stops[0], last = tr.stops[tr.stops.length - 1];
@@ -21423,7 +21862,7 @@ function updateStar() {
   b.title = t(on ? '移除最愛' : '加入最愛');
 }
 function toggleFav(tr) {
-  if (!tr) return;
+  if (!tr || isMyTrain(tr)) return; // 自製列車不進收藏(收藏會同步到帳號)
   const no = String(tr.train);
   const key = favTrainKey(no, tr.sys);
   let favs = loadFavs();
@@ -21765,6 +22204,9 @@ function laStop(api) {
   _laLast = 0; _laKey = '';
 }
 function laSync(tr, force) {
+  // 自製列車不推即時動態。擋在函式頭而不是呼叫端:除了 updateFollowPanel,
+  // syncXferPinToLiveActivity 與 followTrainNo 也會呼叫,只靠面板分流擋不到那兩條。
+  if (isMyTrain(tr)) return;
   if (!LIVE_ACTIVITY_ENABLED || _laDead) return;
   const api = window.RAIL_NATIVE_LIVEACTIVITY;
   if (!_laListening && api.addListener) {
@@ -21776,7 +22218,7 @@ function laSync(tr, force) {
       _laToken = token;
       // laBind 現在是 async(要先取 Firebase ID token)⇒ 這裡是浮動 promise,補 catch 免得
       // 任何非預期例外變成 unhandledRejection(舊版是同步呼叫,例外會直接落在這個 listener 裡)。
-      if (state.followTrain) Promise.resolve(laBind(token, key, state.followTrain)).catch(() => {});
+      if (state.followTrain && !isMyTrain(state.followTrain)) Promise.resolve(laBind(token, key, state.followTrain)).catch(() => {}); // 自製列車不綁推播
     });
   }
   // 🔴 時光機/加速中一律不推卡片:鎖定畫面的倒數是以真實時鐘 1× 自走的,模擬時鐘不是
@@ -22434,12 +22876,50 @@ function buildGarageEntry(rides) {
   const items = garageCollection(rides), count = items.filter(r => r.owned).length;
   return `<button type="button" class="garage-entry" data-act="garage"><span>${escHtml(t('我的車庫'))}<br><small>${escHtml(t('打開收藏，看看車車'))}</small></span><span>${escHtml(t('已入庫 {count} 款', {count}))} ›</span></button>`;
 }
+// ── 自製列車:車庫卡片、「去看它」、「重新排」──
+// 名字一律讀儲存:失效時 state.myTrains 是空的,名字只剩儲存裡有。
+function ownTrainCard() {
+  const saved = window.MyTrainUI ? MyTrainUI.load().train : null;
+  if (!saved) return null;
+  const issue = PLUS_ENABLED && !plusIsActive() ? 'pass_required' : (state.ownTrainIssue ? state.ownTrainIssue.reason : null);
+  const rec = issue ? null : (state.myTrains[0] || null);
+  const first = rec && rec.stops[0], last = rec && rec.stops[rec.stops.length - 1];
+  return {
+    modelId: saved.modelId, name: saved.name, issue, time: fmtHM(saved.depSec),
+    from: first ? stationName(first.name, rec.sys) : '', to: last ? stationName(last.name, rec.sys) : '',
+  };
+}
+// 「自己排一班」:已經有一班就先確認取代。取消=什麼都不做;確認後要到表單按「發車」才真的取代。
+function ownTrainSchedule(modelId) {
+  if (!ownTrainRequire(() => ownTrainSchedule(modelId))) return false;
+  const saved = window.MyTrainUI ? MyTrainUI.load().train : null;
+  if (saved && !confirm(t('這會取代原本的 {name}', { name: saved.name }))) return false;
+  MyTrainUI.openForm(ownTrainHost(), { modelId, preset: null, mode: 'schedule' });
+  return true;
+}
+// 「重新排」:帶入原本的設定,失效的站在表單裡留空。
+function ownTrainReplan() {
+  if (!ownTrainRequire(() => ownTrainReplan())) return false;
+  const saved = window.MyTrainUI ? MyTrainUI.load().train : null;
+  if (!saved) return false;
+  MyTrainUI.openForm(ownTrainHost(), { modelId: saved.modelId, preset: saved, mode: 'replan' });
+  return true;
+}
+// 「去看它」=關車庫+跟這班車,行為跟發車之後一樣。ownTrainFollow 已在上面定義。
+function ownTrainView() {
+  if (!ownTrainRequire(() => ownTrainView())) return false;
+  if (!state.myTrains.length) return false;
+  window.TrainGarage?.close();
+  return ownTrainFollow({});
+}
 let garageReturnFocus = null;
 function openTrainGarage(options = {}) {
   if (!window.TrainGarage) { showToast(t('車庫暫時無法載入，請稍後重試。')); return; }
   if (!state.ready) { showToast(t('收藏資料載入中，請稍後再試。')); return; }
   garageReturnFocus = document.activeElement;
   window.TrainGarage.open({
+    ...ownTrainHost(), // 自製列車:TrainGarage 用 host.plan();下面同名欄位以車庫自己的為準
+    ownTrainCard, ownTrainSchedule, ownTrainView, ownTrainReplan,
     snapshot: garageSnapshot, t, lang: () => I18N_LANG, dark: () => !!state.mapDark,
     onClose: () => {
       const url = new URL(location.href); url.searchParams.delete('garage');
@@ -23877,7 +24357,10 @@ function updateRideBtn(tr) {
   if (!PHYSICAL_COLLECT_ENABLED) { btn.remove(); return; }
   btn.style.removeProperty('display');
   const r = loadRiding();
-  if (!tr || tr.loop || state.mode !== 'sched') { btn.hidden = true; box.hidden = true; return; }
+  // 自製列車不能上車:startRiding 會把 `my:` 識別碼寫進 trainmap-riding-v1,並寫 trainmap-checkins-v1。
+  // 這兩把都在守門腳本的「永遠不准變」清單裡,但那支是純網頁跑的、PHYSICAL_COLLECT_ENABLED 為 false,
+  // 量不到這條——只有 App 與 ?demo=bounty 會走到。
+  if (!tr || tr.loop || isMyTrain(tr) || state.mode !== 'sched') { btn.hidden = true; box.hidden = true; return; }
   if (box.dataset.open === '1') { btn.hidden = true; box.hidden = false; return; }
   box.hidden = true; btn.hidden = false;
   if (r && r.train === String(tr.train) && r.sys === tr.sys) {
@@ -23891,7 +24374,9 @@ function updateRideBtn(tr) {
 // 選下車站:只列上車站之後、今天還沒過的停靠站
 function openRideBox(tr) {
   const box = document.getElementById('fpRideBox'), sel = document.getElementById('fpRideTo');
-  if (!box || !sel || !tr) return;
+  // isMyTrain 防線(跟 updateRideBtn 同一套判斷):按鈕平常靠隱藏/零尺寸擋住自製車,這裡加一道
+  // 結構性防線,不管誰、用什麼方式呼叫這個函式,自製車都進不去選下車站→開始搭乘那條路。
+  if (!box || !sel || !tr || isMyTrain(tr)) return;
   const i0 = ridingBoardIdx(tr);
   const opts = [];
   for (let i = i0 + 1; i < tr.stops.length; i++) opts.push(`<option value="${i}">${escHtml(stationName(tr.stops[i].name, tr.sys))}</option>`);
@@ -26086,6 +26571,7 @@ function renderFollowEvents() {
 function scanFollowEvents() {
   const tr = state.followTrain;
   if (!tr || state.mode !== 'sched') return;
+  if (isMyTrain(tr)) return; // 自製列車有自己的事件列,不走真車這套
   const nowT = state.simSec;
   const myP = trainPos(tr, nowT); if (!myP) return;
   const dw = dwellInfoOf(tr, effTLive(tr));
@@ -26387,7 +26873,7 @@ function renderDelayHist() {
   reframeFocus();     // 同上:誤點履歷是非同步載入,載完重畫會改高度
 }
 function openDelayHist(tr) {
-  if (!PLUS_ENABLED || !tr || tr.sys !== 'tra_sched') return;
+  if (!PLUS_ENABLED || !tr || isMyTrain(tr) || tr.sys !== 'tra_sched') return; // 自製列車沒有誤點履歷，識別碼不送出
   notePanelOpener('delayHistPanel');
   const no = String(tr.train);
   state._delayHistOpen = no;
@@ -26446,6 +26932,8 @@ function setFollowHead(tr, it = trainIntro(tr)) {
 }
 function showFollowPanel(tr) {
   const fp = document.getElementById('followPanel');
+  if (isMyTrain(tr)) { ownTrainPanelShow(tr); return; } // 自製列車走自己的面板
+  ownTrainPanelHide(); // 從自製車換到真車:先把殼還原,下面各列才會照真車重算
   if (state.mode !== 'sched' || !tr) { fp.hidden = true; closeRideBox(); syncFollowOnClass(); return; }
   document.getElementById('fpDot').style.background = tr.color;
   setFollowHead(tr, renderTrainCard(tr));
@@ -26500,6 +26988,7 @@ function followSpeedKmh(tr) {
 }
 function updateFollowPanel(tr) {
   const fp = document.getElementById('followPanel');
+  if (isMyTrain(tr)) { ownTrainPanelUpdate(tr); return; } // 自製列車走自己的面板
   if (fp.hidden || !tr) return;
   // 時鐘不在「現在」時,卡片自己講出來並給一條回去的路——手機沒有站台帶,#nowBtn 是 display:none,
   // 在此之前手機使用者【沒有任何控件】可以回到現在(重新整理也不行:網址帶著 ?train= 會再撥一次)。
@@ -26693,7 +27182,7 @@ function renderFollowBar(msg) {
   fb.className = 'followbar'; fb.hidden = false;
   fb.innerHTML =
     `<span class="dot" style="background:${tr.color}"></span>` +
-    `<b>${escHtml(trainDisplayNo(tr))}</b> ${tr.loop ? `${escHtml(trainDisplayKind(tr))}　${escHtml(t('臺北⇄枋寮 永續來回中'))}` : `${escHtml(trainTypeName(tr.typeName))}　${escHtml(stationName(first.name, tr.sys))}→${escHtml(stationName(last.name, tr.sys))}　` +
+    `<b${isMyTrain(tr) ? ' data-i18n-skip' : ''}>${escHtml(isMyTrain(tr) ? tr.label : trainDisplayNo(tr))}</b> ${tr.loop ? `${escHtml(trainDisplayKind(tr))}　${escHtml(t('臺北⇄枋寮 永續來回中'))}` : `${escHtml(trainTypeName(tr.typeName))}　${escHtml(stationName(first.name, tr.sys))}→${escHtml(stationName(last.name, tr.sys))}　` +
     `${fmtHM(first.depSec % 86400)}–${fmtHM(last.arrSec % 86400)}`}` +
     (msg ? `　· ${escHtml(t(msg))}` : '') +
     `<button id="unfollow">${escHtml(t('取消跟隨'))}</button>`;
@@ -26981,14 +27470,14 @@ function updateFollowCamera() {
       else if (d >= 1800 || d < 0) state._lapAcc = 0;
     }
     state._lapPrev = t;
-    if ((state._lapAcc || 0) >= LOOP_ACH_SEC) { state._lapAcc = 0; recordRide(tr); }
+    if ((state._lapAcc || 0) >= LOOP_ACH_SEC) { state._lapAcc = 0; if (!isMyTrain(tr)) recordRide(tr); }
   } else if (effTLive(tr) > last.arrSec + 2) {
     if (state.followStatus !== 'done') {
       // 完乘資格:從發車附近(±60秒容差)開始跟、且跟隨中沒跳過模擬時間,才蓋章;中途接手或作弊只顯示抵達
       const qualified = state.followStartEff <= first.depSec + 60 && !state.followTimeJumped;
-      if (qualified) recordRide(tr); // 抵達那一刻蓋完乘章
+      if (qualified && !isMyTrain(tr)) recordRide(tr); // 抵達那一刻蓋完乘章(自製列車不蓋)
       restoreFollowSpeed(); // fromStart 重播強制的速度只在此還原一次
-      setFollowStatus('done', qualified ? '已抵達' : '已抵達(中途跟隨・不計完乘)');
+      setFollowStatus('done', qualified || isMyTrain(tr) ? '已抵達' : '已抵達(中途跟隨・不計完乘)'); // 自製車從來不算完乘,不提「不計完乘」
     }
     return;
   }
@@ -27651,6 +28140,7 @@ async function refreshLocalReminderPermission(draft) {
   } catch (e) { return null; }
 }
 async function openLocalReminderSheet(tr, source) {
+  if (isMyTrain(tr)) return; // 自製列車不開到站提醒
   if (!NOTIFY_LOCAL_ENABLED || !reminderSysOf(tr)) return;
   const snapshotDelaySec = localReminderDelaySnapshot(tr);
   // 排程軸上的「現在」（跨日/環島圈由 effT 映射）；已到過的站不列入下拉
@@ -28111,6 +28601,7 @@ function applyTraLivePayload(d) {
   return { total: m.size, delayed, d10, maxDelay };
 }
 function liveDelaySec(tr) {
+  if (isMyTrain(tr)) return 0; // 自製車沒有即時誤點
   let target = 0;
   let snapToken = 0;
   const on = liveActive();
@@ -31181,7 +31672,8 @@ function updateFollowAlert() {
   const el = document.getElementById('fpAlert'), tr = state.followTrain;
   if (!el) return;
   let show = false;
-  if (tr && !tr.loop && state.mode === 'sched') {
+  // 自製列車是虛構班次,官方通阻公告的「班次可能停駛」對它沒有意義
+  if (tr && !tr.loop && !isMyTrain(tr) && state.mode === 'sched') {
     const aff = alertAffectedLineIds();
     if (aff.size) show = tr.stops.some(s => s.segLn && aff.has(s.segLn.id));
   }
@@ -31302,6 +31794,7 @@ function updateSheetOpenClass() {
 // ── 「列車」sheet(手機 fs):點跟隨小卡展開 #trainCard 內容(不搬 DOM) ──
 function openTrainSheet() {
   if (!window.matchMedia(MOBILE_MQ).matches || !document.body.classList.contains('fs') || !state.followTrain) return;
+  if (isMyTrain(state.followTrain)) return; // 列車 sheet 是真車的介紹卡;自製列車只有自己的面板
   if (document.body.classList.contains('ambient')) return; // 直播/放空 HUD 不受影響(§04b)
   soloPanel('train'); // 關掉其他 sheet(保留自己)
   const tc = document.getElementById('trainCard');
@@ -32619,8 +33112,13 @@ function uniCollapse() {
   document.body.classList.add('uni-collapsed');
   syncUniCard(); // uniEligible 已含 !uniCollapsed ⇒ 這一步把卡從看板槽搬回原位
   fp.classList.add('fp-min');
-  // 合併卡裡的 ×／其他按鈕收合後會被 fp-min 藏掉；鍵盤操作改把焦點交給膠囊上仍看得到的「結束」。
-  if (keyboardFocus) { const end = document.getElementById('fpEnd'); if (focusShown(end)) end.focus({ preventScroll: true }); }
+  syncOwnTrainFollowCompactA11y();
+  // 合併卡裡的 ×／其他按鈕收合後會被 fp-min 藏掉。自製車把焦點交給可按 Enter 展開的膠囊；
+  // 真車仍交給膠囊上看得到的「結束」（真車殼本身沒有鍵盤展開契約）。
+  if (keyboardFocus) {
+    const target = isMyTrain(state.followTrain) ? fp : document.getElementById('fpEnd');
+    if (focusShown(target)) target.focus({ preventScroll: true });
+  }
   // 🔴 用 hidden 收看板、不要用 CSS display:none 藏——body.sheet-open 是靠 SHEET_PANEL_IDS 的
   //    hidden 算出來的,CSS 藏起來的話 sheet-open 會留著,於是(a)停靠時那條 dwell-show.sheet-open
   //    會把膠囊淡成透明且吃不到點擊(實測 webkit 整發點擊消失)、(b)tab bar 讓位與底錨全部照「有開
@@ -32635,6 +33133,7 @@ function uniExpand() {
   uniResetCollapse(); // 旗標歸零＋看板恢復可見
   const fp = document.getElementById('followPanel');
   if (fp) fp.classList.remove('fp-min');
+  syncOwnTrainFollowCompactA11y();
   // 點膠囊＝展開意圖,§04c 的收合記憶跟著清(與 openTrainSheet 同一個語意,那裡也是這樣寫)
   try { localStorage.setItem('trainmap-fprail-min', '0'); } catch (err) {}
   syncUniCard(); // 看板還開著的話,卡再搬回槽裡(回到收合前那一頁,uniTab 沒被動過)
@@ -36378,8 +36877,8 @@ const HELP_GROUPS = [
         '通行證在軌島 App 內購買，網站不收費',
         '在網站用同一個軌島帳號登入，App 訂的資格就會生效（面板裡的「已經在 App 訂閱了？登入以同步」）'],
       tip: IS_NATIVE_APP && window.Capacitor?.getPlatform?.() === 'android'
-        ? '通行證內容：台鐵列車的誤點履歷（回溯 90 天的逐日紀錄）、收藏與完乘紀錄跨裝置雲端同步、行程分享、跟車配樂（音樂跟著你在看的那班車與當下時間換情境；免費的背景音樂不受影響）、匯入 Google Maps 已儲存清單、非跟車時的衛星高解析圖磚，以及 Android 16 即時資訊與 Samsung Now Bar 的跟車鎖定畫面進度。'
-        : '通行證內容：台鐵列車的誤點履歷（回溯 90 天的逐日紀錄）、收藏與完乘紀錄跨裝置雲端同步、行程分享、跟車配樂（音樂跟著你在看的那班車與當下時間換情境；免費的背景音樂不受影響）、匯入 Google Maps 已儲存清單、非跟車時的衛星高解析圖磚，以及 iOS 17.6 以上可用的跟車鎖定畫面與動態島即時動態。',
+        ? '通行證內容：台鐵列車的誤點履歷（回溯 90 天的逐日紀錄）、自製列車（把車庫裡的車排班開上地圖、取名字）、收藏與完乘紀錄跨裝置雲端同步、行程分享、跟車配樂（音樂跟著你在看的那班車與當下時間換情境；免費的背景音樂不受影響）、匯入 Google Maps 已儲存清單、非跟車時的衛星高解析圖磚，以及 Android 16 即時資訊與 Samsung Now Bar 的跟車鎖定畫面進度。'
+        : '通行證內容：台鐵列車的誤點履歷（回溯 90 天的逐日紀錄）、自製列車（把車庫裡的車排班開上地圖、取名字）、收藏與完乘紀錄跨裝置雲端同步、行程分享、跟車配樂（音樂跟著你在看的那班車與當下時間換情境；免費的背景音樂不受影響）、匯入 Google Maps 已儲存清單、非跟車時的衛星高解析圖磚，以及 iOS 17.6 以上可用的跟車鎖定畫面與動態島即時動態。',
       try: 'plus' },
   ]},
   { key: 'c', name: '模式與外觀', open: false, secs: [
@@ -36398,6 +36897,12 @@ const HELP_GROUPS = [
       one: '把旅程護照裡的收集章，變成可以旋轉欣賞的小車。',
       steps: ['「更多」或「旅程護照」→「我的車庫」', '選一款車，左右拖曳查看外觀與來源', '累積完乘、里程、車站與支線章，解鎖 62 款紀念模型'],
       tip: '既有車種章自動帶入，每款車也能透過護照里程碑收集。', try: 'garage' },
+    { key: 'myTrain', ic: '製', nm: '自製列車',
+      one: '需要通行證。車庫裡已入庫的台鐵、高鐵、林鐵列車，都可以自己排一班路線、選停站方式、車牌顏色與名字，每天照那個時刻在地圖上跑——這班車是你自己排的，不在官方時刻表上。',
+      steps: ['「我的車庫」→ 已入庫的車款卡片上按「自己排一班」', '選起訖站、停站方式（站站停／只停大站／直達）與出發時間，取個名字',
+        '按「發車」——地圖跟著它跑，面板上會記下停靠哪些站、和哪些真車交會', '之後從車庫按「去看它」隨時回來看；同時只能有一班，排新的一班會取代原本那班'],
+      tip: '通行證失效後，自製列車存檔會留在這台裝置，但不會上地圖，也不能新建或編輯；再次取得通行證後會恢復。台鐵、高鐵、林鐵目前開放，捷運與輕軌、純客車還不能排。跟著這班車時，面板下方可以切換光環開關與大小（標準／大／特大），方便截圖分享。號誌閉塞看不到這班車，可能會跟真車疊在一起或穿過去——這是虛構班次本來就有的限制。',
+      try: 'garage' },
     { key: 'sat', ic: '衛', nm: '衛星影像', tg: 'satBtn', needs: 'satBtn', one: '把底圖換成衛星照片，看得到實際的軌道與站場。',
       steps: ['「更多」→ 衛星影像'], tip: '拉太近時衛星影像可能還沒有那麼清晰的圖資。', try: 'sat' },
     { key: 'orientation', avail: () => !!M, ic: '3D', nm: '旋轉、傾斜與 3D 建築', tg: 'map3dBtn',
@@ -37859,7 +38364,14 @@ function webMcpCurrentView() {
     : [...(state.freqSel || new Set(state.sysId ? [state.sysId] : []))];
   const visible = [...new Set(ids)].map(id => ({ system_id: id, system_name: (webMcpSystem(id) || {}).label || id }));
   let following = null;
-  if (state.followTrain) following = { kind: 'rail_train', train_number: String(state.followTrain.train), system_id: state.followTrain.sys };
+  // 自製列車回自己的形狀:沒有 train_number 這個欄位,名字只在 customName
+  if (state.followTrain && isMyTrain(state.followTrain)) {
+    const rec = state.followTrain;
+    following = { kind: 'my_train', customName: rec.label, model: rec.typeName,
+      from: stationName(rec.stops[0].name, rec.sys), to: stationName(rec.stops[rec.stops.length - 1].name, rec.sys),
+      system_id: rec.sys };
+  }
+  else if (state.followTrain) following = { kind: 'rail_train', train_number: String(state.followTrain.train), system_id: state.followTrain.sys };
   else if (state.freqFollow) following = { kind: 'metro_train', line_id: state.freqFollow.lineId || state.freqFollow.ln && state.freqFollow.ln.id || null,
     vehicle_id: state.freqFollow.vehicleId || null };
   return { ok: true, ready: !!state.ready, group_id: state.group, group_name: group && group.label || state.group,
@@ -38294,6 +38806,8 @@ async function boot() {
     // 車與站都在範圍內時取較近者:點列車跟隨(再點一下把鏡頭鎖回它)、點車站開時刻板;
     // 兩者距離幾乎相同(列車停靠中)分不出意圖 → 彈小選單讓使用者選。
     // 歧義判定要在勝負判定「之前」:停靠時車站常以次像素之差險勝,檢查放在車勝分支內會漏掉站險勝的那半
+    const ownHit = (state._ownTrainHits || []).find(h => Math.abs(h.x - cp.x) <= (h.w || DOT_HIT) / 2 && Math.abs(h.y - cp.y) <= (h.h || DOT_HIT) / 2);
+    if (ownHit) { ownTrainFollow(); return; } // 自製列車點選:走同一個入口,確保切群組與撥鐘的順序一致
     const hits = trainsAt(cp), hit = hits[0];
     // 疊車:兩張以上的牌都罩住這一點,分不出使用者要哪一台 ⇒ 列出來讓他選。
     // 只有「框都中」才會有兩筆(見 trainsAt),所以沒有疊牌的情況一如既往直接跟隨。
@@ -38681,6 +39195,9 @@ async function boot() {
   state.transferDepartures = xferDep && xferDep.schemaVersion === 1 ? xferDep : null;
   // 站等資料(特等/一等/…),缺檔就全走停靠班次數啟發式
   state.stnClassMap = await stnClassP || {};
+  // 自製列車:此時 systems 的軌道(見上方 _track 迴圈)與班表都已載入。
+  // 兩支檔(my-train-plan.js／my-train-ui.js)沒載到時只是這個功能不在,不能讓整個開機丟例外(打包清單漏列時)
+  if (window.MyTrainUI && window.MyTrainPlan) ownTrainRebuild();
   // 台鐵各站地址(TDX Rail/TRA/Station);key 為「台」正規化站名,feature 欄之後補
   state.stnInfoMap = await stnInfoP || {};
   // 台鐵各站月台幾何(scripts/fetch_tra_platforms.mjs 由 OSM 產):單站打卡判「人在不在這座站」用。
@@ -38883,7 +39400,8 @@ function buildShareUrl() {
     return (window.railIslandIntegration?.shareParams(url) || url).href;
   };
   const t = fmtHM(state.simSec);
-  if (state.followTrain && state.followId) return finish(base + '?train=' + encodeURIComponent(state.followId) + '&t=' + t);
+  // 自製列車退回「地點＋時間」:分享連結會傳給別人,更不能帶識別碼
+  if (state.followTrain && state.followId && !isMyTrain(state.followTrain)) return finish(base + '?train=' + encodeURIComponent(state.followId) + '&t=' + t);
   const c = M.getCenter();
   return finish(base + '?g=' + encodeURIComponent(state.group || 'nat') +
     '&at=' + c.lat.toFixed(5) + ',' + c.lng.toFixed(5) +
@@ -39309,6 +39827,7 @@ function tripFromStation(tr) {
   return from;
 }
 function buildTripUrl(tr, destName) {
+  if (isMyTrain(tr)) return null; // 自製列車不生成行程連結
   const code = tripSysCode(tr.sys); if (!code) return null;
   const from = tripFromStation(tr);
   const segs = [code, String(tr.train), encodeURIComponent(destName), tripOpsDate()];
@@ -39572,12 +40091,49 @@ document.getElementById('fpClose').onclick = (e) => {
   e.stopPropagation(); // 不然冒泡到面板的「點膠囊展開」馬上又被展開
   // 整合卡掛著時 × 要走同一條收合路徑(卡先搬回原位、看板一起收起來)——直接加 fp-min 會把膠囊
   // 留在看板的分頁槽裡。uniCollapse 在桌面/沒跟車時回 false,那時照舊只加 class。
-  if (!uniCollapse()) document.getElementById('followPanel').classList.add('fp-min');
+  if (!uniCollapse()) {
+    document.getElementById('followPanel').classList.add('fp-min');
+    syncOwnTrainFollowCompactA11y();
+  }
   try { localStorage.setItem('trainmap-fprail-min', '1'); } catch (err) {}
   syncFollowOnClass(); invalidateMapInsets();
 };
 try { if (localStorage.getItem('trainmap-fprail-min') === '1') document.getElementById('followPanel').classList.add('fp-min'); } catch (err) {}
 document.getElementById('fpEnd').onclick = (e) => { e.stopPropagation(); setAutoTour(false); clearFollow(); };
+// 自製車沿用 #followPanel 的 fp-min 膠囊，但真車原本只有滑鼠／觸控展開路徑。收合時把殼本身
+// 變成唯一的鍵盤入口；展開後把焦點交回可見的 ×，行為比照 freqCard 的 fc-min 契約。
+function syncOwnTrainFollowCompactA11y() {
+  const fp = document.getElementById('followPanel');
+  if (!fp) return;
+  const wasCompact = fp.hasAttribute('data-mt-compact-a11y');
+  let keyboardFocus = false;
+  try { keyboardFocus = fp.contains(document.activeElement) && document.activeElement.matches(':focus-visible'); } catch (e) {}
+  const compact = fp.classList.contains('fp-own') && fp.classList.contains('fp-min') && !fp.hidden;
+  if (compact) {
+    fp.setAttribute('data-mt-compact-a11y', '');
+    fp.setAttribute('tabindex', '0');
+    fp.setAttribute('aria-label', t('展開'));
+  } else if (fp.hasAttribute('data-mt-compact-a11y')) {
+    fp.removeAttribute('data-mt-compact-a11y');
+    fp.removeAttribute('tabindex');
+    fp.removeAttribute('aria-label');
+  }
+  // updatePanel 每拍都會同步一次；只有狀態真的切換才搬焦點，否則正在操作「編輯」等鈕時
+  // 會被下一拍無聲搶回 ×。compact 同態也不反覆 focus 自己。
+  if (wasCompact !== compact && keyboardFocus) {
+    const target = compact ? fp : document.getElementById('fpClose');
+    if (focusShown(target)) target.focus({ preventScroll: true });
+  }
+}
+function expandOwnTrainFollowPanel() {
+  const fp = document.getElementById('followPanel');
+  if (!fp || !fp.classList.contains('fp-own') || !fp.classList.contains('fp-min')) return false;
+  fp.classList.remove('fp-min');
+  try { localStorage.setItem('trainmap-fprail-min', '0'); } catch (err) {}
+  syncOwnTrainFollowCompactA11y();
+  syncFollowOnClass(); invalidateMapInsets();
+  return true;
+}
 function setFreqCardCompact(on, remember = true) {
   const card = document.getElementById('freqCard');
   // 鍵盤焦點在卡上時(膠囊本身、或展開卡的 ×),切換後留在卡裡:展開落在 ×、收起落在膠囊。
@@ -39612,6 +40168,13 @@ document.getElementById('followPanel').addEventListener('click', (e) => {
   // 膠囊態(點空白收起來的那種)點一下就展開回原樣——要排在下面「開列車 sheet」那條之前,
   // 否則手機上點膠囊會跳去另一個介面(列車 sheet),而不是回到收合前看的那張卡。
   if (uniCollapsed && !e.target.closest('.fp-end')) { e.stopPropagation(); uniExpand(); return; }
+  // 自製列車:面板上沒有要轉去列車 sheet 的東西(那張是真車的介紹卡),只處理「膠囊態點一下展開」
+  if (state.followTrain && isMyTrain(state.followTrain)) {
+    if (fp.classList.contains('fp-min') && !e.target.closest('.fp-end')) {
+      expandOwnTrainFollowPanel();
+    }
+    return;
+  }
   // 手機全畫面:點跟隨小卡(非結束/收合/分享鈕)→ 展開「列車」sheet(桌面走原 fp-min 展開;放空不攔,維持既有行為)
   // 🔴 卡已經搬進整合卡的分頁槽時不轉去列車 sheet:那一頁本身就是展開的完整卡,
   //    再跳一個 sheet 會 soloPanel('train') 把看板關掉,整合卡當場散掉。
@@ -39629,7 +40192,13 @@ document.getElementById('followPanel').addEventListener('click', (e) => {
     syncFollowOnClass(); invalidateMapInsets();
   }
 });
-document.getElementById('followPanel').addEventListener('keydown', e => boardRowKey(e, '.fp-dhlink[role="button"]'));
+document.getElementById('followPanel').addEventListener('keydown', e => {
+  if (e.target === e.currentTarget && e.key === 'Enter' && e.currentTarget.classList.contains('fp-own')
+      && e.currentTarget.classList.contains('fp-min')) {
+    e.preventDefault(); e.stopPropagation(); expandOwnTrainFollowPanel(); return;
+  }
+  boardRowKey(e, '.fp-dhlink[role="button"]');
+});
 document.getElementById('tcStar').onclick = (e) => { e.stopPropagation(); toggleFav(state.followTrain); }; // stopPropagation:sheet 態不觸發標題列 toggle
 document.getElementById('tcSheetClose').onclick = (e) => { e.stopPropagation(); closeTrainSheet(); }; // ✕ 收「列車」sheet(跟車不中斷,小卡回來)
 // 三段高抓把:.board 家族 + 「列車」sheet(#trainCard)綁點擊循環 / 拖曳相鄰 snap

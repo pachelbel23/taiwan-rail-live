@@ -857,7 +857,35 @@ try {
   if (plusSub.status !== 0) fail('通行證守門人未過——付費閘門、購買流程、資格判定或止血旗標有一條不符'
     + '（單獨重跑：node scripts/verify_plus_subscription.mjs）');
 
-  // ── 2.28 捷運小工具免費守門人(2026-10-05) ──────────────────────────────────────
+  // ── 2.28 自製列車守門人(排在通行證守門人之後) ────────
+  // 為什麼值得進出貨鏈:「不在出貨鏈上的驗收腳本等於不存在」——這三支寫完後此前沒有任何呼叫者。
+  // plan 守純函式與存檔（站等、路線、停站方式、統計、退路選擇；期望值不跟實作同源）；
+  // isolation 守自製車不得洩漏到網址、分享連結、Firestore、原生橋接、推播、WebMCP、完乘統計
+  // 這七個邊界，從真介面走一遍車庫卡片→排班表單→發車→編輯→刪除，兩引擎；
+  // walkthrough 另守使用者實際會走的路徑（每日標籤、順逆行、exact 24h、藍皮南迴）、四寬真觸控、跨午夜與分享隔離。
+  const mtPlan = spawnSync('node', [path.join(wt, 'scripts', 'verify_my_train_plan.mjs')], { encoding: 'utf8' });
+  process.stdout.write(mtPlan.stdout || ''); process.stderr.write(mtPlan.stderr || '');
+  if (mtPlan.status !== 0) fail('自製列車純函式與存檔守門未過'
+    + '（單獨重跑：npm run check-my-train-plan）');
+  const mtIso = spawnSync('node', [path.join(wt, 'scripts', 'verify_my_train_isolation.mjs')],
+    { cwd: wt, encoding: 'utf8', env: { ...process.env, PORT: '' } });   // 埠號由系統挑（同 2.25／2.26）
+  process.stdout.write(mtIso.stdout || ''); process.stderr.write(mtIso.stderr || '');
+  if (mtIso.status !== 0) fail('自製列車隔離守門未過——自製車疑似洩漏到網址／分享／Firestore／原生橋接／推播／WebMCP／完乘統計其中一項'
+    + '（單獨重跑：npm run check-my-train-isolation）');
+  const mtWalk = spawnSync('node', [path.join(wt, 'scripts', 'verify_my_train_walkthrough.mjs')],
+    // 本機診斷可用這兩把 filter 縮短單獨重跑；但 ship 必須主動洗掉繼承值，
+    // 避免使用者曾 export MYTRAIN_ENGINE=chromium 就靜默少跑 WebKit／其他三寬。
+    { cwd: wt, encoding: 'utf8', env: { ...process.env, PORT: '', MYTRAIN_ENGINE: '', MYTRAIN_WIDTHS: '' } });
+  process.stdout.write(mtWalk.stdout || ''); process.stderr.write(mtWalk.stderr || '');
+  if (mtWalk.status !== 0) fail('自製列車走查守門未過——每日標籤／順逆行／24 小時邊界／藍皮南迴／手機觸控／跨午夜或分享隔離有一項不符'
+    + '（單獨重跑：npm run check-my-train-walkthrough）');
+  // 自製列車付費入口、資格變動與存檔保留必須一併通過。
+  const mtPlus = spawnSync('node', [path.join(wt, 'scripts', 'verify_my_train_plus.mjs')],
+    { cwd: wt, encoding: 'utf8', env: { ...process.env, PORT: '', MYTRAIN_ENGINE: '', MYTRAIN_WIDTHS: '', MYTRAIN_MUTATION: '' } });
+  process.stdout.write(mtPlus.stdout || ''); process.stderr.write(mtPlus.stderr || '');
+  if (mtPlus.status !== 0) fail('自製列車通行證驗收未過'
+    + '（單獨重跑：node scripts/verify_my_train_plus.mjs）');
+  // ── 2.29 捷運小工具免費守門人(2026-10-05) ──────────────────────────────────────
   // 為什麼值得進出貨鏈(2.8 那把尺):(a) 它守的缺陷對真人 100% 復現——方案面板、條款第 3 節或說明中心把小工具的
   // 多站／自動寫回付費,網站一上線就對每個訪客說錯,而即時資訊不設付費門檻是資料授權的條件;(b) 別的閘門量不到——
   // check-copy／check-i18n 只管字數與有沒有翻譯,verify_plus_subscription 不讀這幾段文案;(c) 寫回去不會有任何錯誤訊息。

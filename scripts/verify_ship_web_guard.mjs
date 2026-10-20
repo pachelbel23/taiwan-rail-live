@@ -249,6 +249,9 @@ await group('W', async () => {
     nightDesign > firstGate && nightDesign < strip
       && /const nightDesign = spawnSync\('node', \[path\.join\(wt, 'scripts', 'verify_night_design\.mjs'\)\][^]*?if \(nightDesign\.status !== 0\) fail\(/.test(src),
     `night-design@${nightDesign}、strip@${strip}`);
+  ok('W9 自製列車 walkthrough 出貨不繼承本機縮減 filter',
+    /const mtWalk = spawnSync\('node', \[path\.join\(wt, 'scripts', 'verify_my_train_walkthrough\.mjs'\)\],[^]*?env: \{ \.\.\.process\.env, PORT: '', MYTRAIN_ENGINE: '', MYTRAIN_WIDTHS: '' \}/.test(src),
+    '必須明確把 MYTRAIN_ENGINE／MYTRAIN_WIDTHS 洗成空字串');
   ok('W8 底圖標籤去重守門人經帳本執行、清掉繼承的 BASE_URL、且失敗會在 strip 前擋下出貨',
     labelDedup > firstGate && labelDedup < strip
       && /const labelDedup = spawnSync\('node', \[path\.join\(wt, 'scripts', 'verify_basemap_label_dedup\.mjs'\)\],\s*\{[^}]*BASE_URL: ''[^]*?if \(labelDedup\.status !== 0\) fail\(/.test(src),
