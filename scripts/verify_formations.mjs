@@ -50,10 +50,10 @@ const estimated = [
   ['柴聯自強 DR3100', {systemId: 'tra_sched', carName: '自強(D31)'}, 3],
   ['支線柴聯 DR1000', {systemId: 'tra_sched', carName: '區間車', branchId: 'pingxi'}, 3],
 ];
-// 推估值會過期而且不會有人發現（audit_train_types.py 檔頭的 issue#7 就是這樣過期的），
-// 所以綁一個到期日：台鐵慣例 4／7／10 月改點，下一次是 2026-10。改點後請重查
-// FORMATIONS.md「推估編組」那一節的來源，確認還成立再把日期往後推。
-const ESTIMATE_RECHECK = '2026-10-20';
+// 推估來源每季人工重驗；這是維護期限，不預設任何營運單位的改點日期。
+// 2026-10-20 已逐項核對 12 案的依據與限制，紀錄見 FORMATIONS.md 同日重驗表。
+// 改點或官方編組公告變更時提前重驗，確認來源後才更新下次期限。
+const ESTIMATE_RECHECK = '2027-01-20';
 const failures = [];
 for (const [label, vehicle, cars, meshes] of cases) {
   const spec = formationFor(vehicle, 'actual');
@@ -136,7 +136,7 @@ for (const id of withNos) {
 assert.equal(cases.length, 21, '標準編組檢查表被改動，請同時更新這個數字');
 assert.equal(estimated.length, 12, '推估編組檢查表被改動，請同時更新這個數字');
 assert.ok(new Date() < new Date(ESTIMATE_RECHECK + 'T00:00:00+08:00'),
-  `推估編組的重驗期限 ${ESTIMATE_RECHECK} 已到：台鐵改點後請重查 FORMATIONS.md「推估編組」那一節的依據，確認仍成立再把這個日期往後推`);
+  `推估編組的重驗期限 ${ESTIMATE_RECHECK} 已到：請逐項重查 FORMATIONS.md 的推估編組依據與限制，確認後再更新期限`);
 
 // ── 機捷車種：只准讀官方 TrainType ──────────────────────────────────
 // 「跳站＝直達車」是錯的：官方另有跳站的普通車（114/10/16 起平日 07:00 環北北上那班），

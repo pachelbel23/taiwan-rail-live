@@ -1,6 +1,41 @@
 # 整合預覽 v22：全路網編組切換與 Blender 外觀
 
-## 2026-09-14 全車種開放（目前行為）
+## 2026-10-20 推估編組來源重驗
+
+逐項對照 `verify_formations.mjs` 的 12 個推估案例；節數全部維持既有代表值，`countBasis` 仍為 `estimated`。機車牽引列車的節數包含機車。下表的核對日是查閱來源的日期，不能當作當日派車認證；來源發布日與觀察日另列於說明。
+
+| 驗收案例 | 保留節數 | 本次核對依據 | 適用範圍與信心 |
+| --- | ---: | --- | --- |
+| 一般區間車 | 8 | [台鐵無障礙編組圖][tra-access] 的 EMU700 為 8 輛；[113 年決算報告][tra-report] PDF 第 12 頁列有 4／8／10 輛調整 | 車種文字不能識別當班世代；只採 8 輛代表，中低信心 |
+| 區間快 | 8 | 同上兩份官方資料；沒有把「區間快」視為另一種固定車型 | 與一般區間車共用代表值，當班編組未確認，中低信心 |
+| 莒光號 | 9 | [台鐵無障礙編組圖][tra-access] 列出機車與第 1～8 車 | 支持一種 1＋8 編排，不能證明所有當班皆如此；取代 2004 年常態編組的舊依據，中低信心 |
+| 林鐵 | 6 | [林鐵專開列車資訊][forest-charter] 列阿里山／中興／祝客各 5 客車，另由機車牽引 | 1＋5 是本站代表值；檜木列車另為 4 客車，不套稱所有本線或支線皆相同，低信心 |
+| 機捷車種缺值 | 4 | [桃捷列車介紹][tymc-stock] 列普通車 4 輛、直達車 5 輛 | 缺值時借普通車作代表；不據此認定服務種類。正常資料仍以官方 TrainType 選車種 |
+| 藍皮 | 5 | [2025-05-09 乘車紀錄][blue-observation] 明載所乘列車 4 客車；[台鐵介紹][blue-official] 提醒依現場配置 | 1＋4 為單次觀察的代表值，非每日固定編組；四種車廂類型或整備總量不作輛數證明，低信心 |
+| 鳴日 | 6 | [營運商列車介紹][mingri-operator] 明載 5 節主題客車 | 1＋5 作代表；鳴日廚房及包車仍可能不同，中低信心 |
+| 環島之星 | 7 | [運研所報告][star-report] PDF 第 29 頁記 6 客車；[2026-02-26 乘車紀錄][star-observation] 的 2 月 16～18 日行程亦記 6 客車 | 1＋6 作代表；新紀錄的車廂功能配置已不同於舊報告，不再聲稱現行一定為 4 商務＋客廳＋餐車，中低信心 |
+| 山海號 | 6 | `formations.js` 的 `named.shanhai` 指向 `FORMATIONS.mingri` | 本站虛構列車的設計值，無現實派車斷言 |
+| 平原號 | 6 | `formations.js` 的 `named.pingyuan` 指向 `FORMATIONS.mingri` | 本站虛構列車的設計值，無現實派車斷言 |
+| 柴聯自強 DR3100 | 3 | [台鐵無障礙編組圖][tra-access] 列 DR3101－PDR3151－DR3102 | 單組 3 輛有官方圖；當班重聯組數未知。移除連假固定規則的延伸說法 |
+| 支線柴聯 DR1000 | 3 | [運安會調查報告][dr1000-report] 1.8.1 說明可單輛或多輛聯結；[2025-04-29 乘車紀錄][dr1000-observation] 9-3 記 4811 次為 1034＋1033＋1017 三輛 | 3 輛僅為有實例的代表值，非原廠固定單組或平假日規則；當班輛數未知，低信心 |
+
+本次只修正 DR1000／DR3100 的依據說明，沒有改動節數、幾何、車長或派車資料。沒有取得各班次的即時編組資料，所有推估案例繼續顯示「推估編組」。
+
+下次人工重驗期限為 **2027-01-20**，與 `verify_formations.mjs` 的 `ESTIMATE_RECHECK` 一致，採每季維護週期；遇改點、車種替換或官方編組公告變更應提前重驗。這個日期不是對下一次鐵路改點日期的預測。
+
+[tra-access]: https://tip.railway.gov.tw/tra-tip-web/tip/tip00C/tipC21/view?lang=zh_TW&proCode=8ae4cac38c017e9f018c243c41f93326&subCode=8ae4cac38c017e9f018c243cd8673327
+[tra-report]: https://www.railway.gov.tw/tra-tip-web/tip/file/ab9e9109-7db2-4071-9781-f391e9f98634
+[forest-charter]: https://afrch.forest.gov.tw/0000060
+[tymc-stock]: https://www.tymetro.com.tw/tymetro-new/tw/_pages/travel-guide/introduce.html
+[blue-observation]: https://www.mobile01.com/topicdetail.php?f=207&p=1&t=7118093
+[blue-official]: https://www.railway.gov.tw/tra-tip-web/tip/tip00N/tipN01/blue/index
+[mingri-operator]: https://www.liontravel.us/zh-tw/campaign/taiwan/rail/future/
+[star-report]: https://www.iot.gov.tw/uploads/archive_file_multiple/file/65d5af27367376e31ef32474/日本鐵路觀光推動經驗與策略.pdf
+[star-observation]: https://yehkiki.com/formosa-express-sanrio-2026/
+[dr1000-report]: https://www.ttsb.gov.tw/media/5312/0601臺鐵第2721次車濁水站重大鐵道事故調查報告.pdf
+[dr1000-observation]: https://note.com/mizunyanpanda/n/n7fa9b42745b7
+
+## 2026-09-14 全車種開放（行為沿用，來源以本次重驗為準）
 
 實際編組模式不再把資料不足的車種鎖成三節；全部使用標準或有標示的推估編組。下方 9/12「未生效／待派車重解」與三節限制是歷史紀錄，已由本節取代。推估不是當班派車資料，機車牽引列車的節數包含機車；單車長度仍沿用近似值。三節示意仍供使用者自行選擇。
 
@@ -14,9 +49,9 @@
 | 環島之星 | 推估 7（機車＋6 客車） | [運研所研究報告](https://www.iot.gov.tw/uploads/archive_file_multiple/file/65d5af27367376e31ef32474/日本鐵路觀光推動經驗與策略.pdf) 記錄 4 商務＋1 客廳＋1 餐車；報告非當班資料，故為推估 |
 | 林鐵 | 推估 6（機車＋5 客車） | [林鐵官方包車資訊](https://afrch.forest.gov.tw/0000060) 的阿里山／中興／祝客車種為 5 客車；借作代表值，不能據此確認每日班次或園區支線也掛 5 車，信心低 |
 | 山海／平原 | 推估 6 | 本站虛構列車設計，沿用鳴日代表編組；沒有對應現實派車資料 |
-| 機捷車種缺值 | 推估 4 | 以普通車代表；正常資料仍依官方 TrainType 分 4 輛普通／5 輛直達，607 班都有官方值，不依跳站猜車種 |
+| 機捷車種缺值 | 推估 4 | 以普通車代表；正常資料仍依官方 TrainType 分 4 輛普通／5 輛直達，不依跳站猜車種 |
 
-其餘車型與柴聯推估維持原規則。`verify_formations.mjs` 覆蓋 21 種標準與 12 種推估案例，並檢查具名列車的首中尾模型；重驗期限仍為 2026-10-20。加長後以實際模型長度重跑瀏覽器與互穿閘門，不改官方班表、不放大 120 秒 hold、不縮車遮掩衝突。
+其餘車型與柴聯推估維持原規則。`verify_formations.mjs` 覆蓋 21 種標準與 12 種推估案例，並檢查具名列車的首中尾模型；本次來源重驗後的期限為 2027-01-20。加長後以實際模型長度重跑瀏覽器與互穿閘門，不改官方班表、不放大 120 秒 hold、不縮車遮掩衝突。
 
 ---
 
@@ -76,7 +111,7 @@ EMU900 是 10 輛固定編組這件事有官方依據，但班表挑不出哪一
 
 **推估值會靜默過期**（`scripts/audit_train_types.py` 檔頭的 issue#7 就是這樣過期的：靠 2024 報導推定、
 標了 confidence medium，改點換車後沒有任何機制發現）。所以 `verify_formations.mjs` 裡綁了一個到期日
-`ESTIMATE_RECHECK`：台鐵慣例 4／7／10 月改點，下一次是 2026-10，日期一到閘門就紅，逼人回來重查這張表。
+`ESTIMATE_RECHECK`：日期一到閘門就紅，要求逐項重查來源。2026-10-20 起改採每季人工重驗，遇改點或官方編組資訊變更提前辦理，不預設改點月份。
 TDX 的 `DailyTrainTimetable` 本身沒有節數欄位，所以這件事沒有辦法自動化，只能靠到期日提醒。
 
 ### 區間車與莒光的推估值為什麼還沒生效
