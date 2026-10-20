@@ -1,7 +1,7 @@
 -- 軌道邊卡片的推播交班表。一列保存通過清單，每輪重算目前與下一班，
 -- 因而不共用只綁單班列車的 tra_wait_bindings。
 -- uid 用於付費驗證後的帳號列數上限；所有時間欄位皆為 epoch 毫秒。
--- 卡片到期後多留五分鐘供收卡重試，再由 expire_ms 兜底清理。
+-- 卡片到期後多留五分鐘供排程處理收卡，再由 expire_ms 兜底清理。
 CREATE TABLE IF NOT EXISTS trackside_bindings (
   token TEXT PRIMARY KEY,
   uid TEXT NOT NULL,
