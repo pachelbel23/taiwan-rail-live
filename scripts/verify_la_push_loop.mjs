@@ -2482,7 +2482,8 @@ const csOfTok = (tk) => {
       && cs1.kindOverride === '高鐵' && cs1.colorOverride === '#f05a28', JSON.stringify(cs1));
   ok('PJOURNEY(關鍵)板橋轉乘窗顯示「等候轉乘」且倒數到高鐵發車，不把它誤寫成下一站到站',
     !!cs1 && cs1.transferWaiting === true && cs1.nextStop === '板橋'
-      && cs1.arrivalDate === base + 300 && cs1.terminus === '左營', JSON.stringify(cs1));
+      // terminus 沿用 P1 的最後一站契約；這份接續清單的最後一站是台北。
+      && cs1.arrivalDate === base + 300 && cs1.terminus === '台北', JSON.stringify(cs1));
   const row1 = await getRow(T);
   let phase1 = null;
   try { phase1 = row1 && JSON.parse(row1.journey_state || 'null').phase; } catch (e) {}
