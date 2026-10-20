@@ -346,7 +346,7 @@
   const FORM_LABELS = {
     from: '起站', to: '訖站', 'via-mountain': '山線', 'via-coast': '海線', 'dir-shun': '台鐵順行', 'dir-ni': '台鐵逆行', deptime: '每天發車時間',
     'pattern-all': '站站停', 'pattern-major': '只停大站', 'pattern-express': '直達',
-    hh: '時', mm: '分', name: '名字', cancel: '取消', depart: '發車', colorlabel: '車牌顏色',
+    hh: '時', mm: '分', name: '名字', cancel: '取消', depart: '發車', colorlabel: '車牌顏色', swap: '起訖對調',
   };
 
   // iOS 15.0–15.3 的 WebView 與非安全來源都沒有 crypto.randomUUID,退路依序是
@@ -387,32 +387,106 @@
     countEl.classList.toggle('mt-f-namecount-over', n > plan.NAME_MAX);
   }
 
-  // 起訖搜尋框:輸入即篩(比對正規化後的顯示名子字串),最多列 8 筆;點一列才真的選定那個站鍵。
+  // 選定一個站(建議列、清單裡的站鈕共用)。換了站,方向回到新那組站的最短那邊(同輸入框的 input 處理)。
+  // 起站選好、訖站還空著,直接攤開訖站清單——不 focus 輸入框,手機才不會跳鍵盤蓋住清單。
+  function formPickStation(which, key) {
+    const n = formCtx.graph.nodes.get(key);
+    if (!n) return;
+    formSel[which] = key; formSel.dir = null;
+    formEl.querySelector(`[data-mt-f="${which}"]`).value = formCtx.host.stationName(n.name, formCtx.sys);
+    formHideSug(which);
+    if (which === 'from' && !formSel.to) {
+      formBrowseStations('to');
+      formEl.querySelector('[data-mt-f="to"]').closest('label').scrollIntoView({ block: 'start' });
+    }
+    formRecompute();
+  }
+  function formHideSug(which) {
+    const box = formEl.querySelector(`[data-mt-sug="${which}"]`);
+    box.hidden = true; box.replaceChildren(); box.classList.remove('mt-f-browse');
+  }
+
+  // 起訖搜尋框:輸入即篩(比對正規化後的顯示名子字串),最多列 8 筆;點一列選定那個站鍵。
   // 比對與顯示都要看得懂 host.stationName 的翻譯名(英文介面打「Taipei」找不到是原本的坑)——
   // 比對時原始站名(n.name)與顯示名都試,顯示與選定後帶回輸入框的值一律用顯示名。
+  // 空字串改成攤開整份清單;打出完整站名(只有一站相符)就算選到,不必再點那一列。
   function formFilterStations(which, query) {
     const box = formEl.querySelector(`[data-mt-sug="${which}"]`);
-    box.replaceChildren();
     const q = mtNorm(query).trim();
-    if (!q) { box.hidden = true; return; }
+    if (!q) { formBrowseStations(which); return; }
+    formHideSug(which);
     const host = formCtx.host;
     const list = [...formCtx.graph.nodes.values()]
       .filter(n => mtNorm(n.name).includes(q) || mtNorm(host.stationName(n.name, formCtx.sys)).includes(q))
       .slice(0, 8);
     box.hidden = list.length === 0;
     for (const n of list) {
-      const disp = host.stationName(n.name, formCtx.sys);
       const row = document.createElement('button');
       row.type = 'button'; row.className = 'mt-f-sug-row'; row.setAttribute('data-mt-sug-key', n.key);
-      row.textContent = disp;
-      row.onclick = () => {
-        formSel[which] = n.key;
-        formEl.querySelector(`[data-mt-f="${which}"]`).value = disp;
-        box.hidden = true; box.replaceChildren();
-        formRecompute();
-      };
+      row.textContent = host.stationName(n.name, formCtx.sys);
+      row.onclick = () => formPickStation(which, n.key);
       box.appendChild(row);
     }
+    const exact = list.filter(n => mtNorm(n.name) === q || mtNorm(host.stationName(n.name, formCtx.sys)) === q);
+    if (exact.length === 1) formSel[which] = exact[0].key;
+  }
+
+  // 還沒打字時的整份清單:站多的系統(台鐵)先列常用大站(站等 ≤1,依路線順序),再依路線收合;
+  // 站少的(高鐵、林鐵)直接照路線攤開。大站的站等跟「只停大站」同一套 stationTiers。
+  function formBrowseStations(which) {
+    const box = formEl.querySelector(`[data-mt-sug="${which}"]`);
+    const { host, sys, graph, sd, tiers } = formCtx;
+    box.replaceChildren(); box.classList.add('mt-f-browse');
+    const lines = [];
+    for (const ln of sd.lines || []) {
+      const keys = [];
+      for (const st of ln.stations || []) {
+        const k = host.plan().stationKey(sys, st.name);
+        if (graph.nodes.has(k) && !keys.includes(k)) keys.push(k);
+      }
+      if (keys.length) lines.push({ name: String(ln.name).split(/[（(]/)[0].trim(), keys });
+    }
+    const chips = keys => {
+      const wrap = document.createElement('div'); wrap.className = 'mt-f-chips';
+      for (const k of keys) {
+        const b = document.createElement('button');
+        b.type = 'button'; b.className = 'mt-f-chip'; b.setAttribute('data-mt-sug-key', k);
+        b.setAttribute('aria-pressed', String(formSel.from === k || formSel.to === k));
+        b.textContent = host.stationName(graph.nodes.get(k).name, sys);
+        b.onclick = () => formPickStation(which, k);
+        wrap.appendChild(b);
+      }
+      return wrap;
+    };
+    const heading = text => { const h = document.createElement('div'); h.className = 'mt-f-sec'; h.textContent = text; return h; };
+    if (graph.nodes.size > 25) {
+      const big = [];
+      for (const l of lines) for (const k of l.keys) if (tiers.get(graph.nodes.get(k).name) <= 1 && !big.includes(k)) big.push(k);
+      if (big.length) box.append(heading(host.t('常用大站')), chips(big));
+      for (const l of lines) {
+        const d = document.createElement('details'); d.className = 'mt-f-line';
+        const s = document.createElement('summary');
+        const cnt = document.createElement('span'); cnt.textContent = host.t('{n} 站', { n: l.keys.length });
+        s.append(host.t(l.name), cnt);
+        d.append(s, chips(l.keys));
+        box.appendChild(d);
+      }
+    } else {
+      for (const l of lines) {
+        if (lines.length > 1) box.appendChild(heading(host.t(l.name)));
+        box.appendChild(chips(l.keys));
+      }
+    }
+    box.hidden = false;
+  }
+  // 點輸入框:已選定就攤開整份清單(方便換站),否則照目前打的字篩。已經開著就不重畫(focus 跟 click
+  // 會連續各來一次,重畫會把剛展開的路線收回去)。
+  function formOpenSug(which) {
+    if (!formCtx) return;
+    formHideSug(which === 'from' ? 'to' : 'from');
+    if (!formEl.querySelector(`[data-mt-sug="${which}"]`).hidden) return;
+    if (formSel[which]) formBrowseStations(which);
+    else formFilterStations(which, formEl.querySelector(`[data-mt-f="${which}"]`).value);
   }
 
   // 每次輸入/切換都重算:先給路線摘要(不管名字合不合法),名字合法才進一步算完整時刻表預覽。
@@ -540,6 +614,7 @@
           '</div></div>' +
         '<label class="mt-f-lbl"><span data-mt-lbl="from"></span><input class="mt-f-in" data-mt-f="from" type="text" autocomplete="off"></label>' +
         '<div class="mt-f-sug" data-mt-sug="from" hidden></div>' +
+        '<button type="button" class="mt-f-swap" data-mt-f="swap" data-mt-lbl="swap"></button>' +
         '<label class="mt-f-lbl"><span data-mt-lbl="to"></span><input class="mt-f-in" data-mt-f="to" type="text" autocomplete="off"></label>' +
         '<div class="mt-f-sug" data-mt-sug="to" hidden></div>' +
         '<div class="mt-f-route" data-mt-f="route"></div>' +
@@ -574,6 +649,26 @@
     // 換了起站或訖站，方向回到新那組站的最短那邊（不沿用上一組選的順行／逆行）。
     el.querySelector('[data-mt-f="from"]').addEventListener('input', e => { formSel.from = null; formSel.dir = null; formFilterStations('from', e.target.value); formRecompute(); });
     el.querySelector('[data-mt-f="to"]').addEventListener('input', e => { formSel.to = null; formSel.dir = null; formFilterStations('to', e.target.value); formRecompute(); });
+    for (const w of ['from', 'to']) for (const ev of ['focus', 'click']) el.querySelector(`[data-mt-f="${w}"]`).addEventListener(ev, () => formOpenSug(w));
+    // 按到輸入框與它的清單以外的地方就收起清單。看 pointerdown 的目標,不看 click:清單在按下時才攤開,
+    // 版面一推,click 會落到共同祖先(.mt-f-body)被當成點在外面。focusin 只管鍵盤 Tab 換到別的欄位——
+    // WebKit 點按鈕不給按鈕焦點,焦點落在 dialog 本身,那一次不能算「離開」,否則站鈕還沒 click 清單就沒了。
+    const closeSugOutside = e => {
+      if (!formCtx || e.target === el) return;
+      for (const w of ['from', 'to']) {
+        const box = el.querySelector(`[data-mt-sug="${w}"]`);
+        if (!box.hidden && !box.contains(e.target) && e.target !== el.querySelector(`[data-mt-f="${w}"]`)) formHideSug(w);
+      }
+    };
+    el.addEventListener('pointerdown', closeSugOutside);
+    el.addEventListener('focusin', closeSugOutside);
+    el.querySelector('[data-mt-f="swap"]').onclick = () => {
+      if (!formCtx) return;
+      const a = el.querySelector('[data-mt-f="from"]'), b = el.querySelector('[data-mt-f="to"]');
+      [formSel.from, formSel.to] = [formSel.to, formSel.from]; [a.value, b.value] = [b.value, a.value];
+      formSel.dir = null;
+      formRecompute();
+    };
     el.querySelectorAll('[data-mt-fpattern]').forEach(b => b.onclick = () => { formSel.pattern = b.dataset.v; formSetPressed('[data-mt-fpattern]', b.dataset.v); formRecompute(); });
     el.querySelectorAll('[data-mt-fvia]').forEach(b => b.onclick = () => { formSel.via = b.dataset.v; formSetPressed('[data-mt-fvia]', b.dataset.v); formRecompute(); });
     el.querySelectorAll('[data-mt-fdir]').forEach(b => b.onclick = () => { formSel.dir = b.dataset.v; formSetPressed('[data-mt-fdir]', b.dataset.v); formRecompute(); });
@@ -599,7 +694,7 @@
     const sd = host.systemData(sys);
     const graph = plan.buildGraph(sd.lines, sys);
     const stats = plan.buildRunStats(sys, sd.denseTrains, host.classOf, graph);
-    formCtx = { host, sys, graph, stats, sd, modelId };
+    formCtx = { host, sys, graph, stats, sd, modelId, tiers: plan.stationTiers(sys, sd.denseTrains, host.stnClassMap()) };
     // formBuild() 只建一次 DOM、當時不一定有 host,標籤改成每次開表單都重新翻(語言切換後跟著變)。
     for (const [k, zh] of Object.entries(FORM_LABELS)) {
       const lbl = formEl.querySelector(`[data-mt-lbl="${k}"]`);
@@ -628,8 +723,8 @@
     formEl.querySelector('[data-mt-f="hh"]').value = formSel.hh;
     formEl.querySelector('[data-mt-f="mm"]').value = formSel.mm;
     formEl.querySelector('[data-mt-f="name"]').value = preset ? preset.name : '';
-    formEl.querySelector('[data-mt-sug="from"]').hidden = true;
-    formEl.querySelector('[data-mt-sug="to"]').hidden = true;
+    formHideSug('from'); formHideSug('to');
+    for (const w of ['from', 'to']) formEl.querySelector(`[data-mt-f="${w}"]`).placeholder = host.t('輸入站名，或從清單選');
     formSetPressed('[data-mt-fpattern]', formSel.pattern);
     formSetPressed('[data-mt-fvia]', formSel.via || 'mountain');
     // 林鐵沒有「只停大站」

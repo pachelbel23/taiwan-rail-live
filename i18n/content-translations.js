@@ -4,6 +4,7 @@
   if (!messages || !messages.en || !messages.ja) return;
 
   Object.assign(messages.en, {
+    "自製列車排班更好選站：點起站、訖站就列出常用大站與各路線的站，選完起站自動跳到訖站，也能一鍵對調；打出完整站名不用再點建議": "Easier station picking for custom trains: tap From or To to see major stations and every station by line. After you pick From, the To list opens automatically, and one tap swaps them. Typing a full station name now counts without tapping the suggestion.",
     "隱私權政策補充 iOS 軌道邊鎖定畫面卡片會傳送的資料": "The Privacy Policy now explains what data iOS Trackside Lock Screen cards send.",
     "修正三鶯線重複轉乘資訊，更新站名翻譯與鄰近公車轉乘資料": "Fixed duplicate Sanying Line transfer information and updated station translations and nearby bus connections.",
     "補回太麻里兩條月台股道，減少同站列車重疊；修正部分列車誤入同一股道的交會畫面": "Restored both platform tracks at Taimali to reduce overlapping trains, and corrected some trains meeting on the wrong shared track.",
@@ -278,6 +279,7 @@
   });
 
   Object.assign(messages.ja, {
+    "自製列車排班更好選站：點起站、訖站就列出常用大站與各路線的站，選完起站自動跳到訖站，也能一鍵對調；打出完整站名不用再點建議": "自作列車の駅選びが簡単に：発駅・着駅をタップすると主要駅と路線ごとの全駅を表示。発駅を選ぶと着駅の一覧が自動で開き、ワンタップで入れ替えもできます。駅名を最後まで入力すれば候補をタップしなくても選択されます。",
     "隱私權政策補充 iOS 軌道邊鎖定畫面卡片會傳送的資料": "プライバシーポリシーに、iOSの線路わきロック画面カードが送信するデータの説明を追加しました。",
     "修正三鶯線重複轉乘資訊，更新站名翻譯與鄰近公車轉乘資料": "三鶯線の重複した乗換情報を修正し、駅名の翻訳と周辺のバス乗換情報を更新しました。",
     "補回太麻里兩條月台股道，減少同站列車重疊；修正部分列車誤入同一股道的交會畫面": "太麻里駅の2本のホーム線路を復元して列車の重なりを減らし、一部の列車が誤って同じ線路ですれ違う表示を修正しました。",
@@ -4032,4 +4034,15 @@ Object.assign(window.RAIL_I18N_MESSAGES.ja, {
   "通行證專屬：已入庫的車可以自己排班上地圖": "パス限定：車庫に集めた列車にダイヤを付けて地図上を走らせる",
   "台鐵順行": "順行（反時計回り）",
   "台鐵逆行": "逆行（時計回り）"
+});
+// 2026-10-20 自製列車表單：起訖站點了就列出站名清單。
+Object.assign(window.RAIL_I18N_MESSAGES.en, {
+  "常用大站": "Major stations",
+  "起訖對調": "Swap",
+  "輸入站名，或從清單選": "Type a station, or pick from the list"
+});
+Object.assign(window.RAIL_I18N_MESSAGES.ja, {
+  "常用大站": "主要駅",
+  "起訖對調": "発着を入れ替え",
+  "輸入站名，或從清單選": "駅名を入力、または一覧から選択"
 });

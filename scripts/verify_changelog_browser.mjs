@@ -111,7 +111,9 @@ const widths = [360, 375, 414, 768];
 // 10/18：臺南 10/16 重播入口一條（tainanmemory1016，489→490）。
 // 10/20 補記：10/18～10/19 四條沒跟著 +1（tainanevents1018、tainanglow1018、overtakeside1019、trabindvariant1019；
 // 7520b581 的完整歷史數到 494 條）（490→494）；自製列車上線一條（494→495）。
-const expectedHistoryCount = 495;
+// 10/20 補記：隱私權政策軌道邊卡片一條沒跟著 +1（tracksideprivacy1020；f50a3bf3 的完整歷史數到 496 條）（495→496）；
+// 自製列車選站清單一條（496→497）。
+const expectedHistoryCount = 497;
 
 try {
   for (const [engineName, engine] of Object.entries({ chromium, webkit })) {

@@ -124,6 +124,31 @@ body.mobile-shell.fs.sheet-open .stage > .follow-panel.fp-own { display: none; }
 #mtForm .mt-f-sug[hidden] { display: none; }
 #mtForm .mt-f-sug-row { display: block; width: 100%; text-align: left; padding: 9px 12px; border: 0; background: transparent; font: inherit; font-size: 14px; color: var(--ink); min-height: 44px; }
 #mtForm .mt-f-sug-row:hover, #mtForm .mt-f-sug-row:focus-visible { background: var(--bg-stage); }
+/* 還沒打字時的整份站名清單(常用大站＋依路線收合)。不自己捲動、整份撐開交給 .mt-f-body 捲。
+   min-height 要回到 auto:表單高度固定時 grid 列只長到項目的 min-height,上面那條 46px 留著的話
+   清單只佔 46px,其餘內容溢出蓋住下面的欄位(768 寬實測蓋到停站方式與時間)。 */
+#mtForm .mt-f-sug.mt-f-browse { min-height: auto; max-height: none; overflow: visible; padding: 6px 10px 8px; }
+#mtForm .mt-f-sec { font-size: 12px; font-weight: 700; color: var(--muted); margin: 4px 0 6px; }
+#mtForm .mt-f-chips { display: flex; flex-wrap: wrap; gap: 6px; padding-bottom: 8px; }
+#mtForm .mt-f-chip {
+  min-height: 44px; padding: 4px 12px; border: 1.5px solid var(--line); border-radius: 999px;
+  background: var(--bg-stage); color: var(--ink); font: inherit; font-size: 14px;
+}
+#mtForm .mt-f-chip[aria-pressed="true"] { background: var(--red); border-color: var(--red); color: #fff; }
+#mtForm .mt-f-line { border-top: 1px solid var(--line-faint); }
+#mtForm .mt-f-line > summary {
+  display: flex; justify-content: space-between; align-items: center; min-height: 44px;
+  list-style: none; cursor: pointer; font-size: 14px; font-weight: 700; color: var(--ink);
+}
+#mtForm .mt-f-line > summary::-webkit-details-marker { display: none; }
+#mtForm .mt-f-line > summary span { font-size: 12px; font-weight: 400; color: var(--muted); }
+#mtForm .mt-f-line > summary span::after { content: ' ▾'; }
+#mtForm .mt-f-line[open] > summary span::after { content: ' ▴'; }
+#mtForm .mt-f-swap {
+  justify-self: end; margin: -6px 0 -4px; min-height: 44px; padding: 0 12px; border: 1.5px solid var(--line);
+  border-radius: var(--r-m); background: var(--bg-stage); color: var(--ink); font: inherit; font-size: 13px; font-weight: 700;
+}
+#mtForm .mt-f-swap::before { content: '⇅ '; }
 #mtForm .mt-f-route { font-size: 13px; color: var(--muted); }
 #mtForm .mt-f-via, #mtForm .mt-f-dir, #mtForm .mt-f-pattern { display: flex; gap: 6px; flex-wrap: wrap; }
 #mtForm .mt-f-via[hidden], #mtForm .mt-f-dir[hidden] { display: none; }

@@ -5640,6 +5640,7 @@
            內容 li 上限 8 條(li.grp 是標題不算)。 -->
       <ul class="foot-list foot-recent">
         <li class="grp">最近更新</li>
+        <li data-cl-of="mytrainpicker1020"><span class="d">10/20</span><span>自製列車排班更好選站：點起站、訖站就列出常用大站與各路線的站，選完起站自動跳到訖站，也能一鍵對調；打出完整站名不用再點建議</span></li>
         <li data-cl-of="tracksideprivacy1020"><span class="d">10/20</span><span>隱私權政策補充 iOS 軌道邊鎖定畫面卡片會傳送的資料</span></li>
         <li data-cl-of="ownmaketrain0923"><span class="d">10/20</span><span>新增通行證專屬「自製列車」：把車庫已入庫的台鐵、高鐵、林鐵列車排班、取名字，每天在地圖上跑；跟車時可開關光環、調整大小，方便截圖分享</span></li>
         <li data-cl-of="trabindvariant1019"><span class="d">10/19</span><span>台鐵列車比平常多停或少停一站的日子（例如 9/28 的 136），立體地圖上不再退回示意線形，改沿實體股道行駛</span></li>
@@ -5647,7 +5648,6 @@
         <li data-cl-of="tainanglow1018"><span class="d">10/18</span><span>臺南最後一天的重播：145 與 3782 改成柔和光暈；終點在臺南、保安的班次註明終點；同站或並排的兩班車不再疊在一起</span></li>
         <li data-cl-of="tainanevents1018"><span class="d">10/18</span><span>臺南最後一天的重播：點「最後一夜」的事件，畫面留在臺南站，附上說明與報導連結；新增「臺南發車」</span></li>
         <li data-cl-of="tainanmemory1016"><span class="d">10/18</span><span>新增臺南地面鐵道最後一天（10/16）的重播：依當天實際的到站紀錄重現 226 班列車，可調時間、加速、跟車</span></li>
-        <li data-cl-of="thsrwindow"><span class="d">10/18</span><span>高鐵班表每天早上的更新若沒成功，當天稍後會自動再抓；官方資料若是空的，先保留原本的班表</span></li>
       </ul>
       <!-- 第二層:完整歷史。刻意不掛 .foot-box 類名——placeFootBoxes() 用
            `.site-foot .foot-box` 搬移面板,巢狀同名會被當成另一個盒子一起搬走。 -->
@@ -5872,6 +5872,7 @@
         <li><span class="d">7/16</span><span>捷運準確度升級：六家捷運依官方到站看板即時校正，國定假日自動改跑假日班表</span></li>
         <li><span class="d">7/9</span><span>台鐵即時誤點上線——介接交通部 TDX 平臺每分鐘更新；7/11 起開站即真實時刻、捷運改逐班推演</span></li>
         <li class="grp">跟車、搜尋與車站看板</li>
+        <li data-cl="mytrainpicker1020"><span class="d">10/20</span><span>自製列車排班更好選站：點起站、訖站就列出常用大站與各路線的站，選完起站自動跳到訖站，也能一鍵對調；打出完整站名不用再點建議</span></li>
         <li data-cl="followspeed1014"><span class="d">10/14</span><span>修正跟車小卡在列車還停在月台時，時速就開始往上跳，發車前 3 秒就提早寫「行進中」；現在車停著時速就是 0，倒數會數到「1 秒後開車」，表定發車那一刻才換成行進中；跟在前車後面放慢或停住時，時速也跟著地圖上的車</span></li>
         <li data-cl="metrowidgetfree1005"><span class="d">10/5</span><span>捷運小工具的多站與「自動（最近的站）」改為所有人免費，不再需要通行證；iPhone 與 Android 更新到新版 App 後生效</span></li>
         <li data-cl="rideexpire0930"><span class="d">9/30</span><span>「我上車了」後沒按下車，搭的車又從班表消失（週五夜車過午夜、連假加班車）時，過了抵達時間會自動下車；跟著別班車時按「搭乘中」也能直接下車（謝謝網友回報）</span></li>
@@ -7029,7 +7030,8 @@ const RAIL_3D_BOOT_PARAMS = new URLSearchParams(location.search);
 // v1019a：路網補金崙側線到太麻里正式停靠股的出站段，10/22 6789 在金崙等 161 改停側線（111eed72）；更新紀錄把金崙併進和仁那一條。
 // v1019b：台鐵同鍵、中途停靠型態不同的班往下借路徑、不退回示意線形，且把自己那份計畫留在模板候選裡（3bde26de、1a781914）；另併入待避窗口逐日掃描報告（28c906cd、7232d41e，不進網站產物）；更新紀錄加一條。
 // v1020a：併入通行證專屬的自製列車；更新紀錄改成這次上線的一條。
-const BUILD = 'v1020a';
+// v1020b：自製列車表單的起訖站點了就列出站名清單（常用大站＋依路線），選完起站自動攤開訖站、可對調、打完整站名即選定；更新紀錄加一條。
+const BUILD = 'v1020b';
 const LANDSCAPE_REQUESTED = new URLSearchParams(location.search).get('map') === 'landscape';
 const GARAGE_QUERY = new URLSearchParams(location.search).get('garage');
 // 輕量多語 runtime：繁中原文同時是安全 fallback，外語字典只存差異字串。
