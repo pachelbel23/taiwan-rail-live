@@ -629,6 +629,7 @@ async function legalPages(browser, engine) {
     // 譯文同輪跟上,這裡卻還比對舊句 ⇒ 兩引擎恆紅兩週。舊句的無條件承諾在分享位置上線後已不成立,不可改回去。
     const privacyEnCore = { location: /Raw coordinates [^.]*do not leave your device/.test(privacyEn), noSale: privacyEn.includes('does not sell personal data') };
     assert(privacyEnCore.location && privacyEnCore.noSale, `英文隱私頁缺少定位／資料用途核心條款：${JSON.stringify(privacyEnCore)}`);
+    assert(privacyEn.includes('When you tap “Locate” in Trackside Countdown') && privacyEn.includes('Coordinates are not uploaded.') && privacyEn.includes('Trackside Countdown coordinates also stay on your device') && privacyEn.includes('iOS Trackside Lock Screen cards (a Pass feature)') && privacyEn.includes('whether each service runs the next day') && privacyEn.includes('train numbers and times can reveal your approximate location'), '英文隱私頁缺少軌道邊定位／鎖定畫面卡片條款');
     assert(!/[\u3400-\u9fff]/.test(privacyEn), `英文隱私頁仍有中文：${privacyEn.match(/[\u3400-\u9fff][^.!?]{0,80}/)?.[0] || ''}`);
     assert((await page.locator('a[href*="terms.html"]').first().getAttribute('href')).includes('lang=en'), '法務頁連結沒有保留語言');
 
@@ -641,6 +642,7 @@ async function legalPages(browser, engine) {
     const privacyJa = await bodyText(page, 'main');
     const privacyJaCore = { lang: await page.getAttribute('html', 'lang'), location: /生の座標は端末外へ/.test(privacyJa), noSale: privacyJa.includes('個人データを販売せず') }; // 錨法同英文那條
     assert(privacyJaCore.lang === 'ja' && privacyJaCore.location && privacyJaCore.noSale, `日文隱私頁核心條款未翻譯：${JSON.stringify(privacyJaCore)}`);
+    assert(privacyJa.includes('「線路わきカウントダウン」で「現在地」を押した時') && privacyJa.includes('座標はアップロードしません。') && privacyJa.includes('「線路わきカウントダウン」の座標も端末外へ出ません。') && privacyJa.includes('iOSの線路わきロック画面カード（パス機能）') && privacyJa.includes('翌日の便かどうか') && privacyJa.includes('列車番号と時刻からおおよその位置を推測できます。'), '日文隱私頁缺少軌道邊定位／鎖定畫面卡片條款');
     await page.goto(new URL('terms.html?lang=ja', BASE).href, { waitUntil: 'domcontentloaded' });
     const termsJa = await bodyText(page, 'main');
     assert(termsJa.includes('自動更新サブスクリプション') && termsJa.includes('自動解約'), '日文服務條款核心說明未翻譯');
@@ -814,7 +816,7 @@ for (const [engine, launcher] of [['Chromium', chromium], ['WebKit', webkit]]) {
     ...widths.map(width => [`mobile ${width}px`, () => mobileScenario(browser, engine, width)]),
   ];
   try {
-    browser = await launcher.launch({ headless: true });
+    browser = await launcher.launch({ ...(engine === 'Chromium' ? { channel: 'chrome' } : {}), headless: true });
     for (const [name, run] of scenarios) {
       try {
         await run();
