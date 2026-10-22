@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import http from 'node:http';
+import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { chromium, webkit } from 'playwright';
 import { railWeatherNotice, withRailWeatherNotice } from './rail_weather_bulletin.mjs';
@@ -49,20 +50,21 @@ try {
   globalThis.fetch = async () => { throw new Error('測試禁止連外'); };
   globalThis.caches = { default: { match: async () => Response.json(upstream) } };
   for (const endpoint of ['tra-alert', 'thsr-alert', 'metro-alert']) {
-    for (const full of [false, true]) for (const origin of ['capacitor://localhost', 'https://localhost']) {
-      const response = await worker.fetch(new Request('https://railisland.tw/api/' + endpoint + (full ? '?weather=full' : ''), { headers: { Origin: origin } }), {});
+    for (const full of [false, true]) for (const origin of ['capacitor://localhost', 'https://localhost', null, 'https://railisland.tw']) {
+      const response = await worker.fetch(new Request('https://railisland.tw/api/' + endpoint + (full ? '?weather=full' : ''), { headers: origin ? { Origin: origin } : {} }), {});
       assert.equal(response.status, 200);
-      assert.equal(response.headers.get('access-control-allow-origin'), origin);
+      assert.equal(response.headers.get('access-control-allow-origin'), origin && ['capacitor://localhost', 'https://localhost'].includes(origin) ? origin : null);
       assert.equal(response.headers.get('cache-control'), 'no-store');
       const body = await response.json();
       assert.equal(body.at, upstream.at); // 不能把舊台鐵時戳偽裝成剛更新。
       assert.equal(body.alerts[0].bulletin, true);
       assert.equal(body.alerts[1].status, 1);
-      assert.equal(body.alerts[0].bulletinScope, full ? 'full' : endpoint);
+      const wantFull = full || !['capacitor://localhost', 'https://localhost'].includes(origin);
+      assert.equal(body.alerts[0].bulletinScope, wantFull ? 'full' : endpoint);
       for (const system of source.systems) {
-        assert.equal(body.alerts[0].desc.includes(system.detail), full || scopedIds[endpoint].includes(system.id), endpoint + '/' + system.id);
+        assert.equal(body.alerts[0].desc.includes(system.detail), wantFull || scopedIds[endpoint].includes(system.id), endpoint + '/' + system.id);
       }
-      feeds.set(endpoint + (full ? '?weather=full' : ''), body);
+      if (origin === 'https://localhost') feeds.set(endpoint + (full ? '?weather=full' : ''), body);
     }
   }
 } finally { globalThis.caches = savedCaches; Date.now = savedNow; globalThis.fetch = savedFetch; }
@@ -72,11 +74,14 @@ const baseline = JSON.parse(fs.readFileSync(path.join(root, 'app/shipped-baselin
 const oldIndex = baseline.from.find(p => p.includes('1.6.15-128'));
 assert.ok(oldIndex && fs.existsSync(oldIndex), '需要已發行 App 128 原始產物驗相容性');
 const oldRoot = path.dirname(oldIndex);
+const previousWeb = execFileSync('git', ['show', '187b0841:index.html'], { cwd:root, encoding:'utf8', maxBuffer:8*1024*1024 });
 const mime = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.mjs': 'text/javascript', '.json': 'application/json', '.css': 'text/css', '.png': 'image/png', '.svg': 'image/svg+xml', '.woff2': 'font/woff2' };
 const server = http.createServer((req, res) => {
   const url = new URL(req.url, 'http://localhost');
   const old = url.pathname.startsWith('/old-app/');
-  let relative = decodeURIComponent(old ? url.pathname.slice(8) : url.pathname);
+  const oldWeb = url.pathname.startsWith('/old-web/');
+  if (url.pathname === '/old-web/') return res.writeHead(200, { 'content-type':'text/html; charset=utf-8' }).end(previousWeb);
+  let relative = decodeURIComponent(old || oldWeb ? url.pathname.slice(8) : url.pathname);
   if (relative === '/') relative = '/index.html';
   const baseRoot = old ? oldRoot : root;
   const target = path.resolve(baseRoot, '.' + relative);
@@ -97,7 +102,8 @@ async function configure(context) {
     const u = new URL(route.request().url());
     const endpoint = u.pathname.split('/').pop();
     if (u.pathname.includes('/api/')) {
-      const body = feeds.get(endpoint + (u.searchParams.get('weather') === 'full' ? '?weather=full' : '')) || (endpoint === 'thsr-schedule' ? JSON.parse(fs.readFileSync(path.join(root, 'data/thsr_schedule_dense.json')))
+      const legacyApp = route.request().frame().url().includes('/old-app/');
+      const body = feeds.get(endpoint + (!legacyApp || u.searchParams.get('weather') === 'full' ? '?weather=full' : '')) || (endpoint === 'thsr-schedule' ? JSON.parse(fs.readFileSync(path.join(root, 'data/thsr_schedule_dense.json')))
         : endpoint === 'hazard-alert' ? { hazards: [] }
         : endpoint === 'trtc-live' ? { at: '', src: null, trains: [], board: [], boardPos: { at: null, rows: [], dropped: {} } }
           : { at: '', rows: [], trains: [] });
@@ -266,6 +272,18 @@ try {
         assert.equal(await page.locator('#alertBanner').isVisible(), true);
         record(`${name} 桌面橫幅／來源連結／收起與新版本重現`, {});
       } finally { await desktop.close(); }
+      const oldWebContext = await browser.newContext({ viewport:{width:375,height:900},isMobile:true,hasTouch:true,locale:'zh-TW' });
+      try {
+        await configure(oldWebContext);
+        const page=await oldWebContext.newPage(); await page.clock.install({time:new Date(when)});
+        await page.goto(base+'/old-web/?lang=zh-TW');
+        await page.waitForFunction(()=>state.ready&&activeAlertList().some(a=>a.bulletin));
+        assert.equal(await page.evaluate(()=>activeAlertList().filter(a=>a.bulletin).length),1);
+        await page.tap('#alertChip');
+        const text=await page.locator('#alertDetail').innerText();
+        assert.match(text,/環狀線、三鶯線.*15 分鐘/);
+        record(`${name} 已開啟的 v1022b 舊網頁仍收到單一完整彙整`,{});
+      } finally { await oldWebContext.close(); }
       const context = await browser.newContext({ viewport: { width: 375, height: 900 }, isMobile: true, hasTouch: true, locale: 'zh-TW' });
       try {
         await configure(context);

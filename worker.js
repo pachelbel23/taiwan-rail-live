@@ -8644,9 +8644,9 @@ export default {
     }
     else if (url.pathname === '/api/tra-platforms') res = await traPlatforms(request, env, ctx);
     else if (url.pathname === '/api/tra-live') res = await traLive(request, env, ctx);
-    else if (url.pathname === '/api/tra-alert') res = await withRailWeatherNotice(await traAlert(request, env), Date.now(), url.searchParams.get('weather') === 'full' ? 'full' : 'tra-alert');
-    else if (url.pathname === '/api/thsr-alert') res = await withRailWeatherNotice(await thsrAlert(request, env), Date.now(), url.searchParams.get('weather') === 'full' ? 'full' : 'thsr-alert');
-    else if (url.pathname === '/api/metro-alert') res = await withRailWeatherNotice(await metroAlert(request, env), Date.now(), url.searchParams.get('weather') === 'full' ? 'full' : 'metro-alert');
+    else if (url.pathname === '/api/tra-alert') res = await withRailWeatherNotice(await traAlert(request, env), Date.now(), url.searchParams.get('weather') === 'full' || !APP_ORIGINS.has(origin) ? 'full' : 'tra-alert');
+    else if (url.pathname === '/api/thsr-alert') res = await withRailWeatherNotice(await thsrAlert(request, env), Date.now(), url.searchParams.get('weather') === 'full' || !APP_ORIGINS.has(origin) ? 'full' : 'thsr-alert');
+    else if (url.pathname === '/api/metro-alert') res = await withRailWeatherNotice(await metroAlert(request, env), Date.now(), url.searchParams.get('weather') === 'full' || !APP_ORIGINS.has(origin) ? 'full' : 'metro-alert');
     else if (url.pathname === '/api/hazard-alert') res = await hazardAlert(request, env);
     else if (url.pathname === '/api/metro-live') {
       const sys = url.searchParams.get('sys');
