@@ -29,8 +29,18 @@ assert.equal(tra.additionalSources.length, 1);
 assert.ok(tra.additionalSources[0].sourceUrl.includes('8ae4cac3a15ab24201a16394bf4219db'));
 assert.ok(source.systems.find(s => s.id === 'thsr').detail.includes('10/23 全線正常營運'));
 const ntmetro = source.systems.find(s => s.id === 'ntmetro');
-assert.match(ntmetro.status, /環狀、三鶯約15分鐘/);
-assert.match(ntmetro.detail, /淡海輕軌、安坑輕軌.*待確認/);
+// 新北捷運官方貼文適用10/23：兩條輕軌30分鐘，淡海重疊區與兩條捷運15分鐘。
+assert.match(ntmetro.status, /淡海、安坑30分/);
+assert.match(ntmetro.status, /淡海重疊、環狀、三鶯15分/);
+assert.match(ntmetro.detail, /淡海輕軌、安坑輕軌每 30 分鐘/);
+assert.match(ntmetro.detail, /V01 紅樹林至 V09 濱海沙崙重疊路段每 15 分鐘/);
+assert.match(ntmetro.detail, /環狀線、三鶯線每 15 分鐘/);
+assert.doesNotMatch(ntmetro.detail, /待確認|尚未查得/);
+assert.ok(ntmetro.sourceUrl.startsWith('https://www.facebook.com/NewTaipeiMetro/posts/'));
+assert.equal(ntmetro.additionalSources[0].sourceUrl, 'https://www.ntmetro.com.tw/');
+assert.match(ntmetro.detailI18n.en, /30 minutes.*V01–V09.*15 minutes/);
+assert.match(ntmetro.detailI18n.ja, /30分間隔.*V01紅樹林～V09濱海沙崙.*15分間隔/);
+assert.match(source.systems.find(s => s.id === 'klrt').detail, /下午營運模式待官方/);
 assert.equal(railWeatherNotice(Date.parse('2026-10-22T20:19:59+08:00')), null);
 assert.ok(railWeatherNotice(Date.parse('2026-10-23T23:59:59+08:00')));
 assert.equal(railWeatherNotice(Date.parse('2026-10-24T00:00:00+08:00')), null);
@@ -234,6 +244,7 @@ try {
           await page.goto(base + '/weather-status.html');
           assert.equal(await page.locator('section').count(), 9);
           assert.equal(await page.locator('section[aria-labelledby="tra"] a').count(), 2, '加開公告與原停駛方案都可查閱');
+          assert.equal(await page.locator('section[aria-labelledby="ntmetro"] a').count(), 2, '官方班距貼文與官網營運資訊都可查閱');
           const pageOverflow = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth);
           assert.ok(pageOverflow <= 1);
           for (const a of await page.locator('section a').all()) {

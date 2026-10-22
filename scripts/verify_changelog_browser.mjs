@@ -116,7 +116,8 @@ const widths = [360, 375, 414, 768];
 // 10/22：颱風營運公告與警告一條（497→498）。
 // 10/23：App 颱風公告依系統分送，避免全文重複（498→499）。
 // 10/23：台鐵新增兩班全車自由座營運公告（499→500）。
-const expectedHistoryCount = 500;
+// 10/23：補上淡海、安坑官方颱風班距（500→501）。
+const expectedHistoryCount = 501;
 
 try {
   for (const [engineName, engine] of Object.entries({ chromium, webkit })) {

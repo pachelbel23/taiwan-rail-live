@@ -1,7 +1,7 @@
 {
   "id": "champi-20261023",
-  "revision": "20261023-0557",
-  "checkedAt": "2026-10-23T05:57:58+08:00",
+  "revision": "20261023-0751",
+  "checkedAt": "2026-10-23T07:51:01+08:00",
   "displayFrom": "2026-10-22T20:20:00+08:00",
   "expiresAt": "2026-10-24T00:00:00+08:00",
   "serviceDate": "2026-10-23",
@@ -35,7 +35,7 @@
       "id": "afr",
       "label": "阿里山林鐵",
       "status": "本線、支線停駛",
-      "detail": "10/23 本線及所有支線（含祝山線）停駛。10/24 本線仍停駛，支線配合阿里山國家森林遊樂區開放時間營運，請另查後續公告。本項已於 10/23 05:42 核對原公告；05:57 再查時官網暫時無法讀取，出發前請再查官方資訊。",
+      "detail": "10/23 本線及所有支線（含祝山線）停駛。10/24 本線仍停駛，支線配合阿里山國家森林遊樂區開放時間營運，請另查後續公告。本項原公告已於 10/23 07:50 核對，出發前請再查官方最新資訊。",
       "sourceLabel": "林鐵處 10/22 19:00 更新",
       "sourceUrl": "https://afrch.forest.gov.tw/AllNews/0079490",
       "labelI18n": {
@@ -43,8 +43,8 @@
         "ja": "阿里山林業鉄道"
       },
       "detailI18n": {
-        "en": "All mainline and branch services, including Zhushan, are suspended on Oct 23. The mainline remains suspended on Oct 24; branch services depend on the opening of Alishan National Forest Recreation Area and further official notices. The original notice was verified at 05:42 on October 23; the official site could not be read again at 05:57. Check the operator again before travel.",
-        "ja": "10月23日は本線と全支線（祝山線を含む）が運休。24日も本線は運休し、支線は阿里山国家森林遊楽区の開園時間に合わせて運転する予定です。以後の公式発表をご確認ください。原文は10月23日05:42に確認済みですが、05:57の再確認時には公式サイトを読み取れませんでした。出発前に改めて公式情報をご確認ください。"
+        "en": "All mainline and branch services, including Zhushan, are suspended on Oct 23. The mainline remains suspended on Oct 24; branch services depend on the opening of Alishan National Forest Recreation Area and further official notices. The original notice was verified at 07:50 on October 23. Check the latest official information again before travel.",
+        "ja": "10月23日は本線と全支線（祝山線を含む）が運休。24日も本線は運休し、支線は阿里山国家森林遊楽区の開園時間に合わせて運転する予定です。以後の公式発表をご確認ください。原文は10月23日07:50に確認しました。出発前に改めて最新の公式情報をご確認ください。"
       }
     },
     {
@@ -146,18 +146,24 @@
     {
       "id": "ntmetro",
       "label": "新北捷運（環狀、淡海、安坑、三鶯）",
-      "status": "環狀、三鶯約15分鐘；淡海、安坑待確認",
-      "detail": "10/23 環狀線、三鶯線全線班距約 15 分鐘，視運量及風速調整。淡海輕軌、安坑輕軌尚未查得 10/23 颱風專案營運方案，維持待確認；首頁目前正常燈號不代表整日正常營運。",
-      "sourceLabel": "新北捷運官方營運狀態與最新消息",
-      "sourceUrl": "https://www.ntmetro.com.tw/",
+      "status": "淡海、安坑30分；淡海重疊、環狀、三鶯15分",
+      "detail": "10/23 淡海輕軌、安坑輕軌每 30 分鐘一班；淡海輕軌 V01 紅樹林至 V09 濱海沙崙重疊路段每 15 分鐘一班。環狀線、三鶯線每 15 分鐘一班。各線仍依風雨情況機動降速或暫停營運，出發前請留意官方最新公告。",
+      "sourceLabel": "新北捷運官方 10/23 颱風班距貼文（07:48 核對）",
+      "sourceUrl": "https://www.facebook.com/NewTaipeiMetro/posts/pfbid0wm9BjV2dTKQR6aMdJGmVtHMLAZsfncPvKNpiAoF6TAvJq6w2XsGESKUoHn5SLKoHl",
       "labelI18n": {
         "en": "New Taipei Metro: Circular, Danhai, Ankeng and Sanying",
         "ja": "新北MRT（環状線・淡海・安坑・三鶯）"
       },
       "detailI18n": {
-        "en": "On October 23, the Circular and Sanying lines run about every 15 minutes, subject to demand and wind conditions. A typhoon-specific October 23 plan for Danhai and Ankeng light rail has not yet been confirmed. Current normal-service indicators do not guarantee normal operation throughout the day.",
-        "ja": "10月23日の環状線・三鶯線は全線で約15分間隔とし、利用状況や風に応じて調整します。淡海・安坑ライトレールの10月23日の台風対応運転計画は未確認です。現在の通常運転表示は終日の通常運転を保証しません。"
-      }
+        "en": "On October 23, Danhai and Ankeng light rail run every 30 minutes. Trains on the shared V01–V09 section of Danhai run every 15 minutes. The Circular and Sanying lines also run every 15 minutes. All four lines may run at reduced speed or suspend service depending on wind and rain. Check the latest official notice before travel.",
+        "ja": "10月23日の淡海・安坑ライトレールは30分間隔で運転します。淡海のV01紅樹林～V09濱海沙崙の共通区間と環状線・三鶯線は15分間隔です。各線は風雨に応じて減速または運転を見合わせる場合があります。出発前に最新の公式発表をご確認ください。"
+      },
+      "additionalSources": [
+        {
+          "sourceLabel": "新北捷運官網營運資訊與最新消息",
+          "sourceUrl": "https://www.ntmetro.com.tw/"
+        }
+      ]
     }
   ],
   "warningI18n": {
