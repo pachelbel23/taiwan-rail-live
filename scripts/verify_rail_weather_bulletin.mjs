@@ -21,6 +21,12 @@ assert.doesNotMatch(railWeatherNotice(when).descI18n.en, /[\u3400-\u9fff]/);
 assert.ok(railWeatherNotice(when).descI18n.ja.includes('10月23日'));
 assert.equal(source.systems.length, 9);
 assert.ok(source.systems.find(s => s.id === 'tra').detail.includes('六家、集集、沙崙'));
+const tra = source.systems.find(s => s.id === 'tra');
+assert.match(tra.detail, /6115.*08:23.*09:00.*14:08/);
+assert.match(tra.detail, /6117.*09:46.*10:20.*14:56/);
+assert.match(tra.detail, /兩班均採全車自由座/);
+assert.equal(tra.additionalSources.length, 1);
+assert.ok(tra.additionalSources[0].sourceUrl.includes('8ae4cac3a15ab24201a16394bf4219db'));
 assert.ok(source.systems.find(s => s.id === 'thsr').detail.includes('10/23 全線正常營運'));
 const ntmetro = source.systems.find(s => s.id === 'ntmetro');
 assert.match(ntmetro.status, /環狀、三鶯約15分鐘/);
@@ -227,6 +233,7 @@ try {
           }
           await page.goto(base + '/weather-status.html');
           assert.equal(await page.locator('section').count(), 9);
+          assert.equal(await page.locator('section[aria-labelledby="tra"] a').count(), 2, '加開公告與原停駛方案都可查閱');
           const pageOverflow = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth);
           assert.ok(pageOverflow <= 1);
           for (const a of await page.locator('section a').all()) {

@@ -4,7 +4,9 @@ import { railWeatherNotice } from './rail_weather_bulletin.mjs';
 const data = JSON.parse(await readFile(new URL('../data/rail_weather_bulletin.json', import.meta.url), 'utf8'));
 const esc = value => String(value).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const checked = data.checkedAt.replace('T', ' ').slice(0, 16);
-const rows = data.systems.map(s => `<section aria-labelledby="${esc(s.id)}"><div class="row-head"><h2 id="${esc(s.id)}">${esc(s.label)}</h2><span class="status">${esc(s.status)}</span></div><p>${esc(s.detail)}</p><a href="${esc(s.sourceUrl)}" target="_blank" rel="noopener noreferrer">${esc(s.sourceLabel)} ↗</a></section>`).join('\n');
+const links = s => [{ sourceUrl: s.sourceUrl, sourceLabel: s.sourceLabel }, ...(s.additionalSources || [])]
+  .map(source => `<a href="${esc(source.sourceUrl)}" target="_blank" rel="noopener noreferrer">${esc(source.sourceLabel)} ↗</a>`).join(' ');
+const rows = data.systems.map(s => `<section aria-labelledby="${esc(s.id)}"><div class="row-head"><h2 id="${esc(s.id)}">${esc(s.label)}</h2><span class="status">${esc(s.status)}</span></div><p>${esc(s.detail)}</p>${links(s)}</section>`).join('\n');
 await writeFile(new URL('../weather-status.html', import.meta.url), `<!doctype html>
 <html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex"><meta name="theme-color" content="#f4edda">

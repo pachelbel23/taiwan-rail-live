@@ -4,6 +4,8 @@
   if (!messages || !messages.en || !messages.ja) return;
 
   Object.assign(messages.en, {
+    "薔琵颱風｜10/23 台鐵對號停駛、另加開 2 班全車自由座": "Typhoon Champi · Oct 23: scheduled TRA reserved-seat services suspended; 2 all-unreserved extra trains",
+    "補上台鐵 10/23 加開 6115、6117 次七堵至高雄全車自由座及主要時刻，保留其他停駛、班距調整與待確認提醒": "Added TRA all-unreserved extra trains 6115 and 6117 from Qidu to Kaohsiung on Oct 23, including key times. Other suspensions, revised headways and unconfirmed plans remain visible.",
     "自製列車排班更好選站：點起站、訖站就列出常用大站與各路線的站，選完起站自動跳到訖站，也能一鍵對調；打出完整站名不用再點建議": "Easier station picking for custom trains: tap From or To to see major stations and every station by line. After you pick From, the To list opens automatically, and one tap swaps them. Typing a full station name now counts without tapping the suggestion.",
     "隱私權政策補充 iOS 軌道邊鎖定畫面卡片會傳送的資料": "The Privacy Policy now explains what data iOS Trackside Lock Screen cards send.",
     "修正三鶯線重複轉乘資訊，更新站名翻譯與鄰近公車轉乘資料": "Fixed duplicate Sanying Line transfer information and updated station translations and nearby bus connections.",
@@ -279,6 +281,8 @@
   });
 
   Object.assign(messages.ja, {
+    "薔琵颱風｜10/23 台鐵對號停駛、另加開 2 班全車自由座": "台風情報｜10/23 台湾鉄道の定期指定席列車運休・全車自由席2本を増発",
+    "補上台鐵 10/23 加開 6115、6117 次七堵至高雄全車自由座及主要時刻，保留其他停駛、班距調整與待確認提醒": "10月23日の七堵発高雄行き全車自由席の増発列車6115・6117次と主要時刻を追記。その他の運休、運転間隔の変更、未確認の計画の案内も引き続き表示します。",
     "自製列車排班更好選站：點起站、訖站就列出常用大站與各路線的站，選完起站自動跳到訖站，也能一鍵對調；打出完整站名不用再點建議": "自作列車の駅選びが簡単に：発駅・着駅をタップすると主要駅と路線ごとの全駅を表示。発駅を選ぶと着駅の一覧が自動で開き、ワンタップで入れ替えもできます。駅名を最後まで入力すれば候補をタップしなくても選択されます。",
     "隱私權政策補充 iOS 軌道邊鎖定畫面卡片會傳送的資料": "プライバシーポリシーに、iOSの線路わきロック画面カードが送信するデータの説明を追加しました。",
     "修正三鶯線重複轉乘資訊，更新站名翻譯與鄰近公車轉乘資料": "三鶯線の重複した乗換情報を修正し、駅名の翻訳と周辺のバス乗換情報を更新しました。",

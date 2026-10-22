@@ -115,7 +115,8 @@ const widths = [360, 375, 414, 768];
 // 自製列車選站清單一條（496→497）。
 // 10/22：颱風營運公告與警告一條（497→498）。
 // 10/23：App 颱風公告依系統分送，避免全文重複（498→499）。
-const expectedHistoryCount = 499;
+// 10/23：台鐵新增兩班全車自由座營運公告（499→500）。
+const expectedHistoryCount = 500;
 
 try {
   for (const [engineName, engine] of Object.entries({ chromium, webkit })) {

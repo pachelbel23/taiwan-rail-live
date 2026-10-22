@@ -1,35 +1,41 @@
 {
   "id": "champi-20261023",
-  "revision": "20261023-0123",
-  "checkedAt": "2026-10-23T01:23:51+08:00",
+  "revision": "20261023-0557",
+  "checkedAt": "2026-10-23T05:57:58+08:00",
   "displayFrom": "2026-10-22T20:20:00+08:00",
   "expiresAt": "2026-10-24T00:00:00+08:00",
   "serviceDate": "2026-10-23",
-  "title": "薔琵颱風｜10/23 台鐵對號列車、阿里山林鐵停駛",
+  "title": "薔琵颱風｜10/23 台鐵對號停駛、另加開 2 班全車自由座",
   "warning": "動畫仍可能依原班表顯示列車，不能據此判斷有車可搭。停駛、臨時班距與復駛請以各營運單位最新公告為準，出發前務必再確認。",
   "weatherUrl": "https://www.cwa.gov.tw/V8/C/P/Typhoon/TY_WARN.html",
   "systems": [
     {
       "id": "tra",
       "label": "台鐵",
-      "status": "停駛／機動行駛",
-      "detail": "10/23 對號列車全日、全區間停駛。非對號列車經海線、成追線、宜蘭線及北迴線停駛；其餘幹線非對號列車視風雨機動行駛。支線的平溪、深澳、內灣停駛，六家、集集、沙崙依公告正常行駛。觀光列車及科普列車全日停駛。",
-      "sourceLabel": "台鐵 10/22 20:20 新聞稿",
-      "sourceUrl": "https://www.railway.gov.tw/tra-tip-web/tip/tip009/tip911/newsDtl?newsNo=8ae4cac3a15ab24201a16394bf4219db",
+      "status": "原定對號停駛／加開2班自由座",
+      "detail": "10/23 原定對號列車全日、全區間停駛；另加開南下七堵至高雄 6115 次 PP 自強號（七堵 08:23、台北 09:00 開，高雄 14:08 到）及 6117 次 EMU3000 新自強號（七堵 09:46、台北 10:20 開，高雄 14:56 到），兩班均採全車自由座。其他停靠站與時刻請查 10/23 05:30 官方加開公告。非對號列車經海線、成追線、宜蘭線及北迴線停駛；其餘幹線非對號列車視風雨機動行駛。支線的平溪、深澳、內灣停駛，六家、集集、沙崙依公告正常行駛。觀光列車及科普列車全日停駛。",
+      "sourceLabel": "台鐵 10/23 05:30 加開全車自由座公告",
+      "sourceUrl": "https://www.railway.gov.tw/tra-tip-web/tip/tip009/tip911/newsDtl?newsNo=8ae4cac2a162d49e01a1659aa7750f9b&page=0",
       "labelI18n": {
         "en": "Taiwan Railways (TRA)",
         "ja": "台湾鉄道（TRA）"
       },
       "detailI18n": {
-        "en": "Taiwan Railways has suspended all reserved-seat services for the whole of Oct 23. Non-reserved trains via the coast, Chengzhui, Yilan and North-Link lines are suspended; other mainline non-reserved trains run subject to weather. Pingxi, Shen-ao and Neiwan branches are suspended. Liujia, Jiji and Shalun branches are scheduled to operate. Tourist and science trains are suspended all day.",
-        "ja": "10月23日は全区間の指定席列車が終日運休。海線・成追線・宜蘭線・北廻線を経由する非指定席列車も運休し、その他の幹線の非指定席列車は天候に応じて運転します。平渓・深澳・内湾線は運休、六家・集集・沙崙線は公式発表では通常運転です。観光列車と科学普及列車は終日運休します。"
-      }
+        "en": "All originally scheduled reserved-seat services are suspended across the network on Oct 23. Two additional southbound Qidu–Kaohsiung trains have been announced, both with unreserved seating throughout: PP Tze-Chiang No. 6115 departs Qidu at 08:23 and Taipei at 09:00, arriving in Kaohsiung at 14:08; EMU3000 Tze-Chiang No. 6117 departs Qidu at 09:46 and Taipei at 10:20, arriving in Kaohsiung at 14:56. See the October 23 05:30 official notice for all stops and times. Non-reserved trains via the coast, Chengzhui, Yilan and North-Link lines are suspended; other mainline non-reserved trains run subject to weather. Pingxi, Shen-ao and Neiwan branches are suspended. Liujia, Jiji and Shalun branches are scheduled to operate. Tourist and science trains are suspended all day.",
+        "ja": "10月23日は当初予定されていた全区間の指定席列車が終日運休します。別途、七堵から高雄へ向かう南下の全車自由席列車2本を増発：PP自強号6115次は七堵08:23・台北09:00発、高雄14:08着、EMU3000新自強号6117次は七堵09:46・台北10:20発、高雄14:56着です。全停車駅と時刻は10月23日05:30の公式発表をご確認ください。海線・成追線・宜蘭線・北廻線を経由する非指定席列車は運休し、その他の幹線の非指定席列車は天候に応じて運転します。平渓・深澳・内湾線は運休、六家・集集・沙崙線は公式発表では通常運転です。観光列車と科学普及列車は終日運休します。"
+      },
+      "additionalSources": [
+        {
+          "sourceLabel": "台鐵 10/22 20:20 原停駛與機動行駛方案",
+          "sourceUrl": "https://www.railway.gov.tw/tra-tip-web/tip/tip009/tip911/newsDtl?newsNo=8ae4cac3a15ab24201a16394bf4219db"
+        }
+      ]
     },
     {
       "id": "afr",
       "label": "阿里山林鐵",
       "status": "本線、支線停駛",
-      "detail": "10/23 本線及所有支線（含祝山線）停駛。10/24 本線仍停駛，支線配合阿里山國家森林遊樂區開放時間營運，請另查後續公告。 本項沿用 10/22 21:33 已核對公告；本次官網暫時無法重新確認，出發前請再查官方資訊。",
+      "detail": "10/23 本線及所有支線（含祝山線）停駛。10/24 本線仍停駛，支線配合阿里山國家森林遊樂區開放時間營運，請另查後續公告。本項已於 10/23 05:42 核對原公告；05:57 再查時官網暫時無法讀取，出發前請再查官方資訊。",
       "sourceLabel": "林鐵處 10/22 19:00 更新",
       "sourceUrl": "https://afrch.forest.gov.tw/AllNews/0079490",
       "labelI18n": {
@@ -37,8 +43,8 @@
         "ja": "阿里山林業鉄道"
       },
       "detailI18n": {
-        "en": "All mainline and branch services, including Zhushan, are suspended on Oct 23. The mainline remains suspended on Oct 24; branch services depend on the opening of Alishan National Forest Recreation Area and further official notices. This item retains the notice verified at 21:33 on October 22; the official site could not be rechecked this time. Check the operator again before travel.",
-        "ja": "10月23日は本線と全支線（祝山線を含む）が運休。24日も本線は運休し、支線は阿里山国家森林遊楽区の開園時間に合わせて運転する予定です。以後の公式発表をご確認ください。 本項は10月22日21時33分に確認済みの発表を引き継いでいます。今回は公式サイトを再確認できていないため、出発前に改めて公式情報をご確認ください。"
+        "en": "All mainline and branch services, including Zhushan, are suspended on Oct 23. The mainline remains suspended on Oct 24; branch services depend on the opening of Alishan National Forest Recreation Area and further official notices. The original notice was verified at 05:42 on October 23; the official site could not be read again at 05:57. Check the operator again before travel.",
+        "ja": "10月23日は本線と全支線（祝山線を含む）が運休。24日も本線は運休し、支線は阿里山国家森林遊楽区の開園時間に合わせて運転する予定です。以後の公式発表をご確認ください。原文は10月23日05:42に確認済みですが、05:57の再確認時には公式サイトを読み取れませんでした。出発前に改めて公式情報をご確認ください。"
       }
     },
     {
@@ -110,8 +116,8 @@
       "label": "台北捷運",
       "status": "約 12 分鐘／重疊區段約 6 分鐘",
       "detail": "10/23 文湖、淡水信義、松山新店、板南及中和新蘆線班距約 12 分鐘；南勢角至大橋頭重疊區段約 6 分鐘。各線仍依運量及風速調整，高架、平面段風速達標時暫停營運，地下段維持運轉並彈性調整。",
-      "sourceLabel": "北捷 10/23 營運速報（10/22 20:17 更新）",
-      "sourceUrl": "https://www.metro.taipei/News_Content.aspx?n=30CCEFD2A45592BF&sms=72544237BBE4C5F6&s=3D2BE8F43E80D66B",
+      "sourceLabel": "北捷 10/23 06:00 營運速報（05:26 更新）",
+      "sourceUrl": "https://www.metro.taipei/News_Content.aspx?n=30CCEFD2A45592BF&sms=72544237BBE4C5F6&s=8BEACB051BE72D47",
       "labelI18n": {
         "en": "Taipei Metro",
         "ja": "台北MRT"
