@@ -130,6 +130,10 @@ const API_FIX = {
 };
 const server = createServer((req, res) => {
   const url = new URL(req.url, 'http://x');
+  // 焦點情境使用合成公告；正式颱風公告另有驗收，不能蓋過本檔注入的標題。
+  if (url.pathname === '/data/rail_weather_notice.json') {
+    res.setHeader('content-type', 'application/json'); return res.end('null');
+  }
   if (url.pathname.startsWith('/api/')) {
     res.statusCode = 200; res.setHeader('content-type', 'application/json');
     if (API_FIX[url.pathname]) return res.end(JSON.stringify(API_FIX[url.pathname]()));

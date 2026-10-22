@@ -40,6 +40,8 @@ page.on('pageerror', e => pageErrors.push(String(e)));
 //   setInterval(pollLive, 60e3) 會用真資料把注入值整顆洗掉——同族假紅的根因與擋法
 //   照 verify_tra_motion(acbb7c3);pollLive 有 try/catch,abort 不會產生 pageerror。
 await page.route('**/*tra-live*', r => r.abort());
+// 此檔只驗合成異常；正式靜態颱風公告另由 verify_rail_weather_bulletin 覆蓋，避免搶走受測橫幅。
+await page.route('**/data/rail_weather_notice.json*', r => r.fulfill({ status: 200, contentType: 'application/json', body: 'null' }));
 // 純靜態 server 沒有 /api：頁面的定時輪詢打到會印「Failed to load resource … 404」，落不落在測試窗內看時機
 // （2026-09-19 v0919f 出貨鏈同碼六跑一紅：新增 2 個全是這種）。只排除「/api/ 的資源載入失敗」這一種；
 // 缺靜態檔的 404 與任何真的 console.error 照算。
