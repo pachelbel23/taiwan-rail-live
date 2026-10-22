@@ -4066,3 +4066,11 @@ Object.assign(window.RAIL_I18N_MESSAGES.en, {
 Object.assign(window.RAIL_I18N_MESSAGES.ja, {
   '薔琵颱風｜10/23 台鐵對號列車、阿里山林鐵停駛': '台風による10/23の運休：台湾鉄道の指定席列車・阿里山林業鉄道',
 });
+
+// 已安裝 App 透過既有公告端點取得各系統摘要，避免整份全台彙整重複三次。
+Object.assign(window.RAIL_I18N_MESSAGES.en, {
+  '修正 App 的颱風資訊重複顯示整份內容：台鐵與林鐵、高鐵、捷運與輕軌改為各自的營運公告，保留完整彙整連結': 'Fixed repeated full typhoon bulletins in the app. TRA and Alishan, high speed rail, and metro/light rail now receive separate operator notices, with a link to the full summary.',
+});
+Object.assign(window.RAIL_I18N_MESSAGES.ja, {
+  '修正 App 的颱風資訊重複顯示整份內容：台鐵與林鐵、高鐵、捷運與輕軌改為各自的營運公告，保留完整彙整連結': 'アプリで台風情報の全文が重複する問題を修正。台湾鉄道・阿里山林鉄、高速鉄道、MRT・ライトレールごとの運行案内に分け、全体のまとめへのリンクも残しました。',
+});

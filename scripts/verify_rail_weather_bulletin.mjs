@@ -40,13 +40,15 @@ const savedCaches = globalThis.caches, savedNow = Date.now;
 const savedFetch = globalThis.fetch;
 const upstream = { at: '2026-10-16T22:07:04+08:00', alerts: [{ title: '全線營運正常', status: 1 }] };
 const feeds = new Map();
+const scopedIds = { 'tra-alert': ['tra', 'afr'], 'thsr-alert': ['thsr'], 'metro-alert': ['tmrt', 'krtc', 'klrt', 'trtc', 'tymc', 'ntmetro'] };
+assert.deepEqual(Object.values(scopedIds).flat().sort(), source.systems.map(s => s.id).sort(), '所有系統恰好分送一次');
 try {
   Date.now = () => when;
   globalThis.fetch = async () => { throw new Error('測試禁止連外'); };
   globalThis.caches = { default: { match: async () => Response.json(upstream) } };
   for (const endpoint of ['tra-alert', 'thsr-alert', 'metro-alert']) {
-    for (const origin of ['capacitor://localhost', 'https://localhost']) {
-      const response = await worker.fetch(new Request('https://railisland.tw/api/' + endpoint, { headers: { Origin: origin } }), {});
+    for (const full of [false, true]) for (const origin of ['capacitor://localhost', 'https://localhost']) {
+      const response = await worker.fetch(new Request('https://railisland.tw/api/' + endpoint + (full ? '?weather=full' : ''), { headers: { Origin: origin } }), {});
       assert.equal(response.status, 200);
       assert.equal(response.headers.get('access-control-allow-origin'), origin);
       assert.equal(response.headers.get('cache-control'), 'no-store');
@@ -54,11 +56,15 @@ try {
       assert.equal(body.at, upstream.at); // 不能把舊台鐵時戳偽裝成剛更新。
       assert.equal(body.alerts[0].bulletin, true);
       assert.equal(body.alerts[1].status, 1);
-      feeds.set(endpoint, body);
+      assert.equal(body.alerts[0].bulletinScope, full ? 'full' : endpoint);
+      for (const system of source.systems) {
+        assert.equal(body.alerts[0].desc.includes(system.detail), full || scopedIds[endpoint].includes(system.id), endpoint + '/' + system.id);
+      }
+      feeds.set(endpoint + (full ? '?weather=full' : ''), body);
     }
   }
 } finally { globalThis.caches = savedCaches; Date.now = savedNow; globalThis.fetch = savedFetch; }
-record('三個正式公告路由／iOS 與 Android CORS／保留上游時間與公告', {});
+record('三個正式公告路由：舊 App 系統分送／新版完整彙整／iOS 與 Android CORS／保留上游時間與公告', {});
 
 const baseline = JSON.parse(fs.readFileSync(path.join(root, 'app/shipped-baseline.json')));
 const oldIndex = baseline.from.find(p => p.includes('1.6.15-128'));
@@ -89,7 +95,8 @@ async function configure(context) {
     const u = new URL(route.request().url());
     const endpoint = u.pathname.split('/').pop();
     if (u.pathname.includes('/api/')) {
-      const body = feeds.get(endpoint) || (endpoint === 'hazard-alert' ? { hazards: [] }
+      const body = feeds.get(endpoint + (u.searchParams.get('weather') === 'full' ? '?weather=full' : '')) || (endpoint === 'thsr-schedule' ? JSON.parse(fs.readFileSync(path.join(root, 'data/thsr_schedule_dense.json')))
+        : endpoint === 'hazard-alert' ? { hazards: [] }
         : endpoint === 'trtc-live' ? { at: '', src: null, trains: [], board: [], boardPos: { at: null, rows: [], dropped: {} } }
           : { at: '', rows: [], trains: [] });
       return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(body), headers: { 'access-control-allow-origin': '*' } });
@@ -270,7 +277,26 @@ try {
         assert.match(text, /台鐵.*停駛/s);
         assert.match(text, /阿里山/);
         assert.match(text, /動畫仍可能依原班表/);
-        record(`${name} 已發行 App 1.6.15 (128) 不重打包即可讀到完整警告`, { bulletinCount: await page.evaluate(() => activeAlertList().filter(a => a.bulletin).length) });
+        const combined = await page.evaluate(() => activeAlertList().filter(a => a.bulletin));
+        assert.equal(combined.length, 3, '全台同框保留三則內容不同的系統公告');
+        assert.equal(new Set(combined.map(a => a.title)).size, 3, '三個不同標題');
+        assert.equal(new Set(combined.map(a => a.sig)).size, 3, '三個不同內容簽章');
+        for (const system of source.systems) {
+          assert.equal(combined.filter(a => a.desc.includes(system.detail)).length, 1, system.id + ' 內容不能重複');
+        }
+        const singleCases = [];
+        for (const [groupId, scope, sysId] of [['tra', 'tra-alert', 'tra_sched'], ['hsr', 'thsr-alert', 'thsr_sched'], ['metro', 'metro-alert', 'mrt']]) {
+          await page.evaluate(async ({ groupId, sysId }) => {
+            const group = GROUPS.find(g => g.id === groupId) || GROUPS.find(g => g.members?.includes(sysId));
+            if (!group) throw new Error('找不到群組 ' + groupId);
+            await selectGroup(group); await pollAlert();
+          }, { groupId, sysId });
+          const notices = await page.evaluate(() => activeAlertList().filter(a => a.bulletin));
+          assert.equal(notices.length, 1, groupId + ' 單獨分頁仍有公告');
+          assert.equal(notices[0].bulletinScope, scope);
+          singleCases.push({ groupId, scope, count:notices.length });
+        }
+        record(`${name} 已發行 App 1.6.15 (128)：全台各系統內容恰好一次、切換單一系統仍有公告`, { bulletinCount:combined.length, titles:combined.map(a => a.title), singleCases });
       } finally { await context.close(); }
     } finally { await browser.close(); }
   }
