@@ -1,3 +1,4 @@
+import { withRailWeatherNotice } from './scripts/rail_weather_bulletin.mjs';
 import traScheduleSupplements from './scripts/tra_schedule_supplements.json' with { type: 'json' };
 import {createPlatformProxy} from './scripts/tra_platform_proxy.mjs';
 import {
@@ -8643,9 +8644,9 @@ export default {
     }
     else if (url.pathname === '/api/tra-platforms') res = await traPlatforms(request, env, ctx);
     else if (url.pathname === '/api/tra-live') res = await traLive(request, env, ctx);
-    else if (url.pathname === '/api/tra-alert') res = await traAlert(request, env);
-    else if (url.pathname === '/api/thsr-alert') res = await thsrAlert(request, env);
-    else if (url.pathname === '/api/metro-alert') res = await metroAlert(request, env);
+    else if (url.pathname === '/api/tra-alert') res = await withRailWeatherNotice(await traAlert(request, env));
+    else if (url.pathname === '/api/thsr-alert') res = await withRailWeatherNotice(await thsrAlert(request, env));
+    else if (url.pathname === '/api/metro-alert') res = await withRailWeatherNotice(await metroAlert(request, env));
     else if (url.pathname === '/api/hazard-alert') res = await hazardAlert(request, env);
     else if (url.pathname === '/api/metro-live') {
       const sys = url.searchParams.get('sys');

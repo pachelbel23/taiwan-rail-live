@@ -5632,7 +5632,7 @@
 
   <footer class="site-foot">
     <details class="foot-box">
-      <summary><span>更新紀錄</span><span class="foot-sub">最後更新：2026/10/20</span></summary>
+      <summary><span>更新紀錄</span><span class="foot-sub">最後更新：2026/10/22</span></summary>
       <!-- 第一層是「最近更新」的檢視,不是正本:每一條都用 data-cl-of 指向第二層某條的 data-cl。
            要把一條擠出第一層之前,它的正本必須已經在第二層存在——2026-08-03 就踩過一次:8/1 的
            衛星計費那條只活在第一層(第二層只有一句夾在 7/25 條目裡、日期對不上的附帶說明),
@@ -5640,6 +5640,7 @@
            內容 li 上限 8 條(li.grp 是標題不算)。 -->
       <ul class="foot-list foot-recent">
         <li class="grp">最近更新</li>
+        <li data-cl-of="weather1022"><span class="d">10/22</span><span>新增颱風期間全台鐵道營運提醒與官方來源，明確標示停駛、調整班距及待確認資訊；地圖有車不代表實際開行</span></li>
         <li data-cl-of="mytrainpicker1020"><span class="d">10/20</span><span>自製列車排班更好選站：點起站、訖站就列出常用大站與各路線的站，選完起站自動跳到訖站，也能一鍵對調；打出完整站名不用再點建議</span></li>
         <li data-cl-of="tracksideprivacy1020"><span class="d">10/20</span><span>隱私權政策補充 iOS 軌道邊鎖定畫面卡片會傳送的資料</span></li>
         <li data-cl-of="ownmaketrain0923"><span class="d">10/20</span><span>新增通行證專屬「自製列車」：把車庫已入庫的台鐵、高鐵、林鐵列車排班、取名字，每天在地圖上跑；跟車時可開關光環、調整大小，方便截圖分享</span></li>
@@ -5647,13 +5648,13 @@
         <li data-cl-of="overtakeside1019"><span class="d">10/19</span><span>修正 10/22 金崙站、10/23 和仁站的待避：等車的列車和通過的列車，在立體地圖上不再停在同一條股道</span></li>
         <li data-cl-of="tainanglow1018"><span class="d">10/18</span><span>臺南最後一天的重播：145 與 3782 改成柔和光暈；終點在臺南、保安的班次註明終點；同站或並排的兩班車不再疊在一起</span></li>
         <li data-cl-of="tainanevents1018"><span class="d">10/18</span><span>臺南最後一天的重播：點「最後一夜」的事件，畫面留在臺南站，附上說明與報導連結；新增「臺南發車」</span></li>
-        <li data-cl-of="tainanmemory1016"><span class="d">10/18</span><span>新增臺南地面鐵道最後一天（10/16）的重播：依當天實際的到站紀錄重現 226 班列車，可調時間、加速、跟車</span></li>
       </ul>
       <!-- 第二層:完整歷史。刻意不掛 .foot-box 類名——placeFootBoxes() 用
            `.site-foot .foot-box` 搬移面板,巢狀同名會被當成另一個盒子一起搬走。 -->
       <details class="foot-more">
         <summary>完整更新歷史（依主題分類）</summary>
         <ul class="foot-list">
+        <li data-cl="weather1022"><span class="d">10/22</span><span>新增颱風期間全台鐵道營運提醒與官方來源，明確標示停駛、調整班距及待確認資訊；地圖有車不代表實際開行</span></li>
         <li class="grp">路網與車站</li>
         <li data-cl="trabindvariant1019"><span class="d">10/19</span><span>台鐵列車某天比平常多停或少停一站時（例如 8/30 的 6616、9/28 的 132 與 136），立體地圖上不再退回示意線形，改沿實體股道行駛，優先走這班平常的股道</span></li>
         <li data-cl="overtakeside1019"><span class="d">10/19</span><span>修正 10/22 金崙站、10/23 和仁站的預排待避：停下來等車的列車改走站內的側線，不再跟通過的列車在立體地圖上疊在同一條股道</span></li>
@@ -7031,7 +7032,7 @@ const RAIL_3D_BOOT_PARAMS = new URLSearchParams(location.search);
 // v1019b：台鐵同鍵、中途停靠型態不同的班往下借路徑、不退回示意線形，且把自己那份計畫留在模板候選裡（3bde26de、1a781914）；另併入待避窗口逐日掃描報告（28c906cd、7232d41e，不進網站產物）；更新紀錄加一條。
 // v1020a：併入通行證專屬的自製列車；更新紀錄改成這次上線的一條。
 // v1020b：自製列車表單的起訖站點了就列出站名清單（常用大站＋依路線），選完起站自動攤開訖站、可對調、打完整站名即選定；更新紀錄加一條。
-const BUILD = 'v1020b';
+const BUILD = 'v1022a';
 const LANDSCAPE_REQUESTED = new URLSearchParams(location.search).get('map') === 'landscape';
 const GARAGE_QUERY = new URLSearchParams(location.search).get('garage');
 // 輕量多語 runtime：繁中原文同時是安全 fallback，外語字典只存差異字串。
@@ -31316,7 +31317,9 @@ function pollAlert() {
 async function pollAlertOnce(key) {
   if (state.mode === 'sched') {
     const sysList = (state.schedSystems || []).filter(s => s.alert);
-    if (!sysList.length) return;
+    // 單看林鐵也收全台災害彙整；借用既有端點但只收 bulletin，不冒充林鐵即時 API。
+    const bulletinOnly = !sysList.length;
+    if (bulletinOnly) sysList.push({ alert: apiUrl('api/tra-alert') });
     const merged = []; let at = '', ok = 0;
     for (const sys of sysList) {
       try {
@@ -31326,7 +31329,7 @@ async function pollAlertOnce(key) {
         if (!Array.isArray(d.alerts)) throw new Error('bad payload');
         ok++;
         if (d.at && d.at > at) at = d.at;
-        for (const a of d.alerts) if (a.status !== 1) merged.push({ ...a, sysLabel: sys.label });
+        for (const a of d.alerts) if (a.status !== 1 && (!bulletinOnly || a.bulletin)) merged.push({ ...a, sysLabel: a.sysLabel || sys.label });
       } catch (e) { /* 單一系統失敗略過,不影響其他系統 */ }
     }
     const nextAlert = ok ? { at, list: merged } : null; // 至少一個系統回應才更新(全失敗保留舊資料)
@@ -31615,7 +31618,15 @@ function activeAlertList() {
     ? new Set([...(state.schedSel || (state.sysId ? [state.sysId] : [])),
         ...(state.deco ? (state.decoLines || []).map(freqSysIdOf) : [])])
     : (state.freqSel || new Set(state.sysId ? [state.sysId] : []));
-  return trtcOutageEntries().concat(trtcRecoveryEntries(), official, hazardWatchEntries(),
+  // 同一份全台公告會同時由台鐵／高鐵／捷運送來；只顯示一次，放在公告最前方。
+  // 客戶端也守到期時間，避免跨午夜仍留著上一次輪詢的颱風公告。
+  const seenBulletins = new Set();
+  const bulletins = official.filter(a => {
+    if (!a.bulletin || !a.sig || !(Date.now() < Date.parse(a.end))) return false;
+    if (seenBulletins.has(a.sig)) return false;
+    seenBulletins.add(a.sig); return true;
+  });
+  return bulletins.concat(trtcOutageEntries(), trtcRecoveryEntries(), official.filter(a => !a.bulletin), hazardWatchEntries(),
     selfAnomalyEntries(), curatedNoticeEntries(visSys));
 }
 // 公告的常駐入口有兩種形態(2026-07-30 改版):
@@ -31664,7 +31675,8 @@ function renderAlertDetail() {
   det.innerHTML = list.map(a =>
     `<div class="ad-row${a.self ? ' is-self' : ''}"><b>${a.hazard ? `<span class="ad-self">${escHtml(t('災害觸發'))}</span>` : a.self ? `<span class="ad-self">${escHtml(t('本站觀測'))}</span>` : ''}${a.sysLabel ? escHtml('【' + t(a.sysLabel) + '】') : ''}${escHtml(a.title ? t(a.title) : t('通阻公告'))}</b>` +
     (a.start || a.end ? `<div class="ad-time">${escHtml(fmtT(a.start))}${a.end ? ' ～ ' + escHtml(fmtT(a.end)) : ' ' + escHtml(t('起'))}</div>` : '') +
-    (a.desc ? `<div>${escHtml(t(a.desc))}</div>` : '') +
+    (a.bulletin ? `<div><a href="https://railisland.tw/weather-status.html" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;min-height:44px">${escHtml(t('查閱各系統公告與來源'))} ↗</a></div>` : '') +
+    (a.desc ? `<div>${a.bulletin ? escHtml(t(a.desc)).replace(/\n/g, '<br>') : escHtml(t(a.desc))}</div>` : '') +
     (a.lines && a.lines.length ? `<div class="ad-time">${escHtml(t('影響路線：{routes}', { routes: a.lines.map(name => routeName(name)).join('、') }))}</div>` : '') +
     `</div>`).join('') +
     `<div class="ad-src">${escHtml(t('來源：TDX 營運通阻／狀態公告（平時每 5 分鐘；災害示警生效時加強重查）'))}${state.hazardWatch ? escHtml(t('；災害觸發來源：NCDR 生效中示警')) : ''} · ${escHtml(t('動畫依當日時刻表推演，台鐵誤點已逐車套用、部分捷運營運時段依官方即時資訊校正；但停駛、取消或加開的班次與臨時班距調整不會反映——畫面上列車仍可能照表出現，實際運行以官方公告為準'))}` +

@@ -246,10 +246,11 @@ try {
   });
 
   browser = await chromium.launch({ headless: true });
-  const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  const context = await browser.newContext({ viewport: { width: 1280, height: 900 }, locale: 'zh-TW' });
   await context.addInitScript(() => {
     localStorage.setItem('trainmap-howto-seen', '1');
     localStorage.setItem('trainmap-appearance', 'light');
+        localStorage.setItem('trainmap-language', 'zh-TW');
   });
   const page = await context.newPage();
   const pageErrors = [];
@@ -457,11 +458,12 @@ try {
     try {
       mobileContext = await browser.newContext({
         viewport: { width, height: width === 768 ? 1024 : 844 },
-        isMobile: true, hasTouch: true, deviceScaleFactor: 1,
+        isMobile: true, hasTouch: true, deviceScaleFactor: 1, locale: 'zh-TW',
       });
       await mobileContext.addInitScript(() => {
         localStorage.setItem('trainmap-howto-seen', '1');
         localStorage.setItem('trainmap-appearance', 'light');
+        localStorage.setItem('trainmap-language', 'zh-TW');
       });
       const mobilePage = await mobileContext.newPage();
       mobilePage.on('pageerror', error => row.pageErrors.push(String(error && error.stack || error)));

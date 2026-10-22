@@ -4046,3 +4046,15 @@ Object.assign(window.RAIL_I18N_MESSAGES.ja, {
   "起訖對調": "発着を入れ替え",
   "輸入站名，或從清單選": "駅名を入力、または一覧から選択"
 });
+
+(() => { const messages = window.RAIL_I18N_MESSAGES;
+  Object.assign(messages.en, {
+    '查閱各系統公告與來源': 'View operator notices and sources',
+    '新增颱風期間全台鐵道營運提醒與官方來源，明確標示停駛、調整班距及待確認資訊；地圖有車不代表實際開行': 'Added typhoon rail service notices and official sources across Taiwan, distinguishing suspensions, changed headways and unconfirmed plans. A train on the map does not guarantee service.',
+  });
+  Object.assign(messages.ja, {
+    '查閱各系統公告與來源': '各運行会社のお知らせと出典を見る',
+    '新增颱風期間全台鐵道營運提醒與官方來源，明確標示停駛、調整班距及待確認資訊；地圖有車不代表實際開行': '台風時の台湾各地の運行案内と公式情報へのリンクを追加。運休、運転間隔の変更、未確認の情報を区別します。地図上の列車表示は実際の運行を保証しません。',
+  });
+
+})();
