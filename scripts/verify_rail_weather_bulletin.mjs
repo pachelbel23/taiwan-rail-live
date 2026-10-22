@@ -170,6 +170,38 @@ try {
           await popup.locator('section').first().waitFor();
           assert.equal(await popup.locator('section').count(), 9);
           await popup.close();
+          // 完整長公告與兩套真實跟車卡：開啟讓位、關閉恢復，跟隨身分不變。
+          await page.goto(base + '/?lang=zh-TW');
+          await page.waitForFunction(() => state.ready && activeAlertList().some(a => a.bulletin));
+          await page.evaluate(() => { state._setFs(true); state.playing = false; state.clockAtNow = false; });
+          for (const kind of ['sched', 'freq']) {
+            const selector = kind === 'sched' ? '#followPanel' : '#freqCard';
+            const identity = await page.evaluate(kind => {
+              if (kind === 'sched') {
+                const tr = state.trains.find(t => t.sys === 'tra_sched' && t.stops?.length > 2);
+                state.simSec = tr.stops[0].depSec + 60;
+                setFollow(tr, false, true); return state.followId;
+              }
+              const ln = state.decoLines.find(l => !isTrtcBoardLine(l) && l._tt?.some(t => t.length >= 4));
+              const tr = ln._tt.find(t => t.length >= 4); state.simSec = tr[1] + 1;
+              setFreqFollow({ ln, tr }); return state.freqFollow?.ln.id;
+            }, kind);
+            assert.ok(identity, `${name}/${width}/${kind}: 跟隨真實班次`);
+            assert.equal(await page.locator(selector).evaluate(e => getComputedStyle(e).visibility), 'visible');
+            await page.tap('#alertChip');
+            assert.equal(await page.locator(selector).evaluate(e => getComputedStyle(e).visibility), 'hidden', '公告閱讀中跟車卡讓位');
+            await page.tap('#alertChip');
+            assert.equal(await page.locator(selector).evaluate(e => getComputedStyle(e).visibility), 'visible', '關閉公告恢復原卡');
+            assert.equal(await page.evaluate(kind => kind === 'sched' ? state.followId : state.freqFollow?.ln.id, kind), identity, '跟隨身分不變');
+            states.push({ mode:'follow-' + kind, identity, restored:true });
+          }
+          if (width === 375) {
+            await page.evaluate(() => { window.__weatherActiveAlertList = activeAlertList; activeAlertList = () => [{ title:'一般公告',desc:'一般公告內容' }]; renderAlertBanner(); });
+            await page.tap('#alertChip');
+            assert.equal(await page.locator('#freqCard').evaluate(e => getComputedStyle(e).visibility), 'visible', '一般短公告不隱藏跟車卡');
+            await page.tap('#alertChip');
+            await page.evaluate(() => { activeAlertList = window.__weatherActiveAlertList; delete window.__weatherActiveAlertList; renderAlertBanner(); });
+          }
           await page.clock.setSystemTime(new Date('2026-10-24T00:01:00+08:00'));
           assert.equal(await page.evaluate(() => activeAlertList().filter(a => a.bulletin).length), 0);
           await page.clock.setSystemTime(new Date(when));

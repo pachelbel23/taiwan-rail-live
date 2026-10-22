@@ -38,6 +38,15 @@ await new Promise((resolve, reject) => {
 });
 const BASE = `http://127.0.0.1:${server.address().port}/`;
 
+// 班表每週更新，停站秒數由磁碟原始樣本獨立重算，不能沿用舊資料窗的 750 秒。
+const dwellRows = JSON.parse(readFileSync(path.join(ROOT, 'data/tra_schedule_dense.json'), 'utf8')).trains
+  .filter(tr => !tr.loop && !tr.est)
+  .flatMap(tr => tr.stops.slice(1, -1).filter(st => st.stop !== false && st.depSec >= st.arrSec)
+    .map(st => ({ sec: st.depSec - st.arrSec, local: /普通|普快/.test(tr.carName || '') })));
+const rawMedian = rows => { const values = rows.map(r => r.sec).sort((a, b) => a - b); if (!values.length) throw new Error('停站樣本為空'); const m = Math.floor(values.length / 2); return Math.round(values.length % 2 ? values[m] : (values[m - 1] + values[m]) / 2); };
+const BLUE_DWELL = { on: rawMedian(dwellRows.filter(r => r.local)), off: rawMedian(dwellRows) };
+if (BLUE_DWELL.on === BLUE_DWELL.off) throw new Error('普快與全系統停站中位數必須不同，才能驗出線內外分流');
+
 const results = [];
 function check(name, pass, detail = '') {
   results.push({ name, pass, detail });
@@ -815,8 +824,8 @@ async function blueSnapshot(page) {
 }
 
 function blueOk(s, from, to) {
-  return s.from === from && s.to === to && s.dwell['崁頂'] === 60 && s.dwell['東海'] === 60
-    && s.dwell['枋寮'] === 750 && s.dwell['金崙'] === 750;
+  return s.from === from && s.to === to && s.dwell['崁頂'] === BLUE_DWELL.off && s.dwell['東海'] === BLUE_DWELL.off
+    && s.dwell['枋寮'] === BLUE_DWELL.on && s.dwell['金崙'] === BLUE_DWELL.on;
 }
 
 async function runBlue(browser, engineName) {
@@ -826,7 +835,7 @@ async function runBlue(browser, engineName) {
     await openFormFromGarage(page, 'blue');
     await submitOpenForm(page, { from: '潮州', to: '太麻里', name: '藍皮測' });
     const forward = await blueSnapshot(page);
-    check(`${engineName} 藍皮南迴順向：線外 60 秒、枋寮／線內 750 秒`, blueOk(forward, '潮州', '太麻里'), JSON.stringify(forward));
+    check(`${engineName} 藍皮南迴順向：線外全系統中位數、枋寮／線內普快中位數`, blueOk(forward, '潮州', '太麻里'), JSON.stringify(forward));
 
     await page.reload({ waitUntil: 'domcontentloaded' });
     await page.waitForFunction(() => state.ready && state.myTrains.length === 1, null, { timeout: 60000 });
@@ -843,7 +852,7 @@ async function runBlue(browser, engineName) {
     await page.waitForFunction(() => document.getElementById('mtForm')?.open, null, { timeout: 5000 });
     await submitOpenForm(page, { from: '太麻里', to: '潮州', name: '藍皮測' });
     const reverse = await blueSnapshot(page);
-    check(`${engineName} 藍皮反向經 UI 編輯：線外 60 秒、枋寮／線內 750 秒`,
+    check(`${engineName} 藍皮反向經 UI 編輯：線外全系統中位數、枋寮／線內普快中位數`,
       blueOk(reverse, '太麻里', '潮州') && reverse.id === forward.id, JSON.stringify(reverse));
 
     await page.reload({ waitUntil: 'domcontentloaded' });
