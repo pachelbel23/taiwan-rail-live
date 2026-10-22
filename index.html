@@ -31694,7 +31694,7 @@ function renderAlertDetail() {
     `<div class="ad-row${a.self ? ' is-self' : ''}"><b>${a.hazard ? `<span class="ad-self">${escHtml(t('災害觸發'))}</span>` : a.self ? `<span class="ad-self">${escHtml(t('本站觀測'))}</span>` : ''}${a.sysLabel ? escHtml('【' + t(a.sysLabel) + '】') : ''}${escHtml(a.title ? t(a.title) : t('通阻公告'))}</b>` +
     (a.start || a.end ? `<div class="ad-time">${escHtml(fmtT(a.start))}${a.end ? ' ～ ' + escHtml(fmtT(a.end)) : ' ' + escHtml(t('起'))}</div>` : '') +
     (a.bulletin ? `<div><a href="https://railisland.tw/weather-status.html" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;min-height:44px">${escHtml(t('查閱各系統公告與來源'))} ↗</a></div>` : '') +
-    (a.desc ? `<div>${a.bulletin ? escHtml(t(a.desc)).replace(/\n/g, '<br>') : escHtml(t(a.desc))}</div>` : '') +
+    (a.desc ? `<div>${a.bulletin ? escHtml(a.descI18n && typeof a.descI18n[I18N_LANG] === 'string' ? a.descI18n[I18N_LANG] : t(a.desc)).replace(/\n/g, '<br>') : escHtml(t(a.desc))}</div>` : '') +
     (a.lines && a.lines.length ? `<div class="ad-time">${escHtml(t('影響路線：{routes}', { routes: a.lines.map(name => routeName(name)).join('、') }))}</div>` : '') +
     `</div>`).join('') +
     `<div class="ad-src">${escHtml(t('來源：TDX 營運通阻／狀態公告（平時每 5 分鐘；災害示警生效時加強重查）'))}${state.hazardWatch ? escHtml(t('；災害觸發來源：NCDR 生效中示警')) : ''} · ${escHtml(t('動畫依當日時刻表推演，台鐵誤點已逐車套用、部分捷運營運時段依官方即時資訊校正；但停駛、取消或加開的班次與臨時班距調整不會反映——畫面上列車仍可能照表出現，實際運行以官方公告為準'))}` +

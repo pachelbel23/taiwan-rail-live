@@ -4058,3 +4058,11 @@ Object.assign(window.RAIL_I18N_MESSAGES.ja, {
   });
 
 })();
+
+// 颱風公告的常駐橫幅標題也是介面文字，完整原文仍在公告詳情與來源頁。
+Object.assign(window.RAIL_I18N_MESSAGES.en, {
+  '薔琵颱風｜10/23 台鐵對號列車、阿里山林鐵停駛': 'Typhoon Champi · Oct 23: TRA reserved-seat and Alishan Forest Railway services suspended',
+});
+Object.assign(window.RAIL_I18N_MESSAGES.ja, {
+  '薔琵颱風｜10/23 台鐵對號列車、阿里山林鐵停駛': '台風による10/23の運休：台湾鉄道の指定席列車・阿里山林業鉄道',
+});

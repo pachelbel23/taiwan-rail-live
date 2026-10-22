@@ -113,7 +113,8 @@ const widths = [360, 375, 414, 768];
 // 7520b581 的完整歷史數到 494 條）（490→494）；自製列車上線一條（494→495）。
 // 10/20 補記：隱私權政策軌道邊卡片一條沒跟著 +1（tracksideprivacy1020；f50a3bf3 的完整歷史數到 496 條）（495→496）；
 // 自製列車選站清單一條（496→497）。
-const expectedHistoryCount = 497;
+// 10/22：颱風營運公告與警告一條（497→498）。
+const expectedHistoryCount = 498;
 
 try {
   for (const [engineName, engine] of Object.entries({ chromium, webkit })) {

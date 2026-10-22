@@ -16,6 +16,8 @@ const results = [];
 const record = (name, detail) => { results.push({ name, ...detail }); console.log('PASS', name); };
 const source = JSON.parse(fs.readFileSync(path.join(root, 'data/rail_weather_bulletin.json')));
 assert.equal(source.serviceDate, '2026-10-23');
+assert.doesNotMatch(railWeatherNotice(when).descI18n.en, /[\u3400-\u9fff]/);
+assert.ok(railWeatherNotice(when).descI18n.ja.includes('10月23日'));
 assert.equal(source.systems.length, 9);
 assert.ok(source.systems.find(s => s.id === 'tra').detail.includes('六家、集集、沙崙'));
 assert.ok(source.systems.find(s => s.id === 'thsr').detail.includes('10/23 全線正常營運'));

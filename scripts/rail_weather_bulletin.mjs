@@ -5,7 +5,16 @@ import bulletin from '../data/rail_weather_bulletin.json' with { type: 'json' };
 export function railWeatherNotice(now = Date.now()) {
   if (!(now >= Date.parse(bulletin.displayFrom) && now < Date.parse(bulletin.expiresAt))) return null;
   const checked = bulletin.checkedAt.replace('T', ' ').slice(0, 16);
+  const descI18n = {};
+  for (const [lang, warning] of Object.entries(bulletin.warningI18n || {})) {
+    const heading = lang === 'en' ? `Official notices, manually checked ${checked} (Taiwan time)`
+      : `公式発表の手動確認時刻：${checked}（台湾時間）`;
+    descI18n[lang] = heading + '\n' + warning + '\n'
+      + bulletin.systems.map(s => `[${s.labelI18n?.[lang] || s.label}] ${s.detailI18n?.[lang] || s.detail}`).join('\n')
+      + '\nhttps://railisland.tw/weather-status.html';
+  }
   return {
+    descI18n,
     bulletin: true, status: 0, sysLabel: '軌島', sig: `rail-weather:${bulletin.id}:${bulletin.revision}`,
     title: bulletin.title,
     desc: `【官方公告人工彙整｜核對時間 ${checked}（台灣時間）】\n${bulletin.warning}\n`
