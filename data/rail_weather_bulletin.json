@@ -1,7 +1,7 @@
 {
   "id": "champi-20261023",
-  "revision": "20261022-2133",
-  "checkedAt": "2026-10-22T21:33:00+08:00",
+  "revision": "20261023-0123",
+  "checkedAt": "2026-10-23T01:23:51+08:00",
   "displayFrom": "2026-10-22T20:20:00+08:00",
   "expiresAt": "2026-10-24T00:00:00+08:00",
   "serviceDate": "2026-10-23",
@@ -29,7 +29,7 @@
       "id": "afr",
       "label": "阿里山林鐵",
       "status": "本線、支線停駛",
-      "detail": "10/23 本線及所有支線（含祝山線）停駛。10/24 本線仍停駛，支線配合阿里山國家森林遊樂區開放時間營運，請另查後續公告。",
+      "detail": "10/23 本線及所有支線（含祝山線）停駛。10/24 本線仍停駛，支線配合阿里山國家森林遊樂區開放時間營運，請另查後續公告。 本項沿用 10/22 21:33 已核對公告；本次官網暫時無法重新確認，出發前請再查官方資訊。",
       "sourceLabel": "林鐵處 10/22 19:00 更新",
       "sourceUrl": "https://afrch.forest.gov.tw/AllNews/0079490",
       "labelI18n": {
@@ -37,8 +37,8 @@
         "ja": "阿里山林業鉄道"
       },
       "detailI18n": {
-        "en": "All mainline and branch services, including Zhushan, are suspended on Oct 23. The mainline remains suspended on Oct 24; branch services depend on the opening of Alishan National Forest Recreation Area and further official notices.",
-        "ja": "10月23日は本線と全支線（祝山線を含む）が運休。24日も本線は運休し、支線は阿里山国家森林遊楽区の開園時間に合わせて運転する予定です。以後の公式発表をご確認ください。"
+        "en": "All mainline and branch services, including Zhushan, are suspended on Oct 23. The mainline remains suspended on Oct 24; branch services depend on the opening of Alishan National Forest Recreation Area and further official notices. This item retains the notice verified at 21:33 on October 22; the official site could not be rechecked this time. Check the operator again before travel.",
+        "ja": "10月23日は本線と全支線（祝山線を含む）が運休。24日も本線は運休し、支線は阿里山国家森林遊楽区の開園時間に合わせて運転する予定です。以後の公式発表をご確認ください。 本項は10月22日21時33分に確認済みの発表を引き継いでいます。今回は公式サイトを再確認できていないため、出発前に改めて公式情報をご確認ください。"
       }
     },
     {
@@ -140,8 +140,8 @@
     {
       "id": "ntmetro",
       "label": "新北捷運（環狀、淡海、安坑、三鶯）",
-      "status": "10/23 方案待確認",
-      "detail": "截至核對時間，官方首頁四條路線顯示目前正常運作，但尚未查得 10/23 颱風專案營運公告。不能將目前燈號或本站原班表視為10/23 正常營運的保證，請直接查官方最新資訊。",
+      "status": "環狀、三鶯約15分鐘；淡海、安坑待確認",
+      "detail": "10/23 環狀線、三鶯線全線班距約 15 分鐘，視運量及風速調整。淡海輕軌、安坑輕軌尚未查得 10/23 颱風專案營運方案，維持待確認；首頁目前正常燈號不代表整日正常營運。",
       "sourceLabel": "新北捷運官方營運狀態與最新消息",
       "sourceUrl": "https://www.ntmetro.com.tw/",
       "labelI18n": {
@@ -149,8 +149,8 @@
         "ja": "新北MRT（環状線・淡海・安坑・三鶯）"
       },
       "detailI18n": {
-        "en": "At the check time, the official homepage indicated current normal operation, but no specific Oct 23 typhoon service plan had been found. The current indicator and the original timetable do not guarantee normal service on Oct 23. Check the operator directly for updates.",
-        "ja": "確認時点では公式サイトは現在の通常運転を示していますが、10月23日の台風対応の運転計画は確認できていません。現在の表示や通常の時刻表は10月23日の通常運転を保証しません。公式の最新情報をご確認ください。"
+        "en": "On October 23, the Circular and Sanying lines run about every 15 minutes, subject to demand and wind conditions. A typhoon-specific October 23 plan for Danhai and Ankeng light rail has not yet been confirmed. Current normal-service indicators do not guarantee normal operation throughout the day.",
+        "ja": "10月23日の環状線・三鶯線は全線で約15分間隔とし、利用状況や風に応じて調整します。淡海・安坑ライトレールの10月23日の台風対応運転計画は未確認です。現在の通常運転表示は終日の通常運転を保証しません。"
       }
     }
   ],

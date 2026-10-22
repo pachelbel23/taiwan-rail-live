@@ -9,19 +9,21 @@ import { railWeatherNotice, withRailWeatherNotice } from './rail_weather_bulleti
 import worker from '../worker.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const when = Date.parse('2026-10-22T21:08:00+08:00');
 const outDir = path.join(root, 'tmp/rail-weather-verification');
 fs.mkdirSync(outDir, { recursive: true });
 const results = [];
 const record = (name, detail) => { results.push({ name, ...detail }); console.log('PASS', name); };
 const source = JSON.parse(fs.readFileSync(path.join(root, 'data/rail_weather_bulletin.json')));
+const when = Date.parse(source.checkedAt);
 assert.equal(source.serviceDate, '2026-10-23');
 assert.doesNotMatch(railWeatherNotice(when).descI18n.en, /[\u3400-\u9fff]/);
 assert.ok(railWeatherNotice(when).descI18n.ja.includes('10月23日'));
 assert.equal(source.systems.length, 9);
 assert.ok(source.systems.find(s => s.id === 'tra').detail.includes('六家、集集、沙崙'));
 assert.ok(source.systems.find(s => s.id === 'thsr').detail.includes('10/23 全線正常營運'));
-assert.ok(source.systems.find(s => s.id === 'ntmetro').status.includes('待確認'));
+const ntmetro = source.systems.find(s => s.id === 'ntmetro');
+assert.match(ntmetro.status, /環狀、三鶯約15分鐘/);
+assert.match(ntmetro.detail, /淡海輕軌、安坑輕軌.*待確認/);
 assert.equal(railWeatherNotice(Date.parse('2026-10-22T20:19:59+08:00')), null);
 assert.ok(railWeatherNotice(Date.parse('2026-10-23T23:59:59+08:00')));
 assert.equal(railWeatherNotice(Date.parse('2026-10-24T00:00:00+08:00')), null);
