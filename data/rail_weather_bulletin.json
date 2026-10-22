@@ -1,7 +1,7 @@
 {
   "id": "champi-20261023",
-  "revision": "20261022-2108",
-  "checkedAt": "2026-10-22T21:08:00+08:00",
+  "revision": "20261022-2133",
+  "checkedAt": "2026-10-22T21:33:00+08:00",
   "displayFrom": "2026-10-22T20:20:00+08:00",
   "expiresAt": "2026-10-24T00:00:00+08:00",
   "serviceDate": "2026-10-23",
@@ -60,18 +60,18 @@
     {
       "id": "trtc",
       "label": "台北捷運",
-      "status": "依風雨調整，明日班距待確認",
-      "detail": "北捷已公告防颱措施：高架及平面路段風速達標時暫停營運，地下路段維持運轉並彈性調整班距。截至核對時間，尚未查得 10/23 逐線班距方案；目前正常燈號不代表明日全線照常。",
-      "sourceLabel": "北捷防颱公告（10/22 08:54 更新）",
-      "sourceUrl": "https://www.metro.taipei/News_Content.aspx?n=30CCEFD2A45592BF&s=EAA74E531B8AD497&sms=72544237BBE4C5F6"
+      "status": "約 12 分鐘／重疊區段約 6 分鐘",
+      "detail": "10/23 文湖、淡水信義、松山新店、板南及中和新蘆線班距約 12 分鐘；南勢角至大橋頭重疊區段約 6 分鐘。各線仍依運量及風速調整，高架、平面段風速達標時暫停營運，地下段維持運轉並彈性調整。",
+      "sourceLabel": "北捷 10/23 營運速報（10/22 20:17 更新）",
+      "sourceUrl": "https://www.metro.taipei/News_Content.aspx?n=30CCEFD2A45592BF&sms=72544237BBE4C5F6&s=3D2BE8F43E80D66B"
     },
     {
       "id": "tymc",
       "label": "桃園機場捷運",
-      "status": "依風雨調整，明日班距待確認",
-      "detail": "桃捷公告目前依時刻表發車，颱風期間將視風速、停班課與機場航班調整班距，必要時降速、減班或停駛。截至核對時間，尚未查得 10/23 固定班距方案。",
-      "sourceLabel": "桃捷 10/22 防颱新聞稿",
-      "sourceUrl": "https://www.tymetro.com.tw/tymetro-new/tw/_pages/news/show-2436-1.html"
+      "status": "直達車停駛／普通車 15 分鐘",
+      "detail": "10/23 全天取消直達車及加班車，普通車維持 15 分鐘班距；A1、A3 預辦登機及行李託運全天暫停。實際運轉仍依風速調整，可能降速或暫停營運。",
+      "sourceLabel": "桃捷 10/22 公布之 10/23 營運模式",
+      "sourceUrl": "https://www.tymetro.com.tw/tymetro-new/tw/_pages/news/show-2438-1.html"
     },
     {
       "id": "ntmetro",

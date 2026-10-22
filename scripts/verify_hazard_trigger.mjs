@@ -226,6 +226,7 @@ try {
   const installOfflineRoutes = (targetPage, callsSink = apiCalls) => targetPage.route('**/*', async route => {
     const url = new URL(route.request().url());
     if (url.hostname === '127.0.0.1' || url.hostname === 'localhost') {
+      if (url.pathname === '/data/rail_weather_notice.json') return route.fulfill({ status: 200, contentType: 'application/json', body: 'null' });
       if (url.pathname === '/api/hazard-alert') {
         callsSink.push({ path: url.pathname, status: browserHazardStatus, at: Date.now() });
         return route.fulfill({ status: browserHazardStatus, contentType: 'application/json', body: JSON.stringify(browserHazard) });

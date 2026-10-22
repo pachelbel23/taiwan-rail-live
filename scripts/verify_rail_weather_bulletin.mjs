@@ -193,6 +193,19 @@ try {
           record(`${name} ${width}px 觸控／四種面板狀態／全控件碰撞／來源頁與過期警告`, { states });
         } finally { await context.close(); }
       }
+      const backup = await browser.newContext({ viewport: { width: 375, height: 900 }, isMobile: true, hasTouch: true, locale: 'zh-TW' });
+      try {
+        await configure(backup);
+        await backup.route('**/api/**', route => route.fulfill({ status: 404, body: 'GitHub Pages has no Worker API' }));
+        const page = await backup.newPage();
+        await page.clock.install({ time: new Date(when) });
+        await page.goto(base + '/?lang=zh-TW');
+        await page.waitForFunction(() => { try { return state.ready && activeAlertList().some(a => a.bulletin); } catch { return false; } }, null, { timeout: 60000 });
+        assert.equal(await page.evaluate(() => activeAlertList().filter(a => a.bulletin).length), 1);
+        await page.tap('#alertChip');
+        assert.match(await page.locator('#alertDetail').innerText(), /台鐵.*停駛/s);
+        record(`${name} 備援站所有 API 404 時仍可由靜態公告顯示警告`, {});
+      } finally { await backup.close(); }
       const desktop = await browser.newContext({ viewport: { width: 1280, height: 900 }, locale: 'zh-TW' });
       try {
         await configure(desktop);

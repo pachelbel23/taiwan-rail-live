@@ -1,5 +1,6 @@
 // 與 API 使用同一份核對快照，產生可分享、無須 JavaScript 即可閱讀的公告頁。
 import { readFile, writeFile } from 'node:fs/promises';
+import { railWeatherNotice } from './rail_weather_bulletin.mjs';
 const data = JSON.parse(await readFile(new URL('../data/rail_weather_bulletin.json', import.meta.url), 'utf8'));
 const esc = value => String(value).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const checked = data.checkedAt.replace('T', ' ').slice(0, 16);
@@ -27,3 +28,6 @@ else if (now - Date.parse(checked) >= 4 * 3600000) el.textContent = '距離人�
 updateAge(); setInterval(updateAge, 60000); })();
 </script></body></html>\n`);
 console.log(`weather-status.html：${data.systems.length} 個系統／群組，核對時間 ${checked}`);
+
+// 靜態備援站沒有 Worker，同一份公告另產可直接讀取的 JSON。
+await writeFile(new URL('../data/rail_weather_notice.json', import.meta.url), JSON.stringify(railWeatherNotice(Date.parse(data.checkedAt)), null, 2) + '\n');

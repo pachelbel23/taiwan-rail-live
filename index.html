@@ -31359,6 +31359,24 @@ async function pollAlertOnce(key) {
   renderAlertBanner();
 }
 
+// 靜態備援站沒有 /api；保留同一份具時效公告的靜態副本，也讓 API 故障時仍可看到警告。
+let _railWeatherNoticePolling = null;
+function pollRailWeatherNotice() {
+  if (document.hidden) return Promise.resolve();
+  if (_railWeatherNoticePolling) return _railWeatherNoticePolling;
+  _railWeatherNoticePolling = (async () => {
+    try {
+      const r = await fetch(apiUrl('data/rail_weather_notice.json'), { cache: 'no-store' });
+      if (!r.ok) throw new Error(r.status);
+      const a = await r.json(), now = Date.now();
+      state.railWeatherNotice = a && a.bulletin && a.sig && typeof a.title === 'string' && typeof a.desc === 'string'
+        && now >= Date.parse(a.start) && now < Date.parse(a.end) ? a : null;
+      renderAlertBanner();
+    } catch (e) { /* 失敗保留舊資料；activeAlertList 仍守到期時間 */ }
+  })().finally(() => { _railWeatherNoticePolling = null; });
+  return _railWeatherNoticePolling;
+}
+
 // ── NCDR 災害示警觸發器 ──────────────────────────────────────────────────────
 // Worker 每分鐘讀一次「生效中的示警」總 feed；前端首見/更新事件立即重查公告，事件仍在時每 2 分鐘複查。
 // 🔴 分層鐵則：這裡只加速既有公告 poll 並產生文字；班次異常由原本的連續節拍檢查，
@@ -31621,8 +31639,8 @@ function activeAlertList() {
   // 同一份全台公告會同時由台鐵／高鐵／捷運送來；只顯示一次，放在公告最前方。
   // 客戶端也守到期時間，避免跨午夜仍留著上一次輪詢的颱風公告。
   const seenBulletins = new Set();
-  const bulletins = official.filter(a => {
-    if (!a.bulletin || !a.sig || !(Date.now() < Date.parse(a.end))) return false;
+  const bulletins = official.concat(state.railWeatherNotice ? [state.railWeatherNotice] : []).filter(a => {
+    if (!a.bulletin || !a.sig || !(Date.now() >= Date.parse(a.start) && Date.now() < Date.parse(a.end))) return false;
     if (seenBulletins.has(a.sig)) return false;
     seenBulletins.add(a.sig); return true;
   });
@@ -31699,6 +31717,9 @@ function updateFollowAlert() {
     el.textContent = t('本路線有{system}通阻公告，班次可能停駛——以官方公告為準', { system: t(opLabel) });
   }
 }
+setInterval(pollRailWeatherNotice, 300e3);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) pollRailWeatherNotice(); });
+pollRailWeatherNotice();
 setInterval(pollAlert, 300e3);
 document.addEventListener('visibilitychange', () => { if (!document.hidden) pollAlert(); });
 pollAlert();

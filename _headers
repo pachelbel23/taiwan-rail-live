@@ -81,3 +81,7 @@
 
 /.well-known/assetlinks.json
   Content-Type: application/json
+
+# 颱風營運快照：備援站與 App 的靜態警告不可長期快取。
+/data/rail_weather_notice.json
+  Cache-Control: no-store
