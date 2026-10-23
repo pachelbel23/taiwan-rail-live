@@ -40,7 +40,14 @@ assert.ok(ntmetro.sourceUrl.startsWith('https://www.facebook.com/NewTaipeiMetro/
 assert.equal(ntmetro.additionalSources[0].sourceUrl, 'https://www.ntmetro.com.tw/');
 assert.match(ntmetro.detailI18n.en, /30 minutes.*V01–V09.*15 minutes/);
 assert.match(ntmetro.detailI18n.ja, /30分間隔.*V01紅樹林～V09濱海沙崙.*15分間隔/);
-assert.match(source.systems.find(s => s.id === 'klrt').detail, /下午營運模式待官方/);
+// 10/23新公告已確認全日20分鐘，包含下午；不能再顯示上午限定或待確認。
+const klrt = source.systems.find(s => s.id === 'klrt');
+assert.equal(klrt.status, '全日 20 分鐘班距');
+assert.match(klrt.detail, /10\/23 全日班距 20 分鐘，包含下午時段/);
+assert.doesNotMatch(klrt.detail, /12:00 前|中午前|待官方|待確認|待另/);
+assert.equal(klrt.sourceUrl, 'https://www.krtc.com.tw/Information/notice_more?id=b1da86ad15f54605ad99a035aca8f441');
+assert.match(klrt.detailI18n.en, /20 minutes throughout the day, including the afternoon/);
+assert.match(klrt.detailI18n.ja, /午後を含め終日20分間隔/);
 assert.equal(railWeatherNotice(Date.parse('2026-10-22T20:19:59+08:00')), null);
 assert.ok(railWeatherNotice(Date.parse('2026-10-23T23:59:59+08:00')));
 assert.equal(railWeatherNotice(Date.parse('2026-10-24T00:00:00+08:00')), null);

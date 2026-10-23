@@ -1,7 +1,7 @@
 {
   "id": "champi-20261023",
-  "revision": "20261023-0751",
-  "checkedAt": "2026-10-23T07:51:01+08:00",
+  "revision": "20261023-1138",
+  "checkedAt": "2026-10-23T11:38:33+08:00",
   "displayFrom": "2026-10-22T20:20:00+08:00",
   "expiresAt": "2026-10-24T00:00:00+08:00",
   "serviceDate": "2026-10-23",
@@ -98,17 +98,17 @@
     {
       "id": "klrt",
       "label": "高雄輕軌",
-      "status": "中午前 20 分鐘班距",
-      "detail": "10/23 12:00 前班距 20 分鐘，下午營運模式待官方依天候另行宣布；不可將上午方案視為全日方案。",
-      "sourceLabel": "高捷 10/23 輕軌營運公告",
-      "sourceUrl": "https://www.krtc.com.tw/Information/notice_more?id=c53294ca446b4c77a62283c6811002aa",
+      "status": "全日 20 分鐘班距",
+      "detail": "10/23 全日班距 20 分鐘，包含下午時段。出發前請再確認官方最新公告。",
+      "sourceLabel": "高捷 10/23 輕軌全日班距公告（11:38 核對）",
+      "sourceUrl": "https://www.krtc.com.tw/Information/notice_more?id=b1da86ad15f54605ad99a035aca8f441",
       "labelI18n": {
         "en": "Kaohsiung Light Rail",
         "ja": "高雄ライトレール"
       },
       "detailI18n": {
-        "en": "On Oct 23, trains run every 20 minutes before noon. Afternoon service is subject to a further weather-dependent announcement. The morning plan does not cover the whole day.",
-        "ja": "10月23日の正午までは20分間隔で運転します。午後の運転計画は天候に応じて別途発表されます。午前の計画を終日の運転計画とみなすことはできません。"
+        "en": "On October 23, Kaohsiung Light Rail runs every 20 minutes throughout the day, including the afternoon. Check the latest official notice before travel.",
+        "ja": "10月23日の高雄ライトレールは午後を含め終日20分間隔で運転します。出発前に最新の公式発表をご確認ください。"
       }
     },
     {
