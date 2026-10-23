@@ -63,6 +63,22 @@ const check = (name, pass, detail = '') => {
   if (!pass) failures.push(`${name}${detail ? ` — ${detail}` : ''}`);
 };
 
+// 這裡驗的是每個亮暗主題載入完成後的跟車卡版面。style.load 只表示樣式 JSON
+// 到位，sprite 還可能在飛；固定 250ms 就切走會讓已卸下的 MapLibre Style
+// 將自己取消的 sprite 請求報成 console.error。等固定版本的 imageManager
+// 完成圖示，不把仍在飛的圖磚混入版面前提；未清空／過濾 errors，逾時與錯誤仍失敗。
+async function waitBasemapStyle(page) {
+  try {
+    await page.waitForFunction(() => {
+      try { return M.isStyleReady() && M.raw.style?.imageManager?.isLoaded() === true; } catch (error) { return false; }
+    }, null, { timeout: 30000 });
+  } catch (error) {
+    const status = await page.evaluate(() => ({ kind: M.getStyleKind(), styleReady: M.isStyleReady(),
+      spritesLoaded: M.raw.style?.imageManager?.isLoaded(), spritePending: !!M.raw.style?._spriteRequest }));
+    throw new Error(`底圖圖示未完成載入：${JSON.stringify(status)}`, { cause: error });
+  }
+}
+
 async function runCase(engineName, engine, width) {
   const height = width >= 700 ? 1024 : 844;
   const context = await engine.launch(engineName === 'chromium'
@@ -292,12 +308,14 @@ async function runCase(engineName, engine, width) {
     // 墨水高度用同字型的 canvas measureText 量，不用行框（行框含行距，WebKit／Chromium 各算各的）。
     if (MUTATE_END) await page.addStyleTag({ content: '.follow-panel.fp-min .fp-head > b, .follow-panel.fp-min .fp-head .spd { align-self:baseline !important; }' });
     for (const theme of ['light', 'dark']) {
+      await waitBasemapStyle(page);
       for (const font of ['std', 'large', 'xlarge']) {
         await page.evaluate(({ theme, font }) => {
           state._setAppearance(theme);
           state._setFontScale(font);
           M.resize(); reproject();
         }, { theme, font });
+        await waitBasemapStyle(page);
         await page.waitForTimeout(250);
         const ink = await page.evaluate(() => {
           const canvas = document.createElement('canvas').getContext('2d');
@@ -341,6 +359,7 @@ async function runCase(engineName, engine, width) {
       }
     }
     await page.evaluate(() => state._setAppearance('light'));
+    await waitBasemapStyle(page);
     check(`${tag} C3 零 pageerror／console.error`, errors.length === 0, errors.slice(0, 4).join(' | '));
     rows.push({ engine: engineName, width, train: `${target.sys}/${target.train}`,
       kmh: +target.kmh.toFixed(1), deltas: scenarioRows.map(row => +row.delta.toFixed(6)), errors: errors.length });
