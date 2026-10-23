@@ -5635,7 +5635,7 @@
 
   <footer class="site-foot">
     <details class="foot-box">
-      <summary><span>更新紀錄</span><span class="foot-sub">最後更新：2026/10/23</span></summary>
+      <summary><span>更新紀錄</span><span class="foot-sub">最後更新：2026/10/24</span></summary>
       <!-- 第一層是「最近更新」的檢視,不是正本:每一條都用 data-cl-of 指向第二層某條的 data-cl。
            要把一條擠出第一層之前,它的正本必須已經在第二層存在——2026-08-03 就踩過一次:8/1 的
            衛星計費那條只活在第一層(第二層只有一句夾在 7/25 條目裡、日期對不上的附帶說明),
@@ -5643,6 +5643,7 @@
            內容 li 上限 8 條(li.grp 是標題不算)。 -->
       <ul class="foot-list foot-recent">
         <li class="grp">最近更新</li>
+        <li data-cl-of="weather1024"><span class="d">10/24</span><span>更新 10/24 颱風公告：台鐵中午前分區行駛、北捷部分首班待通知與今日班距；未確認的復駛資訊另標提醒</span></li>
         <li data-cl-of="weathertymcslow1023"><span class="d">10/23</span><span>桃捷因強風慢速行駛；補列台鐵 10/24 中午前各路段行車方案與例外車次，並附桃捷、中捷明日班距；今晚停駛提醒及午夜到期不變</span></li>
         <li data-cl-of="weathertrtc1024"><span class="d">10/23</span><span>補上北捷 10/24 地下段約 12 分鐘、南勢角至大橋頭約 6 分鐘班距；文湖及平面、高架路段首班仍待天候與巡檢通知，保留今晚停駛提醒</span></li>
         <li data-cl-of="weatherkrtcslow1023"><span class="d">10/23</span><span>高雄捷運因颱風瞬間風速達八級，目前慢速行駛，提醒預留時間並附最新官方公告，班距依現場資訊為準</span></li>
@@ -5650,13 +5651,13 @@
         <li data-cl-of="weatherthsrextra1023"><span class="d">10/23</span><span>高鐵取消 10/23 8825 次（18:25）與 8529 次（20:45）兩班全車自由座增開；全線維持正常營運，並補上高捷 23:00 班距切換公告</span></li>
         <li data-cl-of="weatherkrtc14301023"><span class="d">10/23</span><span>高雄捷運公告 10/23 14:30 起紅橘全線每 10 分鐘一班，深夜每 20 分鐘，附上最新官網原文與先前夜間切換說明</span></li>
         <li data-cl-of="weatherntstop1023"><span class="d">10/23</span><span>新北捷運公告 10/23 15:00 起淡海、安坑、三鶯預防性停駛，可能依風雨提前；環狀線維持每 15 分鐘</span></li>
-        <li data-cl-of="weatherkrtc1023"><span class="d">10/23</span><span>補上高雄捷運紅橘線 10/23 晚間班距切換時間：23:00 前每 15 分鐘，23:00 後每 20 分鐘</span></li>
       </ul>
       <!-- 第二層:完整歷史。刻意不掛 .foot-box 類名——placeFootBoxes() 用
            `.site-foot .foot-box` 搬移面板,巢狀同名會被當成另一個盒子一起搬走。 -->
       <details class="foot-more">
         <summary>完整更新歷史（依主題分類）</summary>
         <ul class="foot-list">
+        <li data-cl="weather1024"><span class="d">10/24</span><span>更新 10/24 颱風公告：台鐵中午前分區行駛、北捷部分首班待通知與今日班距；未確認的復駛資訊另標提醒</span></li>
         <li data-cl="weathertymcslow1023"><span class="d">10/23</span><span>桃捷因強風慢速行駛；補列台鐵 10/24 中午前各路段行車方案與例外車次，並附桃捷、中捷明日班距；今晚停駛提醒及午夜到期不變</span></li>
         <li data-cl="weathertrtc1024"><span class="d">10/23</span><span>補上北捷 10/24 地下段約 12 分鐘、南勢角至大橋頭約 6 分鐘班距；文湖及平面、高架路段首班仍待天候與巡檢通知，保留今晚停駛提醒</span></li>
         <li data-cl="weatherkrtcslow1023"><span class="d">10/23</span><span>高雄捷運因颱風瞬間風速達八級，目前慢速行駛，提醒預留時間並附最新官方公告，班距依現場資訊為準</span></li>
@@ -7047,7 +7048,7 @@ const RAIL_3D_BOOT_PARAMS = new URLSearchParams(location.search);
 // v1019b：台鐵同鍵、中途停靠型態不同的班往下借路徑、不退回示意線形，且把自己那份計畫留在模板候選裡（3bde26de、1a781914）；另併入待避窗口逐日掃描報告（28c906cd、7232d41e，不進網站產物）；更新紀錄加一條。
 // v1020a：併入通行證專屬的自製列車；更新紀錄改成這次上線的一條。
 // v1020b：自製列車表單的起訖站點了就列出站名清單（常用大站＋依路線），選完起站自動攤開訖站、可對調、打完整站名即選定；更新紀錄加一條。
-const BUILD = 'v1023m';
+const BUILD = 'v1024a';
 const LANDSCAPE_REQUESTED = new URLSearchParams(location.search).get('map') === 'landscape';
 const GARAGE_QUERY = new URLSearchParams(location.search).get('garage');
 // 輕量多語 runtime：繁中原文同時是安全 fallback，外語字典只存差異字串。

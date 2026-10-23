@@ -4,6 +4,9 @@
   if (!messages || !messages.en || !messages.ja) return;
 
   Object.assign(messages.en, {
+    "更新 10/24 颱風公告：台鐵中午前分區行駛、北捷部分首班待通知與今日班距；未確認的復駛資訊另標提醒": "Updated the October 24 typhoon bulletin: TRA services by section before noon, pending first services on parts of Taipei Metro, and today's headways. Unconfirmed resumptions are clearly marked.",
+    "薔琵颱風｜10/24 台鐵中午前分區行駛、北捷部分首班待通知": "Typhoon Champi · Oct 24: TRA services by section before noon; some Taipei Metro first services pending",
+
     "桃捷因強風慢速行駛；補列台鐵 10/24 中午前各路段行車方案與例外車次，並附桃捷、中捷明日班距；今晚停駛提醒及午夜到期不變": "Taoyuan Airport MRT is running at reduced speed in strong winds. Added TRA sections and train exceptions for before noon on October 24, plus tomorrow's Taoyuan and Taichung MRT headways. Tonight's suspensions and midnight expiry remain.",
     "補上北捷 10/24 地下段約 12 分鐘、南勢角至大橋頭約 6 分鐘班距；文湖及平面、高架路段首班仍待天候與巡檢通知，保留今晚停駛提醒": "Added the October 24 Taipei Metro plan: about 12-minute headways underground and 6 minutes on the shared Nanshijiao–Daqiaotou section. First services on Wenhu and elevated or ground-level sections still await weather and track inspections. Tonight’s suspensions remain stated.",
     "高雄捷運因颱風瞬間風速達八級，目前慢速行駛，提醒預留時間並附最新官方公告，班距依現場資訊為準": "Kaohsiung MRT is running at reduced speed after gusts reached force 8. Allow extra travel time and check the latest official notice and on-site headway information.",
@@ -293,6 +296,9 @@
   });
 
   Object.assign(messages.ja, {
+    "更新 10/24 颱風公告：台鐵中午前分區行駛、北捷部分首班待通知與今日班距；未確認的復駛資訊另標提醒": "10月24日の台風情報を更新：台湾鉄道の正午前の区間別運転、台北MRTの一部始発待ち、本日の運転間隔を掲載し、未確認の再開情報を明示しました。",
+    "薔琵颱風｜10/24 台鐵中午前分區行駛、北捷部分首班待通知": "台風情報｜10/24 台湾鉄道は正午前に区間別運転・台北MRTの一部始発は発表待ち",
+
     "桃捷因強風慢速行駛；補列台鐵 10/24 中午前各路段行車方案與例外車次，並附桃捷、中捷明日班距；今晚停駛提醒及午夜到期不變": "桃園空港MRTは強風で減速運転中です。台湾鉄道の10月24日正午前の区間別計画と例外列車、桃園・台中MRTの明日の運転間隔を追記。今夜の運休案内と午前0時の期限は維持します。",
     "補上北捷 10/24 地下段約 12 分鐘、南勢角至大橋頭約 6 分鐘班距；文湖及平面、高架路段首班仍待天候與巡檢通知，保留今晚停駛提醒": "台北MRTの10月24日の計画を追記しました。地下区間は約12分間隔、南勢角～大橋頭は約6分間隔。文湖線と地上・高架区間の始発は天候と軌道点検により別途発表されます。今夜の運休案内も引き続き掲載します。",
     "高雄捷運因颱風瞬間風速達八級，目前慢速行駛，提醒預留時間並附最新官方公告，班距依現場資訊為準": "高雄MRTは瞬間風力が8級に達し、現在速度を落として運転しています。移動には余裕を持ち、最新の公式発表と現地の運転間隔案内をご確認ください。",

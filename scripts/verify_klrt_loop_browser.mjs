@@ -54,13 +54,42 @@ try{for(const [name,engine]of [['chromium',chromium],['webkit',webkit]]){
   // 觸控真的啟動播放，再用 rAF 看同一輛車走完整段；兩種引擎、兩套陣列都驗。
   await page.setViewportSize({width:375,height:900});
   const picked=await page.evaluate(()=>{state.playing=false;setSpeed(60);return __klrtCase(-1);});
+  // 矩陣最後一格是1280px與段尾，先確認375px的新起點已真正送入renderer。
+  // 若未等模型與viewport就播放，量測會混入resize／重定位的準備工作。
+  await page.waitForFunction(p=>{
+   const r=railIslandIntegration.renderer,v=r.stats.poseSamples.find(v=>v.id===p.id);
+   return r.hasModel(p.id)&&v&&Math.abs(v.coordinate[0]-p.lon)<1e-8&&Math.abs(v.coordinate[1]-p.lat)<1e-8;
+  },picked,{timeout:30000});
   // 長時間矩陣結束後膠囊可能已收成把手，先以觸控喚回播放鈕。
   if(!await page.locator('#pp').isVisible())await page.tap('.controls');
-  await page.tap('#pp');assert.equal(await page.evaluate(()=>state.playing),true);
-  const animation=await page.evaluate(async({id,tb})=>{
-   const frames=[];await new Promise((resolve,reject)=>{const until=performance.now()+15000;function step(){const v=railIslandIntegration.capture().vehicles.find(v=>v.id===id);if(v)frames.push({t:state.simSec,lat:v.latitude,lon:v.longitude});if(state.simSec>=tb){state.playing=false;resolve();return;}if(performance.now()>until){reject(Error('rAF 播放未完成'));return;}requestAnimationFrame(step);}requestAnimationFrame(step);});
-   let travel=0,maxStep=0;for(let i=1;i<frames.length;i++){const d=haversineKm(frames[i-1],frames[i])*1000;travel+=d;maxStep=Math.max(maxStep,d);}return {frames:frames.length,travel,maxStep};
+  // 在真觸控前裝好觀測器；Playwright tap返回後才裝會漏掉已播放的幀。
+  // 起點也納入位移計算，但不算入frames門檻，原幀數／行程／最大跳距限制均不變。
+  await page.evaluate(({id,tb})=>{
+   const first=railIslandIntegration.capture().vehicles.find(v=>v.id===id);
+   if(!first)throw Error('播放前找不到待驗列車');
+   window.__klrtPlayback=new Promise((resolve,reject)=>{
+    const frames=[{t:state.simSec,lat:first.latitude,lon:first.longitude}],until=performance.now()+15000;
+    let started=false;
+    function step(){
+     if(state.playing)started=true;
+     const v=railIslandIntegration.capture().vehicles.find(v=>v.id===id);
+     if(started&&v)frames.push({t:state.simSec,lat:v.latitude,lon:v.longitude});
+     if(started&&state.simSec>=tb){
+      state.playing=false;let travel=0,maxStep=0;
+      for(let i=1;i<frames.length;i++){const d=haversineKm(frames[i-1],frames[i])*1000;travel+=d;maxStep=Math.max(maxStep,d);}
+      resolve({frames:frames.length-1,travel,maxStep,firstSim:frames[0].t,lastSim:frames.at(-1).t});return;
+     }
+     if(performance.now()>until){reject(Error('rAF 播放未完成'));return;}
+     requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+   });
+   window.__klrtPlayback.catch(()=>{}); // 失敗仍由下方await傳回，避免跨程序等待期間產生未處理拒絕。
   },picked);
+  await page.tap('#pp');assert.equal(await page.evaluate(()=>state.playing),true);
+  const animation=await page.evaluate(()=>window.__klrtPlayback);
+  assert.equal(animation.firstSim,picked.ta,'必須從觸控前的段起點開始量測');
+  assert.ok(animation.lastSim>=picked.tb,'必須完整播放至段尾');
   assert.ok(animation.frames>10&&animation.travel>300&&animation.maxStep<50,JSON.stringify(animation));
   console.log(JSON.stringify({name,group,touchPlayback:animation}));
   // 同一段也確認關閉立體列車後仍有正常的 2D 班表位置。
