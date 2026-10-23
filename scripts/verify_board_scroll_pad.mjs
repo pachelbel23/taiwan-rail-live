@@ -653,6 +653,21 @@ async function listWalk(page, eng, P, key, tag) {
 async function boot(browser, { width, height, tier = 'std', query = '' }) {
   const mobile = width < 1000;
   const ctx = await browser.newContext({ viewport: { width, height }, isMobile: mobile, hasTouch: mobile, locale: 'zh-TW', timezoneId: 'Asia/Taipei' });
+  // 本檔用合成清單驗焦點／幾何；Core 也固定輸入，避免每 15 秒輪詢外網改變情境。
+  // 有效空 envelope 仍走真實 poll 與既有 fallback；不關旗標、不過濾任何 pageerror。
+  await ctx.route(/^https:\/\/railisland-metro-core\.sirius1984\.workers\.dev\/v1\/metro\/snapshot(?:\?.*)?$/, route => {
+    const now = Date.now() / 1000;
+    return route.fulfill({
+      status: route.request().method() === 'OPTIONS' ? 204 : 200,
+      contentType: 'application/json',
+      headers: { 'access-control-allow-origin': '*', 'access-control-allow-methods': 'GET, OPTIONS',
+        'access-control-allow-headers': 'accept, if-none-match', 'cache-control': 'no-store' },
+      body: route.request().method() === 'OPTIONS' ? '' : JSON.stringify({
+        schema: 'metro-snapshot/v1', revision: 'boardpad-fixture', generatedAt: now,
+        validUntil: now + 60, systems: [],
+      }),
+    });
+  });
   if (process.env.BSP_TRACE_RO === '1') await ctx.addInitScript(() => {
     const NativeRO = window.ResizeObserver; if (!NativeRO) return;
     let seq = 0; window.__bspRoCalls = []; window.__bspRoErrors = [];
@@ -685,6 +700,8 @@ async function boot(browser, { width, height, tier = 'std', query = '' }) {
   await page.goto(`${BASE}?lang=zh-TW&t=09:41${query}`, { waitUntil: 'domcontentloaded' });
   // 等開機收尾:finishLoad 會 closeRidePanel(),太早開護照會量到被關掉的空面板
   await page.waitForFunction(() => { try { return typeof state !== 'undefined' && state.mode === 'sched' && state.ready === true && (state.trains || []).length > 0; } catch (e) { return false; } }, null, { timeout: 90000 });
+  // 確認合成資料確實被產品接收；URL 或 schema 變了必須失敗，不能悄悄漏回外網。
+  await page.waitForFunction(() => state.metroCore.snapshot?.revision === 'boardpad-fixture', null, { timeout: 10000 });
   await page.evaluate(HELPERS);
   await page.evaluate(RING_INIT);
   return { ctx, page, errors };
