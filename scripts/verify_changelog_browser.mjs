@@ -129,7 +129,8 @@ const widths = [360, 375, 414, 768];
 // 10/24: fresh dated typhoon snapshot (510 -> 511).
 // 10/24: dated Taipei Metro all-route operating plan (511 -> 512).
 // 10/24: dated New Taipei Circular Line15minute plan (512 -> 513).
-const expectedHistoryCount = 513;
+// 10/24: latest three-line continued-suspension notice (513 -> 514).
+const expectedHistoryCount = 514;
 
 try {
   for (const [engineName, engine] of Object.entries({ chromium, webkit })) {
