@@ -1,7 +1,7 @@
 {
   "id": "champi-20261023",
-  "revision": "20261023-1754",
-  "checkedAt": "2026-10-23T17:54:34+08:00",
+  "revision": "20261023-2010",
+  "checkedAt": "2026-10-23T20:10:16+08:00",
   "displayFrom": "2026-10-22T20:20:00+08:00",
   "expiresAt": "2026-10-24T00:00:00+08:00",
   "serviceDate": "2026-10-23",
@@ -135,7 +135,7 @@
       "id": "trtc",
       "label": "台北捷運",
       "status": "18:00 起部分停駛／地下段營運",
-      "detail": "10/23 18:00 起文湖線及高運量平面、高架路段（圓山站至淡水站、新北投站、小碧潭站）暫停營運，復駛時間另行通知。淡水信義線、松山新店線、中和新蘆線、板南線地下段維持正常營運，班距依人潮彈性調整。18:00 前依先前 06:00 公告，五線班距約 12 分鐘、南勢角至大橋頭重疊區段約 6 分鐘，仍依運量及風速調整。",
+      "detail": "10/23 18:00 起文湖線及高運量平面、高架路段（圓山站至淡水站、新北投站、小碧潭站）暫停營運，復駛時間另行通知。淡水信義線、松山新店線、中和新蘆線、板南線地下段維持正常營運，班距依人潮彈性調整。18:00 前依先前 06:00 公告，五線班距約 12 分鐘、南勢角至大橋頭重疊區段約 6 分鐘，仍依運量及風速調整。 10/24 方案另依新公告：淡水信義線地下段、松山新店線、板南線及中和新蘆線班距約 12 分鐘，南勢角至大橋頭重疊區段約 6 分鐘，視運量及人潮彈性調整；文湖線及高運量平面、高架路段的 10/24 首班車須視天候及軌道巡檢狀況，另行通知。",
       "sourceLabel": "北捷 17:10 營運速報（17:23 更新）",
       "sourceUrl": "https://www.metro.taipei/News_Content.aspx?n=30CCEFD2A45592BF&sms=72544237BBE4C5F6&s=649A1A69E7BC170D",
       "labelI18n": {
@@ -143,13 +143,17 @@
         "ja": "台北MRT"
       },
       "detailI18n": {
-        "en": "From 18:00 on Oct 23, the Wenhu Line and the elevated and ground-level high-capacity sections (Yuanshan–Tamsui, Xinbeitou and Xiaobitan) are suspended. Resumption will be announced separately. Underground sections of the Tamsui-Xinyi, Songshan-Xindian, Zhonghe-Xinlu and Bannan lines continue normal service, with headways adjusted to demand. Before 18:00, the earlier 06:00 notice specifies about 12-minute headways on the five lines and about 6 minutes on the shared Nanshijiao–Daqiaotou section, subject to demand and wind.",
-        "ja": "10月23日18:00から文湖線および高運量路線の地上・高架区間（圓山～淡水、新北投、小碧潭）は運休します。運転再開時刻は別途発表されます。淡水信義線・松山新店線・中和新蘆線・板南線の地下区間は通常運転を継続し、利用状況に応じて運転間隔を調整します。18:00より前は従来の06:00発表により5路線が約12分間隔、南勢角～大橋頭の共通区間が約6分間隔で、利用状況や風に応じて調整されます。"
+        "en": "From 18:00 on Oct 23, the Wenhu Line and the elevated and ground-level high-capacity sections (Yuanshan–Tamsui, Xinbeitou and Xiaobitan) are suspended. Resumption will be announced separately. Underground sections of the Tamsui-Xinyi, Songshan-Xindian, Zhonghe-Xinlu and Bannan lines continue normal service, with headways adjusted to demand. Before 18:00, the earlier 06:00 notice specifies about 12-minute headways on the five lines and about 6 minutes on the shared Nanshijiao–Daqiaotou section, subject to demand and wind. For Oct 24, a separate new notice specifies about 12-minute headways on the underground Tamsui-Xinyi section and the Songshan-Xindian, Bannan and Zhonghe-Xinlu lines, or about 6 minutes on the shared Nanshijiao–Daqiaotou section, adjusted to demand. The first Oct 24 services on the Wenhu Line and elevated and ground-level high-capacity sections remain subject to weather and track inspections; a separate announcement is required.",
+        "ja": "10月23日18:00から文湖線および高運量路線の地上・高架区間（圓山～淡水、新北投、小碧潭）は運休します。運転再開時刻は別途発表されます。淡水信義線・松山新店線・中和新蘆線・板南線の地下区間は通常運転を継続し、利用状況に応じて運転間隔を調整します。18:00より前は従来の06:00発表により5路線が約12分間隔、南勢角～大橋頭の共通区間が約6分間隔で、利用状況や風に応じて調整されます。 10月24日は別の新発表により、淡水信義線の地下区間、松山新店線、板南線、中和新蘆線は約12分間隔、南勢角～大橋頭の共通区間は約6分間隔で、利用状況に応じて調整します。文湖線および高運量路線の地上・高架区間の10月24日の始発は、天候と軌道点検の状況により別途発表されます。"
       },
       "additionalSources": [
         {
           "sourceLabel": "北捷 10/23 06:00 營運速報（05:26 更新）",
           "sourceUrl": "https://www.metro.taipei/News_Content.aspx?n=30CCEFD2A45592BF&sms=72544237BBE4C5F6&s=8BEACB051BE72D47"
+        },
+        {
+          "sourceLabel": "北捷 10/24 營運速報（10/23 20:06 更新）",
+          "sourceUrl": "https://www.metro.taipei/News_Content.aspx?n=30CCEFD2A45592BF&sms=72544237BBE4C5F6&s=D24768D861F3702F"
         }
       ]
     },

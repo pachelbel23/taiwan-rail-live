@@ -4,6 +4,7 @@
   if (!messages || !messages.en || !messages.ja) return;
 
   Object.assign(messages.en, {
+    "補上北捷 10/24 地下段約 12 分鐘、南勢角至大橋頭約 6 分鐘班距；文湖及平面、高架路段首班仍待天候與巡檢通知，保留今晚停駛提醒": "Added the October 24 Taipei Metro plan: about 12-minute headways underground and 6 minutes on the shared Nanshijiao–Daqiaotou section. First services on Wenhu and elevated or ground-level sections still await weather and track inspections. Tonight’s suspensions remain stated.",
     "高雄捷運因颱風瞬間風速達八級，目前慢速行駛，提醒預留時間並附最新官方公告，班距依現場資訊為準": "Kaohsiung MRT is running at reduced speed after gusts reached force 8. Allow extra travel time and check the latest official notice and on-site headway information.",
     "北捷 10/23 18:00 起文湖線、圓山至淡水及新北投、小碧潭停駛，地下段維持營運；附官方區段與復駛待通知提醒": "From 18:00 on October 23, Taipei Metro suspends the Wenhu Line, Yuanshan–Tamsui, Xinbeitou and Xiaobitan sections. Underground sections continue operating. Added official section details and the notice that resumption will be announced separately.",
     "薔琵颱風｜北捷文湖線及部分路段 10/23 18:00 起停駛": "Typhoon Champi · Oct 23: Taipei Metro Wenhu Line and some sections suspended from 18:00",
@@ -291,6 +292,7 @@
   });
 
   Object.assign(messages.ja, {
+    "補上北捷 10/24 地下段約 12 分鐘、南勢角至大橋頭約 6 分鐘班距；文湖及平面、高架路段首班仍待天候與巡檢通知，保留今晚停駛提醒": "台北MRTの10月24日の計画を追記しました。地下区間は約12分間隔、南勢角～大橋頭は約6分間隔。文湖線と地上・高架区間の始発は天候と軌道点検により別途発表されます。今夜の運休案内も引き続き掲載します。",
     "高雄捷運因颱風瞬間風速達八級，目前慢速行駛，提醒預留時間並附最新官方公告，班距依現場資訊為準": "高雄MRTは瞬間風力が8級に達し、現在速度を落として運転しています。移動には余裕を持ち、最新の公式発表と現地の運転間隔案内をご確認ください。",
     "北捷 10/23 18:00 起文湖線、圓山至淡水及新北投、小碧潭停駛，地下段維持營運；附官方區段與復駛待通知提醒": "台北MRTは10月23日18:00から文湖線、圓山～淡水、新北投、小碧潭の区間を運休します。地下区間は運転を継続し、対象区間と運転再開時刻は別途発表される旨を追記しました。",
     "薔琵颱風｜北捷文湖線及部分路段 10/23 18:00 起停駛": "台風情報｜10/23 18:00から台北MRT文湖線と一部区間が運休",

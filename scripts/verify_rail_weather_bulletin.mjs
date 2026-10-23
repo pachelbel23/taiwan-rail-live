@@ -44,8 +44,12 @@ assert.ok(trtc.detail.includes("淡水信義線、松山新店線、中和新蘆
 assert.ok(trtc.detail.includes("18:00 前依先前 06:00 公告，五線班距約 12 分鐘"));
 assert.ok(trtc.detail.includes("南勢角至大橋頭重疊區段約 6 分鐘"));
 assert.equal(trtc.sourceUrl, 'https://www.metro.taipei/News_Content.aspx?n=30CCEFD2A45592BF&sms=72544237BBE4C5F6&s=649A1A69E7BC170D');
-assert.equal(trtc.additionalSources.length, 1);
+assert.equal(trtc.additionalSources.length, 2);
 assert.ok(trtc.additionalSources[0].sourceUrl.includes('8BEACB051BE72D47'));
+assert.ok(trtc.additionalSources[1].sourceUrl.includes('D24768D861F3702F'));
+assert.match(trtc.detail, /10\/24 方案另依新公告.*約 12 分鐘.*約 6 分鐘.*10\/24 首班車須視天候及軌道巡檢狀況，另行通知/);
+assert.match(trtc.detailI18n.en, /For Oct 24.*12-minute.*6 minutes.*first Oct 24 services.*subject to weather and track inspections/);
+assert.match(trtc.detailI18n.ja, /10月24日は.*約12分間隔.*約6分間隔.*10月24日の始発.*別途発表/);
 assert.match(trtc.detailI18n.en, /From 18:00.*Wenhu Line.*Yuanshan.*Tamsui, Xinbeitou and Xiaobitan.*suspended/);
 assert.match(trtc.detailI18n.en, /Resumption will be announced separately.*Underground sections.*continue normal service/);
 assert.match(trtc.detailI18n.ja, /18:00.*文湖線および高運量路線.*圓山～淡水、新北投、小碧潭/);
