@@ -121,7 +121,8 @@ const widths = [360, 375, 414, 768];
 // 10/23：高捷紅橘線夜間班距補上官方23:00切換時間（502→503）。
 // 10/23：新北淡海、安坑、三鶯15:00起預防性停駛公告（503→504）。
 // 10/23：高捷14:30起紅橘全線加密為10分鐘，保留夜間20分鐘及先前時刻來源（504→505）。
-const expectedHistoryCount = 505;
+// 10/23：高鐵兩班全車自由座取消增開，補高捷14:30貼文確認夜間切換（505→506）。
+const expectedHistoryCount = 506;
 
 try {
   for (const [engineName, engine] of Object.entries({ chromium, webkit })) {

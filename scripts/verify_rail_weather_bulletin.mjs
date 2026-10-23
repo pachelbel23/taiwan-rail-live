@@ -27,7 +27,15 @@ assert.match(tra.detail, /6117.*09:46.*10:20.*14:56/);
 assert.match(tra.detail, /兩班均採全車自由座/);
 assert.equal(tra.additionalSources.length, 1);
 assert.ok(tra.additionalSources[0].sourceUrl.includes('8ae4cac3a15ab24201a16394bf4219db'));
-assert.ok(source.systems.find(s => s.id === 'thsr').detail.includes('10/23 全線正常營運'));
+const thsr = source.systems.find(s => s.id === 'thsr');
+assert.ok(thsr.detail.includes('10/23 全線正常營運'));
+assert.match(thsr.detail, /8825 次（18:25）及 8529 次（20:45）全車自由座列車暫停增開/);
+assert.equal(thsr.sourceUrl, 'https://www.thsrc.com.tw/ArticleContent/17596fef-dca9-4175-b900-e4e56bd42cc6');
+assert.equal(thsr.additionalSources.length, 1);
+assert.ok(thsr.additionalSources[0].sourceUrl.includes('ea4f7723-a56a-4970-81ae-20a94e2c9e41'));
+assert.match(thsr.detailI18n.en, /normal service.*all-unreserved extra trains, 8825 \(18:25\) and 8529 \(20:45\), will not run/);
+assert.doesNotMatch(thsr.detailI18n.en, /free (?:ride|fare|of charge)/i);
+assert.match(thsr.detailI18n.ja, /全線で時刻表どおり.*全車自由席の8825次（18:25）と8529次（20:45）.*取りやめ/);
 const ntmetro = source.systems.find(s => s.id === 'ntmetro');
 // 新北新公告：15:00起三線停駛，先前班距僅適用停駛前，環狀線維持15分鐘。
 assert.match(source.title, /淡海、安坑、三鶯.*15:00 起停駛/);
@@ -44,18 +52,19 @@ assert.ok(ntmetro.additionalSources[0].sourceUrl.includes('pfbid0wm9BjV2dTKQR6aM
 assert.equal(ntmetro.additionalSources[1].sourceUrl, 'https://www.ntmetro.com.tw/');
 assert.match(ntmetro.detailI18n.en, /suspended from 15:00.*Before suspension.*30 minutes.*V01–V09.*15 minutes/);
 assert.match(ntmetro.detailI18n.ja, /15:00から淡海・安坑ライトレールと三鶯線.*30分間隔.*V01紅樹林～V09濱海沙崙.*15分間隔/);
-// 高捷官網新增14:30起全線10分鐘；23:00僅明列為先前11:50官方公告，不冒稱新稿重列。
+// 高捷14:30官網10分鐘方案，後續14:30更新貼文確認23:00切換；先前15分鐘僅適用14:30前。
 const krtc = source.systems.find(s => s.id === 'krtc');
-assert.match(krtc.detail, /^10\/23 14:30 起紅橘全線班距 10 分鐘，深夜班距 20 分鐘/);
+assert.match(krtc.detail, /^10\/23 14:30 起至 23:00 前紅橘全線班距 10 分鐘，23:00 後班距 20 分鐘/);
 assert.match(krtc.detail, /14:30 前依先前公告每 15 分鐘/);
-assert.match(krtc.detail, /先前 11:50 官方公告夜間自 23:00 後每 20 分鐘，本次官網未重列切換時刻/);
+assert.match(krtc.detail, /官方 14:30 更新貼文已確認 23:00 切換時刻；官網原文未重列該時刻/);
 assert.equal(krtc.sourceUrl, 'https://www.krtc.com.tw/Information/notice_more?id=6a89481664cc4e71822385bb8441035d');
-assert.equal(krtc.additionalSources.length, 1);
+assert.equal(krtc.additionalSources.length, 2);
 assert.ok(krtc.additionalSources[0].sourceUrl.includes('pfbid02G9uYQNvHcLhtfqZ6qsijVN1yQejAS1w5DmLo68BswcH1BVmkUQ1DyzVwUNieK9nzl'));
-assert.match(krtc.detailI18n.en, /From 14:30.*every 10 minutes.*20-minute headways late at night/);
-assert.match(krtc.detailI18n.en, /earlier 11:50.*after 23:00.*latest website notice does not restate/);
-assert.match(krtc.detailI18n.ja, /14:30から.*全線は10分間隔、深夜は20分間隔/);
-assert.match(krtc.detailI18n.ja, /11:50の公式発表では23:00より後が20分間隔.*最新の公式サイト記事では切替時刻を再掲していません/);
+assert.ok(krtc.additionalSources[1].sourceUrl.includes('pfbid02iaLqvDMrVXrBBDhdMf7NhBuCBSmgcczntpSFyBF9BTLQ5zeiBwHkwsq494vY6mJbl'));
+assert.match(krtc.detailI18n.en, /From 14:30 until 23:00.*every 10 minutes; after 23:00, headways are 20 minutes/);
+assert.match(krtc.detailI18n.en, /official 14:30 update confirms the 23:00 changeover/);
+assert.match(krtc.detailI18n.ja, /14:30から23:00までは.*全線が10分間隔、23:00より後は20分間隔/);
+assert.match(krtc.detailI18n.ja, /公式の14:30更新投稿で23:00の切替を確認/);
 // 10/23新公告已確認全日20分鐘，包含下午；不能再顯示上午限定或待確認。
 const klrt = source.systems.find(s => s.id === 'klrt');
 assert.equal(klrt.status, '全日 20 分鐘班距');
@@ -323,6 +332,7 @@ try {
         await page.tap('#alertChip');
         const text=await page.locator('#alertDetail').innerText();
         assert.ok(text.includes(ntmetro.detail), '舊網頁仍須顯示最新完整新北公告');
+        assert.ok(text.includes(thsr.detail), '舊網頁須保留兩班高鐵增開取消');
         assert.match(text,/15:00 起淡海輕軌、安坑輕軌及三鶯線預防性停駛/);
         assert.match(text,/停駛前依先前公告：淡海輕軌、安坑輕軌每 30 分鐘/);
         assert.match(text,/環狀線維持每 15 分鐘/);
@@ -340,6 +350,7 @@ try {
         const text = await page.locator('#alertDetail').innerText();
         assert.match(text, /台鐵.*停駛/s);
         assert.match(text, /阿里山/);
+        assert.ok(text.includes(thsr.detail), '已發行App須顯示兩班高鐵增開取消');
         assert.match(text, /動畫仍可能依原班表/);
         const combined = await page.evaluate(() => activeAlertList().filter(a => a.bulletin));
         assert.equal(combined.length, 3, '全台同框保留三則內容不同的系統公告');

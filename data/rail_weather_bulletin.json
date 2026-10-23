@@ -1,7 +1,7 @@
 {
   "id": "champi-20261023",
-  "revision": "20261023-1418",
-  "checkedAt": "2026-10-23T14:18:25+08:00",
+  "revision": "20261023-1639",
+  "checkedAt": "2026-10-23T16:39:18+08:00",
   "displayFrom": "2026-10-22T20:20:00+08:00",
   "expiresAt": "2026-10-24T00:00:00+08:00",
   "serviceDate": "2026-10-23",
@@ -50,18 +50,24 @@
     {
       "id": "thsr",
       "label": "台灣高鐵",
-      "status": "公告正常營運",
-      "detail": "高鐵已公告 10/23 全線正常營運、依時刻表發車；風雨達限制標準時可能限速或調整，請預留轉乘時間並留意後續公告。",
-      "sourceLabel": "高鐵 10/22 防颱營運公告",
-      "sourceUrl": "https://www.thsrc.com.tw/ArticleContent/ea4f7723-a56a-4970-81ae-20a94e2c9e41",
+      "status": "正常營運／兩班增開取消",
+      "detail": "高鐵已公告 10/23 全線正常營運、依時刻表發車；原規劃加開的 8825 次（18:25）及 8529 次（20:45）全車自由座列車暫停增開。風雨達限制標準時可能限速或調整，請預留轉乘時間並留意後續公告。",
+      "sourceLabel": "高鐵 10/23 兩班全車自由座暫停增開公告",
+      "sourceUrl": "https://www.thsrc.com.tw/ArticleContent/17596fef-dca9-4175-b900-e4e56bd42cc6",
       "labelI18n": {
         "en": "Taiwan High Speed Rail",
         "ja": "台湾高速鉄道"
       },
       "detailI18n": {
-        "en": "THSR has announced normal service across the network on Oct 23. Wind or rain may trigger speed restrictions or further changes. Allow extra time for connections and check subsequent notices.",
-        "ja": "10月23日は全線で時刻表どおりに運転するとの発表です。風雨が基準に達した場合は速度制限や運転変更の可能性があります。乗り継ぎには余裕を持ち、最新情報をご確認ください。"
-      }
+        "en": "THSR has announced normal service across the network on Oct 23, following the timetable. The two planned all-unreserved extra trains, 8825 (18:25) and 8529 (20:45), will not run. Wind or rain may trigger speed restrictions or further changes. Allow extra time for connections and check subsequent notices.",
+        "ja": "10月23日は全線で時刻表どおりに運転するとの発表です。ただし、増発予定だった全車自由席の8825次（18:25）と8529次（20:45）は増発を取りやめます。風雨が基準に達した場合は速度制限や運転変更の可能性があります。乗り継ぎには余裕を持ち、最新情報をご確認ください。"
+      },
+      "additionalSources": [
+        {
+          "sourceLabel": "高鐵 10/22 防颱營運公告",
+          "sourceUrl": "https://www.thsrc.com.tw/ArticleContent/ea4f7723-a56a-4970-81ae-20a94e2c9e41"
+        }
+      ]
     },
     {
       "id": "tmrt",
@@ -82,8 +88,8 @@
     {
       "id": "krtc",
       "label": "高雄捷運紅橘線",
-      "status": "14:30 起 10 分／深夜 20 分",
-      "detail": "10/23 14:30 起紅橘全線班距 10 分鐘，深夜班距 20 分鐘，並視狀況調整班距。14:30 前依先前公告每 15 分鐘；先前 11:50 官方公告夜間自 23:00 後每 20 分鐘，本次官網未重列切換時刻。出發前請再確認官方最新公告。",
+      "status": "14:30 起 10 分／23:00 後 20 分",
+      "detail": "10/23 14:30 起至 23:00 前紅橘全線班距 10 分鐘，23:00 後班距 20 分鐘，並視狀況調整班距。14:30 前依先前公告每 15 分鐘。官方 14:30 更新貼文已確認 23:00 切換時刻；官網原文未重列該時刻。出發前請再確認官方最新公告。",
       "sourceLabel": "高捷官網 10/23 14:30 班距調整（14:18 核對）",
       "sourceUrl": "https://www.krtc.com.tw/Information/notice_more?id=6a89481664cc4e71822385bb8441035d",
       "labelI18n": {
@@ -91,13 +97,17 @@
         "ja": "高雄MRT紅線・橘線"
       },
       "detailI18n": {
-        "en": "From 14:30 on October 23, all Kaohsiung MRT Red and Orange line trains run every 10 minutes, with 20-minute headways late at night, subject to operational adjustments. Before 14:30, the earlier notice specifies 15-minute headways. The earlier 11:50 official update places the 20-minute night service after 23:00; the latest website notice does not restate the changeover time. Check the latest official notice before travel.",
-        "ja": "10月23日14:30から高雄MRT紅線・橘線の全線は10分間隔、深夜は20分間隔で運転し、状況に応じて間隔を調整します。14:30より前は従来の発表では15分間隔です。11:50の公式発表では23:00より後が20分間隔ですが、最新の公式サイト記事では切替時刻を再掲していません。出発前に最新の公式発表をご確認ください。"
+        "en": "From 14:30 until 23:00 on Oct 23, Kaohsiung MRT Red and Orange lines run every 10 minutes; after 23:00, headways are 20 minutes, subject to further adjustment. Before 14:30, the earlier notice specifies 15-minute headways. The official 14:30 update confirms the 23:00 changeover; the website article does not restate that time. Check the latest official notice before travelling.",
+        "ja": "10月23日14:30から23:00までは高雄MRT紅線・橘線の全線が10分間隔、23:00より後は20分間隔となり、状況に応じて変更されます。14:30より前は従来の発表どおり15分間隔です。公式の14:30更新投稿で23:00の切替を確認しています。公式サイトの記事には切替時刻の再掲はありません。出発前に最新の公式発表をご確認ください。"
       },
       "additionalSources": [
         {
           "sourceLabel": "高捷先前 11:50 公告（14:30 前班距及夜間切換參考）",
           "sourceUrl": "https://www.facebook.com/krtco/posts/pfbid02G9uYQNvHcLhtfqZ6qsijVN1yQejAS1w5DmLo68BswcH1BVmkUQ1DyzVwUNieK9nzl"
+        },
+        {
+          "sourceLabel": "高捷 14:30 更新公告（23:00 前 10 分／之後 20 分；14:36 核對）",
+          "sourceUrl": "https://www.facebook.com/krtco/posts/pfbid02iaLqvDMrVXrBBDhdMf7NhBuCBSmgcczntpSFyBF9BTLQ5zeiBwHkwsq494vY6mJbl"
         }
       ]
     },
