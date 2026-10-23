@@ -1,7 +1,7 @@
 {
   "id": "champi-20261023",
-  "revision": "20261023-1740",
-  "checkedAt": "2026-10-23T17:40:17+08:00",
+  "revision": "20261023-1754",
+  "checkedAt": "2026-10-23T17:54:34+08:00",
   "displayFrom": "2026-10-22T20:20:00+08:00",
   "expiresAt": "2026-10-24T00:00:00+08:00",
   "serviceDate": "2026-10-23",
@@ -88,19 +88,23 @@
     {
       "id": "krtc",
       "label": "高雄捷運紅橘線",
-      "status": "14:30 起 10 分／23:00 後 20 分",
-      "detail": "10/23 14:30 起至 23:00 前紅橘全線班距 10 分鐘，23:00 後班距 20 分鐘，並視狀況調整班距。14:30 前依先前公告每 15 分鐘。官方 14:30 更新貼文已確認 23:00 切換時刻；官網原文未重列該時刻。出發前請再確認官方最新公告。",
-      "sourceLabel": "高捷官網 10/23 14:30 班距調整（14:18 核對）",
-      "sourceUrl": "https://www.krtc.com.tw/Information/notice_more?id=6a89481664cc4e71822385bb8441035d",
+      "status": "颱風影響慢速行駛",
+      "detail": "10/23 高捷公告颱風瞬間風速已達八級，目前列車慢速行駛。先前班距方案：10/23 14:30 起至 23:00 前紅橘全線班距 10 分鐘，23:00 後班距 20 分鐘，仍視狀況調整。14:30 前依先前公告每 15 分鐘。官方 14:30 更新貼文已確認 23:00 切換時刻；本則慢速公告未列特定區段、恢復時間或新班距。出發前請再確認官方最新資訊並預留時間。",
+      "sourceLabel": "高捷 10/23 慢速行駛公告（17:54 核對）",
+      "sourceUrl": "https://www.krtc.com.tw/Information/notice_more?id=058ca9b4d4cc4c9a92445b4835fdf320",
       "labelI18n": {
         "en": "Kaohsiung MRT Red and Orange lines",
         "ja": "高雄MRT紅線・橘線"
       },
       "detailI18n": {
-        "en": "From 14:30 until 23:00 on Oct 23, Kaohsiung MRT Red and Orange lines run every 10 minutes; after 23:00, headways are 20 minutes, subject to further adjustment. Before 14:30, the earlier notice specifies 15-minute headways. The official 14:30 update confirms the 23:00 changeover; the website article does not restate that time. Check the latest official notice before travelling.",
-        "ja": "10月23日14:30から23:00までは高雄MRT紅線・橘線の全線が10分間隔、23:00より後は20分間隔となり、状況に応じて変更されます。14:30より前は従来の発表どおり15分間隔です。公式の14:30更新投稿で23:00の切替を確認しています。公式サイトの記事には切替時刻の再掲はありません。出発前に最新の公式発表をご確認ください。"
+        "en": "On Oct 23, Kaohsiung MRT announced that gusts had reached force 8 and trains are currently running at reduced speed. Earlier headway plan: from 14:30 until 23:00, Red and Orange lines run every 10 minutes; after 23:00, headways are 20 minutes, subject to adjustment. Before 14:30, the earlier notice specifies 15-minute headways. The official 14:30 update confirms the 23:00 changeover. This reduced-speed notice does not specify a section, a time to return to normal speed or new headways. Check the latest official information and allow extra travel time.",
+        "ja": "10月23日、高雄MRTは瞬間風力が8級に達したため、現在速度を落として運転していると発表しました。従来の運転間隔は14:30から23:00までは紅線・橘線の全線が10分間隔、23:00より後は20分間隔で、状況に応じて調整されます。14:30より前は従来の発表どおり15分間隔です。公式の14:30更新投稿で23:00の切替を確認しています。今回の減速運転の発表には対象区間、通常速度に戻す時刻、新たな運転間隔の記載はありません。出発前に最新情報を確認し、移動には余裕を持ってください。"
       },
       "additionalSources": [
+        {
+          "sourceLabel": "高捷官網 10/23 14:30 班距調整（14:18 核對）",
+          "sourceUrl": "https://www.krtc.com.tw/Information/notice_more?id=6a89481664cc4e71822385bb8441035d"
+        },
         {
           "sourceLabel": "高捷先前 11:50 公告（14:30 前班距及夜間切換參考）",
           "sourceUrl": "https://www.facebook.com/krtco/posts/pfbid02G9uYQNvHcLhtfqZ6qsijVN1yQejAS1w5DmLo68BswcH1BVmkUQ1DyzVwUNieK9nzl"

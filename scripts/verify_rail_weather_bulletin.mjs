@@ -66,19 +66,23 @@ assert.ok(ntmetro.additionalSources[0].sourceUrl.includes('pfbid0wm9BjV2dTKQR6aM
 assert.equal(ntmetro.additionalSources[1].sourceUrl, 'https://www.ntmetro.com.tw/');
 assert.match(ntmetro.detailI18n.en, /suspended from 15:00.*Before suspension.*30 minutes.*V01–V09.*15 minutes/);
 assert.match(ntmetro.detailI18n.ja, /15:00から淡海・安坑ライトレールと三鶯線.*30分間隔.*V01紅樹林～V09濱海沙崙.*15分間隔/);
-// 高捷14:30官網10分鐘方案，後續14:30更新貼文確認23:00切換；先前15分鐘僅適用14:30前。
+// 高捷新公告確認慢速行駛；先前10/20分鐘班距保留來源，不冒稱慢速期間班距保證。
 const krtc = source.systems.find(s => s.id === 'krtc');
-assert.match(krtc.detail, /^10\/23 14:30 起至 23:00 前紅橘全線班距 10 分鐘，23:00 後班距 20 分鐘/);
+assert.equal(krtc.status, '颱風影響慢速行駛');
+assert.match(krtc.detail, /^10\/23 高捷公告颱風瞬間風速已達八級，目前列車慢速行駛/);
+assert.match(krtc.detail, /先前班距方案：10\/23 14:30 起至 23:00 前紅橘全線班距 10 分鐘，23:00 後班距 20 分鐘/);
 assert.match(krtc.detail, /14:30 前依先前公告每 15 分鐘/);
-assert.match(krtc.detail, /官方 14:30 更新貼文已確認 23:00 切換時刻；官網原文未重列該時刻/);
-assert.equal(krtc.sourceUrl, 'https://www.krtc.com.tw/Information/notice_more?id=6a89481664cc4e71822385bb8441035d');
-assert.equal(krtc.additionalSources.length, 2);
-assert.ok(krtc.additionalSources[0].sourceUrl.includes('pfbid02G9uYQNvHcLhtfqZ6qsijVN1yQejAS1w5DmLo68BswcH1BVmkUQ1DyzVwUNieK9nzl'));
-assert.ok(krtc.additionalSources[1].sourceUrl.includes('pfbid02iaLqvDMrVXrBBDhdMf7NhBuCBSmgcczntpSFyBF9BTLQ5zeiBwHkwsq494vY6mJbl'));
-assert.match(krtc.detailI18n.en, /From 14:30 until 23:00.*every 10 minutes; after 23:00, headways are 20 minutes/);
-assert.match(krtc.detailI18n.en, /official 14:30 update confirms the 23:00 changeover/);
-assert.match(krtc.detailI18n.ja, /14:30から23:00までは.*全線が10分間隔、23:00より後は20分間隔/);
-assert.match(krtc.detailI18n.ja, /公式の14:30更新投稿で23:00の切替を確認/);
+assert.match(krtc.detail, /本則慢速公告未列特定區段、恢復時間或新班距/);
+assert.match(krtc.detail, /官方 14:30 更新貼文已確認 23:00 切換時刻/);
+assert.equal(krtc.sourceUrl, 'https://www.krtc.com.tw/Information/notice_more?id=058ca9b4d4cc4c9a92445b4835fdf320');
+assert.equal(krtc.additionalSources.length, 3);
+assert.ok(krtc.additionalSources[0].sourceUrl.includes('6a89481664cc4e71822385bb8441035d'));
+assert.ok(krtc.additionalSources[1].sourceUrl.includes('pfbid02G9uYQNvHcLhtfqZ6qsijVN1yQejAS1w5DmLo68BswcH1BVmkUQ1DyzVwUNieK9nzl'));
+assert.ok(krtc.additionalSources[2].sourceUrl.includes('pfbid02iaLqvDMrVXrBBDhdMf7NhBuCBSmgcczntpSFyBF9BTLQ5zeiBwHkwsq494vY6mJbl'));
+assert.match(krtc.detailI18n.en, /gusts had reached force 8.*currently running at reduced speed.*Earlier headway plan.*14:30 until 23:00.*every 10 minutes; after 23:00, headways are 20 minutes/);
+assert.match(krtc.detailI18n.en, /does not specify a section, a time to return to normal speed or new headways/);
+assert.match(krtc.detailI18n.ja, /瞬間風力が8級.*現在速度を落として運転.*14:30から23:00.*10分間隔、23:00より後は20分間隔/);
+assert.match(krtc.detailI18n.ja, /対象区間、通常速度に戻す時刻、新たな運転間隔の記載はありません/);
 // 10/23新公告已確認全日20分鐘，包含下午；不能再顯示上午限定或待確認。
 const klrt = source.systems.find(s => s.id === 'klrt');
 assert.equal(klrt.status, '全日 20 分鐘班距');
