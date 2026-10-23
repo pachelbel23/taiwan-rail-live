@@ -4,6 +4,7 @@
   if (!messages || !messages.en || !messages.ja) return;
 
   Object.assign(messages.en, {
+    "補列新北環狀線 10/24 約 15 分鐘班距；淡海、安坑、三鶯今日首班與復駛仍待確認，保留北捷各線方案及風雨調整提醒": "Added the Circular Line’s Oct 24 plan at about 15-minute headways. First services and resumption on Danhai, Ankeng and Sanying remain unconfirmed; Taipei Metro’s plan and weather-related adjustments are retained.",
     "更新北捷 10/24 各線正常營運方案與約 12／6 分鐘班距；速報標題不作即時復駛依據，仍視風雨調整": "Updated Taipei Metro’s Oct 24 plan for normal operation on all routes at about 12/6-minute headways. The update’s headline time does not establish immediate resumption; weather-related adjustments still apply.",
     "薔琵颱風｜10/24 台鐵中午前分區行駛、北捷各線正常營運方案": "Typhoon Champi · Oct 24: TRA regional services before noon; Taipei Metro all-route normal-operation plan",
 
@@ -299,6 +300,7 @@
   });
 
   Object.assign(messages.ja, {
+    "補列新北環狀線 10/24 約 15 分鐘班距；淡海、安坑、三鶯今日首班與復駛仍待確認，保留北捷各線方案及風雨調整提醒": "新北MRT環状線の10月24日の約15分間隔を追記しました。淡海・安坑・三鶯の本日の始発と再開は未確認で、台北MRTの計画と風雨による調整条件も掲載しています。",
     "更新北捷 10/24 各線正常營運方案與約 12／6 分鐘班距；速報標題不作即時復駛依據，仍視風雨調整": "台北MRTの10月24日の全路線通常運転計画と約12分・6分間隔を更新しました。速報の見出し時刻を即時再開の根拠とはせず、風雨による変更条件も掲載しています。",
     "薔琵颱風｜10/24 台鐵中午前分區行駛、北捷各線正常營運方案": "台風情報｜10/24 台湾鉄道は正午前に区間別運転・台北MRTは全路線通常運転の計画",
 
