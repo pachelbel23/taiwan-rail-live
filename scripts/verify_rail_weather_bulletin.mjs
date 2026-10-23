@@ -36,9 +36,23 @@ assert.ok(thsr.additionalSources[0].sourceUrl.includes('ea4f7723-a56a-4970-81ae-
 assert.match(thsr.detailI18n.en, /normal service.*all-unreserved extra trains, 8825 \(18:25\) and 8529 \(20:45\), will not run/);
 assert.doesNotMatch(thsr.detailI18n.en, /free (?:ride|fare|of charge)/i);
 assert.match(thsr.detailI18n.ja, /全線で時刻表どおり.*全車自由席の8825次（18:25）と8529次（20:45）.*取りやめ/);
+const trtc = source.systems.find(s => s.id === 'trtc');
+assert.match(trtc.detail, /^10\/23 18:00/);
+assert.ok(trtc.detail.includes("文湖線及高運量平面、高架路段（圓山站至淡水站、新北投站、小碧潭站）暫停營運"));
+assert.ok(trtc.detail.includes("復駛時間另行通知"));
+assert.ok(trtc.detail.includes("淡水信義線、松山新店線、中和新蘆線、板南線地下段維持正常營運"));
+assert.ok(trtc.detail.includes("18:00 前依先前 06:00 公告，五線班距約 12 分鐘"));
+assert.ok(trtc.detail.includes("南勢角至大橋頭重疊區段約 6 分鐘"));
+assert.equal(trtc.sourceUrl, 'https://www.metro.taipei/News_Content.aspx?n=30CCEFD2A45592BF&sms=72544237BBE4C5F6&s=649A1A69E7BC170D');
+assert.equal(trtc.additionalSources.length, 1);
+assert.ok(trtc.additionalSources[0].sourceUrl.includes('8BEACB051BE72D47'));
+assert.match(trtc.detailI18n.en, /From 18:00.*Wenhu Line.*Yuanshan.*Tamsui, Xinbeitou and Xiaobitan.*suspended/);
+assert.match(trtc.detailI18n.en, /Resumption will be announced separately.*Underground sections.*continue normal service/);
+assert.match(trtc.detailI18n.ja, /18:00.*文湖線および高運量路線.*圓山～淡水、新北投、小碧潭/);
+assert.match(trtc.detailI18n.ja, /運転再開時刻は別途発表.*地下区間は通常運転を継続/);
 const ntmetro = source.systems.find(s => s.id === 'ntmetro');
 // 新北新公告：15:00起三線停駛，先前班距僅適用停駛前，環狀線維持15分鐘。
-assert.match(source.title, /淡海、安坑、三鶯.*15:00 起停駛/);
+assert.match(source.title, /北捷文湖線及部分路段.*18:00 起停駛/);
 assert.match(ntmetro.status, /15:00 起淡海、安坑、三鶯停駛/);
 assert.match(ntmetro.detail, /^10\/23 15:00 起淡海輕軌、安坑輕軌及三鶯線預防性停駛/);
 assert.match(ntmetro.detail, /可能提前停駛/);
@@ -333,6 +347,7 @@ try {
         const text=await page.locator('#alertDetail').innerText();
         assert.ok(text.includes(ntmetro.detail), '舊網頁仍須顯示最新完整新北公告');
         assert.ok(text.includes(thsr.detail), '舊網頁須保留兩班高鐵增開取消');
+        assert.ok(text.includes(trtc.detail), 'Previous web includes exact new Taipei Metro suspension scope');
         assert.match(text,/15:00 起淡海輕軌、安坑輕軌及三鶯線預防性停駛/);
         assert.match(text,/停駛前依先前公告：淡海輕軌、安坑輕軌每 30 分鐘/);
         assert.match(text,/環狀線維持每 15 分鐘/);
@@ -351,6 +366,7 @@ try {
         assert.match(text, /台鐵.*停駛/s);
         assert.match(text, /阿里山/);
         assert.ok(text.includes(thsr.detail), '已發行App須顯示兩班高鐵增開取消');
+        assert.ok(text.includes(trtc.detail), 'Shipped App includes new suspension and underground service');
         assert.match(text, /動畫仍可能依原班表/);
         const combined = await page.evaluate(() => activeAlertList().filter(a => a.bulletin));
         assert.equal(combined.length, 3, '全台同框保留三則內容不同的系統公告');

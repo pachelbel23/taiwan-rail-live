@@ -4,6 +4,8 @@
   if (!messages || !messages.en || !messages.ja) return;
 
   Object.assign(messages.en, {
+    "北捷 10/23 18:00 起文湖線、圓山至淡水及新北投、小碧潭停駛，地下段維持營運；附官方區段與復駛待通知提醒": "From 18:00 on October 23, Taipei Metro suspends the Wenhu Line, Yuanshan–Tamsui, Xinbeitou and Xiaobitan sections. Underground sections continue operating. Added official section details and the notice that resumption will be announced separately.",
+    "薔琵颱風｜北捷文湖線及部分路段 10/23 18:00 起停駛": "Typhoon Champi · Oct 23: Taipei Metro Wenhu Line and some sections suspended from 18:00",
     "高鐵取消 10/23 8825 次（18:25）與 8529 次（20:45）兩班全車自由座增開；全線維持正常營運，並補上高捷 23:00 班距切換公告": "THSR has cancelled the planned all-unreserved extra trains 8825 (18:25) and 8529 (20:45) on October 23; the normal network service notice remains. Added the 23:00 headway changeover source from Kaohsiung MRT’s 14:30 update.",
     "高雄捷運公告 10/23 14:30 起紅橘全線每 10 分鐘一班，深夜每 20 分鐘，附上最新官網原文與先前夜間切換說明": "Kaohsiung MRT Red and Orange lines run every 10 minutes from 14:30 on October 23 and every 20 minutes late at night. Added the latest website notice and the earlier night-service changeover information.",
     "新北捷運公告 10/23 15:00 起淡海、安坑、三鶯預防性停駛，可能依風雨提前；環狀線維持每 15 分鐘": "New Taipei Metro will suspend Danhai, Ankeng and Sanying services from 15:00 on October 23, possibly earlier depending on weather. The Circular Line continues every 15 minutes.",
@@ -288,6 +290,8 @@
   });
 
   Object.assign(messages.ja, {
+    "北捷 10/23 18:00 起文湖線、圓山至淡水及新北投、小碧潭停駛，地下段維持營運；附官方區段與復駛待通知提醒": "台北MRTは10月23日18:00から文湖線、圓山～淡水、新北投、小碧潭の区間を運休します。地下区間は運転を継続し、対象区間と運転再開時刻は別途発表される旨を追記しました。",
+    "薔琵颱風｜北捷文湖線及部分路段 10/23 18:00 起停駛": "台風情報｜10/23 18:00から台北MRT文湖線と一部区間が運休",
     "高鐵取消 10/23 8825 次（18:25）與 8529 次（20:45）兩班全車自由座增開；全線維持正常營運，並補上高捷 23:00 班距切換公告": "台湾高鉄は10月23日の全車自由席増発列車8825次（18:25）・8529次（20:45）の増発を取りやめます。全線通常運転の発表も併記し、高雄MRTの14:30更新による23:00の運転間隔切替の出典を追加しました。",
     "高雄捷運公告 10/23 14:30 起紅橘全線每 10 分鐘一班，深夜每 20 分鐘，附上最新官網原文與先前夜間切換說明": "高雄MRT紅線・橘線は10月23日14:30から全線10分間隔、深夜は20分間隔で運転します。最新の公式サイト記事と従来の夜間切替時刻の説明を追加しました。",
     "新北捷運公告 10/23 15:00 起淡海、安坑、三鶯預防性停駛，可能依風雨提前；環狀線維持每 15 分鐘": "新北MRTは10月23日15:00から淡海・安坑・三鶯線を予防的に運休します。天候により早まる場合があります。環状線は15分間隔を維持します。",

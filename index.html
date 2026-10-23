@@ -5643,6 +5643,7 @@
            內容 li 上限 8 條(li.grp 是標題不算)。 -->
       <ul class="foot-list foot-recent">
         <li class="grp">最近更新</li>
+        <li data-cl-of="weathertrtcstop1023"><span class="d">10/23</span><span>北捷 10/23 18:00 起文湖線、圓山至淡水及新北投、小碧潭停駛，地下段維持營運；附官方區段與復駛待通知提醒</span></li>
         <li data-cl-of="weatherthsrextra1023"><span class="d">10/23</span><span>高鐵取消 10/23 8825 次（18:25）與 8529 次（20:45）兩班全車自由座增開；全線維持正常營運，並補上高捷 23:00 班距切換公告</span></li>
         <li data-cl-of="weatherkrtc14301023"><span class="d">10/23</span><span>高雄捷運公告 10/23 14:30 起紅橘全線每 10 分鐘一班，深夜每 20 分鐘，附上最新官網原文與先前夜間切換說明</span></li>
         <li data-cl-of="weatherntstop1023"><span class="d">10/23</span><span>新北捷運公告 10/23 15:00 起淡海、安坑、三鶯預防性停駛，可能依風雨提前；環狀線維持每 15 分鐘</span></li>
@@ -5650,13 +5651,13 @@
         <li data-cl-of="weatherklrt1023"><span class="d">10/23</span><span>高雄輕軌 10/23 下午方案已確認，全日每 20 分鐘一班，附上最新官方公告</span></li>
         <li data-cl-of="weathernt1023"><span class="d">10/23</span><span>補上淡海、安坑 10/23 每 30 分鐘班距，淡海紅樹林至濱海沙崙重疊路段每 15 分鐘，附官方公告；高雄輕軌下午仍待另行宣布</span></li>
         <li data-cl-of="weatherextra1023"><span class="d">10/23</span><span>補上台鐵 10/23 加開 6115、6117 次七堵至高雄全車自由座及主要時刻，保留其他停駛、班距調整與待確認提醒</span></li>
-        <li data-cl-of="weatherapp1023"><span class="d">10/23</span><span>修正 App 颱風資訊整份重複顯示，改為各系統公告；補上新北環狀線、三鶯線 10/23 約 15 分鐘班距，淡海與安坑仍待確認</span></li>
       </ul>
       <!-- 第二層:完整歷史。刻意不掛 .foot-box 類名——placeFootBoxes() 用
            `.site-foot .foot-box` 搬移面板,巢狀同名會被當成另一個盒子一起搬走。 -->
       <details class="foot-more">
         <summary>完整更新歷史（依主題分類）</summary>
         <ul class="foot-list">
+        <li data-cl="weathertrtcstop1023"><span class="d">10/23</span><span>北捷 10/23 18:00 起文湖線、圓山至淡水及新北投、小碧潭停駛，地下段維持營運；附官方區段與復駛待通知提醒</span></li>
         <li data-cl="weatherthsrextra1023"><span class="d">10/23</span><span>高鐵取消 10/23 8825 次（18:25）與 8529 次（20:45）兩班全車自由座增開；全線維持正常營運，並補上高捷 23:00 班距切換公告</span></li>
         <li data-cl="weatherkrtc14301023"><span class="d">10/23</span><span>高雄捷運公告 10/23 14:30 起紅橘全線每 10 分鐘一班，深夜每 20 分鐘，附上最新官網原文與先前夜間切換說明</span></li>
         <li data-cl="weatherntstop1023"><span class="d">10/23</span><span>新北捷運公告 10/23 15:00 起淡海、安坑、三鶯預防性停駛，可能依風雨提前；環狀線維持每 15 分鐘</span></li>
@@ -7043,7 +7044,7 @@ const RAIL_3D_BOOT_PARAMS = new URLSearchParams(location.search);
 // v1019b：台鐵同鍵、中途停靠型態不同的班往下借路徑、不退回示意線形，且把自己那份計畫留在模板候選裡（3bde26de、1a781914）；另併入待避窗口逐日掃描報告（28c906cd、7232d41e，不進網站產物）；更新紀錄加一條。
 // v1020a：併入通行證專屬的自製列車；更新紀錄改成這次上線的一條。
 // v1020b：自製列車表單的起訖站點了就列出站名清單（常用大站＋依路線），選完起站自動攤開訖站、可對調、打完整站名即選定；更新紀錄加一條。
-const BUILD = 'v1023i';
+const BUILD = 'v1023j';
 const LANDSCAPE_REQUESTED = new URLSearchParams(location.search).get('map') === 'landscape';
 const GARAGE_QUERY = new URLSearchParams(location.search).get('garage');
 // 輕量多語 runtime：繁中原文同時是安全 fallback，外語字典只存差異字串。
