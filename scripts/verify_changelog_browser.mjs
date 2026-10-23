@@ -125,7 +125,8 @@ const widths = [360, 375, 414, 768];
 // 10/23: Taipei Metro suspension from 18:00, with underground service retained (506 -> 507).
 // 10/23：高捷瞬間風速達八級慢速行駛，保留先前班距參考（507→508）。
 // 10/23：補列10/24北捷班距與首班待通知，保留今晚停駛（508→509）。
-const expectedHistoryCount = 509;
+// 10/23: Taoyuan reduced speed and next-day TRA sections (509 -> 510).
+const expectedHistoryCount = 510;
 
 try {
   for (const [engineName, engine] of Object.entries({ chromium, webkit })) {

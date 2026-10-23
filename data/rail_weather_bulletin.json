@@ -1,7 +1,7 @@
 {
   "id": "champi-20261023",
-  "revision": "20261023-2010",
-  "checkedAt": "2026-10-23T20:10:16+08:00",
+  "revision": "20261023-2205",
+  "checkedAt": "2026-10-23T22:05:41+08:00",
   "displayFrom": "2026-10-22T20:20:00+08:00",
   "expiresAt": "2026-10-24T00:00:00+08:00",
   "serviceDate": "2026-10-23",
@@ -13,7 +13,7 @@
       "id": "tra",
       "label": "台鐵",
       "status": "原定對號停駛／加開2班自由座",
-      "detail": "10/23 原定對號列車全日、全區間停駛；另加開南下七堵至高雄 6115 次 PP 自強號（七堵 08:23、台北 09:00 開，高雄 14:08 到）及 6117 次 EMU3000 新自強號（七堵 09:46、台北 10:20 開，高雄 14:56 到），兩班均採全車自由座。其他停靠站與時刻請查 10/23 05:30 官方加開公告。非對號列車經海線、成追線、宜蘭線及北迴線停駛；其餘幹線非對號列車視風雨機動行駛。支線的平溪、深澳、內灣停駛，六家、集集、沙崙依公告正常行駛。觀光列車及科普列車全日停駛。",
+      "detail": "10/23 原定對號列車全日、全區間停駛；另加開南下七堵至高雄 6115 次 PP 自強號（七堵 08:23、台北 09:00 開，高雄 14:08 到）及 6117 次 EMU3000 新自強號（七堵 09:46、台北 10:20 開，高雄 14:56 到），兩班均採全車自由座。其他停靠站與時刻請查 10/23 05:30 官方加開公告。非對號列車經海線、成追線、宜蘭線及北迴線停駛；其餘幹線非對號列車視風雨機動行駛。支線的平溪、深澳、內灣停駛，六家、集集、沙崙依公告正常行駛。觀光列車及科普列車全日停駛。 10/24 12:00 前另依 10/23 21:30 新公告：西部對號列車基隆至彰化停駛，彰化經高雄至枋寮正常；非對號列車基隆至彰化間除海線、成追線全區間停駛外，其餘視風雨機動行駛，彰化至枋寮正常。東部樹林經宜蘭至花蓮對號及非對號列車停駛，花蓮至臺東正常；南迴線正常。472、102、280、270、207 次全區間停駛；101、191 次台中至潮州及 371 次台中至臺東全區間正常。六家、集集、沙崙正常，平溪、深澳、內灣停駛；行經停駛區間的加班車全區間停駛。觀光列車除藍皮解憂號正常外，海風、山嵐、鳴日廚房及 1、2 次環島之星全日停駛；科普列車全日停駛、閉幕活動取消。10/24 12:00 後資訊預定於當日 08:00 公告，不能視為今晚已復駛。",
       "sourceLabel": "台鐵 10/23 05:30 加開全車自由座公告",
       "sourceUrl": "https://www.railway.gov.tw/tra-tip-web/tip/tip009/tip911/newsDtl?newsNo=8ae4cac2a162d49e01a1659aa7750f9b&page=0",
       "labelI18n": {
@@ -21,13 +21,17 @@
         "ja": "台湾鉄道（TRA）"
       },
       "detailI18n": {
-        "en": "All originally scheduled reserved-seat services are suspended across the network on Oct 23. Two additional southbound Qidu–Kaohsiung trains have been announced, both with unreserved seating throughout: PP Tze-Chiang No. 6115 departs Qidu at 08:23 and Taipei at 09:00, arriving in Kaohsiung at 14:08; EMU3000 Tze-Chiang No. 6117 departs Qidu at 09:46 and Taipei at 10:20, arriving in Kaohsiung at 14:56. See the October 23 05:30 official notice for all stops and times. Non-reserved trains via the coast, Chengzhui, Yilan and North-Link lines are suspended; other mainline non-reserved trains run subject to weather. Pingxi, Shen-ao and Neiwan branches are suspended. Liujia, Jiji and Shalun branches are scheduled to operate. Tourist and science trains are suspended all day.",
-        "ja": "10月23日は当初予定されていた全区間の指定席列車が終日運休します。別途、七堵から高雄へ向かう南下の全車自由席列車2本を増発：PP自強号6115次は七堵08:23・台北09:00発、高雄14:08着、EMU3000新自強号6117次は七堵09:46・台北10:20発、高雄14:56着です。全停車駅と時刻は10月23日05:30の公式発表をご確認ください。海線・成追線・宜蘭線・北廻線を経由する非指定席列車は運休し、その他の幹線の非指定席列車は天候に応じて運転します。平渓・深澳・内湾線は運休、六家・集集・沙崙線は公式発表では通常運転です。観光列車と科学普及列車は終日運休します。"
+        "en": "All originally scheduled reserved-seat services are suspended across the network on Oct 23. Two additional southbound Qidu–Kaohsiung trains have been announced, both with unreserved seating throughout: PP Tze-Chiang No. 6115 departs Qidu at 08:23 and Taipei at 09:00, arriving in Kaohsiung at 14:08; EMU3000 Tze-Chiang No. 6117 departs Qidu at 09:46 and Taipei at 10:20, arriving in Kaohsiung at 14:56. See the October 23 05:30 official notice for all stops and times. Non-reserved trains via the coast, Chengzhui, Yilan and North-Link lines are suspended; other mainline non-reserved trains run subject to weather. Pingxi, Shen-ao and Neiwan branches are suspended. Liujia, Jiji and Shalun branches are scheduled to operate. Tourist and science trains are suspended all day. A separate notice issued at 21:30 on Oct 23 covers Oct 24 before 12:00. Western reserved-seat services are suspended between Keelung and Changhua; Changhua–Kaohsiung–Fangliao operates normally. Between Keelung and Changhua, non-reserved services on the coast and Chengzhui lines are suspended throughout, while other routes run subject to weather; Changhua–Fangliao operates normally. Both reserved and non-reserved services between Shulin, Yilan and Hualien are suspended; Hualien–Taitung and the South-Link Line operate normally. Trains 472, 102, 280, 270 and 207 are suspended throughout. Trains 101 and 191 between Taichung and Chaozhou, and 371 between Taichung and Taitung, operate throughout. Liujia, Jiji and Shalun operate normally; Pingxi, Shen-ao and Neiwan remain suspended. Extra trains passing through suspended sections are cancelled throughout. Among the named tourist services, only the Breezy Blue runs normally; Haifeng, Shanlan, Mingri Kitchen and Formosa Express Nos. 1 and 2 are suspended all day. Science trains are suspended all day and the closing event is cancelled. Information for after 12:00 on Oct 24 is scheduled for announcement at 08:00 that day. This is not a resumption tonight.",
+        "ja": "10月23日は当初予定されていた全区間の指定席列車が終日運休します。別途、七堵から高雄へ向かう南下の全車自由席列車2本を増発：PP自強号6115次は七堵08:23・台北09:00発、高雄14:08着、EMU3000新自強号6117次は七堵09:46・台北10:20発、高雄14:56着です。全停車駅と時刻は10月23日05:30の公式発表をご確認ください。海線・成追線・宜蘭線・北廻線を経由する非指定席列車は運休し、その他の幹線の非指定席列車は天候に応じて運転します。平渓・深澳・内湾線は運休、六家・集集・沙崙線は公式発表では通常運転です。観光列車と科学普及列車は終日運休します。 別途、10月23日21:30発表の10月24日12:00より前の計画では、西部の指定席列車は基隆～彰化が運休、彰化～高雄～枋寮は通常運転です。基隆～彰化の非指定席列車は海線・成追線が全区間運休、その他は天候に応じて運転し、彰化～枋寮は通常運転します。東部の樹林～宜蘭～花蓮は指定席・非指定席とも運休、花蓮～台東と南廻線は通常運転です。472・102・280・270・207次は全区間運休。101・191次の台中～潮州と371次の台中～台東は全区間運転します。六家・集集・沙崙は通常運転、平渓・深澳・内湾は運休です。運休区間を通る増発列車は全区間運休。観光列車は藍皮解憂号のみ通常運転し、海風・山嵐・鳴日厨房・環島之星1次と2次は終日運休します。科学普及列車は終日運休し、閉幕行事も中止です。10月24日12:00以降の情報は当日08:00発表予定で、今夜の運転再開を示すものではありません。"
       },
       "additionalSources": [
         {
           "sourceLabel": "台鐵 10/22 20:20 原停駛與機動行駛方案",
           "sourceUrl": "https://www.railway.gov.tw/tra-tip-web/tip/tip009/tip911/newsDtl?newsNo=8ae4cac3a15ab24201a16394bf4219db"
+        },
+        {
+          "sourceLabel": "台鐵 10/23 21:30 公布之 10/24 12:00 前營運方案",
+          "sourceUrl": "https://www.railway.gov.tw/tra-tip-web/tip/tip009/tip911/newsDtl?newsNo=8ae4cac3a1650e3a01a16906f5681318&page=0"
         }
       ]
     },
@@ -73,7 +77,7 @@
       "id": "tmrt",
       "label": "台中捷運",
       "status": "15 分鐘班距",
-      "detail": "10/23 綠線調整為每 15 分鐘一班，仍會依風雨與旅運需求機動調整；風力達安全限制時可能暫停營運。",
+      "detail": "10/23 綠線調整為每 15 分鐘一班，仍會依風雨與旅運需求機動調整；風力達安全限制時可能暫停營運。 10/24 另已公告維持 15 分鐘班距，仍依旅運需求及天候調整；這是明日方案，並非今晚停駛或復駛公告。",
       "sourceLabel": "中捷 10/22 班距調整公告",
       "sourceUrl": "https://www.tmrt.com.tw/announcement/draft-news/detail?id=f6d04207-6ad6-4f80-b166-561f66c22daf",
       "labelI18n": {
@@ -81,9 +85,15 @@
         "ja": "台中MRT"
       },
       "detailI18n": {
-        "en": "Green Line trains run every 15 minutes on Oct 23, with adjustments according to weather and demand. Services may be suspended if wind reaches the safety limit.",
-        "ja": "10月23日の緑線は15分間隔で運転し、天候と利用状況に応じて調整します。風が安全基準に達した場合は運転を見合わせる可能性があります。"
-      }
+        "en": "Green Line trains run every 15 minutes on Oct 23, with adjustments according to weather and demand. Services may be suspended if wind reaches the safety limit. A separate Oct 24 notice keeps 15-minute headways, subject to demand and weather. This is tomorrow's plan, not an announcement of suspension or resumption tonight.",
+        "ja": "10月23日の緑線は15分間隔で運転し、天候と利用状況に応じて調整します。風が安全基準に達した場合は運転を見合わせる可能性があります。 別の10月24日の発表でも15分間隔を継続し、利用状況と天候に応じて調整します。明日の計画であり、今夜の運休や運転再開の発表ではありません。"
+      },
+      "additionalSources": [
+        {
+          "sourceLabel": "中捷 10/23 公布之 10/24 班距方案",
+          "sourceUrl": "https://www.tmrt.com.tw/announcement/draft-news/detail?id=6ad4cf49-4444-48f8-8cd0-944a0391e16d"
+        }
+      ]
     },
     {
       "id": "krtc",
@@ -160,18 +170,28 @@
     {
       "id": "tymc",
       "label": "桃園機場捷運",
-      "status": "直達車停駛／普通車 15 分鐘",
-      "detail": "10/23 全天取消直達車及加班車，普通車維持 15 分鐘班距；A1、A3 預辦登機及行李託運全天暫停。實際運轉仍依風速調整，可能降速或暫停營運。",
-      "sourceLabel": "桃捷 10/22 公布之 10/23 營運模式",
-      "sourceUrl": "https://www.tymetro.com.tw/tymetro-new/tw/_pages/news/show-2438-1.html",
+      "status": "強風慢速／直達車停駛",
+      "detail": "10/23 桃捷因目前風速較強，列車慢速行駛；新公告未列特定區段、恢復正常速度時間或新班距。先前 10/23 方案為全天取消直達車及加班車，普通車維持 15 分鐘班距；A1、A3 預辦登機及行李託運全天暫停，實際運轉依風速調整，可能暫停營運。10/24 另已公告同樣取消直達車及加班車、普通車 15 分鐘，A1、A3 預辦登機及行李託運全天暫停，仍依天候調整；這不代表今晚恢復正常速度。",
+      "sourceLabel": "桃捷 10/23 21:55:16 強風慢速行駛公告",
+      "sourceUrl": "https://www.tymetro.com.tw/tymetro-new/tw/_pages/general/show-22-1.html",
       "labelI18n": {
         "en": "Taoyuan Airport MRT",
         "ja": "桃園空港MRT"
       },
       "detailI18n": {
-        "en": "All express and extra services are cancelled on Oct 23. Commuter trains run every 15 minutes. In-town check-in and baggage services at A1 and A3 are suspended all day. Wind conditions may cause speed restrictions or suspensions.",
-        "ja": "10月23日は直達車と増発列車が終日運休し、普通車は15分間隔で運転します。A1・A3駅の市内チェックインと手荷物預かりは終日休止します。風に応じて減速または運転を見合わせる可能性があります。"
-      }
+        "en": "On Oct 23, Taoyuan Airport MRT announced that trains are running at reduced speed due to strong winds. The new notice does not specify a section, a return to normal speed or new headways. The earlier Oct 23 plan cancels all express and extra services; commuter trains run every 15 minutes. In-town check-in and baggage services at A1 and A3 are suspended all day. Operations remain subject to wind conditions and may be suspended. A separate Oct 24 notice keeps express and extra services cancelled, commuter trains at 15-minute headways, and A1/A3 check-in and baggage services closed all day, subject to weather. It does not announce a return to normal speed tonight.",
+        "ja": "10月23日、桃園空港MRTは強風のため列車が減速運転中と発表しました。新発表には対象区間、通常速度に戻す時刻、新たな運転間隔の記載はありません。従来の10月23日の計画は直達車と増発列車が終日運休、普通車は15分間隔で、A1・A3駅の市内チェックインと手荷物預かりは終日休止です。風に応じて運転を見合わせる可能性があります。別の10月24日の発表でも直達車・増発列車の運休、普通車15分間隔、A1・A3の市内チェックインと手荷物預かりの終日休止を継続し、天候に応じて調整します。今夜通常速度に戻るとの発表ではありません。"
+      },
+      "additionalSources": [
+        {
+          "sourceLabel": "桃捷先前 10/23 營運模式（10/22 公布）",
+          "sourceUrl": "https://www.tymetro.com.tw/tymetro-new/tw/_pages/news/show-2438-1.html"
+        },
+        {
+          "sourceLabel": "桃捷 10/24 營運模式（10/23 公布）",
+          "sourceUrl": "https://www.tymetro.com.tw/tymetro-new/tw/_pages/news/show-2439-1.html"
+        }
+      ]
     },
     {
       "id": "ntmetro",
