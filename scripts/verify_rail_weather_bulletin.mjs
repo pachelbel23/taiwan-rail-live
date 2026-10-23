@@ -29,17 +29,21 @@ assert.equal(tra.additionalSources.length, 1);
 assert.ok(tra.additionalSources[0].sourceUrl.includes('8ae4cac3a15ab24201a16394bf4219db'));
 assert.ok(source.systems.find(s => s.id === 'thsr').detail.includes('10/23 全線正常營運'));
 const ntmetro = source.systems.find(s => s.id === 'ntmetro');
-// 新北捷運官方貼文適用10/23：兩條輕軌30分鐘，淡海重疊區與兩條捷運15分鐘。
-assert.match(ntmetro.status, /淡海、安坑30分/);
-assert.match(ntmetro.status, /淡海重疊、環狀、三鶯15分/);
-assert.match(ntmetro.detail, /淡海輕軌、安坑輕軌每 30 分鐘/);
-assert.match(ntmetro.detail, /V01 紅樹林至 V09 濱海沙崙重疊路段每 15 分鐘/);
-assert.match(ntmetro.detail, /環狀線、三鶯線每 15 分鐘/);
+// 新北新公告：15:00起三線停駛，先前班距僅適用停駛前，環狀線維持15分鐘。
+assert.match(source.title, /淡海、安坑、三鶯.*15:00 起停駛/);
+assert.match(ntmetro.status, /15:00 起淡海、安坑、三鶯停駛/);
+assert.match(ntmetro.detail, /^10\/23 15:00 起淡海輕軌、安坑輕軌及三鶯線預防性停駛/);
+assert.match(ntmetro.detail, /可能提前停駛/);
+assert.match(ntmetro.detail, /停駛前依先前公告：淡海輕軌、安坑輕軌每 30 分鐘/);
+assert.match(ntmetro.detail, /V01 紅樹林至 V09 濱海沙崙重疊路段及三鶯線每 15 分鐘/);
+assert.match(ntmetro.detail, /環狀線維持每 15 分鐘/);
 assert.doesNotMatch(ntmetro.detail, /待確認|尚未查得/);
-assert.ok(ntmetro.sourceUrl.startsWith('https://www.facebook.com/NewTaipeiMetro/posts/'));
-assert.equal(ntmetro.additionalSources[0].sourceUrl, 'https://www.ntmetro.com.tw/');
-assert.match(ntmetro.detailI18n.en, /30 minutes.*V01–V09.*15 minutes/);
-assert.match(ntmetro.detailI18n.ja, /30分間隔.*V01紅樹林～V09濱海沙崙.*15分間隔/);
+assert.equal(ntmetro.sourceUrl, 'https://www.facebook.com/NewTaipeiMetro/posts/pfbid029safw3V2jBWZVW6kMFpDboXdJhVWWCnwPbuuuTAQ7qXFvyBBv74wzDAsWwTFuJ2wl');
+assert.equal(ntmetro.additionalSources.length, 2);
+assert.ok(ntmetro.additionalSources[0].sourceUrl.includes('pfbid0wm9BjV2dTKQR6aMdJGmVtHMLAZsfncPvKNpiAoF6TAvJq6w2XsGESKUoHn5SLKoHl'));
+assert.equal(ntmetro.additionalSources[1].sourceUrl, 'https://www.ntmetro.com.tw/');
+assert.match(ntmetro.detailI18n.en, /suspended from 15:00.*Before suspension.*30 minutes.*V01–V09.*15 minutes/);
+assert.match(ntmetro.detailI18n.ja, /15:00から淡海・安坑ライトレールと三鶯線.*30分間隔.*V01紅樹林～V09濱海沙崙.*15分間隔/);
 // 高捷11:50官方更新明訂23:00切換，不能只保留模糊的「深夜」。
 const krtc = source.systems.find(s => s.id === 'krtc');
 assert.match(krtc.detail, /23:00 前班距 15 分鐘，23:00 後班距 20 分鐘/);
@@ -257,7 +261,7 @@ try {
           await page.goto(base + '/weather-status.html');
           assert.equal(await page.locator('section').count(), 9);
           assert.equal(await page.locator('section[aria-labelledby="tra"] a').count(), 2, '加開公告與原停駛方案都可查閱');
-          assert.equal(await page.locator('section[aria-labelledby="ntmetro"] a').count(), 2, '官方班距貼文與官網營運資訊都可查閱');
+          assert.equal(await page.locator('section[aria-labelledby="ntmetro"] a').count(), 3, '新停駛公告、停駛前班距及官網營運資訊都可查閱');
           const pageOverflow = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth);
           assert.ok(pageOverflow <= 1);
           for (const a of await page.locator('section a').all()) {
@@ -312,7 +316,10 @@ try {
         assert.equal(await page.evaluate(()=>activeAlertList().filter(a=>a.bulletin).length),1);
         await page.tap('#alertChip');
         const text=await page.locator('#alertDetail').innerText();
-        assert.match(text,/環狀線、三鶯線.*15 分鐘/);
+        assert.ok(text.includes(ntmetro.detail), '舊網頁仍須顯示最新完整新北公告');
+        assert.match(text,/15:00 起淡海輕軌、安坑輕軌及三鶯線預防性停駛/);
+        assert.match(text,/停駛前依先前公告：淡海輕軌、安坑輕軌每 30 分鐘/);
+        assert.match(text,/環狀線維持每 15 分鐘/);
         record(`${name} 已開啟的 v1022b 舊網頁仍收到單一完整彙整`,{});
       } finally { await oldWebContext.close(); }
       const context = await browser.newContext({ viewport: { width: 375, height: 900 }, isMobile: true, hasTouch: true, locale: 'zh-TW' });

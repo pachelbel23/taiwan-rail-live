@@ -119,7 +119,8 @@ const widths = [360, 375, 414, 768];
 // 10/23：補上淡海、安坑官方颱風班距（500→501）。
 // 10/23：高雄輕軌下午方案改為已確認全日20分鐘（501→502）。
 // 10/23：高捷紅橘線夜間班距補上官方23:00切換時間（502→503）。
-const expectedHistoryCount = 503;
+// 10/23：新北淡海、安坑、三鶯15:00起預防性停駛公告（503→504）。
+const expectedHistoryCount = 504;
 
 try {
   for (const [engineName, engine] of Object.entries({ chromium, webkit })) {

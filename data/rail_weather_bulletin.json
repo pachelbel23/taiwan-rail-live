@@ -1,11 +1,11 @@
 {
   "id": "champi-20261023",
-  "revision": "20261023-1154",
-  "checkedAt": "2026-10-23T11:54:00+08:00",
+  "revision": "20261023-1309",
+  "checkedAt": "2026-10-23T13:09:26+08:00",
   "displayFrom": "2026-10-22T20:20:00+08:00",
   "expiresAt": "2026-10-24T00:00:00+08:00",
   "serviceDate": "2026-10-23",
-  "title": "薔琵颱風｜10/23 台鐵對號停駛、另加開 2 班全車自由座",
+  "title": "薔琵颱風｜淡海、安坑、三鶯 10/23 15:00 起停駛",
   "warning": "動畫仍可能依原班表顯示列車，不能據此判斷有車可搭。停駛、臨時班距與復駛請以各營運單位最新公告為準，出發前務必再確認。",
   "weatherUrl": "https://www.cwa.gov.tw/V8/C/P/Typhoon/TY_WARN.html",
   "systems": [
@@ -146,19 +146,23 @@
     {
       "id": "ntmetro",
       "label": "新北捷運（環狀、淡海、安坑、三鶯）",
-      "status": "淡海、安坑30分；淡海重疊、環狀、三鶯15分",
-      "detail": "10/23 淡海輕軌、安坑輕軌每 30 分鐘一班；淡海輕軌 V01 紅樹林至 V09 濱海沙崙重疊路段每 15 分鐘一班。環狀線、三鶯線每 15 分鐘一班。各線仍依風雨情況機動降速或暫停營運，出發前請留意官方最新公告。",
-      "sourceLabel": "新北捷運官方 10/23 颱風班距貼文（07:48 核對）",
-      "sourceUrl": "https://www.facebook.com/NewTaipeiMetro/posts/pfbid0wm9BjV2dTKQR6aMdJGmVtHMLAZsfncPvKNpiAoF6TAvJq6w2XsGESKUoHn5SLKoHl",
+      "status": "15:00 起淡海、安坑、三鶯停駛；環狀15分",
+      "detail": "10/23 15:00 起淡海輕軌、安坑輕軌及三鶯線預防性停駛，若風雨提前達停駛標準，可能提前停駛。停駛前依先前公告：淡海輕軌、安坑輕軌每 30 分鐘一班；淡海輕軌 V01 紅樹林至 V09 濱海沙崙重疊路段及三鶯線每 15 分鐘一班。環狀線維持每 15 分鐘一班，仍依風雨狀況機動降速、調整班距或暫停營運。",
+      "sourceLabel": "新北捷運 10/23 15:00 三線停駛公告（13:09 核對）",
+      "sourceUrl": "https://www.facebook.com/NewTaipeiMetro/posts/pfbid029safw3V2jBWZVW6kMFpDboXdJhVWWCnwPbuuuTAQ7qXFvyBBv74wzDAsWwTFuJ2wl",
       "labelI18n": {
         "en": "New Taipei Metro: Circular, Danhai, Ankeng and Sanying",
         "ja": "新北MRT（環状線・淡海・安坑・三鶯）"
       },
       "detailI18n": {
-        "en": "On October 23, Danhai and Ankeng light rail run every 30 minutes. Trains on the shared V01–V09 section of Danhai run every 15 minutes. The Circular and Sanying lines also run every 15 minutes. All four lines may run at reduced speed or suspend service depending on wind and rain. Check the latest official notice before travel.",
-        "ja": "10月23日の淡海・安坑ライトレールは30分間隔で運転します。淡海のV01紅樹林～V09濱海沙崙の共通区間と環状線・三鶯線は15分間隔です。各線は風雨に応じて減速または運転を見合わせる場合があります。出発前に最新の公式発表をご確認ください。"
+        "en": "On October 23, service on Danhai Light Rail, Ankeng Light Rail and the Sanying Line is suspended from 15:00 as a precaution. Suspension may begin earlier if wind and rain reach the safety limits. Before suspension, the earlier announced plan is Danhai and Ankeng every 30 minutes, with the shared V01–V09 section of Danhai and the Sanying Line every 15 minutes. The Circular Line continues every 15 minutes, subject to reduced speed, headway changes or suspension depending on weather.",
+        "ja": "10月23日の15:00から淡海・安坑ライトレールと三鶯線は予防的に運転を見合わせます。風雨が基準に達した場合は早まることがあります。運休までの従来の発表は淡海・安坑が30分間隔、淡海のV01紅樹林～V09濱海沙崙の共通区間と三鶯線が15分間隔です。環状線は15分間隔を維持し、天候により減速、間隔の変更、運転見合わせの可能性があります。"
       },
       "additionalSources": [
+        {
+          "sourceLabel": "新北捷運先前班距公告（僅供停駛前方案參考）",
+          "sourceUrl": "https://www.facebook.com/NewTaipeiMetro/posts/pfbid0wm9BjV2dTKQR6aMdJGmVtHMLAZsfncPvKNpiAoF6TAvJq6w2XsGESKUoHn5SLKoHl"
+        },
         {
           "sourceLabel": "新北捷運官網營運資訊與最新消息",
           "sourceUrl": "https://www.ntmetro.com.tw/"
