@@ -1,7 +1,7 @@
 {
   "id": "champi-20261023",
-  "revision": "20261023-1309",
-  "checkedAt": "2026-10-23T13:09:26+08:00",
+  "revision": "20261023-1418",
+  "checkedAt": "2026-10-23T14:18:25+08:00",
   "displayFrom": "2026-10-22T20:20:00+08:00",
   "expiresAt": "2026-10-24T00:00:00+08:00",
   "serviceDate": "2026-10-23",
@@ -82,18 +82,24 @@
     {
       "id": "krtc",
       "label": "高雄捷運紅橘線",
-      "status": "23:00 前 15 分／之後 20 分",
-      "detail": "10/23 紅橘線 23:00 前班距 15 分鐘，23:00 後班距 20 分鐘。出發前請再確認官方最新公告。",
-      "sourceLabel": "高捷官方 10/23 11:50 營運更新（11:54 核對）",
-      "sourceUrl": "https://www.facebook.com/krtco/posts/pfbid02G9uYQNvHcLhtfqZ6qsijVN1yQejAS1w5DmLo68BswcH1BVmkUQ1DyzVwUNieK9nzl",
+      "status": "14:30 起 10 分／深夜 20 分",
+      "detail": "10/23 14:30 起紅橘全線班距 10 分鐘，深夜班距 20 分鐘，並視狀況調整班距。14:30 前依先前公告每 15 分鐘；先前 11:50 官方公告夜間自 23:00 後每 20 分鐘，本次官網未重列切換時刻。出發前請再確認官方最新公告。",
+      "sourceLabel": "高捷官網 10/23 14:30 班距調整（14:18 核對）",
+      "sourceUrl": "https://www.krtc.com.tw/Information/notice_more?id=6a89481664cc4e71822385bb8441035d",
       "labelI18n": {
         "en": "Kaohsiung MRT Red and Orange lines",
         "ja": "高雄MRT紅線・橘線"
       },
       "detailI18n": {
-        "en": "On October 23, Kaohsiung MRT Red and Orange line trains run every 15 minutes before 23:00 and every 20 minutes after 23:00. Check the latest official notice before travel.",
-        "ja": "10月23日の高雄MRT紅線・橘線は23:00より前は15分間隔、23:00より後は20分間隔で運転します。出発前に最新の公式発表をご確認ください。"
-      }
+        "en": "From 14:30 on October 23, all Kaohsiung MRT Red and Orange line trains run every 10 minutes, with 20-minute headways late at night, subject to operational adjustments. Before 14:30, the earlier notice specifies 15-minute headways. The earlier 11:50 official update places the 20-minute night service after 23:00; the latest website notice does not restate the changeover time. Check the latest official notice before travel.",
+        "ja": "10月23日14:30から高雄MRT紅線・橘線の全線は10分間隔、深夜は20分間隔で運転し、状況に応じて間隔を調整します。14:30より前は従来の発表では15分間隔です。11:50の公式発表では23:00より後が20分間隔ですが、最新の公式サイト記事では切替時刻を再掲していません。出発前に最新の公式発表をご確認ください。"
+      },
+      "additionalSources": [
+        {
+          "sourceLabel": "高捷先前 11:50 公告（14:30 前班距及夜間切換參考）",
+          "sourceUrl": "https://www.facebook.com/krtco/posts/pfbid02G9uYQNvHcLhtfqZ6qsijVN1yQejAS1w5DmLo68BswcH1BVmkUQ1DyzVwUNieK9nzl"
+        }
+      ]
     },
     {
       "id": "klrt",

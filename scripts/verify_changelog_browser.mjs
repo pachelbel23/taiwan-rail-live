@@ -120,7 +120,8 @@ const widths = [360, 375, 414, 768];
 // 10/23：高雄輕軌下午方案改為已確認全日20分鐘（501→502）。
 // 10/23：高捷紅橘線夜間班距補上官方23:00切換時間（502→503）。
 // 10/23：新北淡海、安坑、三鶯15:00起預防性停駛公告（503→504）。
-const expectedHistoryCount = 504;
+// 10/23：高捷14:30起紅橘全線加密為10分鐘，保留夜間20分鐘及先前時刻來源（504→505）。
+const expectedHistoryCount = 505;
 
 try {
   for (const [engineName, engine] of Object.entries({ chromium, webkit })) {
