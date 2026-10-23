@@ -17,7 +17,7 @@
   // 官方另有「跳站的普通車」,回推會把它畫成 5 節直達車。實測今日兩種日型 607 班官方全部有標,
   // 回推則 11 班猜不出、6 班猜錯。官方沒標的留 null,照舊退成 3 節示意並標「當班編組待確認」。
   const TYMC_SERVICE={com:'local',exp:'express'};
-  if(params.get('tracks')!=='legacy')import('./rail-3d/physical/client.js').then(m=>m.loadPhysicalMotion()).then(m=>{m.formationLengthM=formationLengthM;window.railIslandPhysical=m;glTracks.sig='';}).catch(e=>console.error('實體股道',e));
+  const physicalLoad=params.get('tracks')!=='legacy'?import('./rail-3d/physical/client.js').then(m=>m.loadPhysicalMotion()).then(m=>{m.formationLengthM=formationLengthM;window.railIslandPhysical=m;glTracks.sig='';return m;}).catch(e=>{console.error('實體股道',e);return null;}):Promise.resolve(null);
   // 這一區的 ri-* 全是使用者在「觀看設定」裡按過的選擇(立體列車開關、編組、地形、車身大小、透視…),
   // 原本記在 sessionStorage,分頁一關(手機上就是把 app 滑掉)整組就沒了,下次開又回預設——
   // 這正是實際踩到過的問題。設定要跨次開啟活著,只能放 localStorage,
@@ -32,7 +32,7 @@
   formationMode=formationMode==='three'?'three':'actual';groundMode=groundMode==='terrain'?'terrain':'flat';trainSizeMode=trainSizeMode==='scale'?'scale':'readable';
   let renderer=null,lastFrame=null,loading=false,loadSerial=Promise.resolve(),epoch=0,manualTarget=null,appearanceKey='',noteAt=0,renderAt=-Infinity,noteLang='';
   let trainIds=new WeakMap(),lineIds=new WeakMap();
-  const shapeCache=new WeakMap(),lineBounds=new WeakMap(),tripKeys=new WeakMap(),targets=new Map(),stationTargets=new Map(),motionItems=new Map(),headings=new Map(),errors=[];
+  const shapeCache=new WeakMap(),lineBounds=new WeakMap(),stationIds=new WeakMap(),tripKeys=new WeakMap(),targets=new Map(),stationTargets=new Map(),motionItems=new Map(),headings=new Map(),errors=[];
   const save=(key,value)=>{try{localStorage.setItem(key,String(value));}catch{}};
   function tripKey(tr){
     if(!tripKeys.has(tr)){let h=2166136261;for(const c of JSON.stringify(tr)){h^=c.charCodeAt(0);h=Math.imul(h,16777619);}tripKeys.set(tr,(h>>>0).toString(36));}return tripKeys.get(tr);
@@ -71,7 +71,7 @@
       else if(!trainIds.has(target.tr))trainIds.set(target.tr,id);
       vehicles.push({id,longitude:pos.lon,latitude:pos.lat,railElevationM:null,...meta});}
     function station(st,sys,ln){const board=ln?{name:st.name,lat:st.lat,lon:st.lon,sys:state.mode==='sched'?'deco':'freq',metroSysId:sys}:st;
-      const id=[sys,st.id||st.name,st.lat,st.lon].join(':');if(stationTargets.has(id))return;stationTargets.set(id,board);stations.push({id,name:st.name,systemId:sys,longitude:st.lon,latitude:st.lat});}
+      let sid=stationIds.get(st);if(!sid||sid.sys!==sys)stationIds.set(st,sid={sys,id:[sys,st.id||st.name,st.lat,st.lon].join(':')});const id=sid.id;if(stationTargets.has(id))return;stationTargets.set(id,board);stations.push({id,name:st.name,systemId:sys,longitude:st.lon,latitude:st.lat});}
     const pools=state.mode==='sched'?(state.deco?state.decoLines||[]:[]):state.lines||[];
     if(state.mode==='sched'){
       for(const ln of state.trackLines||[])if(!state.trackVisible||state.trackVisible.has(ln.id))routes.push(lineRecord(ln,ln.sys||ln._sys||'rail'));
@@ -163,7 +163,14 @@
   let landscapeTransparent=read('ri-landscape-transparent','0')==='1';
   function inspectionEnabled(){return state.basemap==='landscape'?landscapeTransparent:state.basemap==='sat'?satelliteTransparent:transparent;}
   function syncAppearance(force=false){if(!renderer)return;const satellite=state.basemap==='sat',landscape=state.basemap==='landscape',inspection=inspectionEnabled(),key=[state.map3d,state.mapDark,satellite,landscape,inspection].join(':');if(!force&&key===appearanceKey)return;appearanceKey=key;renderer.setAppearance({buildings:state.map3d,dark:state.mapDark,transparent:inspection,satellite,landscape});syncUI();}
-  function render(now){if(!renderer||!M.raw.getLayer('live-vehicles-3d')||!state.ready||document.hidden)return;try{
+  // 立體算繪器(three.js、整合模組、約 23 MB 的股道剖面)等到看得到立體列車的視角才掛:全台平面視角
+  // 掛了也畫不出東西(下面 13.8 以下直接清空),卻讓每個人開機多載、多解析這一大包。
+  // 漫遊、鎖頭跟車、衛星原貌／地形、?scene=3d 與 ?visit 深連結一律視為要用,照舊一開始就掛。
+  let attachPending=false;
+  function rendererWanted(){return state.basemap==='landscape'||effectiveGround()==='terrain'||!!state.ambient||followHeadLocked()||M.raw.getZoom()>=12.5||params.get('scene')==='3d'||params.has('visit');}
+  function render(now){
+    if(!renderer){if(!loading&&!attachPending&&state.ready&&!document.hidden&&M.isStyleReady()&&rendererWanted()){attachPending=true;attach();}return;}
+    if(!M.raw.getLayer('live-vehicles-3d')||!state.ready||document.hidden)return;try{
     // tick 才節流；選項呼叫 render() 時立即生效，暫停中的跳時也不受間隔限制。
     // 相機有動作維持全速，同一視角的列車更新則與主 canvas 的待機頻率一致。
     // 暫停時仍低頻檢查資料與模型到貨；官方即時捷運使用牆鐘，不能因回放暫停而降成靜態。
@@ -184,8 +191,9 @@
     const padding={...mapInsets()};for(const key of ['top','bottom','left','right'])padding[key]=Math.max(0,Number(padding[key])||0);
     state._autoPan=true;try{const v=lastFrame?.vehicles.find(v=>v.id===lastFrame.selectedVehicleId);renderer.followCoordinate(v?.route?.physical?[v.longitude,v.latitude]:[lon,lat],padding);}finally{state._autoPan=false;}return true;
   }
-  function attach(){const ticket=++epoch;loadSerial=loadSerial.catch(()=>{}).then(async()=>{if(ticket!==epoch)return;loading=true;syncUI();renderer?.destroy();renderer=null;appearanceKey='';
-    try{const {createLiveMap}=await import(base+'map3d.js');if(ticket!==epoch)return;
+  function attach(){const ticket=++epoch;loadSerial=loadSerial.catch(()=>{}).then(async()=>{attachPending=false;if(ticket!==epoch)return;loading=true;syncUI();renderer?.destroy();renderer=null;appearanceKey='';
+    try{const [{createLiveMap},phys]=await Promise.all([import(base+'map3d.js'),physicalLoad]);if(ticket!==epoch)return;
+      if(phys?.ensureProfiles)await phys.ensureProfiles();if(ticket!==epoch)return; // 股道剖面延後到這裡才載(client.js):算繪器建立前就要在位,橋隧結構才不會先用平地剖面蓋一次
       const next=await createLiveMap({map:M.raw,isCurrent:()=>ticket===epoch&&M.isStyleReady(),landscape:state.basemap==='landscape',groundMode:effectiveGround(),formationMode,trainSizeMode,getHeading:headingFor,onGesture:()=>{if(!followHeadLocked())setFollowLock(false);},onInteract:()=>{state._gestureAt=state._interactAt=performance.now();},onError:e=>{if(errors.length<20)errors.push(e);}});
       if(ticket!==epoch){next.destroy();return;}renderer=next;syncAppearance();render();
     }catch(e){if(e.name!=='AbortError'){errors.push(String(e.stack||e));showToast(t('立體顯示載入失敗，請重試'));}}finally{loading=false;syncUI();}});}
@@ -230,9 +238,9 @@
     M.raw.on('pitchend',syncUI);
     if(params.has('visit'))queueMicrotask(()=>loadSerial.then(()=>guide.goTo(params.get('visit'))));
 
-    M.raw.on('style.load',attach);M.raw.on('rotatestart',e=>{if(e.originalEvent)manualTarget=currentTarget();});M.raw.on('pitchstart',e=>{if(e.originalEvent)manualTarget=currentTarget();});
+    M.raw.on('style.load',()=>{if(rendererWanted())attach();});M.raw.on('rotatestart',e=>{if(e.originalEvent)manualTarget=currentTarget();});M.raw.on('pitchstart',e=>{if(e.originalEvent)manualTarget=currentTarget();});
     if(state.basemap==='landscape'){setMap3d(true);if(M.getPitch()<20)M.setPitch(50);}
-    if(params.get('scene')==='3d'){setMap3d(true);M.setPitch(55);const zoom=Number(params.get('z'));if(Number.isFinite(zoom)&&zoom>=14&&zoom<=21){M.stop();M.raw.setZoom(zoom-ML_Z);}}if(M.isStyleReady())attach();syncUI();
+    if(params.get('scene')==='3d'){setMap3d(true);M.setPitch(55);const zoom=Number(params.get('z'));if(Number.isFinite(zoom)&&zoom>=14&&zoom<=21){M.stop();M.raw.setZoom(zoom-ML_Z);}}if(M.isStyleReady()&&rendererWanted())attach();syncUI();
   }
   window.railIslandIntegration={version:26,get guide(){return guide;},setPerspective,beforeStyleChange(){epoch++;renderer?.destroy();renderer=null;appearanceKey='';},get active(){return !!renderer&&enabled&&!!M.raw.getLayer('live-vehicles-3d');},get renderer(){return renderer;},get loading(){return loading;},errors,capture,render,recenter,select,
     syncCameraLock(){return cameraLock?.sync()||false;},

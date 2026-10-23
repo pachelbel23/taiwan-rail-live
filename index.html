@@ -5643,6 +5643,7 @@
            內容 li 上限 8 條(li.grp 是標題不算)。 -->
       <ul class="foot-list foot-recent">
         <li class="grp">最近更新</li>
+        <li data-cl-of="webperf1024"><span class="d">10/24</span><span>網站效能：省掉每幀重複計算與多餘的版面重排，立體列車與股道剖面改為放大時才載入；一般筆電開機更快、拖曳與跟車更順</span></li>
         <li data-cl-of="weather1024"><span class="d">10/24</span><span>更新 10/24 颱風公告：台鐵中午前分區行駛、北捷部分首班待通知與今日班距；未確認的復駛資訊另標提醒</span></li>
         <li data-cl-of="weathertymcslow1023"><span class="d">10/23</span><span>桃捷因強風慢速行駛；補列台鐵 10/24 中午前各路段行車方案與例外車次，並附桃捷、中捷明日班距；今晚停駛提醒及午夜到期不變</span></li>
         <li data-cl-of="weathertrtc1024"><span class="d">10/23</span><span>補上北捷 10/24 地下段約 12 分鐘、南勢角至大橋頭約 6 分鐘班距；文湖及平面、高架路段首班仍待天候與巡檢通知，保留今晚停駛提醒</span></li>
@@ -5650,13 +5651,13 @@
         <li data-cl-of="weathertrtcstop1023"><span class="d">10/23</span><span>北捷 10/23 18:00 起文湖線、圓山至淡水及新北投、小碧潭停駛，地下段維持營運；附官方區段與復駛待通知提醒</span></li>
         <li data-cl-of="weatherthsrextra1023"><span class="d">10/23</span><span>高鐵取消 10/23 8825 次（18:25）與 8529 次（20:45）兩班全車自由座增開；全線維持正常營運，並補上高捷 23:00 班距切換公告</span></li>
         <li data-cl-of="weatherkrtc14301023"><span class="d">10/23</span><span>高雄捷運公告 10/23 14:30 起紅橘全線每 10 分鐘一班，深夜每 20 分鐘，附上最新官網原文與先前夜間切換說明</span></li>
-        <li data-cl-of="weatherntstop1023"><span class="d">10/23</span><span>新北捷運公告 10/23 15:00 起淡海、安坑、三鶯預防性停駛，可能依風雨提前；環狀線維持每 15 分鐘</span></li>
       </ul>
       <!-- 第二層:完整歷史。刻意不掛 .foot-box 類名——placeFootBoxes() 用
            `.site-foot .foot-box` 搬移面板,巢狀同名會被當成另一個盒子一起搬走。 -->
       <details class="foot-more">
         <summary>完整更新歷史（依主題分類）</summary>
         <ul class="foot-list">
+        <li data-cl="webperf1024"><span class="d">10/24</span><span>網站效能檢視：誤點漸變鍵、閉塞鍵、最愛站名改快取，時鐘與班數只在變動時寫入，光暈關閉時不再 save／restore；立體列車與約 23 MB 股道剖面改為放大到城市視角才載入，開機傳輸量減半</span></li>
         <li data-cl="weather1024"><span class="d">10/24</span><span>更新 10/24 颱風公告：台鐵中午前分區行駛、北捷部分首班待通知與今日班距；未確認的復駛資訊另標提醒</span></li>
         <li data-cl="weathertymcslow1023"><span class="d">10/23</span><span>桃捷因強風慢速行駛；補列台鐵 10/24 中午前各路段行車方案與例外車次，並附桃捷、中捷明日班距；今晚停駛提醒及午夜到期不變</span></li>
         <li data-cl="weathertrtc1024"><span class="d">10/23</span><span>補上北捷 10/24 地下段約 12 分鐘、南勢角至大橋頭約 6 分鐘班距；文湖及平面、高架路段首班仍待天候與巡檢通知，保留今晚停駛提醒</span></li>
@@ -7048,7 +7049,7 @@ const RAIL_3D_BOOT_PARAMS = new URLSearchParams(location.search);
 // v1019b：台鐵同鍵、中途停靠型態不同的班往下借路徑、不退回示意線形，且把自己那份計畫留在模板候選裡（3bde26de、1a781914）；另併入待避窗口逐日掃描報告（28c906cd、7232d41e，不進網站產物）；更新紀錄加一條。
 // v1020a：併入通行證專屬的自製列車；更新紀錄改成這次上線的一條。
 // v1020b：自製列車表單的起訖站點了就列出站名清單（常用大站＋依路線），選完起站自動攤開訖站、可對調、打完整站名即選定；更新紀錄加一條。
-const BUILD = 'v1024a';
+const BUILD = 'v1024b';
 const LANDSCAPE_REQUESTED = new URLSearchParams(location.search).get('map') === 'landscape';
 const GARAGE_QUERY = new URLSearchParams(location.search).get('garage');
 // 輕量多語 runtime：繁中原文同時是安全 fallback，外語字典只存差異字串。
@@ -7136,7 +7137,14 @@ function i18nContentData(group, item, field, index = null) {
   return value == null ? (sourceValue == null ? '' : String(sourceValue)) : String(value);
 }
 function i18nNumber(value, options) {
-  try { return new Intl.NumberFormat(I18N_LANG, options).format(value); }
+  // 格式器快取:班數讀數、跟車倒數每幀都經過這裡,逐次 new Intl.NumberFormat 在降速機上吃掉繪圖 2%。
+  try {
+    const cache = i18nNumber._fmt || (i18nNumber._fmt = new Map());
+    const key = I18N_LANG + (options ? '|' + JSON.stringify(options) : '');
+    let f = cache.get(key);
+    if (!f) cache.set(key, f = new Intl.NumberFormat(I18N_LANG, options));
+    return f.format(value);
+  }
   catch (e) { return String(value); }
 }
 // 把兩個片語接起來時的分隔符:中文與日文詞間不留空白,英文要。
@@ -8393,22 +8401,31 @@ function syncTimeUI() {
   // (選時器、跟隨未發車的車)手機使用者【沒有任何控件回得來】,重新整理也不行。
   // 只在真的離開「現在」時把那顆鈕放出來:平時不佔手機那條窄帶的寬度。
   document.body.classList.toggle('clock-off', !state.clockAtNow);
-  document.getElementById('tod').value = Math.floor(state.simSec / 60);
-  document.getElementById('todOut').textContent = fmtHM(state.simSec);
-  document.getElementById('clock').textContent = fmtHM(state.simSec);
+  // 只在值真的變了才寫:同值寫入照樣算 DOM 變動,會弄髒版面,幀內下一個讀版面的人(徽章觀察器的
+  // getClientRects、流量圖的 clientWidth)就得強制重排。時鐘每秒才換一次字,其餘幀全是白寫。
+  const mins = Math.floor(state.simSec / 60), hm = fmtHM(state.simSec), tod = document.getElementById('tod');
+  if (+tod.value !== mins) tod.value = mins;
+  setText(document.getElementById('todOut'), hm);
+  setText(document.getElementById('clock'), hm);
   paintTimeRail();
 }
+function setText(el, s) { if (el && el.textContent !== s) el.textContent = s; }
 // 時刻尺捲動:尺中央=當下時刻,1px=1 分鐘。三層刻度的磚寬(60/15/5)都整除 60,
 // 故位移取 mod 60 即可讓整點金線永遠落在「分鐘 ≡ 0」的位置(小數保留=平滑捲動)。
 // 每幀只寫一個 background-position-x,不動 DOM。
-let _todTape = null;
+let _todTape = null, _todTapeW = 0, _todTapeX = '';
 function paintTimeRail() {
-  if (!_todTape) _todTape = document.getElementById('todTape');
-  if (!_todTape) return;
-  const w = _todTape.clientWidth;
+  if (!_todTape) {
+    _todTape = document.getElementById('todTape');
+    if (!_todTape) return;
+    // 寬度由 ResizeObserver 回報,不每幀讀 clientWidth(讀版面會在幀內強制重排)。收起(display:none)時回報 0。
+    _todTapeW = _todTape.clientWidth;
+    if (window.ResizeObserver) new ResizeObserver(() => { _todTapeW = _todTape.clientWidth; }).observe(_todTape);
+  }
+  const w = _todTapeW;
   if (!w) return; // 手機把尺收起(display:none)時寬度為 0,直接跳過
-  const x = (((w / 2 - state.simSec / 60) % 60) + 60) % 60;
-  _todTape.style.backgroundPositionX = x.toFixed(2) + 'px';
+  const x = ((((w / 2 - state.simSec / 60) % 60) + 60) % 60).toFixed(2) + 'px';
+  if (x !== _todTapeX) _todTape.style.backgroundPositionX = _todTapeX = x;
 }
 function setSimSec(sec) {
   state.simSec = ((sec % 86400) + 86400) % 86400;
@@ -12056,7 +12073,7 @@ const _blockHold = new Map(), _blockCapped = new Set(), _blockGap = new Map(), _
 const _blockSideSign = new Map();            // 上一幀給過的號誌:相位要黏著,身分一變才不會整組對調
 const _blockSideRole = new Map();            // 已經定案的讓位角色:同一對車沒散開就不重新分配
 let _blockSim = null;
-function blockKeyOf(tr) { return (tr.sys || '') + ':' + tr.train; } // 跨系統車次會撞號,不能只用車次
+function blockKeyOf(tr) { return tr._blockKey || (tr._blockKey = (tr.sys || '') + ':' + tr.train); } // 跨系統車次會撞號,不能只用車次;sys 由 applySchedSystems 標定後不再變,鍵記在車上
 function blockHoldSec(tr) { if (isMyTrain(tr)) return 0; return _blockHold.size && BLOCK_SYS[tr.sys] ? (_blockHold.get(blockKeyOf(tr)) || 0) : 0; } // 自製車看不到閉塞
 // 前車不在停站區間,卻實質停在這一段的起點或終點停靠站上:規則 (1) 的「停站中」,一樣不算障礙。
 // 停靠站後面接一段被拉長的跑段時,車會從站心以不到 5km/h 慢慢爬出去:6652 在七堵是到開同秒(沒有停站
@@ -13288,7 +13305,7 @@ function runningCount() {
 
 function updateCount() {
   const n = runningCount();
-  document.getElementById('count').textContent = t('{n} 班奔跑中', { n: i18nNumber(n) }, n);
+  setText(document.getElementById('count'), t('{n} 班奔跑中', { n: i18nNumber(n) }, n));
 }
 
 // 距離僅控制標記透明度，投影與軌道幾何沿用引擎原值。
@@ -14305,7 +14322,7 @@ function drawSched(w, h, paintDecoTrains) {
   }
   // 台糖園區名:排在站名之後參與同一套避讓(站名優先),放記號正下方
   for (const s of sugarLbls) tryLabel(s.cp.x, s.cp.y + 24, t(s.pk.name), '600 10.5px ', 3, s.cp.detailOpacity);
-  document.getElementById('count').textContent = t('{n} 班奔跑中', { n: i18nNumber(n) }, n);
+  setText(document.getElementById('count'), t('{n} 班奔跑中', { n: i18nNumber(n) }, n));
 }
 
 // 自製列車 2D 繪製:獨立一輪,畫在真車上面。只在它的系統有畫、chip 開著時畫;
@@ -14377,9 +14394,9 @@ function drawFollowMarker(p, tr) {
 }
 
 let labelBoxes = [];
-let _favStNames = new Set();
+let _favStNames = new Set(), _favStLoaded = false;
 function refreshFavStationNames() {
-  _favStNames.clear();
+  _favStNames.clear(); _favStLoaded = true;
   if (typeof loadFavStations === 'function') {
     for (const f of loadFavStations()) {
       if (f && f.name) _favStNames.add(f.name.replace(/臺/g, '台'));
@@ -14388,7 +14405,8 @@ function refreshFavStationNames() {
   return _favStNames;
 }
 function isFavStationName(name) {
-  if (!_favStNames.size && typeof loadFavStations === 'function') refreshFavStationNames();
+  // 用「載過沒」而不是「有沒有東西」判斷:沒有最愛的人 size 恆 0,否則每站每幀都重讀 localStorage 再 JSON.parse
+  if (!_favStLoaded && typeof loadFavStations === 'function') refreshFavStationNames();
   return !!name && _favStNames.has(name.replace(/臺/g, '台'));
 }
 function tryLabel(x, y, name, font, halo, opacity = 1, isFav = false, st = null) {
@@ -14821,10 +14839,9 @@ function drawFreqDirArrow(cp, ln, carrier, pB) { // 捷運/輕軌:牌=線路縮�
 function trainGlow() { return state.basemap !== 'landscape' && (state.basemap === 'sat' || state.mapDark); }
 function glowUnder(p, color, r) {
   const opacity = p.detailOpacity ?? 1;
-  if (opacity <= 0) return;
+  if (opacity <= 0 || !trainGlow()) return; // 紙底不發光:先判斷再 save,免得每車白付一對 save/restore
   ctx.save(); ctx.globalAlpha = opacity;
   try {
-    if (!trainGlow()) return;
     ctx.save();
     ctx.shadowColor = color; ctx.shadowBlur = 16;
     ctx.globalAlpha = opacity * (0.85);
@@ -14869,10 +14886,9 @@ function trailRibbon(P, w0, fillA, color) {
 }
 function drawTrail(getPos, head, color, sh) {
   const opacity = head.detailOpacity ?? 1;
-  if (opacity <= 0) return;
+  if (opacity <= 0 || !trainGlow()) return; // 同 glowUnder:紙底沒有尾巴,不進 save/restore
   ctx.save(); ctx.globalAlpha = opacity;
   try {
-    if (!trainGlow()) return;
     const step = TRAIL_SEC / TRAIL_STEPS;
     _trailPts.length = 0; _trailPts.push(head);
     for (let k = 1; k <= TRAIL_STEPS; k++) {
@@ -27079,14 +27095,14 @@ function updateFollowPanel(tr) {
   if (dwelling) {
     // 倒數無條件進位:最後一秒寫「1 秒」,發車那一刻才換行進中(四捨五入會在最後半秒寫「0 秒後開車」)
     const left = Math.ceil(dw.remain), mm = Math.floor(left / 60), ss = left % 60;
-    stEl.textContent = t('⏸ 停靠 {station} · {time}後開車', {
+    setText(stEl, t('⏸ 停靠 {station} · {time}後開車', {
       station: stationName(dw.st.name, tr.sys),
       time: (mm > 0 ? t('{n} 分 ', { n: i18nNumber(mm) }, mm) : '') + t('{n} 秒', { n: i18nNumber(ss) }, ss),
-    }) + (dw.total >= 180 ? t('（待避／調度長停）') : '');
-    stEl.classList.remove('run');
+    }) + (dw.total >= 180 ? t('（待避／調度長停）') : ''));
+    stEl.classList.toggle('run', false); // toggle(force) 不變就不動 DOM;add/remove 同值照樣算變動、弄髒版面
   } else {
-    stEl.textContent = t('▶ 行進中');
-    stEl.classList.add('run');
+    setText(stEl, t('▶ 行進中'));
+    stEl.classList.toggle('run', true);
   }
   stEl.hidden = false;
   // 站名牌:隨機挑車後先短暫報下一站；其餘時間維持既有的進站淡入、開車淡出。
@@ -27103,8 +27119,8 @@ function updateFollowPanel(tr) {
       document.getElementById('dpNextLabel').textContent = t('下一站');
       const di = document.getElementById('dpIntro'); di.innerHTML = ''; di.style.display = 'none';
     }
-    plate.classList.add('dp-next', 'show');
-    document.body.classList.add('dwell-show');
+    plate.classList.toggle('dp-next', true); plate.classList.toggle('show', true);
+    document.body.classList.toggle('dwell-show', true);
   } else if (dwelling) {
     if (state._plateStop !== dw.st) {
       state._plateStop = dw.st;
@@ -27124,10 +27140,12 @@ function updateFollowPanel(tr) {
       if (introHtml) { di.innerHTML = introHtml; di.style.display = ''; }
       else { di.innerHTML = ''; di.style.display = 'none'; }
     }
-    plate.classList.remove('dp-next');
-    plate.classList.add('show');
-    document.body.classList.add('dwell-show'); // 停靠站名牌顯示中:他 sheet 展開(sheet-open)時讓跟車小卡淡出讓位(見 CSS body.dwell-show.sheet-open)
-  } else { plate.classList.remove('dp-next', 'show'); document.body.classList.remove('dwell-show'); state._plateStop = null; }
+    plate.classList.toggle('dp-next', false);
+    plate.classList.toggle('show', true);
+    // 停靠站名牌顯示中:他 sheet 展開(sheet-open)時讓跟車小卡淡出讓位(見 CSS body.dwell-show.sheet-open)。
+    // 一律 toggle(force):body 的 class 有 view-controls 的觀察器在看,每幀同值 add 會逼它每幀重量版面。
+    document.body.classList.toggle('dwell-show', true);
+  } else { plate.classList.toggle('dp-next', false); plate.classList.toggle('show', false); document.body.classList.toggle('dwell-show', false); state._plateStop = null; }
   // 即時時速:地圖上這班車最近 FP_SPEED_DT_SEC 秒實際走了多遠(followSpeedKmh);大數字讀數,看著有速度感。
   // 只往回看:以前取「現在→20 秒後」,等於讀地圖還沒畫的未來,車還停在月台讀數就開始爬(發車前十幾秒已到 14 km/h)。
   // 車種極速是硬上限:位置曲線本身已被夾在極速內(buildObsProfile),但相鄰段換軌道形狀物件時
@@ -28412,9 +28430,9 @@ function gateEpoch(g, on) { if (on !== g.on) { g.on = on; if (on) { g.ep++; g.at
 function bigRise(motion, d) { return !!(motion && motion.snapRise > 0 && d >= motion.snapRise); } // 上升量 d 秒達門檻 ⇒ 一步到位
 function easedShift(key, target, g, motion, snapToken) {
   let e = _easedShift.get(key);
+  if (!e && !target) return 0; // 無 entry 且目標 0=絕大多數無誤點車,走 fast path 不建 entry(也不讀時鐘)
   const n = performance.now();
   if (!e) {
-    if (!target) return 0; // 無 entry 且目標 0=絕大多數無誤點車,走 fast path 不建 entry
     const snap = !!snapToken || !!(g && n - g.at < 5000) || bigRise(motion, target); // 官方過站錨點與初次同步也直接對齊
     _easedShift.set(key, e = { cur: snap ? target : 0, at: n, sim: state.simSec, ep: g ? g.ep : 0, snapToken: snapToken || 0 });
     return e.cur;
@@ -28638,7 +28656,10 @@ function liveDelaySec(tr) {
   // 比照下方 metroShiftSec 的鍵作法。tr.sys 是穩定字串 id,跨 rebuild 不變。
   // 鍵再帶名冊日(tr._rday,由 applySchedSystems 標):同一個車次號每天都會再開一班,而漸變條目
   // 活得比名冊久 ⇒ 不帶日期的話跨日換名冊後今天的同號車會繼承昨天那班的偏移(實測 6.3 公里)。
-  return easedShift((tr._rday || '') + '|' + (tr.sys || 'tra_sched') + ':' + tr.train, target, gateEpoch(_traGateEp, on), TRA_MOTION_PROFILE, snapToken); // 退場也經漸變滑出,不在門檻關閉時提前 return 0
+  // 鍵記在車上(名冊日或系統變了才重算):每幀對全部台鐵車各拼一次字串再雜湊,曾是 updateBlockHolds 最大的單項。
+  const day = tr._rday || '';
+  if (tr._ldKey === undefined || tr._ldKeyDay !== day || tr._ldKeySys !== tr.sys) { tr._ldKeyDay = day; tr._ldKeySys = tr.sys; tr._ldKey = day + '|' + (tr.sys || 'tra_sched') + ':' + tr.train; }
+  return easedShift(tr._ldKey, target, gateEpoch(_traGateEp, on), TRA_MOTION_PROFILE, snapToken); // 退場也經漸變滑出,不在門檻關閉時提前 return 0
 }
 async function pollLive() {
   const ls = state.schedSystems && state.schedSystems.find(s => s.live);

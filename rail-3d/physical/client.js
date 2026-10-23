@@ -23,10 +23,17 @@ import {createDisplayLevelLookup} from './display-level.js';
 const PHYSICAL_SYSTEMS=['tra_sched','thsr_sched','afr_sched'];
 export async function loadPhysicalMotion(){
  const json=async file=>{const r=await fetch(new URL(file,import.meta.url));if(!r.ok)throw Error('股道資料載入失敗');return r.json();};
- const [network,profiles,dispatch,metroNetwork,metroProfiles,levels]=await Promise.all(['network.json','display-profiles.json','dispatch.json','metro-network.json','metro-display-profiles.json','level-profiles.json'].map(json));
- for(const p of [profiles,metroProfiles])for(const [id,e]of Object.entries(p.entries))e.level=levels.entries[id]||null;
+ // 平面定位只要股道幾何與派車表。高程／層位／洞口三份顯示剖面(解壓後約 23 MB)只有立體算繪會讀
+ // (route-runtime 的 elevation／level／levelAt 都是查詢當下才看 profiles.entries),所以先給空殼,
+ // 等 rail-3d 要掛算繪器時呼叫 ensureProfiles() 再抓、填進同一個物件——只看平面圖的人不必下載這一包。
+ const [network,dispatch,metroNetwork]=await Promise.all(['network.json','dispatch.json','metro-network.json'].map(json));
+ const profiles={entries:{}},metroProfiles={entries:{}};let levels={entries:{},portals:[]},profilesLoad=null,portalPaths=null;
+ const ensureProfiles=()=>profilesLoad||(profilesLoad=Promise.all(['display-profiles.json','metro-display-profiles.json','level-profiles.json'].map(json)).then(([p,mp,l])=>{
+  levels=l;portalPaths=null;
+  for(const [src,dst]of [[p,profiles],[mp,metroProfiles]])for(const [id,e]of Object.entries(src.entries)){e.level=l.entries[id]||null;dst.entries[id]=e;}
+ }).catch(e=>{profilesLoad=null;throw e;}));
  const motion=createPhysicalMotion(network,profiles,dispatch),metro=createMetroPhysicalMotion(metroNetwork,metroProfiles);
- let displayLevelLookup=null,portalPaths=null;
+ let displayLevelLookup=null;
  let visibleCache=null;const boxes=new WeakMap();
  function visibleRoutes(lines,bounds){const west=bounds.getWest()-.006,east=bounds.getEast()+.006,south=bounds.getSouth()-.006,north=bounds.getNorth()+.006,systems=new Map();
   for(const line of lines){const sys=line.systemId;if(PHYSICAL_SYSTEMS.includes(sys)&&!systems.has(sys))systems.set(sys,line.color);}
@@ -42,7 +49,7 @@ export async function loadPhysicalMotion(){
  // 兩邊各留一份的話,名單一改就會出現「宣告換圖、卻沒有東西可換」的空窗——線直接消失。
  // portals＝建置時算好的洞口位置與朝向（[經度,緯度,朝洞內方位角,系統]）。算繪端只取樣有車在跑的
  // 股道，沒車的隧道一個洞口都取樣不到，所以這份要隨產物出去。
- return {...motion,metro,dispatch,visibleRoutes,systems:PHYSICAL_SYSTEMS,portals:levels.portals||[],
+ return {...motion,metro,dispatch,visibleRoutes,systems:PHYSICAL_SYSTEMS,ensureProfiles,get portals(){return levels.portals||[];},
   get portalPaths(){return portalPaths||(portalPaths=bindPortalPaths(levels.portals||[],[motion.geometry,metro.geometry]));},
   displayLevelAt(system,coordinate,angle){if(!displayLevelLookup)displayLevelLookup=createDisplayLevelLookup(network.ways,motion.geometry.levelAt);return displayLevelLookup(system,coordinate,angle);},
   sample:(tr,...rest)=>covered(tr)?motion.sample(tr,...rest):undefined,

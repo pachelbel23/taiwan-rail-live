@@ -40,6 +40,8 @@ export async function createLiveMap({map,landscape=false,isCurrent=()=>true,onGe
   const ml=await library(),[catalog,profileData]=await Promise.all([json('assets/blender-map-v1/manifest.json'),json('integration/display-profiles.json')]);
   assertCurrent();
   const el=map.getContainer(),landscapeTheme=landscape?'landscape':'original';
+  // 視口尺寸只在 map 'resize' 時重讀:project() 每車每幀都問 clientWidth,讀版面會在幀內逼瀏覽器重排(基準佔 update 11%)。
+  let viewW=el.clientWidth,viewH=el.clientHeight;
   let trees=null,terrainRefreshPending=groundMode==='terrain';
   let disposed=false,ready=false,lastDetail=null,stationLayer=null,stationLabels=null,markers=null,inspection=false,frame=null,routeKey='',routeRefs=[],lastBuild=0,dirty=true,buildCenter=null,buildElev=0,buildView=null,lastNear=null,popup=null;
   const clearance=createRailClearance();
@@ -316,7 +318,7 @@ export async function createLiveMap({map,landscape=false,isCurrent=()=>true,onGe
     const vw=bounds.getWest(),ve=bounds.getEast(),vs=bounds.getSouth(),vn=bounds.getNorth(),
           padX=(ve-vw)*.25,padY=(vn-vs)*.25;
     const onScreen=(c,v)=>v.followed||(c[0]>=vw-padX&&c[0]<=ve+padX&&c[1]>=vs-padY&&c[1]<=vn+padY);
-    hits=[];stats.models=0;stats.undergroundModels=0;stats.poseSamples=[];stats.modelFallbacks=[];const arrowP=[],arrowC=[],beams=[],beamLimit=el.clientWidth<768?8:24;let beamMs=0;
+    hits=[];stats.models=0;stats.undergroundModels=0;stats.poseSamples=[];stats.modelFallbacks=[];const arrowP=[],arrowC=[],beams=[],beamLimit=viewW<768?8:24;let beamMs=0;
     next.vehicles.forEach((v,i)=>{const coord=[v.longitude,v.latitude],profile=near&&(onScreen(coord,v)||wanted.has(v.id))&&(terrainState.terrain||v.route?.level||wanted.has(v.id))&&Math.hypot(coord[0]-center.lng,coord[1]-center.lat)<.08?routeProfile(v):null,path=profile&&formationPath(v,profile),ratio=ml.MercatorCoordinate.fromLngLat(coord).meterInMercatorCoordinateUnits()/unit,
       h=(profile?path===profile.path?profile.height:railHeight(path,profile.s):undefined)??(onScreen(coord,v)?height(coord):null),p=world(coord,h??.65),m=models.get(v.id),color=new THREE.Color(v.followed?'#d65130':v.color||'#287766');
       positions.set(p,i*3);colors.set([color.r,color.g,color.b],i*3);const hit={v,p,modelled:false};hits.push(hit);
@@ -349,7 +351,7 @@ export async function createLiveMap({map,landscape=false,isCurrent=()=>true,onGe
         }else stats.modelFallbacks.push({id:v.id,reason:!profile?'來源位置不在線形上':terrainState.terrain&&!profile.path.elevation?'缺少固定顯示高程':'編組超出已知線形端點'});
       }else if(v.followed&&!formationFor(v,formationMode))stats.modelFallbacks.push({id:v.id,reason:'車型或編組長度尚未確認'});
       const screen=!markers&&next.display?.dirArrow?project(p):null;
-      const heading=screen&&screen.z>=-1&&screen.z<=1&&screen.x>=0&&screen.y>=0&&screen.x<=el.clientWidth&&screen.y<=el.clientHeight&&!m?.group?.visible&&h!==null?getHeading?.(v):null;
+      const heading=screen&&screen.z>=-1&&screen.z<=1&&screen.x>=0&&screen.y>=0&&screen.x<=viewW&&screen.y<=viewH&&!m?.group?.visible&&h!==null?getHeading?.(v):null;
       if(heading!==null&&heading!==undefined){const angle=heading,dx=Math.cos(angle),dy=Math.sin(angle),a=screen,b=project([p[0]+dx*ratio,p[1]+dy*ratio,p[2]]),s=ratio/Math.max(.015,Math.hypot(b.x-a.x,b.y-a.y));
         for(const [x,y]of [[12,0],[5,3],[5,-3]]){arrowP.push(p[0]+(dx*x-dy*y)*s,p[1]+(dy*x+dx*y)*s,p[2]+.1);arrowC.push(color.r,color.g,color.b);}}
     });
@@ -393,9 +395,9 @@ export async function createLiveMap({map,landscape=false,isCurrent=()=>true,onGe
   // 畫面四角視線與鉛直夾角的正切（最斜的那條），封頂在 2（約俯角 45 的畫面上緣）：再斜的視線落在畫面遠端，
   // 透視壓得很扁，多放寬的距離在畫面上只差幾個像素，卻會把一大片畫面外的車變成候選
   // （台北車站俯角 60、z16 實測：封頂 6 時候選 34 列、封頂 2 時 22 列，畫面上看得到的都是 16 列）。
-  function viewSlope(){const p=map.getPitch()*Math.PI/180,ty=Math.tan(map.getVerticalFieldOfView()*Math.PI/360),tx=ty*el.clientWidth/Math.max(1,el.clientHeight);
+  function viewSlope(){const p=map.getPitch()*Math.PI/180,ty=Math.tan(map.getVerticalFieldOfView()*Math.PI/360),tx=ty*viewW/Math.max(1,viewH);
     return Math.min(2,Math.hypot(tx,Math.sin(p)+ty*Math.cos(p))/Math.max(1e-6,Math.cos(p)-ty*Math.sin(p)));}
-  function project(p,deep){const a=new THREE.Vector3(...p).applyMatrix4(deep?deepProjection:camera.projectionMatrix);return {x:(a.x+1)*map.getCanvas().clientWidth/2,y:(1-a.y)*map.getCanvas().clientHeight/2,z:a.z};}
+  function project(p,deep){const a=new THREE.Vector3(...p).applyMatrix4(deep?deepProjection:camera.projectionMatrix);return {x:(a.x+1)*viewW/2,y:(1-a.y)*viewH/2,z:a.z};}
   function syncAmbient(on){if(on===ambientWas)return;ambientWas=on;cameraAt=performance.now();
     if(on){ambientView={pitch:map.getPitch(),bearing:map.getBearing(),zoom:map.getZoom()};orbitBearing=map.getBearing();}
     if(!on&&ambientView){ambientView=null;zoomFollows=null;syncZoomAnchor();}
@@ -428,9 +430,9 @@ export async function createLiveMap({map,landscape=false,isCurrent=()=>true,onGe
       render(gl,args){
         // DEM 在 MapLibre 本幀準備完成後才同步橋墩與車體，避免沿用前一幀地表。
         if(terrainRefreshPending&&terrainState.terrain&&frame&&Number.isFinite(terrainSample(map.getCenter().toArray()))){dirty=true;lastBuild=-Infinity;update(frame);if(map.isSourceLoaded('terrain'))terrainRefreshPending=false;}
-        const night=nightAmount(globalThis.railIslandSunlight?.current);ambientLight.intensity=1.9*(1-night*.7);sun.intensity=2*(1-night*.94);camera.projectionMatrix.copy(projection.fromArray(args.defaultProjectionData.mainMatrix).multiply(transform));deepenFar(deepProjection.copy(camera.projectionMatrix));updateModelScales();trainHalo.update(models,(c,h,deep)=>project(world(c,h),deep),el.clientWidth,el.clientHeight,frame?.display);structures.setVisible(map.getZoom()>=14);rails.render(el.clientWidth,el.clientHeight,routeWidth(map.getZoom()),map.getZoom()>=14&&(terrainState.terrain||frame?.routes.some(r=>r.physical||r.drawingRanges)),frame?.display?.dark);webgl.resetState();camera.layers.enable(3);webgl.render(scene,camera);camera.layers.disable(3);stats.frames++;
+        const night=nightAmount(globalThis.railIslandSunlight?.current);ambientLight.intensity=1.9*(1-night*.7);sun.intensity=2*(1-night*.94);camera.projectionMatrix.copy(projection.fromArray(args.defaultProjectionData.mainMatrix).multiply(transform));deepenFar(deepProjection.copy(camera.projectionMatrix));updateModelScales();trainHalo.update(models,(c,h,deep)=>project(world(c,h),deep),viewW,viewH,frame?.display);structures.setVisible(map.getZoom()>=14);rails.render(viewW,viewH,routeWidth(map.getZoom()),map.getZoom()>=14&&(terrainState.terrain||frame?.routes.some(r=>r.physical||r.drawingRanges)),frame?.display?.dark);webgl.resetState();camera.layers.enable(3);webgl.render(scene,camera);camera.layers.disable(3);stats.frames++;
         const lead=models.get(frame?.selectedVehicleId)?.cars?.[0],pad=map.getPadding();
-        stats.headLockErrorPx=frame?.headLocked&&lead?Math.hypot(project(lead.position.toArray()).x-(el.clientWidth+pad.left-pad.right)/2,project(lead.position.toArray()).y-(el.clientHeight+pad.top-pad.bottom)/2):null;
+        stats.headLockErrorPx=frame?.headLocked&&lead?Math.hypot(project(lead.position.toArray()).x-(viewW+pad.left-pad.right)/2,project(lead.position.toArray()).y-(viewH+pad.top-pad.bottom)/2):null;
       }});vehicleLayer=map.getLayer('live-vehicles-3d');
     map.addLayer({id:'live-tunnel-apertures',type:'custom',renderingMode:'3d',render(gl,args){
       if(!terrainState.terrain||!stats.structures.portals)return;
@@ -441,7 +443,7 @@ export async function createLiveMap({map,landscape=false,isCurrent=()=>true,onGe
     // 最後的正常深度 pass 再恢復位於建築前方的車體，路線不會蓋住車身。
     if(map.getLayer('building-3d'))map.addLayer({id:'live-vehicles-underlay',type:'custom',renderingMode:'3d',render(gl,args){
       if(!terrainState.stationInspection)return;camera.projectionMatrix.copy(projection.fromArray(args.defaultProjectionData.mainMatrix).multiply(transform));updateModelScales();
-      rails.render(el.clientWidth,el.clientHeight,0,false);webgl.resetState();webgl.render(scene,camera);
+      rails.render(viewW,viewH,0,false);webgl.resetState();webgl.render(scene,camera);
     }},'building-3d');underlayLayer=map.getLayer('live-vehicles-underlay');
     // 衛星底圖沒有 openmaptiles / building-3d，獨立 Blender 模型仍需建立。
     {stationLayer=await createStationLayer(map,()=>terrainState,()=>{}, {maplibre:ml,clearance});assertCurrent();map.addLayer(stationLayer);for(const e of stationLayer.failures)report(e.message);}
@@ -450,11 +452,11 @@ export async function createLiveMap({map,landscape=false,isCurrent=()=>true,onGe
       // 地下這一趟用往下延伸的遠裁切面（見 deepenFar），畫完還原成主畫面的投影。
       deepenFar(camera.projectionMatrix.copy(projection.fromArray(args.defaultProjectionData.mainMatrix).multiply(transform)));
       // 只對地下模型建立自己的深度，再半透明混合；不讓背面及內部三角形累積成黑色雜點。
-      undergroundRails.render(el.clientWidth,el.clientHeight,0,false);
+      undergroundRails.render(viewW,viewH,0,false);
       webgl.resetState();webgl.clearDepth();
       // 先保留所有車體的前後關係，僅略過地表與建物；地下透視不能蓋過上層列車。
       camera.layers.set(2);scene.overrideMaterial=vehicleDepthMaterial;webgl.render(scene,camera);scene.overrideMaterial=null;camera.layers.set(1);
-      undergroundRails.render(el.clientWidth,el.clientHeight,routeWidth(map.getZoom()),map.getZoom()>=14,frame?.display?.dark);webgl.render(scene,camera);camera.layers.set(0);camera.projectionMatrix.copy(projection);
+      undergroundRails.render(viewW,viewH,routeWidth(map.getZoom()),map.getZoom()>=14,frame?.display?.dark);webgl.render(scene,camera);camera.layers.set(0);camera.projectionMatrix.copy(projection);
     }});undergroundLayer=map.getLayer('live-underground-3d');
     orderBuildingPasses(map);
     function startGesture(e){if(!e.originalEvent)return;motionCamera.cancel();onInteract?.();if(!gesture){gesturePanned=false;gestureOrbited=false;followReturn=null;stats.followReturning=false;}gesture=true;clearTimeout(gestureTimer);}
@@ -467,6 +469,7 @@ export async function createLiveMap({map,landscape=false,isCurrent=()=>true,onGe
     for(const type of ['pointerup','pointercancel'])listen(document,type,e=>{if(pointers.delete(e.pointerId))finishGesture();});
     listen(map.getCanvas(),'wheel',e=>{startGesture({originalEvent:e});gestureOrbited=true;finishGesture();});
     listen(window,'blur',e=>{if(e.target===window){pointers.clear();finishGesture();}});
+    listenMap('resize',()=>{viewW=el.clientWidth;viewH=el.clientHeight;});
     listenMap('movestart',startGesture);
     listenMap('move',e=>{if(e.originalEvent)onInteract?.();});
     listenMap('dragstart',e=>{startGesture(e);if(e.originalEvent){const input=e.originalEvent;
@@ -506,7 +509,7 @@ export async function createLiveMap({map,landscape=false,isCurrent=()=>true,onGe
         if(gesture){
           if(!gestureOrbited||!frame?.followLock){stats.followSuppressed=(stats.followSuppressed||0)+1;return;}
         }
-        const w=el.clientWidth,h=el.clientHeight,padding={...insets};
+        const w=viewW,h=viewH,padding={...insets};
         if(padding.left+padding.right>w-80){const k=(w-80)/(padding.left+padding.right);padding.left*=k;padding.right*=k;}
         if(padding.top+padding.bottom>h-80){const k=(h-80)/(padding.top+padding.bottom);padding.top*=k;padding.bottom*=k;}
         const v=frame?.vehicles.find(v=>v.followed),model=v&&modelFor(formationFor(v,formationMode));
