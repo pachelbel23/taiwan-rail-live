@@ -307,6 +307,17 @@ async function desktopCore(browser, engine) {
     assert(!/undefined|\bi18n\./i.test(followEn), `英文跟隨卡洩漏內部值：${followEn}`);
     record(engine, '英文列車跟隨卡');
 
+    // 下兩組要驗指定的上游故障／災害 fixture；當日靜態颱風公告會排在它們前面。
+    // 僅隔離這兩組的靜態來源，保留原本翻譯斷言；手機及颱風專用驗收仍載入真實公告。
+    const weatherFixtureUrl = '**/data/rail_weather_notice.json*';
+    const hideWeatherFixture = route => route.fulfill({ status: 404, body: 'synthetic alert fixture' });
+    await context.route(weatherFixtureUrl, hideWeatherFixture);
+    const savedWeatherNotice = await page.evaluate(async () => {
+      if (_railWeatherNoticePolling) await _railWeatherNoticePolling;
+      const notice = state.railWeatherNotice;
+      state.railWeatherNotice = null;
+      return notice;
+    });
     await page.evaluate(() => {
       state.alert = { list: [{ sysLabel: '台鐵', title: '營運通阻公告', desc: '網路連線失敗，請稍後再試', lines: ['高鐵'] }] };
       state.hazardWatch = null;
@@ -333,6 +344,8 @@ async function desktopCore(browser, engine) {
     assert(!/[\u3400-\u9fff]/.test(hazardEn), `英文災害監看仍有中文：${hazardEn}`);
     await page.evaluate(() => { state.hazardWatch = null; document.getElementById('alertDetail').hidden = true; renderAlertBanner(); });
     record(engine, '英文災害類型、監看說明與 stale 降級');
+    await context.unroute(weatherFixtureUrl, hideWeatherFixture);
+    await page.evaluate(notice => { state.railWeatherNotice = notice; renderAlertBanner(); }, savedWeatherNotice);
 
     await page.evaluate(() => {
       state.plus = { active: false, loading: false, error: '', pkgMonthly: null, pkgAnnual: null, mgmtUrl: '', adapter: null };
