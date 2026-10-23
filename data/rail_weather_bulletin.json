@@ -1,11 +1,11 @@
 {
   "id": "champi-20261024",
-  "revision": "20261024-0132",
-  "checkedAt": "2026-10-24T01:32:45+08:00",
+  "revision": "20261024-0446",
+  "checkedAt": "2026-10-24T04:46:51+08:00",
   "displayFrom": "2026-10-24T00:00:00+08:00",
   "expiresAt": "2026-10-25T00:00:00+08:00",
   "serviceDate": "2026-10-24",
-  "title": "薔琵颱風｜10/24 台鐵中午前分區行駛、北捷部分首班待通知",
+  "title": "薔琵颱風｜10/24 台鐵中午前分區行駛、北捷各線正常營運方案",
   "warning": "動畫仍可能依原班表顯示列車，不能據此判斷有車可搭。停駛、臨時班距與復駛請以各營運單位最新公告為準，出發前務必再確認。",
   "weatherUrl": "https://www.cwa.gov.tw/V8/C/P/Typhoon/TY_WARN.html",
   "systems": [
@@ -16,7 +16,7 @@
       "detail": "10/24 12:00 前：西部對號列車基隆至彰化停駛，彰化經高雄至枋寮正常；非對號列車基隆至彰化間，海線、成追線全區間停駛，其餘視風雨機動行駛，彰化至枋寮正常。東部樹林經宜蘭至花蓮對號及非對號列車停駛，花蓮至臺東正常；南迴線對號及非對號正常。472、102、280、270、207 次全區間停駛；101、191 次台中至潮州及 371 次台中至臺東全區間正常。六家、集集、沙崙正常，平溪、深澳、內灣全區間停駛；行經停駛區間的加班車全區間停駛。觀光列車除藍皮解憂號正常外，海風、山嵐、鳴日廚房及 1、2 次環島之星全日停駛；科普列車全日停駛、閉幕活動取消。10/24 12:00 後資訊預定於當日 08:00 公告，尚不能推定中午後恢復。10/23 的 6115、6117 次加開不屬於今日方案。",
       "sourceLabel": "台鐵 10/23 21:30 公布之 10/24 中午前行車資訊",
       "sourceUrl": "https://www.railway.gov.tw/tra-tip-web/tip/tip009/tip911/newsDtl?newsNo=8ae4cac3a1650e3a01a16906f5681318&page=0",
-      "sourceCheckedAt": "2026-10-24T01:32:05+08:00",
+      "sourceCheckedAt": "2026-10-24T04:45:43+08:00",
       "labelI18n": {
         "en": "Taiwan Railways (TRA)",
         "ja": "台湾鉄道（TRA）"
@@ -30,17 +30,17 @@
       "id": "afr",
       "label": "阿里山林鐵",
       "status": "本線停駛／支線配合遊樂區開放",
-      "detail": "10/24 本線嘉義至阿里山定期列車停駛，祝山、沼平、神木等支線配合阿里山國家森林遊樂區開放時間營運，尚未取得明確開行時間。依據 10/22 19:00 更新原文，最近成功核讀為 10/23 23:48；本輪 10/24 01:32 原文與列表讀取失敗，正常重讀原文一次仍失敗，不能宣稱已重新確認。嘉義市檜意森活村及阿里山林業村開園不代表阿里山國家森林遊樂區開放或列車復駛。",
-      "sourceLabel": "林鐵處 10/22 19:00 更新（最近成功核讀 10/23 23:48）",
+      "detail": "10/24 本線嘉義至阿里山定期列車停駛，祝山、沼平、神木等支線配合阿里山國家森林遊樂區開放時間營運，尚未取得明確開行時間。依據 10/22 19:00 更新原文，最近成功核讀為 10/24 04:30；本輪 10/24 04:45 原文與列表讀取失敗，不能宣稱已重新確認。嘉義市檜意森活村及阿里山林業村開園不代表阿里山國家森林遊樂區開放或列車復駛。",
+      "sourceLabel": "林鐵處 10/22 19:00 更新（最近成功核讀 10/24 04:30）",
       "sourceUrl": "https://afrch.forest.gov.tw/AllNews/0079490",
-      "sourceCheckedAt": "2026-10-23T23:48:20+08:00",
+      "sourceCheckedAt": "2026-10-24T04:30:42+08:00",
       "labelI18n": {
         "en": "Alishan Forest Railway",
         "ja": "阿里山林業鉄道"
       },
       "detailI18n": {
-        "en": "On Oct 24, scheduled mainline services between Chiayi and Alishan are suspended. Branch services including Zhushan, Zhaoping and Shenmu depend on the opening of Alishan National Forest Recreation Area; no definite departure time has been confirmed. This follows the notice updated at 19:00 on Oct 22, last successfully read at 23:48 on Oct 23. The article and latest list could not be read at 01:32 on Oct 24, and one normal article retry also failed; this is not a fresh confirmation. Reopening of the Hinoki Village and Alishan Forestry Village in Chiayi City does not establish reopening of the national forest recreation area or train services.",
-        "ja": "10月24日は嘉義～阿里山の本線定期列車が運休。祝山・沼平・神木などの支線は阿里山国家森林遊楽区の開園時間に合わせて運転する予定ですが、具体的な発車時刻は未確認です。10月22日19:00更新の発表を最後に正常閲覧できたのは10月23日23:48です。10月24日01:32は原文と最新一覧を取得できず、通常の再読1回も失敗しており、今回改めて確認できたとはしていません。嘉義市の檜意森活村・阿里山林業村の開園は、国家森林遊楽区の開園や列車再開を意味しません。"
+        "en": "On Oct 24, scheduled mainline services between Chiayi and Alishan are suspended. Branch services including Zhushan, Zhaoping and Shenmu depend on the opening of Alishan National Forest Recreation Area; no definite departure time has been confirmed. This follows the notice updated at 19:00 on Oct 22, last successfully read at 04:30 on Oct 24. The article and latest list could not be read at 04:45 on Oct 24; this is not a fresh confirmation. Reopening of the Hinoki Village and Alishan Forestry Village in Chiayi City does not establish reopening of the national forest recreation area or train services.",
+        "ja": "10月24日は嘉義～阿里山の本線定期列車が運休。祝山・沼平・神木などの支線は阿里山国家森林遊楽区の開園時間に合わせて運転する予定ですが、具体的な発車時刻は未確認です。10月22日19:00更新の発表を最後に正常閲覧できたのは10月24日04:30です。10月24日04:45は原文と最新一覧を取得できず、今回改めて確認できたとはしていません。嘉義市の檜意森活村・阿里山林業村の開園は、国家森林遊楽区の開園や列車再開を意味しません。"
       }
     },
     {
@@ -50,7 +50,7 @@
       "detail": "高鐵已明確公告 10/24 全線正常營運，各車次依時刻表發車；若風速、雨量達運轉限制標準，部分路段可能限速或另行調整，請預留轉乘時間。10/23 的 8825、8529 次取消增開公告僅適用昨日，不能當作今日停駛資訊。",
       "sourceLabel": "高鐵 10/23 公布之 10/24 全線正常營運公告",
       "sourceUrl": "https://www.thsrc.com.tw/ArticleContent/0a67aca6-69e4-4a47-a3cf-ffbd2568648d",
-      "sourceCheckedAt": "2026-10-24T01:31:58+08:00",
+      "sourceCheckedAt": "2026-10-24T04:45:40+08:00",
       "labelI18n": {
         "en": "Taiwan High Speed Rail",
         "ja": "台湾高速鉄道"
@@ -67,7 +67,7 @@
       "detail": "10/24 綠線調整為每 15 分鐘一班，依旅運需求及天候機動調整。平均風力達 7 級時將降速至時速 40 公里；平均 8 級或瞬間 10 級時將暫停營運。復駛須風力低於停駛門檻持續 2 小時，再經軌道巡檢確認安全。這些是官方安全條件，不代表本輪已確認實際降速或停駛。",
       "sourceLabel": "中捷 10/23 公布之 10/24 班距與安全條件",
       "sourceUrl": "https://www.tmrt.com.tw/announcement/draft-news/detail?id=6ad4cf49-4444-48f8-8cd0-944a0391e16d",
-      "sourceCheckedAt": "2026-10-24T01:32:07+08:00",
+      "sourceCheckedAt": "2026-10-24T04:45:44+08:00",
       "labelI18n": {
         "en": "Taichung MRT",
         "ja": "台中MRT"
@@ -84,7 +84,7 @@
       "detail": "本輪核對官方最新列表及公開粉專，尚未取得明確適用 10/24 的颱風班距或恢復正常速度公告。10/23 最後核實的慢速公告與先前班距官網原文目前均為空稿；慢速稿最近成功核讀為 10/23 20:59，不能因原文消失或網站一般正常燈號推定已恢復。昨日 14:30 起 10 分鐘、23:00 後 20 分鐘方案不直接延用為今日班距，請出發前查官方最新資訊。",
       "sourceLabel": "高捷官方最新重要公告列表（10/24 方案待確認）",
       "sourceUrl": "https://www.krtc.com.tw/Information/notice",
-      "sourceCheckedAt": "2026-10-24T01:31:56+08:00",
+      "sourceCheckedAt": "2026-10-24T04:45:39+08:00",
       "additionalSources": [
         {
           "sourceLabel": "高捷官方公開粉專最新貼文",
@@ -107,7 +107,7 @@
       "detail": "本輪官方最新列表與公開粉專尚未查得明確適用 10/24 的颱風營運方案；昨日全日 20 分鐘原文目前為空稿，不能推定今日仍為 20 分鐘，也不能據此推定復駛或正常營運。10/23 的全日班距公告僅供歷史參考，今日搭乘請再查官方最新資訊。",
       "sourceLabel": "高捷官方最新重要公告列表（輕軌今日班距待確認）",
       "sourceUrl": "https://www.krtc.com.tw/Information/notice",
-      "sourceCheckedAt": "2026-10-24T01:31:56+08:00",
+      "sourceCheckedAt": "2026-10-24T04:45:39+08:00",
       "additionalSources": [
         {
           "sourceLabel": "高捷／輕軌官方公開粉專最新貼文",
@@ -126,14 +126,18 @@
     {
       "id": "trtc",
       "label": "台北捷運",
-      "status": "地下段約 12／6 分鐘；部分首班待通知",
-      "detail": "10/24 淡水信義線地下段、松山新店線、板南線及中和新蘆線班距約 12 分鐘；南勢角至大橋頭重疊區段約 6 分鐘，依運量及人潮調整。文湖線與高運量平面、高架路段（先前公告範圍為圓山至淡水、新北投及小碧潭）自 10/23 18:00 起停駛，10/24 首班車須視天候與軌道巡檢狀況另行通知，尚不能推定正常首班已恢復。",
-      "sourceLabel": "北捷 10/24 營運速報（10/23 20:06 更新）",
-      "sourceUrl": "https://www.metro.taipei/News_Content.aspx?n=30CCEFD2A45592BF&sms=72544237BBE4C5F6&s=D24768D861F3702F",
-      "sourceCheckedAt": "2026-10-24T01:32:06+08:00",
+      "status": "各線正常營運方案／約 12／6 分鐘",
+      "detail": "北捷 10/24「06:00」營運速報公布各路線正常營運：文湖線、淡水信義線、松山新店線、板南線及中和新蘆線班距約 12 分鐘，南勢角至大橋頭重疊區段約 6 分鐘，仍依運量及風速調整。平面、高架路段若瞬間風速達 10 級以上，或 10 分鐘內平均風速達 7 級，仍將暫停營運；地下段維持運轉並依人潮調整班距。標題「06:00」不是明示的首班或復駛起始時刻，原文未逐段列出復駛時間，不能據此認定查核當下已開行；先前部分首班待通知及 10/23 停駛稿僅保留為歷史參考。",
+      "sourceLabel": "北捷 10/24「06:00」營運速報（04:32 資料更新）",
+      "sourceUrl": "https://www.metro.taipei/News_Content.aspx?n=30CCEFD2A45592BF&sms=72544237BBE4C5F6&s=1E432CD2383523BA",
+      "sourceCheckedAt": "2026-10-24T04:46:51+08:00",
       "additionalSources": [
         {
-          "sourceLabel": "北捷 10/23 17:10 原停駛區段公告（17:23 更新）",
+          "sourceLabel": "北捷先前 10/24 部分首班待通知方案（僅供歷史參考）",
+          "sourceUrl": "https://www.metro.taipei/News_Content.aspx?n=30CCEFD2A45592BF&sms=72544237BBE4C5F6&s=D24768D861F3702F"
+        },
+        {
+          "sourceLabel": "北捷 10/23 17:10 停駛區段原文（僅供歷史參考）",
           "sourceUrl": "https://www.metro.taipei/News_Content.aspx?n=30CCEFD2A45592BF&sms=72544237BBE4C5F6&s=649A1A69E7BC170D"
         }
       ],
@@ -142,21 +146,21 @@
         "ja": "台北MRT"
       },
       "detailI18n": {
-        "en": "On Oct 24, the underground Tamsui-Xinyi section and the Songshan-Xindian, Bannan and Zhonghe-Xinlu lines run at about 12-minute headways, or about 6 minutes on the shared Nanshijiao–Daqiaotou section, adjusted to demand. The Wenhu Line and elevated and ground-level high-capacity sections (the previously specified Yuanshan–Tamsui, Xinbeitou and Xiaobitan sections) have been suspended since 18:00 on Oct 23. Their first Oct 24 services remain subject to weather and track inspections and will be announced separately; normal first services are not yet confirmed.",
-        "ja": "10月24日は淡水信義線の地下区間、松山新店線、板南線、中和新蘆線が約12分間隔、南勢角～大橋頭の共通区間が約6分間隔で、利用状況に応じて調整します。文湖線と高運量路線の地上・高架区間（従来発表の圓山～淡水、新北投、小碧潭）は10月23日18:00から運休。10月24日の始発は天候と軌道点検により別途発表され、通常の始発再開はまだ確認できていません。"
+        "en": "Taipei Metro's Oct 24 operating update, headed '06:00', announces normal operation on all routes: the Wenhu, Tamsui-Xinyi, Songshan-Xindian, Bannan and Zhonghe-Xinlu lines run at about 12-minute headways, or about 6 minutes on the shared Nanshijiao–Daqiaotou section, subject to demand and wind. Ground-level and elevated sections will still suspend service if gusts reach force 10 or above, or the 10-minute average reaches force 7. Underground sections continue operating, with headways adjusted to demand. The headline '06:00' is not an explicitly stated first-service or resumption start time, and the article does not list resumption times for individual sections. Do not infer that services were already running at the check time. The earlier pending-first-service plan and Oct 23 suspension notice are retained as historical references only.",
+        "ja": "台北MRTの10月24日「06:00」運転速報は、各路線の通常運転を発表しています。文湖線・淡水信義線・松山新店線・板南線・中和新蘆線は約12分間隔、南勢角～大橋頭の共通区間は約6分間隔で、利用状況と風速に応じて調整します。地上・高架区間では瞬間風速が10級以上、または10分間平均が7級に達した場合、引き続き運転を見合わせます。地下区間は運転を維持し、利用状況に応じて間隔を調整します。見出しの「06:00」は始発や運転再開の開始時刻を明示したものではなく、本文にも区間ごとの再開時刻は記載されていません。確認時点ですでに運転中とは判断していません。一部の始発について続報待ちとしていた従来の計画と10月23日の運休発表は、過去の参考情報としてのみ残しています。"
       }
     },
     {
       "id": "tymc",
       "label": "桃園機場捷運",
       "status": "普通車 15 分鐘／直達及加班停駛",
-      "detail": "10/24 全天取消直達車及加班車，普通車維持 15 分鐘班距；A1 台北車站、A3 新北產業園區站預辦登機及行李託運全天暫停。實際運轉視風雨調整，達標可能降速或暫停。官網仍可讀取 10/23 21:55:16 強風慢速稿，但未列今日新班距、特定區段或恢復正常速度時間，不能據此保證今日正常速度。",
+      "detail": "10/24 全天取消直達車及加班車，普通車維持 15 分鐘班距；A1 台北車站、A3 新北產業園區站預辦登機及行李託運全天暫停。實際運轉視風雨調整，達標可能降速或暫停。10/23 21:55:16 強風慢速稿最近成功核讀為 10/24 01:51；本輪原連結轉至首頁，無法讀到該原文。原稿未列今日新班距、特定區段或恢復正常速度時間，不能因轉址推定已恢復或保證今日正常速度。",
       "sourceLabel": "桃捷 10/24 營運模式（10/23 公布）",
       "sourceUrl": "https://www.tymetro.com.tw/tymetro-new/tw/_pages/news/show-2439-1.html",
-      "sourceCheckedAt": "2026-10-24T01:32:00+08:00",
+      "sourceCheckedAt": "2026-10-24T04:45:42+08:00",
       "additionalSources": [
         {
-          "sourceLabel": "桃捷 10/23 21:55:16 強風慢速公告（歷史與速度狀態參考）",
+          "sourceLabel": "桃捷 10/23 21:55:16 慢速歷史原文（目前轉址，最近成功 10/24 01:51）",
           "sourceUrl": "https://www.tymetro.com.tw/tymetro-new/tw/_pages/general/show-22-1.html"
         }
       ],
@@ -165,8 +169,8 @@
         "ja": "桃園空港MRT"
       },
       "detailI18n": {
-        "en": "On Oct 24, all express and extra services are cancelled; commuter trains run every 15 minutes. In-town check-in and baggage services at A1 Taipei Main Station and A3 New Taipei Industrial Park are closed all day. Operations remain subject to weather, with speed restrictions or suspension possible when safety thresholds are reached. The website still displays the Oct 23 21:55:16 strong-wind reduced-speed notice, but it does not specify new Oct 24 headways, a section or a return to normal speed. It does not guarantee normal speed today.",
-        "ja": "10月24日は直達車と増発列車が終日運休し、普通車は15分間隔です。A1台北車站・A3新北産業園区の市内チェックインと手荷物預かりは終日休止。天候に応じて調整し、基準に達した場合は減速や運休の可能性があります。公式サイトには10月23日21:55:16の強風による減速記事も残っていますが、本日の新たな運転間隔、対象区間、通常速度に戻す時刻は示されておらず、本日の通常速度を保証するものではありません。"
+        "en": "On Oct 24, all express and extra services are cancelled; commuter trains run every 15 minutes. In-town check-in and baggage services at A1 Taipei Main Station and A3 New Taipei Industrial Park are closed all day. Operations remain subject to weather, with speed restrictions or suspension possible when safety thresholds are reached. The Oct 23 21:55:16 strong-wind reduced-speed article was last successfully read at 01:51 on Oct 24. Its original link now redirects to the homepage, so the article cannot be read in this check. The earlier text did not specify new Oct 24 headways, a section or a return to normal speed. The redirect does not establish recovery and does not guarantee normal speed today.",
+        "ja": "10月24日は直達車と増発列車が終日運休し、普通車は15分間隔です。A1台北車站・A3新北産業園区の市内チェックインと受託手荷物の受付は終日休止。天候に応じて調整し、基準に達した場合は減速や運休の可能性があります。10月23日21:55:16の強風による減速記事を最後に正常閲覧できたのは10月24日01:51です。元のリンクは現在トップページに転送され、今回その原文は読めません。従来の記事は本日の新たな運転間隔、対象区間、通常速度に戻す時刻を示しておらず、転送は復旧を意味せず、本日の通常速度を保証するものではありません。"
       }
     },
     {
@@ -176,7 +180,7 @@
       "detail": "本輪官網最新列表、首頁及官方公開粉專尚未查得明確適用 10/24 的首班、復駛或今日班距公告。最近完整方案為 10/23 15:00 起淡海、安坑、三鶯預防性停駛，環狀線當日每 15 分鐘；三線須待風雨趨緩並完成軌道、供電與沿線安全巡檢確認後才能恢復。不能把昨日停駛前 30／15 分鐘或環狀 15 分鐘直接當成今日方案，也不能因首頁跑馬消失或正常燈號推定復駛。",
       "sourceLabel": "新北捷運官方 10/23 停駛原文（10/24 復駛待確認）",
       "sourceUrl": "https://www.ntmetro.com.tw/basic/?mode=detail&node=914",
-      "sourceCheckedAt": "2026-10-24T01:31:55+08:00",
+      "sourceCheckedAt": "2026-10-24T04:45:37+08:00",
       "additionalSources": [
         {
           "sourceLabel": "新北捷運官方首頁與最新營運資訊",
