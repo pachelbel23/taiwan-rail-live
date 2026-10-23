@@ -1,7 +1,7 @@
 {
   "id": "champi-20261023",
-  "revision": "20261023-1138",
-  "checkedAt": "2026-10-23T11:38:33+08:00",
+  "revision": "20261023-1154",
+  "checkedAt": "2026-10-23T11:54:00+08:00",
   "displayFrom": "2026-10-22T20:20:00+08:00",
   "expiresAt": "2026-10-24T00:00:00+08:00",
   "serviceDate": "2026-10-23",
@@ -82,17 +82,17 @@
     {
       "id": "krtc",
       "label": "高雄捷運紅橘線",
-      "status": "15 分鐘／深夜 20 分鐘",
-      "detail": "10/23 紅橘線全日班距 15 分鐘，深夜 20 分鐘，視情況調整。",
-      "sourceLabel": "高捷 10/23 列車行駛概況",
-      "sourceUrl": "https://www.krtc.com.tw/Information/notice_more?id=6a89481664cc4e71822385bb8441035d",
+      "status": "23:00 前 15 分／之後 20 分",
+      "detail": "10/23 紅橘線 23:00 前班距 15 分鐘，23:00 後班距 20 分鐘。出發前請再確認官方最新公告。",
+      "sourceLabel": "高捷官方 10/23 11:50 營運更新（11:54 核對）",
+      "sourceUrl": "https://www.facebook.com/krtco/posts/pfbid02G9uYQNvHcLhtfqZ6qsijVN1yQejAS1w5DmLo68BswcH1BVmkUQ1DyzVwUNieK9nzl",
       "labelI18n": {
         "en": "Kaohsiung MRT Red and Orange lines",
         "ja": "高雄MRT紅線・橘線"
       },
       "detailI18n": {
-        "en": "On Oct 23, trains run every 15 minutes, increasing to 20 minutes late at night. Further changes depend on conditions.",
-        "ja": "10月23日は15分間隔、深夜は20分間隔で運転します。状況に応じて変更されます。"
+        "en": "On October 23, Kaohsiung MRT Red and Orange line trains run every 15 minutes before 23:00 and every 20 minutes after 23:00. Check the latest official notice before travel.",
+        "ja": "10月23日の高雄MRT紅線・橘線は23:00より前は15分間隔、23:00より後は20分間隔で運転します。出発前に最新の公式発表をご確認ください。"
       }
     },
     {

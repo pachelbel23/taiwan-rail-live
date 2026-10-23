@@ -4,6 +4,7 @@
   if (!messages || !messages.en || !messages.ja) return;
 
   Object.assign(messages.en, {
+    "補上高雄捷運紅橘線 10/23 晚間班距切換時間：23:00 前每 15 分鐘，23:00 後每 20 分鐘": "Added the October 23 evening headway change time for Kaohsiung MRT Red and Orange lines: every 15 minutes before 23:00 and every 20 minutes after 23:00.",
     "高雄輕軌 10/23 下午方案已確認，全日每 20 分鐘一班，附上最新官方公告": "Confirmed the October 23 afternoon plan for Kaohsiung Light Rail: trains run every 20 minutes all day. Added the latest official notice.",
     "補上淡海、安坑 10/23 每 30 分鐘班距，淡海紅樹林至濱海沙崙重疊路段每 15 分鐘，附官方公告；高雄輕軌下午仍待另行宣布": "Added the October 23 Danhai and Ankeng 30-minute headways and the 15-minute shared Hongshulin–Binhai Shalun section, with the official notice. Kaohsiung Light Rail afternoon service still awaits a further announcement.",
     "薔琵颱風｜10/23 台鐵對號停駛、另加開 2 班全車自由座": "Typhoon Champi · Oct 23: scheduled TRA reserved-seat services suspended; 2 all-unreserved extra trains",
@@ -283,6 +284,7 @@
   });
 
   Object.assign(messages.ja, {
+    "補上高雄捷運紅橘線 10/23 晚間班距切換時間：23:00 前每 15 分鐘，23:00 後每 20 分鐘": "10月23日の高雄MRT紅線・橘線の夜間の運転間隔変更時刻を追記：23:00より前は15分間隔、23:00より後は20分間隔です。",
     "高雄輕軌 10/23 下午方案已確認，全日每 20 分鐘一班，附上最新官方公告": "10月23日の高雄ライトレールの午後の運転計画を確認。終日20分間隔で運転し、最新の公式発表へのリンクを追加しました。",
     "補上淡海、安坑 10/23 每 30 分鐘班距，淡海紅樹林至濱海沙崙重疊路段每 15 分鐘，附官方公告；高雄輕軌下午仍待另行宣布": "10月23日の淡海・安坑ライトレールの30分間隔、淡海の紅樹林～濱海沙崙共通区間の15分間隔運転と公式発表を追記。高雄ライトレールの午後の計画は別途発表待ちです。",
     "薔琵颱風｜10/23 台鐵對號停駛、另加開 2 班全車自由座": "台風情報｜10/23 台湾鉄道の定期指定席列車運休・全車自由席2本を増発",

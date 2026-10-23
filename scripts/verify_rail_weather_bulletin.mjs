@@ -40,6 +40,12 @@ assert.ok(ntmetro.sourceUrl.startsWith('https://www.facebook.com/NewTaipeiMetro/
 assert.equal(ntmetro.additionalSources[0].sourceUrl, 'https://www.ntmetro.com.tw/');
 assert.match(ntmetro.detailI18n.en, /30 minutes.*V01–V09.*15 minutes/);
 assert.match(ntmetro.detailI18n.ja, /30分間隔.*V01紅樹林～V09濱海沙崙.*15分間隔/);
+// 高捷11:50官方更新明訂23:00切換，不能只保留模糊的「深夜」。
+const krtc = source.systems.find(s => s.id === 'krtc');
+assert.match(krtc.detail, /23:00 前班距 15 分鐘，23:00 後班距 20 分鐘/);
+assert.ok(krtc.sourceUrl.startsWith('https://www.facebook.com/krtco/posts/'));
+assert.match(krtc.detailI18n.en, /15 minutes before 23:00 and every 20 minutes after 23:00/);
+assert.match(krtc.detailI18n.ja, /23:00より前は15分間隔、23:00より後は20分間隔/);
 // 10/23新公告已確認全日20分鐘，包含下午；不能再顯示上午限定或待確認。
 const klrt = source.systems.find(s => s.id === 'klrt');
 assert.equal(klrt.status, '全日 20 分鐘班距');

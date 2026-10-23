@@ -5643,6 +5643,7 @@
            內容 li 上限 8 條(li.grp 是標題不算)。 -->
       <ul class="foot-list foot-recent">
         <li class="grp">最近更新</li>
+        <li data-cl-of="weatherkrtc1023"><span class="d">10/23</span><span>補上高雄捷運紅橘線 10/23 晚間班距切換時間：23:00 前每 15 分鐘，23:00 後每 20 分鐘</span></li>
         <li data-cl-of="weatherklrt1023"><span class="d">10/23</span><span>高雄輕軌 10/23 下午方案已確認，全日每 20 分鐘一班，附上最新官方公告</span></li>
         <li data-cl-of="weathernt1023"><span class="d">10/23</span><span>補上淡海、安坑 10/23 每 30 分鐘班距，淡海紅樹林至濱海沙崙重疊路段每 15 分鐘，附官方公告；高雄輕軌下午仍待另行宣布</span></li>
         <li data-cl-of="weatherextra1023"><span class="d">10/23</span><span>補上台鐵 10/23 加開 6115、6117 次七堵至高雄全車自由座及主要時刻，保留其他停駛、班距調整與待確認提醒</span></li>
@@ -5650,13 +5651,13 @@
         <li data-cl-of="weather1022"><span class="d">10/22</span><span>新增颱風期間全台鐵道營運提醒與官方來源，明確標示停駛、調整班距及待確認資訊；地圖有車不代表實際開行；開啟颱風公告時跟車卡暫時隱藏</span></li>
         <li data-cl-of="mytrainpicker1020"><span class="d">10/20</span><span>自製列車排班更好選站：點起站、訖站就列出常用大站與各路線的站，選完起站自動跳到訖站，也能一鍵對調；打出完整站名不用再點建議</span></li>
         <li data-cl-of="tracksideprivacy1020"><span class="d">10/20</span><span>隱私權政策補充 iOS 軌道邊鎖定畫面卡片會傳送的資料</span></li>
-        <li data-cl-of="ownmaketrain0923"><span class="d">10/20</span><span>新增通行證專屬「自製列車」：把車庫已入庫的台鐵、高鐵、林鐵列車排班、取名字，每天在地圖上跑；跟車時可開關光環、調整大小，方便截圖分享</span></li>
       </ul>
       <!-- 第二層:完整歷史。刻意不掛 .foot-box 類名——placeFootBoxes() 用
            `.site-foot .foot-box` 搬移面板,巢狀同名會被當成另一個盒子一起搬走。 -->
       <details class="foot-more">
         <summary>完整更新歷史（依主題分類）</summary>
         <ul class="foot-list">
+        <li data-cl="weatherkrtc1023"><span class="d">10/23</span><span>補上高雄捷運紅橘線 10/23 晚間班距切換時間：23:00 前每 15 分鐘，23:00 後每 20 分鐘</span></li>
         <li data-cl="weatherklrt1023"><span class="d">10/23</span><span>高雄輕軌 10/23 下午方案已確認，全日每 20 分鐘一班，附上最新官方公告</span></li>
         <li data-cl="weathernt1023"><span class="d">10/23</span><span>補上淡海、安坑 10/23 每 30 分鐘班距，淡海紅樹林至濱海沙崙重疊路段每 15 分鐘，附官方公告；高雄輕軌下午仍待另行宣布</span></li>
         <li data-cl="weatherextra1023"><span class="d">10/23</span><span>補上台鐵 10/23 加開 6115、6117 次七堵至高雄全車自由座及主要時刻，保留其他停駛、班距調整與待確認提醒</span></li>
@@ -7039,7 +7040,7 @@ const RAIL_3D_BOOT_PARAMS = new URLSearchParams(location.search);
 // v1019b：台鐵同鍵、中途停靠型態不同的班往下借路徑、不退回示意線形，且把自己那份計畫留在模板候選裡（3bde26de、1a781914）；另併入待避窗口逐日掃描報告（28c906cd、7232d41e，不進網站產物）；更新紀錄加一條。
 // v1020a：併入通行證專屬的自製列車；更新紀錄改成這次上線的一條。
 // v1020b：自製列車表單的起訖站點了就列出站名清單（常用大站＋依路線），選完起站自動攤開訖站、可對調、打完整站名即選定；更新紀錄加一條。
-const BUILD = 'v1023e';
+const BUILD = 'v1023f';
 const LANDSCAPE_REQUESTED = new URLSearchParams(location.search).get('map') === 'landscape';
 const GARAGE_QUERY = new URLSearchParams(location.search).get('garage');
 // 輕量多語 runtime：繁中原文同時是安全 fallback，外語字典只存差異字串。
