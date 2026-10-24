@@ -7895,15 +7895,22 @@ function createMaplibreEngine(containerId, view) {
   }
   window.__ofmGl = raw; // 驗證腳本的 GL 把手
   let detailView;
-  function detailOpacity(ll) {
+  // 視距那一把尺（原生 DetailOpacity／StationDistanceClip 同式）：俯角 ≤30° 回 null＝不限；否則回本幀的 {lng, lat, cos, far}，
+  // 相機沒動就是同一個物件（呼叫端可拿物件身分當「相機動了沒」的簽名）。
+  function detailViewNow() {
     const tr = raw.transform, c = tr.center, pitch = tr.pitch;
-    if (pitch <= 30) return 1; // 俯視仍可看全台，不以站等或列車身分例外放行遠端標記。
+    if (pitch <= 30) return null; // 俯視仍可看全台，不以站等或列車身分例外放行遠端標記。
     if (!detailView || detailView.lng !== c.lng || detailView.lat !== c.lat || detailView.pitch !== pitch || detailView.zoom !== tr.zoom || detailView.width !== tr.width || detailView.height !== tr.height) {
       const cos = Math.cos(c.lat * Math.PI / 180), tilt = Math.min(1, (pitch - 30) / 25);
       const span = Math.max(500, Math.max(tr.width, tr.height) * 40075016.686 * cos / tr.worldSize);
       detailView = { lng: c.lng, lat: c.lat, pitch, zoom: tr.zoom, width: tr.width, height: tr.height, cos, far: span * 2.5 / tilt };
     }
-    const p = mlToLL(ll), v = detailView;
+    return detailView;
+  }
+  function detailOpacity(ll) {
+    const v = detailViewNow();
+    if (!v) return 1;
+    const p = mlToLL(ll);
     const distance = Math.hypot((p.lng - v.lng) * v.cos, p.lat - v.lat) * 111195;
     const t = Math.max(0, Math.min(1, (distance / v.far - .55) / .45));
     return 1 - t * t * (3 - 2 * t);
@@ -7913,16 +7920,20 @@ function createMaplibreEngine(containerId, view) {
     // 投影(全程浮點;MapLibre project 回的是 Point{x,y})
     toScreen: ll => { const p = mlToLL(ll); const q = raw.project([p.lng, p.lat]); return { x: q.x, y: q.y }; },
     detailOpacity,
+    detailView: detailViewNow,
     fromScreen: pt => { const q = raw.unproject([Array.isArray(pt) ? pt[0] : pt.x, Array.isArray(pt) ? pt[1] : pt.y]); return { lat: q.lat, lng: q.lng }; },
-    // 平坦模式才使用水平 horizon。起伏模式的 project 已讀取 DEM，不能再把山稜上的
-    // 標記用海平面直線截成半截；保留引擎投影，不在 draw 逐幀讀回 GPU 深度。
+    // 地平線那一列，照 GL JS getBounds／getMercatorHorizon 的算法（原生 OverlayScene.horizonFromCenter 同一條式子）：
+    //   top = H/2 − cameraToCenterDistance × min(0.85·tan(90°−pitch), tan(89.25°−pitch))
+    // 0.85 是 GL JS 刻意取「真地平線再往畫面中央 15%」那一列，引擎的遠平面也切在這附近；俯角約 68.6° 以下這一列在畫面外、回 0。
+    // 起伏地形一律同一列（不再早退）：引擎 project() 會把地平線後的點投到這一列附近、相機背後的點翻面到更上方，
+    // 遠方的站就排成一列掛在山稜上方。山稜上高於海平面地平線的標記被切掉是接受的代價；要保留只能在點擊／游標用
+    // isOnSurface 查，draw 迴圈不逐幀讀回 GPU 深度。
     surfaceTop: () => {
-      const tr = raw.transform;
-      if (raw.getTerrain() || raw.getPitch() <= 60 || tr.isPointOnMapSurface({x: tr.width / 2, y: 0})) return 0;
-      let lo = 0, hi = tr.height;
-      for (let i = 0; i < 14; i++) { const mid = (lo + hi) / 2; if (tr.isPointOnMapSurface({x: tr.width / 2, y: mid})) hi = mid; else lo = mid; }
-      return hi;
+      const tr = raw.transform, r = Math.PI / 180;
+      return Math.max(0, tr.height / 2 - tr.cameraToCenterDistance * Math.min(0.85 * Math.tan((90 - tr.pitch) * r), Math.tan((89.25 - tr.pitch) * r)));
     },
+    // 真地平線那一列（可為負＝在畫面外）：投到它上面的點是翻面的，連線時不可跟它相連（tracePolyline）。
+    horizonTop: () => { const tr = raw.transform; return tr.height / 2 - tr.cameraToCenterDistance * Math.tan((90 - tr.pitch) * Math.PI / 180); },
     // 點擊/游標才查實際地形覆蓋，山稜高於水平 horizon 時仍可點選。
     isOnSurface: pt => raw.transform.isPointOnMapSurface(pt, raw.terrain),
     worldPx: (ll, z) => mlWorldPx(ll, z),
@@ -8492,6 +8503,7 @@ function textColorFor(hex) {
 function reproject() {
   if (!M || !state.data) return;
   const size = M.getSize();
+  skyTop = M.surfaceTop(); skyHorizon = M.horizonTop(); // ln.pts 經 mapDetailPoint，要用本幀相機的地平線
   state.dpr = Math.min(window.devicePixelRatio || 1, 2); // 主畫布 dpr 上限 2x
   // 尺寸沒變不重設緩衝區:設 cv.width 會清空 canvas,若發生在本幀 draw 之後(如 panTo/flyTo
   // 動畫的 move 事件),畫好的列車會整幀被抹掉;順帶省去每次 move 的 buffer 重配
@@ -13177,7 +13189,7 @@ function repaintOverpasses(w, h, P, groups) {
   };
   const stroke = (pts, a, b, col) => {
     ctx.beginPath();
-    for (let i = a; i <= b; i++) i === a ? ctx.moveTo(pts[i].x, pts[i].y) : ctx.lineTo(pts[i].x, pts[i].y);
+    tracePolyline(pts, a, b);
     ctx.strokeStyle = P.railCase; ctx.lineWidth = 5.6; ctx.stroke();
     ctx.strokeStyle = col; ctx.lineWidth = 3; ctx.stroke();
   };
@@ -13312,9 +13324,33 @@ function updateCount() {
 }
 
 // 距離僅控制標記透明度，投影與軌道幾何沿用引擎原值。
+// 地平線（skyTop＝M.surfaceTop()）以上的點一律當不可見：引擎 project() 會把地平線後的點投到那一列附近、
+// 相機背後的點翻面到天空，只靠 draw 末尾的 clearRect 擋不住連線與命中。skyTop 為 0（俯角不夠大、地平線在畫面外）
+// 時不裁，畫面頂緣外 20px 的標記照舊算在視野內。
+let skyTop = 0, skyHorizon = -Infinity; // 本幀的裁切列與真地平線列，draw／reproject 開頭更新
 function mapDetailPoint(ll) {
   const p = M.toScreen(ll);
-  return { x: p.x, y: p.y, detailOpacity: M.detailOpacity(ll) };
+  return { x: p.x, y: p.y, detailOpacity: skyTop > 0 && !(p.y >= skyTop) ? 0 : M.detailOpacity(ll) };
+}
+// 折線描到 ctx：skyTop 以上的點不畫，線段一端在那一列之上就截在那一列；投到真地平線（skyHorizon）之上的點是翻面的，
+// 跟它相連的段整段不畫，否則會連成跨畫面長直線（glTracks 註解描述過的現象）。skyTop 為 0 時照原樣逐點連。
+function tracePolyline(pts, a = 0, b = pts.length - 1) {
+  if (!(skyTop > 0)) { for (let i = a; i <= b; i++) i === a ? ctx.moveTo(pts[i].x, pts[i].y) : ctx.lineTo(pts[i].x, pts[i].y); return; }
+  const cut = (p, q) => { const t = (skyTop - p.y) / (q.y - p.y); return { x: p.x + (q.x - p.x) * t, y: skyTop }; }; // p 地面側、q 天空側
+  let pen = false, prev = null;
+  for (let i = a; i <= b; i++) {
+    const p = pts[i], ground = p.y >= skyTop && Number.isFinite(p.x);
+    if (ground) {
+      if (pen) ctx.lineTo(p.x, p.y);
+      else if (prev && prev.y >= skyHorizon && Number.isFinite(prev.x)) { const q = cut(p, prev); ctx.moveTo(q.x, q.y); ctx.lineTo(p.x, p.y); }
+      else ctx.moveTo(p.x, p.y);
+      pen = true;
+    } else {
+      if (pen && p.y >= skyHorizon && Number.isFinite(p.x)) { const q = cut(prev, p); ctx.lineTo(q.x, q.y); }
+      pen = false;
+    }
+    prev = p;
+  }
 }
 // 近景先排除遠離視口的座標，再求含 DEM 的透視投影；保留半個視口餘裕與原本螢幕裁切。
 // 每次 draw 重取範圍，手勢與跟車仍使用本幀相機，沒有快取移動元素的位置。
@@ -13335,7 +13371,7 @@ function drawFreq(w, h) {
     if (!state.visible.has(ln.id) || !ln.pts) return;
     const line = ln.shapePts || ln.pts;
     ctx.beginPath();
-    line.forEach((p, i) => i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y));
+    tracePolyline(line);
     /* 實色線+底圖色外描(knockout):交會處乾淨讓線,取代半透明疊印 */
     ctx.strokeStyle = P.railCase; ctx.lineWidth = 5.6; ctx.stroke();
     ctx.strokeStyle = metroLineColor(ln.color);
@@ -13760,7 +13796,7 @@ function drawDecoBase(w, h) {
     if (!line || line.length < 2) continue;
     if (offLine(ln)) continue; // 省電關鍵:全台同框跟車時 18 條裝飾線多半整條離屏,跳過描邊(8千餘點/幀)
     ctx.beginPath();
-    line.forEach((p, i) => i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y));
+    tracePolyline(line);
     ctx.strokeStyle = P.railCase; ctx.lineWidth = 5.6; ctx.stroke();
     ctx.strokeStyle = metroLineColor(ln.color);
     ctx.lineWidth = 3; ctx.stroke();
@@ -13913,7 +13949,7 @@ function metroLineColor(color) {
 // 樣式 data/track_style_layers.json(states × themes)。四條規則(計畫 D1–D4):auto+dark 只壓班表軌道、GL 站點圓只畫捷運/輕軌線、
 // casing/色線依 sortKey 階級交錯。跟隨高亮若留在 canvas、pitch>0 時地平線後的投影會翻面、連成跨畫面長直線；
 // 改用獨立 GeoJSON source 給 MapLibre 原生裁切。每幀 glTracksSync 用簽名比對，狀態沒變就不碰 GL。
-const glTracks = { ready: false, style: null, lines: null, stations: null, ranks: [], sig: '', followPts: null, followColor: '', followSig: '' };
+const glTracks = { ready: false, style: null, lines: null, stations: null, ranks: [], sig: '', followPts: null, followColor: '', followSig: '', stnBase: null };
 function glTracksActive() { return GL_TRACKS && glTracks.ready && !!M; }
 async function glTracksLoad() {
   if (!GL_TRACKS || !M || !M.onStyleLoad) return;
@@ -14038,9 +14074,39 @@ function glTracksSync() {
     for (const [p, v] of Object.entries(casing)) raw.setPaintProperty('track-casing-' + k, p, v);
     for (const [p, v] of Object.entries(line)) raw.setPaintProperty('track-line-' + k, p, v);
   }
-  raw.setFilter('track-stations', ['in', ['get', 'lineKey'], ['literal', K.stnKeys]]);
+  glTracks.stnBase = ['in', ['get', 'lineKey'], ['literal', K.stnKeys]];
+  glStationClipSync(true); // 站點圓的 filter＝線路名單 ∧ 視距半徑，由它寫
   raw.setLayerZoomRange('track-stations', stnMin, 24);
   for (const [p, v] of Object.entries(stn)) raw.setPaintProperty('track-stations', p, v);
+}
+// 站點圓的視距上限（原生 StationDistanceClip 同一把尺＝detailOpacity 的 far）：俯角 >30° 時，離畫面中心 far 公尺以外的站
+// 不進 track-stations 的 filter。GL 會把遠平面以前所有圖磚裡的站圓都畫出來，遠端那些會在地平線擠成一排；canvas 的站名
+// 早就按 far 淡出了，站圓得用同一把尺。名單只在相機動到「有站進出半徑」時才改，setFilter 才不會每幀重排。
+const glStnClip = { view: undefined, keys: null, applied: '' };
+function glStationClipSync(force) {
+  const raw = M.raw;
+  if (!glTracks.stnBase || !raw.getLayer('track-stations')) return;
+  const v = M.detailView();
+  if (v !== glStnClip.view) {
+    glStnClip.view = v;
+    let keys = null;
+    if (v) {
+      const limit = (v.far / 111195) ** 2, all = glTracks.stations.features;
+      keys = [];
+      for (const f of all) {
+        const [lon, lat] = f.geometry.coordinates, dx = (lon - v.lng) * v.cos, dy = lat - v.lat;
+        if (dx * dx + dy * dy <= limit) keys.push(f.properties.lineKey + '|' + f.properties.name);
+      }
+      if (keys.length === all.length) keys = null;
+    }
+    glStnClip.keys = keys;
+  }
+  const applied = glStnClip.keys ? glStnClip.keys.join('\n') : '';
+  if (!force && applied === glStnClip.applied) return;
+  glStnClip.applied = applied;
+  raw.setFilter('track-stations', glStnClip.keys
+    ? ['all', glTracks.stnBase, ['in', ['concat', ['get', 'lineKey'], '|', ['get', 'name']], ['literal', glStnClip.keys]]]
+    : glTracks.stnBase);
 }
 window.__glTracks = glTracks; // 守門人把手(verify_gl_tracks.mjs)
 // ==== GL TRACKS END ====
@@ -14134,14 +14200,10 @@ function drawSegOnShape(ln, s, color, lineWidth, w, h) {
   const inPad = p => p.x >= -60 && p.x <= w + 60 && p.y >= -60 && p.y <= h + 60;
   const pts = ln.shape ? shapeSlice(ln, s.dA, s.dB) : [s.pA, s.pB];
   if (pts.length < 2) return;
-  let any = false;
+  const sp = pts.map(p => M.toScreen([p.lat, p.lon]));
+  if (!sp.some(inPad)) return; // 整段離屏:不建路徑也不描,省下兩次 stroke
   ctx.beginPath();
-  for (let i = 0; i < pts.length; i++) {
-    const p = M.toScreen([pts[i].lat, pts[i].lon]);
-    if (inPad(p)) any = true;
-    i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y);
-  }
-  if (!any) return; // 整段離屏:路徑已建但不描,省下兩次 stroke
+  tracePolyline(sp);
   ctx.strokeStyle = pal().railCase; ctx.lineWidth = lineWidth + 2.6; ctx.stroke();
   ctx.strokeStyle = color; ctx.lineWidth = lineWidth; ctx.stroke();
 }
@@ -14184,12 +14246,9 @@ function drawSched(w, h, paintDecoTrains) {
       if (ln._bbox && (ln._bbox[2] < -40 || ln._bbox[0] > w + 40 || ln._bbox[3] < -40 || ln._bbox[1] > h + 40)) continue; // 整條離屏:跳過描邊(跟車時遠端系統的軌道多半在屏外)
       ctx.beginPath();
       if (ln.shapePts) {
-        ln.shapePts.forEach((p, i) => i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y));
+        tracePolyline(ln.shapePts);
       } else {
-        ln.stations.forEach((s, i) => {
-          const cp = mapDetailPoint([s.lat, s.lon]);
-          i ? ctx.lineTo(cp.x, cp.y) : ctx.moveTo(cp.x, cp.y);
-        });
+        tracePolyline(ln.stations.map(s => mapDetailPoint([s.lat, s.lon])));
       }
       /* 實色線+底圖色外描(knockout):交會處乾淨讓線,取代半透明疊印 */
       ctx.strokeStyle = P.railCase; ctx.lineWidth = 5.6; ctx.stroke();
@@ -14207,10 +14266,7 @@ function drawSched(w, h, paintDecoTrains) {
   // 「隱藏」模式不畫——這個模式就是純流星畫面,跟隨路線也不留
   if (!glTracksActive() && state.followTrain && state.trackStyle !== 'hidden' && state._routePts && state._routePts.length > 1) {
     ctx.beginPath();
-    for (let i = 0; i < state._routePts.length; i++) {
-      const p = mapDetailPoint([state._routePts[i].lat, state._routePts[i].lon]);
-      i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y);
-    }
+    tracePolyline(state._routePts.map(p => mapDetailPoint([p.lat, p.lon])));
     ctx.lineCap = 'round'; ctx.lineJoin = 'round';
     ctx.strokeStyle = P.followCase; ctx.lineWidth = 8.5; ctx.stroke();
     ctx.strokeStyle = railDimColor(state.followTrain.color, FOLLOW_DIM); ctx.lineWidth = 4.4; ctx.stroke();
@@ -18542,6 +18598,7 @@ function draw() {
   if (!state.ready) return;
   state._drawCount = (state._drawCount || 0) + 1; // 省電節流的實測計數器(測試讀取繪製頻率用)
   const w = cv.width / state.dpr, h = cv.height / state.dpr;
+  skyTop = M.surfaceTop(); skyHorizon = M.horizonTop(); // 先於所有投影：mapDetailPoint／tracePolyline 本幀都讀這兩列
   if (M.getZoom() >= 14) { const b = M.getBounds().pad(.5), sw = b.getSouthWest(), ne = b.getNorthEast(); detailArea = [sw.lng, sw.lat, ne.lng, ne.lat]; }
   else detailArea = null;
   ctx.clearRect(0, 0, w, h);
@@ -18553,13 +18610,12 @@ function draw() {
   labelBoxes = [];
   trainPaintQ = null; // 上一幀若中途拋例外,殘留佇列不可帶進這一幀(否則車會被收進去卻沒人畫)
   ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-  if (glTracksActive()) glTracksSync(); // GL 軌道:狀態沒變就早退(簽名比對),有變才 setFilter/setPaintProperty
+  if (glTracksActive()) { glTracksSync(); glStationClipSync(); } // GL 軌道:狀態沒變就早退(簽名比對),有變才 setFilter/setPaintProperty
   glPlaceDedupSync(); // 底圖地名、機場名跟站名同名就不畫底圖那個(竹北站旁的「竹北市」、松山機場站旁的「臺北松山機場」);沒變就早退
   if (state.mode === 'sched') { if (state.deco) drawDecoBase(w, h); drawSched(w, h, state.deco ? () => drawDecoTrains(w, h) : null); if (state.deco) drawDecoLabels(); } else drawFreq(w, h);
   drawMe(); // 「我的位置」畫最後=在所有軌道與列車之上,不會被蓋掉
   drawJourneyShareMarker(); // 收件端的分享位置同樣是移動元素：永遠畫在真實座標，不做碰撞位移
-  const skyHeight = M.surfaceTop();
-  if (skyHeight > 0) ctx.clearRect(0, 0, w, skyHeight); // 地平線外的車牌／站名不可浮在天空，也不參與下方命中。
+  if (skyTop > 0) ctx.clearRect(0, 0, w, skyTop); // 兜底：地平線外殘留的像素（列下方標記伸上去的部分）不可浮在天空。
   ctx.globalAlpha = 1; ctx.textAlign = 'start'; ctx.textBaseline = 'alphabetic';
 }
 
