@@ -20,7 +20,7 @@ assert.equal(source.serviceDate, '2026-10-24');
 assert.equal(source.displayFrom, '2026-10-24T00:00:00+08:00');
 assert.equal(source.expiresAt, '2026-10-25T00:00:00+08:00');
 assert.ok(Date.parse(source.checkedAt) >= Date.parse(source.displayFrom));
-assert.equal(source.title, "薔琵颱風｜10/24 桃捷普通 15 分鐘，林鐵沼平、神木 13 時起恢復");
+assert.equal(source.title, "薔琵颱風｜10/24 淡海官網班距與停駛資訊不一致");
 assert.doesNotMatch(railWeatherNotice(when).descI18n.en, /[\u3400-\u9fff]/);
 assert.ok(railWeatherNotice(when).descI18n.ja.includes('10月24日'));
 assert.equal(source.systems.length, 9);
@@ -31,7 +31,7 @@ for (const system of source.systems) {
 const TRA_UPDATED_FACTS = {
   "schema": 1,
   "serviceDate": "2026-10-24",
-  "revision": "20261024-1508",
+  "revision": "20261024-1810",
   "newPlanTrainNumbers": [
     "432",
     "273",
@@ -590,7 +590,7 @@ function assertTRAUpdatedFacts(text, language, {context = 'TRA'} = {}) {
 const TRTC_NOON_FACTS = {
   "schema": 1,
   "serviceDate": "2026-10-24",
-  "revision": "20261024-1508",
+  "revision": "20261024-1810",
   "sourceUrl": "https://www.metro.taipei/News_Content.aspx?n=30CCEFD2A45592BF&sms=72544237BBE4C5F6&s=07211C1B52E9F4FE",
   "sourceCheckedAt": "2026-10-24T12:32:41+08:00",
   "rawEvidence": "/private/tmp/rail-weather-trtc-noon-1024-1232-source.json",
@@ -1037,11 +1037,11 @@ function assertTRTCNoonFacts(text, language = 'zh-TW', { context = 'TRTC noon op
 
 const NT_TYMC_FACTS = {
   "schema": 1,
-  "revision": "20261024-1508",
+  "revision": "20261024-1810",
   "serviceDate": "2026-10-24",
-  "checkedAt": "2026-10-24T15:08:38+08:00",
+  "checkedAt": "2026-10-24T18:10:46+08:00",
   "expiresAt": "2026-10-25T00:00:00+08:00",
-  "rawEvidence": "/private/tmp/rail-weather-ntmetro-ankeng-readonly-1024-1400.json",
+  "rawEvidence": "/private/tmp/rail-weather-monitor-1024-1810.json",
   "sourceEvidenceFiles": [
     {
       "path": "/private/tmp/rail-weather-ntmetro-ankeng-readonly-1024-1400.json",
@@ -1054,218 +1054,504 @@ const NT_TYMC_FACTS = {
     {
       "path": "/private/tmp/rail-weather-tymc-afr-new-notices-1024-1505-source.json",
       "sha256": "3dec2087ff254ad646c6edf7c76516ba117ab87e008a341d91003f71ca120090"
+    },
+    {
+      "path": "/private/tmp/rail-weather-ntmetro-danhai-new-source-1024-1709.json",
+      "sha256": "c4f3a5660d5be4b89302f15d62b13d3dc6829b18e0acc0d1ec7752ed067fabd6"
+    },
+    {
+      "path": "/private/tmp/rail-weather-ntmetro-danhai-1024-1727-variation-source.json",
+      "sha256": "abae49a53615a9bae117b8a8f636cbfa962939f2a16a52d523cc6d537e96e61a"
+    },
+    {
+      "path": "/private/tmp/rail-weather-monitor-1024-1810.json",
+      "sha256": "92e5d6a029b59ab56315cef6a29284d6772d6acd139e0df0214e7d70f8447dea"
     }
   ],
-  "canonicalDraft": "/private/tmp/rail-weather-tymc-afr-1024-1508-bulletin-draft.json",
-  "canonicalDraftSHA256": "03133059d4aaf8e4f4f0fc6859ffc678dbdfcb02a26ff3a74990984cfa457693",
+  "canonicalDraft": "/private/tmp/rail-weather-ntmetro-danhai-1024-1810-bulletin-draft.json",
+  "canonicalDraftSHA256": "9894dbc2e9c3d6b80015b8a98d8db83a4b874526f7549f83059bfe8b0293e8ed",
   "checks": [
     {
-      "id": "nt-circular-and-sanying-approximately-fifteen",
+      "id": "nt-conflict-zh-TW-1",
       "system": "ntmetro",
       "fragments": {
         "zh-TW": [
-          "10/24 本輪核對新北捷運官方首頁已載入的最新跑馬，環狀線與三鶯線班距皆約 15 分鐘，"
+          "10/24 17:09:39 核對新北捷運官方首頁已完整載入的最新跑馬，新增「淡海輕軌班距15~30分鐘，將視運量調整班距、降速行駛或暫停營運」；淡海欄也由先前「全線停止運作」改為「全線班距延長」。"
         ],
+        "en": [],
+        "ja": []
+      }
+    },
+    {
+      "id": "nt-conflict-zh-TW-2",
+      "system": "ntmetro",
+      "fragments": {
+        "zh-TW": [
+          "17:11:08 正常重讀同一首頁，文字相同。"
+        ],
+        "en": [],
+        "ja": []
+      }
+    },
+    {
+      "id": "nt-conflict-zh-TW-3",
+      "system": "ntmetro",
+      "fragments": {
+        "zh-TW": [
+          "這是本輪新讀到的班距原文，不是延用昨日方案。"
+        ],
+        "en": [],
+        "ja": []
+      }
+    },
+    {
+      "id": "nt-conflict-zh-TW-4",
+      "system": "ntmetro",
+      "fragments": {
+        "zh-TW": [
+          "環狀線及三鶯線仍約 15 分鐘，安坑輕軌仍 30 分鐘，各自保留視運量調整班距、降速或暫停營運的條件。"
+        ],
+        "en": [],
+        "ja": []
+      }
+    },
+    {
+      "id": "nt-conflict-zh-TW-5",
+      "system": "ntmetro",
+      "fragments": {
+        "zh-TW": [
+          "但同頁總覽「營運狀況」仍顯示「全線暫停營運」，與各路線跑馬和淡海欄不一致，不能由總覽燈號推定其他路線已停駛或全面正常。"
+        ],
+        "en": [],
+        "ja": []
+      }
+    },
+    {
+      "id": "nt-conflict-zh-TW-6",
+      "system": "ntmetro",
+      "fragments": {
+        "zh-TW": [
+          "短訊未列適用日期、精確發布、開始或復駛時刻，也未列淡海首班或具體區段；本彙整僅記錄官方當前班距文字及矛盾，不能把核讀時刻當成復駛時間、確認特定區段已開行或宣稱全面恢復正常班表與速度。"
+        ],
+        "en": [],
+        "ja": []
+      }
+    },
+    {
+      "id": "nt-conflict-zh-TW-7",
+      "system": "ntmetro",
+      "fragments": {
+        "zh-TW": [
+          "先前今日淡海停止運作欄位、08:44 三線維持停駛跑馬及 10/23 15:00 起三線預防性停駛原文，僅供歷史依據，不能取代本輪最新文字。"
+        ],
+        "en": [],
+        "ja": []
+      }
+    },
+    {
+      "id": "nt-conflict-zh-TW-8",
+      "system": "ntmetro",
+      "fragments": {
+        "zh-TW": [
+          "昨日原文要求風雨趨緩並完成軌道、供電及沿線安全巡檢確認後才能恢復；不能由公告省略或燈號變化推定已完成巡檢，出發前仍須確認現場與最新官方資訊。"
+        ],
+        "en": [],
+        "ja": []
+      }
+    },
+    {
+      "id": "nt-conflict-zh-TW-9",
+      "system": "ntmetro",
+      "fragments": {
+        "zh-TW": [
+          " 補充核對：17:24:05 同一首頁的淡海欄一度又顯示「全線停止運作」，但 15–30 分鐘跑馬仍在；17:27:02 正常重讀時，淡海欄再顯示「全線班距延長」，總覽又顯示「全線暫停營運」。"
+        ],
+        "en": [],
+        "ja": []
+      }
+    },
+    {
+      "id": "nt-conflict-zh-TW-10",
+      "system": "ntmetro",
+      "fragments": {
+        "zh-TW": [
+          "這些反覆且互相矛盾的欄位不能當作另一次停駛或復駛，也不能據此確認淡海實際已開行；出發前須以現場及後續明確官方公告確認。"
+        ],
+        "en": [],
+        "ja": []
+      }
+    },
+    {
+      "id": "nt-conflict-en-1",
+      "system": "ntmetro",
+      "fragments": {
+        "zh-TW": [],
         "en": [
-          "In this Oct 24 check, the fully loaded scrolling notices on New Taipei Metro's official homepage give headways of about 15 minutes for both the Circular and Sanying lines,"
+          "At 17:09:39 on Oct 24, the fully loaded scrolling notices on New Taipei Metro's official homepage newly stated that Danhai LRT headways are 15–30 minutes, with headway adjustments, slower running or suspension according to demand. "
         ],
+        "ja": []
+      }
+    },
+    {
+      "id": "nt-conflict-en-2",
+      "system": "ntmetro",
+      "fragments": {
+        "zh-TW": [],
+        "en": [
+          "The Danhai field also changed from 'entire line out of operation' to 'extended headways throughout the line'. "
+        ],
+        "ja": []
+      }
+    },
+    {
+      "id": "nt-conflict-en-3",
+      "system": "ntmetro",
+      "fragments": {
+        "zh-TW": [],
+        "en": [
+          "One normal re-read of the same homepage at 17:11:08 showed the same wording. "
+        ],
+        "ja": []
+      }
+    },
+    {
+      "id": "nt-conflict-en-4",
+      "system": "ntmetro",
+      "fragments": {
+        "zh-TW": [],
+        "en": [
+          "This is newly read official headway text, not a carry-over of yesterday's plan. "
+        ],
+        "ja": []
+      }
+    },
+    {
+      "id": "nt-conflict-en-5",
+      "system": "ntmetro",
+      "fragments": {
+        "zh-TW": [],
+        "en": [
+          "The Circular and Sanying lines remain about 15 minutes apart, and Ankeng remains 30 minutes apart; each notice retains the conditional measures. "
+        ],
+        "ja": []
+      }
+    },
+    {
+      "id": "nt-conflict-en-6",
+      "system": "ntmetro",
+      "fragments": {
+        "zh-TW": [],
+        "en": [
+          "However, the same page's overall operating indicator still says 'all lines temporarily suspended', conflicting with the line-specific scrolling notices and Danhai field. "
+        ],
+        "ja": []
+      }
+    },
+    {
+      "id": "nt-conflict-en-7",
+      "system": "ntmetro",
+      "fragments": {
+        "zh-TW": [],
+        "en": [
+          "That indicator cannot establish suspension of the other lines or a return to full normal service. "
+        ],
+        "ja": []
+      }
+    },
+    {
+      "id": "nt-conflict-en-8",
+      "system": "ntmetro",
+      "fragments": {
+        "zh-TW": [],
+        "en": [
+          "The short notices give no service date, exact publication, start or resumption time, Danhai first train, or specific operating section. "
+        ],
+        "ja": []
+      }
+    },
+    {
+      "id": "nt-conflict-en-9",
+      "system": "ntmetro",
+      "fragments": {
+        "zh-TW": [],
+        "en": [
+          "This summary records the current official wording and the conflict only. "
+        ],
+        "ja": []
+      }
+    },
+    {
+      "id": "nt-conflict-en-10",
+      "system": "ntmetro",
+      "fragments": {
+        "zh-TW": [],
+        "en": [
+          "The check time is not a resumption time, no particular section is confirmed to be running, and a full normal timetable or normal speed is not confirmed. "
+        ],
+        "ja": []
+      }
+    },
+    {
+      "id": "nt-conflict-en-11",
+      "system": "ntmetro",
+      "fragments": {
+        "zh-TW": [],
+        "en": [
+          "Today's earlier Danhai out-of-operation field, the 08:44 three-line suspension notice, and the preventive suspension notice from 15:00 on Oct 23 are historical evidence only and do not replace the latest wording. "
+        ],
+        "ja": []
+      }
+    },
+    {
+      "id": "nt-conflict-en-12",
+      "system": "ntmetro",
+      "fragments": {
+        "zh-TW": [],
+        "en": [
+          "Yesterday's notice required wind and rain to ease and safety confirmation after track, power-supply and lineside inspections before resumption. "
+        ],
+        "ja": []
+      }
+    },
+    {
+      "id": "nt-conflict-en-13",
+      "system": "ntmetro",
+      "fragments": {
+        "zh-TW": [],
+        "en": [
+          "Omitted wording or an indicator change does not establish completed inspections. "
+        ],
+        "ja": []
+      }
+    },
+    {
+      "id": "nt-conflict-en-14",
+      "system": "ntmetro",
+      "fragments": {
+        "zh-TW": [],
+        "en": [
+          "Check the latest official information and actual station arrangements before travelling. "
+        ],
+        "ja": []
+      }
+    },
+    {
+      "id": "nt-conflict-en-15",
+      "system": "ntmetro",
+      "fragments": {
+        "zh-TW": [],
+        "en": [
+          "Additional check: at 17:24:05 the same homepage's Danhai field again read 'entire line out of operation' while the 15–30-minute scrolling notice remained. "
+        ],
+        "ja": []
+      }
+    },
+    {
+      "id": "nt-conflict-en-16",
+      "system": "ntmetro",
+      "fragments": {
+        "zh-TW": [],
+        "en": [
+          "A normal re-read at 17:27:02 again showed 'extended headways throughout the line', with the overall indicator saying 'all lines temporarily suspended'. "
+        ],
+        "ja": []
+      }
+    },
+    {
+      "id": "nt-conflict-en-17",
+      "system": "ntmetro",
+      "fragments": {
+        "zh-TW": [],
+        "en": [
+          "These changing and conflicting fields do not establish another suspension or resumption and do not confirm that Danhai trains are actually running. "
+        ],
+        "ja": []
+      }
+    },
+    {
+      "id": "nt-conflict-en-18",
+      "system": "ntmetro",
+      "fragments": {
+        "zh-TW": [],
+        "en": [
+          "Confirm with station arrangements and a further explicit official notice before travelling."
+        ],
+        "ja": []
+      }
+    },
+    {
+      "id": "nt-conflict-ja-1",
+      "system": "ntmetro",
+      "fragments": {
+        "zh-TW": [],
+        "en": [],
         "ja": [
-          "10月24日の今回の確認では、新北MRT公式トップページで読み込みが完了した最新スクロール案内に、環状線と三鶯線はいずれも約15分間隔、"
+          "10月24日17:09:39に読み込み完了後の新北MRT公式トップページを確認したところ、最新スクロール案内に新たに「淡海ライトレールは15〜30分間隔、利用状況に応じて運転間隔の調整、減速、運休を行う場合がある」と記載されていました。"
         ]
       }
     },
     {
-      "id": "nt-ankeng-approximately-thirty",
+      "id": "nt-conflict-ja-2",
       "system": "ntmetro",
       "fragments": {
-        "zh-TW": [
-          "安坑輕軌班距約 30 分鐘；"
-        ],
-        "en": [
-          "and about 30 minutes for Ankeng LRT."
-        ],
+        "zh-TW": [],
+        "en": [],
         "ja": [
-          "安坑ライトレールは約30分間隔と記載されています。"
+          "淡海欄も従来の「全線運行停止」から「全線で運転間隔を延長」に変わっています。"
         ]
       }
     },
     {
-      "id": "nt-three-lines-demand-dependent-adjust-slow-or-suspend",
+      "id": "nt-conflict-ja-3",
       "system": "ntmetro",
       "fragments": {
-        "zh-TW": [
-          "三線各自註明將視運量調整班距、降速行駛或暫停營運。"
-        ],
-        "en": [
-          "Each of the three notices says headways may be adjusted, trains may slow down or service may be suspended according to demand."
-        ],
+        "zh-TW": [],
+        "en": [],
         "ja": [
-          "3路線とも利用状況に応じて運転間隔の調整、減速、運休を行う場合があります。"
+          "同じページを17:11:08に通常の方法で再度読み、同じ文面を確認しました。"
         ]
       }
     },
     {
-      "id": "nt-ankeng-normal-tab-extended-headway-field",
+      "id": "nt-conflict-ja-4",
       "system": "ntmetro",
       "fragments": {
-        "zh-TW": [
-          "正常點選首頁安坑輕軌欄位後，顯示「全線班距延長」。"
-        ],
-        "en": [
-          "A normal click on the homepage's Ankeng LRT tab shows 'extended headways throughout the line'."
-        ],
+        "zh-TW": [],
+        "en": [],
         "ja": [
-          "トップページの安坑ライトレールのタブを通常の操作で選ぶと、「全線で運転間隔を延長」と表示されます。"
+          "これは今回新たに確認した公式文面であり、昨日の計画を本日に引き継いだものではありません。"
         ]
       }
     },
     {
-      "id": "nt-ankeng-thirty-new-explicit-not-yesterday-carryover",
+      "id": "nt-conflict-ja-5",
       "system": "ntmetro",
       "fragments": {
-        "zh-TW": [
-          "安坑約 30 分鐘是本輪官方最新明文，並非把昨日停駛前的班距自動延用。"
-        ],
-        "en": [
-          "The approximately 30-minute Ankeng headway is explicitly stated in the latest official notice in this check; it is not an automatic carry-over of yesterday's pre-suspension headway."
-        ],
+        "zh-TW": [],
+        "en": [],
         "ja": [
-          "安坑の約30分間隔は今回の最新の公式案内に明記されたもので、昨日の運休前の運転間隔を自動的に引き継いだものではありません。"
+          "環状線と三鶯線は引き続き約15分間隔、安坑は30分間隔で、それぞれ利用状況に応じた調整、減速、運休の条件も残っています。"
         ]
       }
     },
     {
-      "id": "nt-short-notice-no-service-date-publication-start-or-resumption",
+      "id": "nt-conflict-ja-6",
       "system": "ntmetro",
       "fragments": {
-        "zh-TW": [
-          "短訊本身未列適用日期、精確發布、開始或復駛時刻，"
-        ],
-        "en": [
-          "The short notices give no service date, exact publication time, start time or resumption time."
-        ],
+        "zh-TW": [],
+        "en": [],
         "ja": [
-          "短文自体には適用日、正確な発表時刻、開始時刻、再開時刻は記載されていません。"
+          "ただし同じページの総合的な「運行状況」表示は引き続き「全線一時運休」で、各路線のスクロール案内や淡海欄と一致していません。"
         ]
       }
     },
     {
-      "id": "nt-check-time-not-sanying-or-ankeng-resumption-time",
+      "id": "nt-conflict-ja-7",
       "system": "ntmetro",
       "fragments": {
-        "zh-TW": [
-          "不能把核讀時刻當成三鶯或安坑的復駛起點，"
-        ],
-        "en": [
-          "The check time is not a confirmed Sanying or Ankeng resumption time,"
-        ],
+        "zh-TW": [],
+        "en": [],
         "ja": [
-          "確認時刻を三鶯線や安坑の再開時刻とはせず、"
+          "この表示だけで、ほかの路線の運休や通常運行への全面復帰を判断することはできません。"
         ]
       }
     },
     {
-      "id": "nt-not-full-normal-timetable-restoration",
+      "id": "nt-conflict-ja-8",
       "system": "ntmetro",
       "fragments": {
-        "zh-TW": [
-          "也不能寫成全面恢復正常班表。"
-        ],
-        "en": [
-          "and this is not a statement that the full normal timetable has resumed."
-        ],
+        "zh-TW": [],
+        "en": [],
         "ja": [
-          "通常ダイヤへの全面復帰ともしていません。"
+          "短文には適用日、正確な発表・開始・再開時刻、淡海の始発列車、具体的な運行区間は記載されていません。"
         ]
       }
     },
     {
-      "id": "nt-danhai-entire-line-still-not-operating",
+      "id": "nt-conflict-ja-9",
       "system": "ntmetro",
       "fragments": {
-        "zh-TW": [
-          "首頁淡海輕軌欄位仍顯示「全線停止運作」，"
-        ],
-        "en": [
-          "The homepage's Danhai LRT field still reads 'entire line out of operation'."
-        ],
+        "zh-TW": [],
+        "en": [],
         "ja": [
-          "トップページの淡海ライトレール欄は引き続き「全線運行停止」です。"
+          "本まとめは現在の公式文面と表示の矛盾を記録するもので、確認時刻を再開時刻とはせず、特定区間の運行開始や通常ダイヤ・通常速度への全面復帰も確認したものではありません。"
         ]
       }
     },
     {
-      "id": "nt-no-danhai-resumption-from-other-three-lines",
+      "id": "nt-conflict-ja-10",
       "system": "ntmetro",
       "fragments": {
-        "zh-TW": [
-          "本輪尚未取得淡海復駛的明確公告，不能由其他三線的班距推定淡海已復駛。"
-        ],
-        "en": [
-          "No explicit Danhai resumption notice was obtained in this check; the other three lines' headways do not establish resumption on Danhai."
-        ],
+        "zh-TW": [],
+        "en": [],
         "ja": [
-          "淡海の再開を明記した発表は今回確認できておらず、ほかの3路線の運転間隔から淡海の再開を推定できません。"
+          "本日のこれまでの淡海欄の停止表示、08:44の3路線運休継続案内、10月23日15:00からの予防的運休発表は過去の根拠資料で、今回の最新文面に置き換わるものではありません。"
         ]
       }
     },
     {
-      "id": "nt-earlier-three-line-stop-history-not-current-sanying-or-ankeng-stop",
+      "id": "nt-conflict-ja-11",
       "system": "ntmetro",
       "fragments": {
-        "zh-TW": [
-          "先前 08:44 核對的「三線維持停駛」跑馬及 10/23 15:00 起三線預防性停駛原文，僅保留為歷史依據，不能當成最新三鶯線、安坑輕軌仍停駛的公告；"
-        ],
-        "en": [
-          "The scrolling notice checked at 08:44 saying that all three lines remained suspended and the notice of preventive suspension from 15:00 on Oct 23 are retained as historical evidence only, not as the latest statement that Sanying and Ankeng are still suspended."
-        ],
+        "zh-TW": [],
+        "en": [],
         "ja": [
-          "08:44に確認した「3路線は運休継続」というスクロール案内と、10月23日15:00から3路線を予防的に運休する発表は、過去の根拠資料としてのみ残し、三鶯線や安坑が現在も運休中という最新発表としては扱っていません。"
+          "昨日の発表は風雨が弱まり、軌道・電力設備・沿線の点検後に安全を確認してから再開するとしていました。"
         ]
       }
     },
     {
-      "id": "nt-yesterday-safety-inspection-conditions-historical",
+      "id": "nt-conflict-ja-12",
       "system": "ntmetro",
       "fragments": {
-        "zh-TW": [
-          "昨日原文要求風雨趨緩並完成軌道、供電與沿線安全巡檢確認後才能恢復。"
-        ],
-        "en": [
-          "Yesterday's notice required wind and rain to ease and safety confirmation after inspections of track, power supply and lineside conditions before resumption."
-        ],
+        "zh-TW": [],
+        "en": [],
         "ja": [
-          "昨日の発表は、風雨が弱まり、軌道・電力設備・沿線の安全点検を終えて安全を確認してから再開するとしていました。"
+          "文言の省略や表示の変化だけで点検完了を判断せず、出発前に最新の公式情報と現地の案内をご確認ください。"
         ]
       }
     },
     {
-      "id": "nt-yesterday-danhai-thirty-not-todays-plan",
+      "id": "nt-conflict-ja-13",
       "system": "ntmetro",
       "fragments": {
-        "zh-TW": [
-          "昨日停駛前的淡海每 30 分鐘班距不能自動延用為今日方案，"
-        ],
-        "en": [
-          "Yesterday's pre-suspension 30-minute headway on Danhai is not automatically today's plan."
-        ],
+        "zh-TW": [],
+        "en": [],
         "ja": [
-          "昨日の運休前の淡海30分間隔を本日の計画に自動的に引き継ぐことはせず、"
+          " 追加確認：17:24:05には同じページの淡海欄が再び「全線運行停止」と表示されましたが、15〜30分間隔のスクロール案内は残っていました。"
         ]
       }
     },
     {
-      "id": "nt-missing-notice-or-indicators-not-resumption",
+      "id": "nt-conflict-ja-14",
       "system": "ntmetro",
       "fragments": {
-        "zh-TW": [
-          "公告缺失或一般燈號也不等於復駛。"
-        ],
-        "en": [
-          "Missing notices or generic operating indicators do not establish resumption."
-        ],
+        "zh-TW": [],
+        "en": [],
         "ja": [
-          "発表の消失や一般的な運行表示だけでは再開を確認できません。"
+          "17:27:02に通常の方法で再度読むと、淡海欄は再び「全線で運転間隔を延長」、総合表示は「全線一時運休」でした。"
+        ]
+      }
+    },
+    {
+      "id": "nt-conflict-ja-15",
+      "system": "ntmetro",
+      "fragments": {
+        "zh-TW": [],
+        "en": [],
+        "ja": [
+          "変動し、互いに矛盾する表示を、新たな運休や再開の根拠とはせず、淡海の列車が実際に運行していることも確認したものではありません。"
+        ]
+      }
+    },
+    {
+      "id": "nt-conflict-ja-16",
+      "system": "ntmetro",
+      "fragments": {
+        "zh-TW": [],
+        "en": [],
+        "ja": [
+          "出発前に現地の案内と今後の明確な公式発表をご確認ください。"
         ]
       }
     },
@@ -1666,9 +1952,10 @@ function assertNtTymcFacts(text, language = 'zh-TW', {context = 'NT/TYMC updated
     }
   }
   approved.push(...NT_TYMC_APPROVED_SUPPLEMENTAL[language].map(normalizeNtTymc));
+  approved.push(...{"zh-TW": ["薔琵颱風｜10/24 淡海官網班距與停駛資訊不一致", "淡海官網資訊不一致／環狀、三鶯約 15 分鐘／安坑 30 分鐘", "新北捷運官方首頁跑馬與路線欄位（淡海班距、停駛資訊不一致）"], "en": ["Typhoon Champi | Oct 24: Danhai headway and suspension information conflict on the official homepage", "Conflicting official Danhai information / Circular & Sanying: about 15 min / Ankeng: 30 min", "New Taipei Metro official homepage ticker and line fields (conflicting Danhai headway and suspension information)"], "ja": ["台風チャンピ｜10/24 淡海の公式運転間隔・運休情報が不一致", "淡海の公式情報が不一致／環状・三鶯約15分／安坑30分", "新北MRT公式トップページのスクロール案内と路線欄（淡海の間隔・運休情報が不一致）"]}[language].map(normalizeNtTymc));
   let residual = actual;
   for (const fragment of [...new Set(approved)].sort((a,b)=>b.length-a.length)) residual = residual.split(fragment).join('');
-  for (const pattern of [...NT_TYMC_CONTRADICTIONS[language], ...J_TYMC_ADDITIONAL_CONTRADICTIONS[language]]) {
+  for (const pattern of [...NT_TYMC_CONTRADICTIONS[language], ...J_TYMC_ADDITIONAL_CONTRADICTIONS[language], ...{"zh-TW":[/淡海.{0,28}(?:已確認|確定已|已經|已全面).{0,16}(?:開行|復駛|恢復|正常)/u,/淡海.{0,28}(?:17:09|17:11|17:24|17:27|18:10).{0,16}(?:開始復駛|恢復營運|首班)/u],"en":[/Danhai.{0,35}(?:confirmedrunning|definitelyresumed|hasfullyresumed|nowoperatingnormally)/iu],"ja":[/淡海.{0,28}(?:再開済み|運行開始を確認|全面再開|通常運転に復帰)/u]}[language]]) {
     if (pattern.test(residual)) throw new Error(`${context}: contradictory or unsupported operating assertion (${language})`);
   }
   return {
@@ -1679,14 +1966,14 @@ function assertNtTymcFacts(text, language = 'zh-TW', {context = 'NT/TYMC updated
     exactServiceAndConditionBindings: true,
     historicalAndUnknownBoundariesRetained: true,
     noUnstatedStartOrRestoration: true,
-    ntmetro: {sanyingHeadwayMinutes:15,circularHeadwayMinutes:15,ankengHeadwayMinutes:30,sanyingStartTimeNotGiven:true,ankengStartTimeNotGiven:true,danhaiSuspended:true,old914NotCurrentSanyingOrAnkengStop:true,ankengThirtyIsNewExplicitNotYesterdayCarryover:true},
+    ntmetro: {sanyingHeadwayMinutes:15,circularHeadwayMinutes:15,ankengHeadwayMinutes:30,sanyingStartTimeNotGiven:true,ankengStartTimeNotGiven:true,danhaiHeadwayTextMinutes:[15,30],danhaiActualServiceUnconfirmed:true,conflictingOfficialIndicators:true,indicatorAlternationNotNewStopOrResumption:true,old914NotCurrentSanyingOrAnkengStop:true,ankengThirtyIsNewExplicitNotYesterdayCarryover:true},
     tymc: {"noticeTitleTime": "14:00", "titleTimeDoesNotEstablishExactPublicationOrStart": true, "pageDate": "2026-10-24", "commuterHeadwayMinutes": 15, "flightDemandDependentExtraExpress": true, "crowdDependentExtraExpress": true, "checkInBaggageAllDaySuspended": true, "checkInBaggageStations": ["A1", "A3"], "noNewExpressStartTimeGiven": true, "noFixedExpressHeadwayOrFullResumptionClaim": true, "previousHolidayAnd1300HistoricalOnly": true, "windConditionOmissionNotWithdrawal": true, "oldSlowLinkRedirectNotFullRecheck": true}
   };
 }
 
 const AFR_LIST_FACTS = {
   "schema": 1,
-  "revision": "20261024-1508",
+  "revision": "20261024-1810",
   "serviceDate": "2026-10-24",
   "sourceUrl": "https://afrch.forest.gov.tw/AllNews",
   "sourceCheckedAt": "2026-10-24T15:05:37+08:00",
@@ -1962,13 +2249,13 @@ assert.equal(tymc.additionalSources[1].sourceUrl, "https://www.tymetro.com.tw/ty
 assert.equal(tymc.additionalSources[1].sourceLabel, "桃捷更早 10/24 模式（10/23 公布；直達及加班車全天取消僅供歷史參考）");
 assert.equal(tymc.additionalSources[2].sourceUrl, "https://www.tymetro.com.tw/tymetro-new/tw/_pages/general/show-22-1.html");
 assert.equal(tymc.additionalSources[2].sourceLabel, "桃捷 10/23 21:55:16 慢速歷史原文（目前轉址，最近成功 10/24 01:51）");
-assert.equal(ntmetro.status, "環狀、三鶯約 15 分鐘／安坑約 30 分鐘／淡海停駛");
+assert.equal(ntmetro.status, "淡海官網資訊不一致／環狀、三鶯約 15 分鐘／安坑 30 分鐘");
 assert.equal(ntmetro.sourceUrl, "https://www.ntmetro.com.tw/");
-assert.equal(ntmetro.sourceCheckedAt, "2026-10-24T13:56:31+08:00");
-assert.equal(ntmetro.sourceLabel, "新北捷運官方首頁最新跑馬（環狀、三鶯約 15 分鐘；安坑約 30 分鐘）");
+assert.equal(ntmetro.sourceCheckedAt, "2026-10-24T18:10:46+08:00");
+assert.equal(ntmetro.sourceLabel, "新北捷運官方首頁跑馬與路線欄位（淡海班距、停駛資訊不一致）");
 assert.equal(ntmetro.additionalSources.length, 2);
 assert.equal(ntmetro.additionalSources[0].sourceUrl, "https://www.ntmetro.com.tw/basic/?mode=detail&node=914");
-assert.equal(ntmetro.additionalSources[0].sourceLabel, "新北捷運 10/23 三線停駛原文（僅供歷史依據，不代表最新三鶯、安坑仍停駛）");
+assert.equal(ntmetro.additionalSources[0].sourceLabel, "新北捷運 10/23 三線停駛原文（僅供歷史依據，不代替今日最新班距或指定復駛時刻）");
 assert.equal(ntmetro.additionalSources[1].sourceUrl, "https://www.facebook.com/NewTaipeiMetro/");
 assert.equal(ntmetro.additionalSources[1].sourceLabel, "新北捷運官方公開粉專（本輪登入頁，最近公開成功 10/24 07:15）");
 for (const lang of ['zh-TW','en','ja']) assertNtTymcFacts([tymc,ntmetro].map(s=>lang==='zh-TW'?s.detail:s.detailI18n[lang]).join('\n'),lang,{context:'新北與桃捷最新原文完整獨立核對'});
@@ -2218,8 +2505,8 @@ try {
           assert.match(await page.locator('#ageNote').innerText(), /已過適用日期/);
           if (width === 375) {
             const languageTitles = {
-              en: "Typhoon Champi | Oct 24 Airport MRT commuter trains every 15 minutes; Alishan Zhaoping and Shenmu lines resume from 13:00",
-              ja: "台風情報｜10月24日 空港MRT普通車は15分間隔、阿里山の沼平・神木線は13:00から運転再開",
+              en: "Typhoon Champi | Oct 24: Danhai headway and suspension information conflict on the official homepage",
+              ja: "台風チャンピ｜10/24 淡海の公式運転間隔・運休情報が不一致",
             };
             await page.clock.setSystemTime(new Date(when));
             for (const lang of ['en','ja']) {
