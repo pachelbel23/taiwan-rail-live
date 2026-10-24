@@ -43,7 +43,10 @@ export async function createLiveMap({map,landscape=false,isCurrent=()=>true,onGe
   // 視口尺寸只在 map 'resize' 時重讀:project() 每車每幀都問 clientWidth,讀版面會在幀內逼瀏覽器重排(基準佔 update 11%)。
   let viewW=el.clientWidth,viewH=el.clientHeight;
   let trees=null,terrainRefreshPending=groundMode==='terrain';
-  let disposed=false,ready=false,lastDetail=null,stationLayer=null,stationLabels=null,markers=null,inspection=false,frame=null,routeKey='',routeRefs=[],lastBuild=0,dirty=true,buildCenter=null,buildElev=0,buildView=null,lastNear=null,farSpan=0,popup=null;
+  let disposed=false,ready=false,lastDetail=null,stationLayer=null,stationLabels=null,markers=null,inspection=false,frame=null,routeKey='',routeRefs=[],lastBuild=0,dirty=true,buildCenter=null,buildElev=0,buildView=null,lastNear=null,farSpan=0,farMissing=false,popup=null;
+  // DEM 到貨要不要重建：近景（或還沒建過）照舊；遠景的 3D 示意線高度來自建置資料，只有上次建置有樣本因 DEM 沒到
+  // 而被跳過（railHeight 回 null）才需要——不然平移過起伏地形時每片圖磚到貨都重建一次（實測半個畫面 5 次、每次 40～57ms）。
+  const demRebuildWanted=()=>lastNear!==false||farMissing;
   const clearance=createRailClearance();
   const terrainState={terrain:groundMode==='terrain',buildings:true,labels:true,stationInspection:false,stationInspectionAll:true,exaggeration:1};
   const scene=new THREE.Scene(),camera=new THREE.Camera(),projection=new THREE.Matrix4(),deepProjection=new THREE.Matrix4(),anchor=ml.MercatorCoordinate.fromLngLat([121,24]),unit=anchor.meterInMercatorCoordinateUnits();
@@ -200,17 +203,18 @@ export async function createLiveMap({map,landscape=false,isCurrent=()=>true,onGe
     const spanLon=bounds.getEast()-bounds.getWest(),spanLat=bounds.getNorth()-bounds.getSouth();
     const w=bounds.getWest()-spanLon/4,e=bounds.getEast()+spanLon/4,s0=bounds.getSouth()-spanLat/4,n0=bounds.getNorth()+spanLat/4;
     farSpan=Math.max(spanLon,spanLat);
-    const lineSegments=[],buriedSegments=[];
+    const lineSegments=[],buriedSegments=[];let missing=0;
     for(const r of frame.routes){if(r.physical)continue;const path=pathFor(r);if(!path?.elevation)continue;const coords=r.coordinates;
       for(let i=1;i<coords.length;i++){const a=coords[i-1],b=coords[i];
         if(Math.min(a[0],b[0])>e||Math.max(a[0],b[0])<w||Math.min(a[1],b[1])>n0||Math.max(a[1],b[1])<s0)continue;
         const start=path.d[i-1],end=path.d[i],length=end-start;if(!(length>0))continue;
         const n=Math.max(1,Math.ceil(length/stepM));let prev=null;
-        for(let k=0;k<=n;k++){const s=start+length*k/n,q=path.at(Math.min(path.length,s)).coordinate,h=railHeight(path,s),p=h===null?null:world(q,h);
+        for(let k=0;k<=n;k++){const s=start+length*k/n,q=path.at(Math.min(path.length,s)).coordinate,h=railHeight(path,s),p=h===null?null:world(q,h);if(h===null)missing++;
           if(prev&&p){const draw=buriedDraw(path,s,q,h);if(draw!=='none')(draw==='xray'?buriedSegments:lineSegments).push({a:prev,b:p,color:r.displayColor||r.color,physical:false});}
           prev=p;}
       }}
     rails.set(lineSegments);undergroundRails.set(buriedSegments);stats.railSegments=lineSegments.length;stats.undergroundRailSegments=buriedSegments.length;
+    farMissing=missing>0;stats.farMissingSamples=missing;
   }
   function rebuildLines(){
     const buildStarted=performance.now();terrainCaching=true;tcLon=tcLat=NaN;
@@ -319,7 +323,7 @@ export async function createLiveMap({map,landscape=false,isCurrent=()=>true,onGe
     const now=performance.now(),center=map.getCenter(),near=map.getZoom()>=14;
     if(buildView&&(Math.abs(map.getZoom()-buildView[0])>.4||Math.abs(map.getPitch()-buildView[1])>5||Math.abs(map.getBearing()-buildView[2])>15))dirty=true;
     // 單一到貨事件可能早於整片 DEM 到齊:建置當時的地面高程若已經不同,同樣要重建。
-    if(terrainState.terrain&&buildCenter){const e=terrainSample(buildCenter);if(Number.isFinite(e)&&Math.abs(e-buildElev)>.5)dirty=true;}
+    if(terrainState.terrain&&buildCenter&&demRebuildWanted()){const e=terrainSample(buildCenter);if(Number.isFinite(e)&&Math.abs(e-buildElev)>.5)dirty=true;}
     const moveLimit=lastNear||!terrainState.terrain?.003:Math.max(.003,farSpan*.2); // 遠景的 3D 示意線建得比畫面大四分之一，鏡頭移過邊界兩成再重建
     if(near!==lastNear||detailLevel()!==lastDetail||((dirty||!buildCenter||Math.hypot(center.lng-buildCenter[0],center.lat-buildCenter[1])>moveLimit)&&now-lastBuild>250))rebuildLines();
     const all=next.display?.modelMode==='all'||!!next.display?.ambient,bounds=map.getBounds();
@@ -452,7 +456,7 @@ export async function createLiveMap({map,landscape=false,isCurrent=()=>true,onGe
     map.addLayer({id:'live-vehicles-3d',type:'custom',renderingMode:'3d',onAdd(_,gl){webgl=new THREE.WebGLRenderer({canvas:map.getCanvas(),context:gl});webgl.autoClear=false;},
       render(gl,args){
         // DEM 在 MapLibre 本幀準備完成後才同步橋墩與車體，避免沿用前一幀地表。
-        if(terrainRefreshPending&&terrainState.terrain&&frame&&Number.isFinite(terrainSample(map.getCenter().toArray()))){dirty=true;lastBuild=-Infinity;update(frame);if(map.isSourceLoaded('terrain'))terrainRefreshPending=false;}
+        if(terrainRefreshPending&&terrainState.terrain&&frame&&Number.isFinite(terrainSample(map.getCenter().toArray()))){if(demRebuildWanted()){dirty=true;lastBuild=-Infinity;update(frame);}if(map.isSourceLoaded('terrain'))terrainRefreshPending=false;}
         const night=nightAmount(globalThis.railIslandSunlight?.current);ambientLight.intensity=1.9*(1-night*.7);sun.intensity=2*(1-night*.94);camera.projectionMatrix.copy(projection.fromArray(args.defaultProjectionData.mainMatrix).multiply(transform));deepenFar(deepProjection.copy(camera.projectionMatrix));updateModelScales();trainHalo.update(models,(c,h,deep)=>project(world(c,h),deep),viewW,viewH,frame?.display);structures.setVisible(map.getZoom()>=14);rails.render(viewW,viewH,routeWidth(map.getZoom()),terrainState.terrain||(map.getZoom()>=14&&frame?.routes.some(r=>r.physical||r.drawingRanges)),frame?.display?.dark);webgl.resetState();camera.layers.enable(3);webgl.render(scene,camera);camera.layers.disable(3);stats.frames++;
         const lead=models.get(frame?.selectedVehicleId)?.cars?.[0],pad=map.getPadding();
         stats.headLockErrorPx=frame?.headLocked&&lead?Math.hypot(project(lead.position.toArray()).x-(viewW+pad.left-pad.right)/2,project(lead.position.toArray()).y-(viewH+pad.top-pad.bottom)/2):null;
@@ -505,7 +509,7 @@ export async function createLiveMap({map,landscape=false,isCurrent=()=>true,onGe
     listenMap('sourcedata',e=>{if(terrainState.terrain&&e.sourceId==='terrain'&&(e.tile||e.sourceDataType==='content')){
       // 圖磚回來了就把退場歸零；本來已經退成平坦的話，順手要求重建，列車會回到起伏高度。
       demRecovered();demWaitFrom=0;
-      dirty=true;terrainRefreshPending=true;}});
+      if(demRebuildWanted())dirty=true;terrainRefreshPending=true;}});
     // 地形來源自己的載入錯誤（島內 DEM 圖磚讀壞、分片長度不符、連粗圖磚都取不到）。
     // 取消中的圖磚不算——平移縮放時 MapLibre 本來就會大量中止請求。
     listenMap('error',e=>{
