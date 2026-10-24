@@ -1,4 +1,5 @@
 import { withRailWeatherNotice } from './scripts/rail_weather_bulletin.mjs';
+import { railAiScheduled, railAiStatus } from './scripts/rail_ai_status.mjs';
 import traScheduleSupplements from './scripts/tra_schedule_supplements.json' with { type: 'json' };
 import {createPlatformProxy} from './scripts/tra_platform_proxy.mjs';
 import {
@@ -6478,7 +6479,7 @@ const API_POST_ALLOWED = new Set(['/api/account-delete', '/api/bounty-claim', '/
 // /api 端點白名單——只給流量埋點的 blob 用(不是路由閘門,路由在 fetch 裡)。不在名單內一律記成
 // 'other',否則隨便打 /api/<亂數> 就能把 blob 基數炸開。新增端點時要一起加進來。
 const API_ENDPOINTS = new Set([
-  'tra-platforms', 'tra-live', 'tra-alert', 'thsr-alert', 'metro-alert', 'hazard-alert', 'metro-live', 'ntmetro-live', 'trtc-live',
+  'tra-platforms', 'tra-live', 'tra-alert', 'thsr-alert', 'metro-alert', 'hazard-alert', 'rail-status', 'metro-live', 'ntmetro-live', 'trtc-live',
   'klrt-position', 'bus-transfer', 'bus-leg-live', 'bus-route-stops', 'bus-stop-search', 'bus-stop-live', 'journey-share',
   'delay-stats', 'delay-history', 'thsr-schedule', 'thsr-freeseat', 'thsr-seat', 'station-events', 'today-board', 'basemap-token', 'basemap-session', 'basemap-src', 'basemap-fallback', 'account-delete',
   'bounty-board', 'bounty-claim', 'bounty-submit', 'bounty-me', 'bounty-merge', 'plus-status', 'revenuecat-webhook',
@@ -8473,6 +8474,25 @@ export default {
       // 災害來源/公告不能延遲或改變北捷帳本 cron 的成功/失敗契約；scheduled runtime 一定提供 waitUntil。
       // 本機直接呼叫 default.scheduled 若沒帶 ctx，catch 已吞住 rejection，帳本仍照原路徑完成。
       if (ctx && typeof ctx.waitUntil === 'function') ctx.waitUntil(hazardTask);
+      // AI 營運整理（scripts/rail_ai_status.mjs）：每 3 分鐘掃官方公告，有營運相關變化才呼叫 Claude。
+      // 等災害監看跑完才起跑：NCDR 有生效示警時，三個通阻端點的記憶體快取剛被它叫醒，這時才順手讀 TDX 公告，
+      // 不為了整理多打 TDX（端點成本按次數計點）。自帶 .catch ⇒ 不可能改變 scheduled 的成功/失敗契約(同 hazardTask)。
+      const railAiTask = hazardTask.then(async h => {
+        let alerts = null;
+        if (h && h.announcements) {
+          const base = 'https://railisland.tw';
+          alerts = {};
+          for (const [k, fn] of [['tra', traAlert], ['thsr', thsrAlert], ['metro', metroAlert]]) {
+            try { alerts[k] = ((await (await fn(new Request(base + '/api/' + k + '-alert'), env)).json()) || {}).alerts || null; }
+            catch (e) { alerts[k] = null; }
+          }
+        }
+        return railAiScheduled(event, env, { alerts });
+      }).catch(e => {
+        console.error('[cron rail-ai] 失敗:', (e && e.stack) || String(e));
+        return { error: String((e && e.message) || e) };
+      });
+      if (ctx && typeof ctx.waitUntil === 'function') ctx.waitUntil(railAiTask);
       // 🔴 兩條推播迴圈並行,而 laJwt() 的快取是「解析完才寫回」⇒ 冷快取時兩邊會各簽一把
       // provider token(內容幾乎相同、只差簽章)。Apple 對 provider token 的更新頻率有硬限制
       // (429 TooManyProviderTokenUpdates),沒必要為此多產生一把。先暖一次,兩邊之後都是快取命中。
@@ -8551,6 +8571,8 @@ export default {
         await twTask;
         await tsTask;
         await journeySharePruneTask;
+        // 同理 await:整理要等模型回應(一個系統約一到三分鐘),不能交給 waitUntil 的存活時間截斷。
+        await railAiTask;
         // 同理 await:北捷營運窗外(約 01:00–06:00)trtcLedgerScheduled 會立刻早退,handler 一 return
         // 就可能把 waitUntil 截斷——而 05:00–06:00 正是自癒該把今天班表準備好的時段。
         await thsrHealTask;
@@ -8648,6 +8670,7 @@ export default {
     else if (url.pathname === '/api/thsr-alert') res = await withRailWeatherNotice(await thsrAlert(request, env), Date.now(), url.searchParams.get('weather') === 'full' || !APP_ORIGINS.has(origin) ? 'full' : 'thsr-alert');
     else if (url.pathname === '/api/metro-alert') res = await withRailWeatherNotice(await metroAlert(request, env), Date.now(), url.searchParams.get('weather') === 'full' || !APP_ORIGINS.has(origin) ? 'full' : 'metro-alert');
     else if (url.pathname === '/api/hazard-alert') res = await hazardAlert(request, env);
+    else if (url.pathname === '/api/rail-status') res = await railAiStatus(request, env);
     else if (url.pathname === '/api/metro-live') {
       const sys = url.searchParams.get('sys');
       // hasOwnProperty.call 而非 METRO_LIVE_OPS[sys]:後者吃原型鏈,sys='constructor' 等會誤過閘門

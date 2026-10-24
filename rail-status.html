@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex"><meta name="theme-color" content="#f4edda">
+<title>即時營運整理｜軌島</title>
+<meta name="description" content="軌島依各鐵道營運單位官方原文自動整理的即時營運狀況，附官方原文連結與整理時間。">
+<!-- AI 營運整理頁：資料來自 /api/rail-status（scripts/rail_ai_status.mjs）。樣式沿用 weather-status.html。
+     ?rev=<id> 看指定的一版（核對用）。 -->
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f4edda;color:#302f29;font:16px/1.8 system-ui,-apple-system,sans-serif}main{max-width:900px;margin:auto;padding:24px max(20px,env(safe-area-inset-right)) 48px max(20px,env(safe-area-inset-left))}a{color:#245c59;text-underline-offset:4px;overflow-wrap:anywhere}a:focus-visible,button:focus-visible{outline:3px solid #be5f26;outline-offset:3px}nav{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;border-bottom:2px solid #302f29;padding-bottom:10px}nav a{display:inline-flex;align-items:center;min-height:44px}.langs{display:flex;gap:6px}.langs button{font:inherit;font-size:14px;min-height:36px;padding:0 10px;border:1px solid #aaa38e;border-radius:6px;background:#fffaf0;color:#302f29;cursor:pointer}.langs button[aria-pressed=true]{background:#302f29;color:#fffaf0;border-color:#302f29}.eyebrow{letter-spacing:.12em;font-size:13px;margin:25px 0 8px}h1{font-size:clamp(26px,5vw,40px);line-height:1.35;margin:0 0 16px}h2{font-size:20px;line-height:1.5;margin:0}.warning{border:2px solid #a24424;border-left-width:7px;background:#fff1dc;padding:16px 20px;color:#6f2917}.warning strong{display:block;font-size:20px}.warning p{margin:8px 0 0}.meta{color:#615d51;font-size:14px}.row-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.badges{display:flex;gap:8px;flex-wrap:wrap;align-items:center}section{margin-top:16px;padding:20px;border:1px solid #aaa38e;background:#fffaf0;border-radius:8px}section.alert{border-color:#a24424;border-left-width:5px}section p{margin:12px 0 4px}.status{font-size:13px;border:1px solid #a27e3a;border-radius:4px;padding:2px 8px;background:#f5e8c9}.tag{font-size:12px;border-radius:99px;padding:1px 9px;border:1px solid #5b3cc4;color:#5b3cc4;white-space:nowrap}.tag.manual{border-color:#615d51;color:#615d51}.sources{margin:10px 0 0;padding-left:20px;font-size:14px}.sources li{margin:2px 0}.empty{margin-top:16px;padding:20px;border:1px dashed #aaa38e;border-radius:8px;background:#fffaf0}footer{margin-top:28px;border-top:1px solid #aaa38e;padding-top:16px;font-size:14px}@media(max-width:480px){main{padding-top:16px}section{padding:16px}.warning{padding:14px}.row-head{display:block}.badges{margin-top:8px}nav{font-size:14px}}
+</style></head><body><main>
+<nav aria-label="網站導覽"><a href="./" id="back">← 軌島即時地圖</a><div class="langs" role="group" aria-label="語言"><button data-lang="zh" aria-pressed="true">中文</button><button data-lang="en" aria-pressed="false">EN</button><button data-lang="ja" aria-pressed="false">日本語</button></div></nav>
+<p class="eyebrow">RAIL ISLAND · <span id="eyebrow">即時營運整理</span></p><h1 id="h1">全台鐵道即時營運整理</h1>
+<div class="warning" role="note"><strong id="warnTitle">⚠ 這一頁由 AI 依官方原文自動整理</strong><p id="warnBody">每 3 分鐘檢查一次各營運單位的官方公告，有變化才重新整理，仍可能漏看或寫錯。地圖上有列車也不代表實際開行。出發前請點各段的官方原文確認。</p></div>
+<p class="meta" id="meta">讀取中…</p>
+<div id="list" aria-live="polite"></div>
+<footer id="footer">目前監看台鐵、高鐵、台北捷運、新北捷運、阿里山林鐵的官方公告列表，以及災害示警期間的 TDX 通阻公告。高雄捷運、高雄輕軌、台中捷運、桃園機場捷運的官網公告要用瀏覽器執行程式才看得到，這裡還讀不到；沒有列出的系統不代表一定正常。</footer>
+</main><script>
+(() => {
+const T = {
+  zh: { eyebrow: '即時營運整理', h1: '全台鐵道即時營運整理', warnTitle: '⚠ 這一頁由 AI 依官方原文自動整理',
+    warnBody: '每 3 分鐘檢查一次各營運單位的官方公告，有變化才重新整理，仍可能漏看或寫錯。地圖上有列車也不代表實際開行。出發前請點各段的官方原文確認。',
+    footer: '目前監看台鐵、高鐵、台北捷運、新北捷運、阿里山林鐵的官方公告列表，以及災害示警期間的 TDX 通阻公告。高雄捷運、高雄輕軌、台中捷運、桃園機場捷運的官網公告要用瀏覽器執行程式才看得到，這裡還讀不到；沒有列出的系統不代表一定正常。',
+    back: '← 軌島即時地圖', checked: '最近一次檢查官方來源', rev: '這一版整理於', loading: '讀取中…', fail: '暫時讀不到整理結果，請直接查看各營運單位官方公告。',
+    empty: '目前沒有需要注意的營運異常。', ai: 'AI 整理', manual: '人工核對', frozen: 'AI 整理（已暫停更新）', updated: '整理時間', src: '官方原文', history: '你正在看第 {id} 版（{t}）。', latest: '回到最新版', colon: '：' },
+  en: { eyebrow: 'Live service summary', h1: 'Taiwan rail service status', warnTitle: '⚠ This page is summarized by AI from official notices',
+    warnBody: 'Official notices are checked every 3 minutes and re-summarized when they change. It may still miss or misstate something, and trains on the map do not mean they are running. Check the official notice linked in each section before you travel.',
+    footer: 'Currently monitored: official notice lists of TRA, THSR, Taipei Metro, New Taipei Metro and the Alishan Forest Railway, plus TDX service alerts during hazard warnings. Kaohsiung Metro, Kaohsiung LRT, Taichung Metro and Taoyuan Airport MRT publish notices that need a browser to load and cannot be read yet. A system not listed here is not necessarily running normally.',
+    back: '← Rail Island live map', checked: 'Official sources last checked', rev: 'This summary was made', loading: 'Loading…', fail: 'The summary is unavailable right now. Please check each operator\'s official notices.',
+    empty: 'No service disruptions to report right now.', ai: 'AI summary', manual: 'Checked by hand', frozen: 'AI summary (updates paused)', updated: 'Summarized', src: 'Official notices', history: 'You are viewing revision {id} ({t}).', latest: 'Back to latest', colon: ': ' },
+  ja: { eyebrow: '運行状況まとめ', h1: '台湾の鉄道 運行状況まとめ', warnTitle: '⚠ このページは公式発表をもとに AI が自動でまとめています',
+    warnBody: '各事業者の公式発表を 3 分ごとに確認し、変化があればまとめ直します。見落としや誤りの可能性があり、地図に列車が表示されていても運行しているとは限りません。お出かけ前に各項目の公式発表をご確認ください。',
+    footer: '現在確認しているのは、台湾鉄路・台湾高速鉄道・台北メトロ・新北メトロ・阿里山林業鉄路の公式発表一覧と、災害警報中の TDX 運行情報です。高雄メトロ・高雄ライトレール・台中メトロ・桃園空港 MRT の公式発表はブラウザでの実行が必要なため、まだ読み取れません。掲載のない路線が平常運行とは限りません。',
+    back: '← 軌島ライブマップ', checked: '公式発表の最終確認', rev: 'このまとめの作成', loading: '読み込み中…', fail: 'まとめを取得できませんでした。各事業者の公式発表をご確認ください。',
+    empty: '現在お知らせする運行の乱れはありません。', ai: 'AI まとめ', manual: '手動確認', frozen: 'AI まとめ（更新停止中）', updated: 'まとめ', src: '公式発表', history: '第 {id} 版（{t}）を表示しています。', latest: '最新版へ', colon: '：' },
+};
+const sfx = { zh: '', en: 'En', ja: 'Ja' };
+const params = new URLSearchParams(location.search);
+const rev = params.get('rev');
+let lang = params.get('lang');
+if (!T[lang]) { try { lang = localStorage.getItem('railStatusLang'); } catch (e) {} }
+if (!T[lang]) lang = /^ja/.test(navigator.language) ? 'ja' : /^zh/.test(navigator.language) ? 'zh' : (navigator.language ? 'en' : 'zh');
+let data = null;
+const fmt = ms => new Date(ms).toLocaleString(lang === 'zh' ? 'zh-TW' : lang, { timeZone: 'Asia/Taipei', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false });
+const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+function render() {
+  const t = T[lang];
+  document.documentElement.lang = lang === 'zh' ? 'zh-Hant' : lang;
+  for (const id of ['eyebrow', 'h1', 'warnTitle', 'warnBody', 'footer']) document.getElementById(id).textContent = t[id];
+  document.getElementById('back').textContent = t.back;
+  for (const b of document.querySelectorAll('.langs button')) b.setAttribute('aria-pressed', String(b.dataset.lang === lang));
+  const meta = document.getElementById('meta'), list = document.getElementById('list');
+  list.replaceChildren();
+  if (!data) { meta.textContent = t.loading; return; }
+  if (data.error) { meta.textContent = t.fail; return; }
+  meta.replaceChildren();
+  if (rev && data.revision) {
+    meta.append(t.history.replace('{id}', data.revision.id).replace('{t}', fmt(data.revision.at)), ' ');
+    const a = el('a', null, t.latest); a.href = location.pathname + (lang !== 'zh' ? '?lang=' + lang : ''); meta.append(a, el('br'));
+  }
+  if (data.checkedAt) meta.append(`${t.checked}${t.colon}${fmt(data.checkedAt)}`, el('br'));
+  if (data.revision) meta.append(`${t.rev}${t.colon}${fmt(data.revision.at)}`);
+  if (!data.systems.length) { list.append(el('div', 'empty', t.empty)); return; }
+  for (const s of data.systems) {
+    const affected = (s.impacts || []).some(i => i.state !== '正常');
+    const sec = el('section', affected ? 'alert' : null);
+    sec.setAttribute('aria-labelledby', 'sys-' + s.id);
+    const head = el('div', 'row-head');
+    const h2 = el('h2', null, s.label); h2.id = 'sys-' + s.id;
+    const badges = el('div', 'badges');
+    badges.append(el('span', 'status', s['status' + sfx[lang]] || s.status),
+      el('span', 'tag' + (s.basis === 'manual' ? ' manual' : ''), s.basis === 'manual' ? t.manual : s.basis === 'ai-frozen' ? t.frozen : t.ai));
+    head.append(h2, badges);
+    sec.append(head);
+    for (const para of String(s['detail' + sfx[lang]] || s.detail || '').split(/\n+/).filter(Boolean)) sec.append(el('p', null, para));
+    sec.append(el('p', 'meta', `${t.updated}${t.colon}${fmt(s.updatedAt)}`));
+    if (s.sources && s.sources.length) {
+      const ul = el('ul', 'sources');
+      ul.setAttribute('aria-label', t.src);
+      for (const src of s.sources) {
+        const li = el('li'), a = el('a', null, (src.title || new URL(src.url).hostname) + ' ↗');
+        a.href = src.url; a.target = '_blank'; a.rel = 'noopener noreferrer';
+        li.append(a); ul.append(li);
+      }
+      sec.append(el('p', 'meta', t.src), ul);
+    }
+    list.append(sec);
+  }
+}
+async function load() {
+  try {
+    const r = await fetch('/api/rail-status' + (rev ? '?rev=' + encodeURIComponent(rev) : ''), { cache: 'no-store' });
+    const d = await r.json();
+    data = r.ok ? d : { error: true };
+  } catch (e) { if (!data) data = { error: true }; }
+  render();
+}
+for (const b of document.querySelectorAll('.langs button')) b.addEventListener('click', () => {
+  lang = b.dataset.lang;
+  try { localStorage.setItem('railStatusLang', lang); } catch (e) {}
+  render();
+});
+render(); load();
+if (!rev) setInterval(load, 60000);
+})();
+</script></body></html>

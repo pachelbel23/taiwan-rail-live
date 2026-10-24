@@ -41,6 +41,7 @@
     "check-transfer-collapse": "node scripts/verify_transfer_collapse.mjs",
     "check-transfer-live-handoff": "node scripts/verify_transfer_live_handoff.mjs",
     "check-live-activity": "node scripts/verify_live_activity.mjs",
+    "check-rail-ai-status": "node scripts/verify_rail_ai_status.mjs",
     "check-transfer": "npm run check-transfer-departures && npm run check-transfer-connections && npm run check-transfer-pin && npm run check-transfer-transitions && npm run check-transfer-mobile && npm run check-transfer-follow-pin && npm run check-transfer-collapse && npm run check-transfer-live-handoff",
     "build-run-profiles": "node scripts/build_run_profiles.mjs",
     "check-run-profiles": "node scripts/verify_run_profiles_match.mjs",

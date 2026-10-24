@@ -156,6 +156,10 @@ try {
   const edgePut = spawnSync('node', [path.join(wt, 'scripts', 'verify_edge_cache_put.mjs')], { cwd: wt, encoding: 'utf8' });
   process.stdout.write(edgePut.stdout || ''); process.stderr.write(edgePut.stderr || '');
   if (edgePut.status !== 0) fail('邊緣快取寫入守門未過：verify_edge_cache_put');
+  // AI 營運整理（/api/rail-status＋cron）：本機 D1＋假官網＋假 Claude 串流，不呼叫真 API。
+  const railAi = spawnSync('node', [path.join(wt, 'scripts', 'verify_rail_ai_status.mjs')], { cwd: wt, encoding: 'utf8' });
+  process.stdout.write(railAi.stdout || ''); process.stderr.write(railAi.stderr || '');
+  if (railAi.status !== 0) fail('AI 營運整理守門未過（單獨重跑：npm run check-rail-ai-status）');
 
   // 🔴 位置不可移到 strip 之後:check_i18n 的 evaluateConstBlock 拿【註解】當區塊結束標記
   //    （'// 有精選特色'、'// 播放/速度/時間'），strip 把註解刪光之後它會報「找不到內容區塊」
