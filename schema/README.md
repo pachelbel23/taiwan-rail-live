@@ -19,6 +19,7 @@
 | `0013_tra_wait_prev_dep.sql` | ✅ **權威** | 台鐵等站卡的進站軌道版面：替 `tra_wait_bindings` 補 `prev_dep_sec`（上一個停靠站的表定發車時刻），伺服器據此在「上一站→本站」那段每分鐘推一發讓卡片上的車往前挪。**所有環境都要跑，新環境＝`0010` + `0013`。** |
 | `0014_trackside.sql` | 權威 | 軌道邊卡片的 `trackside_bindings`；清單只保存車次、系統、時刻與隔日標記，時間欄位一律毫秒。獨立於既有卡片表，部署新版 Worker 前先套用。 |
 | `0015_rail_ai_status.sql` | 權威 | AI 營運整理（`/api/rail-status`、`rail-status.html`）的五張 `rail_ai_*` 表：偵測狀態、變化事件、官方原文存證、每一版整理、手動鎖定。跟人工彙整完全分開。**部署新版 Worker 前先套用**；沒套時 cron 的整理任務自己吞錯，`/api/rail-status` 回 503，其他功能不受影響。 |
+| `0016_rail_push.sql` | 權威 | AI 營運整理的推播（`scripts/rail_push.mjs`）：`rail_push_devices`（App 的 APNs token、關掉的系統、開著卡片的系統、管理者／測試機旗標）、`rail_push_requests`（每則草稿、核可與送出進度、AI 檢查結論）、`rail_push_recipients`（一般等級推給了誰）。**部署新版 Worker 前先套用**；沒套時 `/api/push/register` 回 503，cron 的推播任務自己吞錯，其他功能不受影響。 |
 
 ## 套用到正式庫
 
@@ -32,6 +33,7 @@ arch -arm64 node ./node_modules/wrangler/bin/wrangler.js d1 execute DELAY_DB --r
 arch -arm64 node ./node_modules/wrangler/bin/wrangler.js d1 execute DELAY_DB --remote --file=schema/0013_tra_wait_prev_dep.sql
 arch -arm64 node ./node_modules/wrangler/bin/wrangler.js d1 execute DELAY_DB --remote --file=schema/0014_trackside.sql
 arch -arm64 node ./node_modules/wrangler/bin/wrangler.js d1 execute DELAY_DB --remote --file=schema/0015_rail_ai_status.sql
+arch -arm64 node ./node_modules/wrangler/bin/wrangler.js d1 execute DELAY_DB --remote --file=schema/0016_rail_push.sql
 ```
 
 （`npx wrangler` 在這台機器是壞的，一律用上面的完整寫法。）
