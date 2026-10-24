@@ -4,6 +4,11 @@
   if (!messages || !messages.en || !messages.ja) return;
 
   Object.assign(messages.en, {
+    "颱風公告補列淡海官網15至30分鐘班距與停駛資訊不一致，提醒先確認實際開行": "Typhoon notice records conflicting official Danhai 15–30-minute headway and suspension information; confirm actual service before travelling.",
+    "薔琵颱風｜10/24 淡海官網班距與停駛資訊不一致": "Typhoon Champi | Oct 24: Danhai headway and suspension information conflict on the official homepage",
+    "淡海官網資訊不一致／環狀、三鶯約 15 分鐘／安坑 30 分鐘": "Conflicting official Danhai information / Circular & Sanying: about 15 min / Ankeng: 30 min",
+    "新北捷運官方首頁跑馬與路線欄位（淡海班距、停駛資訊不一致）": "New Taipei Metro official homepage ticker and line fields (conflicting Danhai headway and suspension information)",
+    "新北捷運 10/23 三線停駛原文（僅供歷史依據，不代替今日最新班距或指定復駛時刻）": "New Taipei Metro Oct 23 three-line suspension notice (historical evidence only; does not replace today’s latest headway text or specify a resumption time)",
     "桃捷普通15分鐘、依航班與人潮彈性加開直達；林鐵列表：沼平、神木24日13時起恢復，本線、祝山25日恢復。": "Airport MRT commuter trains run every 15 minutes, with flexible extra express services according to flights and crowds. The Alishan official list gives Zhaoping/Shenmu resumption from 13:00 on Oct 24 and mainline/Zhushan resumption on Oct 25.",
     "薔琵颱風｜10/24 桃捷普通 15 分鐘，林鐵沼平、神木 13 時起恢復": "Typhoon Champi | Oct 24 Airport MRT commuter trains every 15 minutes; Alishan Zhaoping and Shenmu lines resume from 13:00",
     "桃捷普通車依假日時刻、13時起彈性增開直達；環狀與三鶯約15分鐘、安坑約30分鐘，淡海仍停駛。": "Airport MRT commuter trains follow the holiday timetable, with flexible additional express services from 13:00. Circular and Sanying lines are about every 15 minutes, Ankeng about every 30 minutes; Danhai remains suspended.",
@@ -315,6 +320,11 @@
   });
 
   Object.assign(messages.ja, {
+    "颱風公告補列淡海官網15至30分鐘班距與停駛資訊不一致，提醒先確認實際開行": "台風案内に淡海の公式15〜30分間隔と運休情報の不一致を記録し、利用前の実際の運行確認を案内。",
+    "薔琵颱風｜10/24 淡海官網班距與停駛資訊不一致": "台風チャンピ｜10/24 淡海の公式運転間隔・運休情報が不一致",
+    "淡海官網資訊不一致／環狀、三鶯約 15 分鐘／安坑 30 分鐘": "淡海の公式情報が不一致／環状・三鶯約15分／安坑30分",
+    "新北捷運官方首頁跑馬與路線欄位（淡海班距、停駛資訊不一致）": "新北MRT公式トップページのスクロール案内と路線欄（淡海の間隔・運休情報が不一致）",
+    "新北捷運 10/23 三線停駛原文（僅供歷史依據，不代替今日最新班距或指定復駛時刻）": "新北MRT10/23の3路線運休発表（過去の根拠のみ。本日の最新間隔や具体的な再開時刻の代わりにはしない）",
     "桃捷普通15分鐘、依航班與人潮彈性加開直達；林鐵列表：沼平、神木24日13時起恢復，本線、祝山25日恢復。": "空港MRT普通車は15分間隔、フライト需要と利用状況に応じて直達車を柔軟に増発します。林鉄公式一覧では沼平・神木線は10月24日13:00から、本線・祝山線は10月25日に再開予定です。",
     "薔琵颱風｜10/24 桃捷普通 15 分鐘，林鐵沼平、神木 13 時起恢復": "台風情報｜10月24日 空港MRT普通車は15分間隔、阿里山の沼平・神木線は13:00から運転再開",
     "桃捷普通車依假日時刻、13時起彈性增開直達；環狀與三鶯約15分鐘、安坑約30分鐘，淡海仍停駛。": "空港MRTの普通車は休日ダイヤどおり、13:00から直達車を柔軟に増発します。環状線・三鶯線は約15分間隔、安坑は約30分間隔、淡海は運休継続です。",
