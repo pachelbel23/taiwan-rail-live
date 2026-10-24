@@ -76,6 +76,7 @@
 - `capture()` 的車站 id 以 WeakMap 快取（連同 sys）。
 - 新增 `rendererWanted()`：衛星原貌、地形、漫遊、鎖頭跟車、zoom ≥ 12.5、`?scene=3d`、`?visit` 之一成立才掛算繪器；`render()` 在沒有算繪器時每幀檢查一次，`style.load` 與開機也改成「要用才掛」。`attach()` 等 `physicalLoad` 與 `ensureProfiles()` 都到位才 `createLiveMap`。
 
+- 出貨鏈第四發（`verify_physical_no_overlap` G10／G11／G12 紅）抓到的缺口：測試用 `{ ...T, train: 'TEST-…' }` 複製真車再改車次，記在車上的 `_blockKey`／`_ldKey` 跟著被複製，三輛測試車共用同一把閉塞鍵與漸變鍵。兩個快取改成「車次或系統（與服務日）變了就重算」，產品碼裡唯一的 `{ ...tr, stops }` 複製沒改車次，行為不變。
 - 出貨鏈第一次跑出來的缺口（10/24 上午補）：`attachDue()`＝「該掛還沒掛」，對外的 `loading` 把這一幀算進去（輪詢 loading／renderer 的驗收不會搶在 attach 之前過）；`deferred`＝這個視角不掛、也沒有東西在途；attach 失敗記 `attachFailed`，不再每幀重試，等下一次 `style.load` 或選項呼叫 `attach()`。
 
 `rail-3d/physical/client.js`

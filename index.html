@@ -12076,7 +12076,7 @@ const _blockHold = new Map(), _blockCapped = new Set(), _blockGap = new Map(), _
 const _blockSideSign = new Map();            // 上一幀給過的號誌:相位要黏著,身分一變才不會整組對調
 const _blockSideRole = new Map();            // 已經定案的讓位角色:同一對車沒散開就不重新分配
 let _blockSim = null;
-function blockKeyOf(tr) { return tr._blockKey || (tr._blockKey = (tr.sys || '') + ':' + tr.train); } // 跨系統車次會撞號,不能只用車次;sys 由 applySchedSystems 標定後不再變,鍵記在車上
+function blockKeyOf(tr) { if (tr._bkTrain !== tr.train || tr._bkSys !== tr.sys) { tr._bkTrain = tr.train; tr._bkSys = tr.sys; tr._blockKey = (tr.sys || '') + ':' + tr.train; } return tr._blockKey; } // 跨系統車次會撞號,不能只用車次;sys 由 applySchedSystems 標定後不再變,鍵記在車上
 function blockHoldSec(tr) { if (isMyTrain(tr)) return 0; return _blockHold.size && BLOCK_SYS[tr.sys] ? (_blockHold.get(blockKeyOf(tr)) || 0) : 0; } // 自製車看不到閉塞
 // 前車不在停站區間,卻實質停在這一段的起點或終點停靠站上:規則 (1) 的「停站中」,一樣不算障礙。
 // 停靠站後面接一段被拉長的跑段時,車會從站心以不到 5km/h 慢慢爬出去:6652 在七堵是到開同秒(沒有停站
@@ -28661,7 +28661,7 @@ function liveDelaySec(tr) {
   // 活得比名冊久 ⇒ 不帶日期的話跨日換名冊後今天的同號車會繼承昨天那班的偏移(實測 6.3 公里)。
   // 鍵記在車上(名冊日或系統變了才重算):每幀對全部台鐵車各拼一次字串再雜湊,曾是 updateBlockHolds 最大的單項。
   const day = tr._rday || '';
-  if (tr._ldKey === undefined || tr._ldKeyDay !== day || tr._ldKeySys !== tr.sys) { tr._ldKeyDay = day; tr._ldKeySys = tr.sys; tr._ldKey = day + '|' + (tr.sys || 'tra_sched') + ':' + tr.train; }
+  if (tr._ldKey === undefined || tr._ldKeyDay !== day || tr._ldKeySys !== tr.sys || tr._ldKeyTrain !== tr.train) { tr._ldKeyDay = day; tr._ldKeySys = tr.sys; tr._ldKeyTrain = tr.train; tr._ldKey = day + '|' + (tr.sys || 'tra_sched') + ':' + tr.train; }
   return easedShift(tr._ldKey, target, gateEpoch(_traGateEp, on), TRA_MOTION_PROFILE, snapToken); // 退場也經漸變滑出,不在門檻關閉時提前 return 0
 }
 async function pollLive() {
