@@ -220,5 +220,105 @@ check('資料表不存在回 503', bad.status === 503);
     && prompts.some(p => p.includes('加開 3 列')) && prompts.some(p => p.includes('全線正常營運')));
 }
 
+// ── 18–23：上線前複審抓到的情境，各用一個乾淨的庫 ──
+const TB = Date.parse('2026-10-25T09:00:00+08:00'); // 整點，是 3 的倍數分鐘
+const fresh = () => { const f = openTestDb(); return { ...f, env: { DELAY_DB: f.DELAY_DB, ANTHROPIC_API_KEY: 'test-key' } }; };
+const apiOn = async (e, now, qs = '') => { const r = await railAiStatus(new Request('https://railisland.tw/api/rail-status' + qs), e, now); return { status: r.status, body: await r.json() }; };
+const reply = (status, state, urls = []) => claudeReply({ ...entry(status, state), sourceUrls: urls });
+const savedTra = [...world.lists['tra-list']];
+
+// 18. 只靠 TDX 的系統（高雄輕軌）：示警結束後恢復，也要看得到、改寫成正常；端點失敗不當成公告消失
+{
+  const f = fresh();
+  const stop = { sysLabel: '高雄輕軌', status: 2, title: '輕軌停駛', desc: '因強風全線停駛', lines: ['C'] };
+  const normal = label => ({ sysLabel: label, status: 1, title: '正常營運', desc: '正常營運' });
+  let alertsNow = { tra: [], thsr: [], metro: [stop, normal('高雄捷運')] }, loads = 0, klrt = ['輕軌停駛', '停駛'];
+  const loadAlerts = async () => { loads++; return alertsNow; };
+  world.claudeCalls.length = 0;
+  world.claude = body => body.messages[0].content.includes('系統：klrt') ? reply(...klrt) : reply('正常', '正常');
+  const tick = (min, hazardActive) => railAiScheduled({ scheduledTime: TB + min * 60e3 }, f.env, { hazardActive, loadAlerts, fetch: fakeFetch });
+  await tick(0, true);
+  const latest = () => JSON.parse(f.db.prepare('SELECT systems FROM rail_ai_revisions ORDER BY id DESC LIMIT 1').get().systems);
+  check('示警期間讀 TDX：輕軌停駛排整理並寫成停駛、例行正常的高捷不整理', loads === 1 && latest().klrt?.status === '輕軌停駛' && !latest().krtc);
+  const calls = world.claudeCalls.length;
+  await tick(3, false);
+  check('示警結束、輕軌還沒恢復：照樣讀 TDX，沒變化不叫模型', loads === 2 && world.claudeCalls.length === calls);
+  alertsNow = { tra: [], thsr: [], metro: [normal('高雄輕軌'), normal('高雄捷運')] }; klrt = ['恢復正常', '正常'];
+  await tick(6, false);
+  const p = world.claudeCalls.at(-1).body.messages[0].content;
+  check('輕軌恢復：停駛那筆消失、例行正常出現 → 整理，提示裡有 TDX 的正常營運', loads === 3 && p.includes('系統：klrt') && p.includes('[1] 正常營運') && p.includes('消失') && latest().klrt.status === '恢復正常');
+  check('提示允許把營運單位標示的正常營運當作依據', p.length > 0 && world.claudeCalls.at(-1).body.system.includes('可以當作目前正常營運的依據'));
+  await tick(9, false);
+  check('TDX 系統都恢復正常後，沒有示警就不再讀 TDX', loads === 3);
+  const before = f.db.prepare(`SELECT COUNT(*) n FROM rail_ai_events WHERE system IN ('tra','klrt') AND type IN ('new','removed')`).get().n;
+  alertsNow = { tra: null, thsr: [], metro: [normal('高雄捷運')] };
+  await tick(12, true);
+  check('台鐵端點失敗、輕軌那家查不到：不算公告消失、不排整理', f.db.prepare(`SELECT COUNT(*) n FROM rail_ai_events WHERE system IN ('tra','klrt') AND type IN ('new','removed')`).get().n === before
+    && f.db.prepare(`SELECT COUNT(*) n FROM rail_ai_kv WHERE k LIKE 'pending:%'`).get().n === 0);
+}
+
+// 19. 失敗退避，串流中途出錯的費用照樣算進當月花費
+{
+  const f = fresh();
+  world.claudeCalls.length = 0;
+  world.claude = () => sse([
+    { type: 'message_start', message: { model: 'claude-opus-5-5', usage: { input_tokens: 10000, output_tokens: 1 } } },
+    { type: 'content_block_start', index: 0, content_block: { type: 'text', text: '' } },
+    { type: 'content_block_delta', index: 0, delta: { type: 'text_delta', text: 'x'.repeat(100) } },
+    { type: 'error', error: { type: 'overloaded_error', message: 'Overloaded' } },
+  ]);
+  await railAiDetect(f.env, { now: TB, fetch: fakeFetch }); // 基準：台鐵（加開）、新北（燈號）排整理
+  let r = await railAiSummarize(f.env, { now: TB, fetch: fakeFetch });
+  const spend = () => Number(f.db.prepare(`SELECT v FROM rail_ai_kv WHERE k LIKE 'spend:%'`).get()?.v || 0);
+  check('串流中途出錯：兩個系統都記失敗，已花的費用算進當月', r.failed?.length === 2 && Math.abs(spend() - 2 * (10000 * 4 + 100 * 20) / 1e6) < 1e-9, JSON.stringify(r) + ' spend ' + spend());
+  const n0 = world.claudeCalls.length;
+  r = await railAiSummarize(f.env, { now: TB + 3 * 60e3, fetch: fakeFetch });
+  check('失敗後 3 分鐘：退避中不叫模型', r.skipped === 'nothing pending' && world.claudeCalls.length === n0);
+  r = await railAiSummarize(f.env, { now: TB + 6 * 60e3, fetch: fakeFetch });
+  check('第一次失敗後 6 分鐘：再試', r.failed?.length === 2);
+  await railAiSummarize(f.env, { now: TB + 18 * 60e3, fetch: fakeFetch });
+  const n3 = world.claudeCalls.length;
+  r = await railAiSummarize(f.env, { now: TB + 10 * 3600e3, fetch: fakeFetch });
+  check('連續 3 次失敗：停手，幾小時後也不再叫', r.skipped === 'nothing pending' && world.claudeCalls.length === n3 && n3 === 6);
+  world.lists['tra-list'] = [traItem('ee05', '颱風 列車停駛公告'), ...savedTra];
+  world.articles[traUrl('ee05')] = '<p>停駛</p>';
+  await railAiDetect(f.env, { now: TB + 10 * 3600e3 + 3 * 60e3, fetch: fakeFetch });
+  world.claude = () => reply('部分停駛', '部分停駛', [traUrl('ee05')]);
+  r = await railAiSummarize(f.env, { now: TB + 10 * 3600e3 + 3 * 60e3, fetch: fakeFetch });
+  check('停手後有新公告：只重試有新變化的台鐵，成功後清掉失敗紀錄', r.done?.join() === 'tra' && r.failed.length === 0
+    && f.db.prepare(`SELECT COUNT(*) n FROM rail_ai_kv WHERE k = 'fail:tra'`).get().n === 0 && f.db.prepare(`SELECT COUNT(*) n FROM rail_ai_kv WHERE k = 'fail:ntmetro'`).get().n === 1, JSON.stringify(r));
+  // 21. 卡住的系統與太久沒更新的系統，頁面要提醒
+  let a = await apiOn(f.env, TB + 11 * 3600e3);
+  check('新北一直整理失敗：API 列在 lagging，附官網網址', a.body.lagging.length === 1 && a.body.lagging[0].id === 'ntmetro' && a.body.lagging[0].url === 'https://www.ntmetro.com.tw/', JSON.stringify(a.body.lagging));
+  check('台鐵剛整理過：不標太久沒更新', a.body.systems.find(x => x.id === 'tra')?.stale === false);
+  a = await apiOn(f.env, TB + 23 * 3600e3);
+  check('台鐵停駛 12 小時沒有新整理：標 stale', a.body.systems.find(x => x.id === 'tra')?.stale === true);
+  a = await apiOn(f.env, TB + 11 * 3600e3, '?rev=1');
+  check('看舊版不列 lagging', a.body.lagging.length === 0);
+}
+
+// 20、22、23. 抓不到的內文會補抓；被擠下去又回來的舊公告不算新；模型只能引用餵給它的網址
+{
+  const f = fresh();
+  world.lists['tra-list'] = [traItem('dd01', '颱風 停駛公告'), ...savedTra];
+  delete world.articles[traUrl('dd01')];
+  await railAiDetect(f.env, { now: TB, fetch: fakeFetch });
+  check('內文抓不到：先存標題、內文空著', f.db.prepare('SELECT text FROM rail_ai_articles WHERE url = ?').get(traUrl('dd01'))?.text === null);
+  f.db.prepare(`DELETE FROM rail_ai_kv WHERE k LIKE 'pending:%'`).run();
+  world.articles[traUrl('dd01')] = '<p>補到的內文：全線停駛</p>';
+  let d = await railAiDetect(f.env, { now: TB + 3 * 60e3, fetch: fakeFetch });
+  check('下一輪補抓到內文：存起來並排整理', d.dirty.includes('tra') && f.db.prepare('SELECT text FROM rail_ai_articles WHERE url = ?').get(traUrl('dd01')).text.includes('補到的內文'), JSON.stringify(d));
+  world.claude = () => reply('停駛', '停駛', [traUrl('dd01'), 'https://evil.example/fake']);
+  await railAiSummarize(f.env, { now: TB + 3 * 60e3, fetch: fakeFetch });
+  const sys = JSON.parse(f.db.prepare('SELECT systems FROM rail_ai_revisions ORDER BY id DESC LIMIT 1').get().systems);
+  check('模型引用沒餵給它的網址會被濾掉', JSON.stringify(sys.tra.sourceUrls) === JSON.stringify([traUrl('dd01')]), JSON.stringify(sys.tra.sourceUrls));
+  world.lists['tra-list'] = [...savedTra];
+  await railAiDetect(f.env, { now: TB + 6 * 60e3, fetch: fakeFetch });
+  world.lists['tra-list'] = [traItem('dd01', '颱風 停駛公告'), ...savedTra];
+  d = await railAiDetect(f.env, { now: TB + 9 * 60e3, fetch: fakeFetch });
+  check('被擠下去又回來的舊公告：不算新公告、不排整理', !d.dirty.includes('tra') && d.relevant === 0, JSON.stringify(d));
+}
+world.lists['tra-list'] = savedTra;
+
 console.log(fails ? `\n${fails} 項失敗` : '\n全部通過');
 process.exit(fails ? 1 : 0);

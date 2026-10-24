@@ -8475,20 +8475,20 @@ export default {
       // 本機直接呼叫 default.scheduled 若沒帶 ctx，catch 已吞住 rejection，帳本仍照原路徑完成。
       if (ctx && typeof ctx.waitUntil === 'function') ctx.waitUntil(hazardTask);
       // AI 營運整理（scripts/rail_ai_status.mjs）：每 3 分鐘掃官方公告，有營運相關變化才呼叫 Claude。
-      // 等災害監看跑完才起跑：NCDR 有生效示警時，三個通阻端點的記憶體快取剛被它叫醒，這時才順手讀 TDX 公告，
-      // 不為了整理多打 TDX（端點成本按次數計點）。自帶 .catch ⇒ 不可能改變 scheduled 的成功/失敗契約(同 hazardTask)。
-      const railAiTask = hazardTask.then(async h => {
-        let alerts = null;
-        if (h && h.announcements) {
-          const base = 'https://railisland.tw';
-          alerts = {};
+      // 等災害監看跑完才起跑：NCDR 有生效示警時三個通阻端點的記憶體快取剛被它叫醒，這時讀 TDX 公告不多打上游
+      // （端點成本按次數計點）；什麼時候真的讀由 railAiScheduled 決定，只在每 3 分鐘那一輪。
+      // 自帶 .catch ⇒ 不可能改變 scheduled 的成功/失敗契約(同 hazardTask)。
+      const railAiTask = hazardTask.then(h => railAiScheduled(event, env, {
+        hazardActive: !!(h && h.announcements),
+        loadAlerts: async () => {
+          const base = 'https://railisland.tw', alerts = {};
           for (const [k, fn] of [['tra', traAlert], ['thsr', thsrAlert], ['metro', metroAlert]]) {
             try { alerts[k] = ((await (await fn(new Request(base + '/api/' + k + '-alert'), env)).json()) || {}).alerts || null; }
             catch (e) { alerts[k] = null; }
           }
-        }
-        return railAiScheduled(event, env, { alerts });
-      }).catch(e => {
+          return alerts;
+        },
+      })).catch(e => {
         console.error('[cron rail-ai] 失敗:', (e && e.stack) || String(e));
         return { error: String((e && e.message) || e) };
       });
