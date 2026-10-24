@@ -122,7 +122,7 @@
 ## 五、尚未做、留給下一步判斷
 
 - **3D 在 4× 降速只有 33 fps**，瓶頸是 MapLibre 的繪製（建築擠出＋地形＋傾斜 60°）。可做的是「省電模式再降 dpr 到 1.5、或在 3D 關掉建築層」這類畫質取捨，需要使用者看過畫面再決定。
-- **自動降級（對應 App 的中低階模式）**：8× 量到 2D 可用、3D 不可用（10–14 fps）。做法可以比照 App 的建議卡：偵測到「立體列車開著、連續幾秒 rAF 幀距中位數 > 60 ms、沒在互動」就把立體列車切回平面並吐司「這台電腦跑立體列車太吃力，已改用平面；可在觀看設定重新開啟」。只影響這次開啟（不改 `ri-trains-enabled` 的使用者設定）。這會改變使用者看到的畫面，等使用者決定要不要做、要不要用更保守的門檻。既有的 30 fps 省電模式對 2D 幫助不大（8× 下 2D 瓶頸是每幀的工作量，不是幀率上限），不建議拿它當兜底。
+- **自動降級（對應 App 的中低階模式）**：8× 量到 2D 可用、3D 不可用（10–14 fps）。做法可以比照 App 的建議卡：偵測到「立體列車開著、連續幾秒 rAF 幀距中位數 > 60 ms、沒在互動」就把立體列車切回平面並吐司「這台電腦跑立體列車太吃力，已改用平面；可在觀看設定重新開啟」。只影響這次開啟（不改 `ri-trains-enabled` 的使用者設定）。這會改變使用者看到的畫面，等使用者決定要不要做、要不要用更保守的門檻。既有的 30 fps 省電模式對 2D 幫助不大（8× 下 2D 瓶頸是每幀的工作量，不是幀率上限），不建議拿它當兜底。（10/24 18:02 已隨 v1024k 出貨，見第六節）
 - ~~`verify_easedshift_key` 白天再補跑一次~~：10/24 09:43 已補跑，K1–K7 全 ✓。
 
 ## 六、出貨紀錄
@@ -130,6 +130,8 @@
 - 10/24 11:52 以 main `9d1f821c`（BUILD **v1024e**）`npm run ship-web` 出貨成功：railisland.tw 逐 byte＝stripped(9d1f821c)，1,887,448 bytes，API 200；升版前正式站是 `7d9bcfa9`（v1024d）。原本 go 的是 v1024b，因 main 同日已出到 v1024d 而改號。
 - 出貨鏈前四發分別被擋在：樹沒有 `node_modules`（符號連結主 repo 的即可）、別條線的出貨鎖（08:48 那發跑到 10:01）、近期更新缺 en／ja、i18n 瀏覽器驗收的 `settle3d`（首屏延後掛載）、實體股道互穿閘門（鍵快取被展開複製帶走）。每一發 15～70 分鐘。
 - 出貨後 curl 確認：`const BUILD = 'v1024e'`、`rail-3d/physical/client.js` 含 `ensureProfiles`、`rail-3d.js` 含 `attachDue`／`deferred`／`rendererWanted`、更新紀錄第一條是 webperf1024。
+- 10/24 18:02 以 main `1ec2667b`（BUILD **v1024k**）`npm run ship-web -- --ref 1ec2667b` 出貨成功：railisland.tw 逐 byte＝stripped(1ec2667b)，1,892,141 bytes，API 200；升版前正式站是 `60456cc1`（v1024j）。內容是以 main 60456cc1 為底 `--no-ff` 併入 `fix/horizon-clip-1024` 52d49e9d（傾斜視角：地平線後的站與線不畫、起伏地形的示意線改由 3D 層畫不進地形 RTT＝「中間一圈」的根因、遠景地形重建節流）與 `claude/web-3d-autodegrade-1024` f8ba860e（第五節留下的 3D 自動降級：只關立體列車、不動視角與 3D 建築）。go 的是 v1024i，因 main 同日已出到 v1024j 而改號；出貨鏈一發過，但先等另一條線 `--full` 出貨的鎖 45 分鐘（15:36–16:48）。
+- 出貨後確認：`const BUILD = 'v1024k'`、更新紀錄前兩條是 horizonclip1024／auto3d1024；用地平線線的截圖腳本（`output/perf-web/ringab-prod.mjs`，BASE=https://railisland.tw/）拍使用者視角（起伏地形、pitch 62、暗色、3D 建築）：profileKeys 47、glLineKeys 0、farMissingSamples 0、零 pageerror，畫面無弧、地平線上方無站名。
 
 ## 七、怎麼重跑
 
