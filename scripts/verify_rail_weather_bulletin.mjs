@@ -20,7 +20,7 @@ assert.equal(source.serviceDate, '2026-10-24');
 assert.equal(source.displayFrom, '2026-10-24T00:00:00+08:00');
 assert.equal(source.expiresAt, '2026-10-25T00:00:00+08:00');
 assert.ok(Date.parse(source.checkedAt) >= Date.parse(source.displayFrom));
-assert.equal(source.title, "薔琵颱風｜10/24 台鐵東部搶修，桃捷彈性直達、新北班距調整");
+assert.equal(source.title, "薔琵颱風｜10/24 桃捷普通 15 分鐘，林鐵沼平、神木 13 時起恢復");
 assert.doesNotMatch(railWeatherNotice(when).descI18n.en, /[\u3400-\u9fff]/);
 assert.ok(railWeatherNotice(when).descI18n.ja.includes('10月24日'));
 assert.equal(source.systems.length, 9);
@@ -31,7 +31,7 @@ for (const system of source.systems) {
 const TRA_UPDATED_FACTS = {
   "schema": 1,
   "serviceDate": "2026-10-24",
-  "revision": "20261024-1356",
+  "revision": "20261024-1508",
   "newPlanTrainNumbers": [
     "432",
     "273",
@@ -590,7 +590,7 @@ function assertTRAUpdatedFacts(text, language, {context = 'TRA'} = {}) {
 const TRTC_NOON_FACTS = {
   "schema": 1,
   "serviceDate": "2026-10-24",
-  "revision": "20261024-1356",
+  "revision": "20261024-1508",
   "sourceUrl": "https://www.metro.taipei/News_Content.aspx?n=30CCEFD2A45592BF&sms=72544237BBE4C5F6&s=07211C1B52E9F4FE",
   "sourceCheckedAt": "2026-10-24T12:32:41+08:00",
   "rawEvidence": "/private/tmp/rail-weather-trtc-noon-1024-1232-source.json",
@@ -988,6 +988,7 @@ const TRTC_NOON_APPROVED_SUPPLEMENTAL = {
     "Taipei Metro's Oct 23 '17:10' suspension-section notice (historical reference only)"
   ],
   "ja": [
+    "新しい発表に風速条件の再掲がないことを条件の撤回とは扱いません。",
     "台風情報｜10/24 台湾鉄道の北廻線・宜蘭線は復旧作業中、台北MRTは段階的に間隔短縮",
     "台北MRTは5路線を8分～9分30秒間隔へ段階的に短縮し、3つの重複区間は約4分30秒間隔と発表。台湾鉄道東部の復旧作業・運行変更・個別の運休情報も引き続き掲載。",
     "段階的に8分～9分30秒間隔、重複区間は約4分30秒",
@@ -1036,9 +1037,9 @@ function assertTRTCNoonFacts(text, language = 'zh-TW', { context = 'TRTC noon op
 
 const NT_TYMC_FACTS = {
   "schema": 1,
-  "revision": "20261024-1356",
+  "revision": "20261024-1508",
   "serviceDate": "2026-10-24",
-  "checkedAt": "2026-10-24T13:56:31+08:00",
+  "checkedAt": "2026-10-24T15:08:38+08:00",
   "expiresAt": "2026-10-25T00:00:00+08:00",
   "rawEvidence": "/private/tmp/rail-weather-ntmetro-ankeng-readonly-1024-1400.json",
   "sourceEvidenceFiles": [
@@ -1049,10 +1050,14 @@ const NT_TYMC_FACTS = {
     {
       "path": "/private/tmp/rail-weather-nt-tymc-new-source-1024-1345.json",
       "sha256": "4adf9f1a8cfe8a896809cf9aa6e968ca8c3d91eded1fca6a66e6befdf2db8718"
+    },
+    {
+      "path": "/private/tmp/rail-weather-tymc-afr-new-notices-1024-1505-source.json",
+      "sha256": "3dec2087ff254ad646c6edf7c76516ba117ab87e008a341d91003f71ca120090"
     }
   ],
-  "canonicalDraft": "/private/tmp/rail-weather-nt-tymc-1024-1356-bulletin-draft.json",
-  "canonicalDraftSHA256": "560fbd94e268e53b39ebb77c4fbbc33e7a23d6ac979f81fc71678e7d57eacb1b",
+  "canonicalDraft": "/private/tmp/rail-weather-tymc-afr-1024-1508-bulletin-draft.json",
+  "canonicalDraftSHA256": "03133059d4aaf8e4f4f0fc6859ffc678dbdfcb02a26ff3a74990984cfa457693",
   "checks": [
     {
       "id": "nt-circular-and-sanying-approximately-fifteen",
@@ -1265,142 +1270,157 @@ const NT_TYMC_FACTS = {
       }
     },
     {
-      "id": "tymc-displayed-notice-timestamp-and-today",
+      "id": "tymc-headline-date-and-unconfirmed-exact-time",
       "system": "tymc",
       "fragments": {
         "zh-TW": [
-          "桃捷本次公告頁面顯示 10/24 13:37:40，公布今日營運模式："
+          "桃捷 10/24 最新公告標題標示「14:00」，頁面日期為 10/24，未確認精確發布或生效時刻，不能把標題時間當成直達車開始或全面復駛時間。"
         ],
         "en": [
-          "The notice displayed at 13:37:40 on Oct 24 gives today's plan:"
+          "Taoyuan Metro's latest Oct 24 notice has '14:00' in its headline and an Oct 24 page date. The exact publication or effective time is unconfirmed; the headline time is not a confirmed start or full resumption time for express services."
         ],
         "ja": [
-          "10月24日13:37:40と表示された桃園MRTの発表による本日の運行計画では、"
+          "桃園MRTの10月24日付の最新発表は、見出しに「14:00」、ページ日付に10月24日と表示されています。正確な発表時刻や適用開始時刻は未確認で、見出しの時刻を直達車の開始時刻や全面再開時刻とはしていません。"
         ]
       }
     },
     {
-      "id": "tymc-all-commuter-trains-normal-holiday-timetable",
+      "id": "tymc-commuter-current-fifteen-minute-headway",
       "system": "tymc",
       "fragments": {
         "zh-TW": [
-          "機場捷運普通車皆依照假日時刻表發車、維持正常營運；"
+          "今日普通車維持 15 分鐘班距，"
         ],
         "en": [
-          "all Airport MRT commuter trains operate normally to the holiday timetable,"
+          "Today, commuter trains maintain 15-minute headways,"
         ],
         "ja": [
-          "普通車はすべて休日ダイヤどおりに正常運行し、"
+          "本日の普通車は15分間隔を維持し、"
         ]
       }
     },
     {
-      "id": "tymc-flexible-crowd-dependent-additional-express-from-thirteen",
+      "id": "tymc-flight-and-crowd-dependent-flexible-express",
       "system": "tymc",
       "fragments": {
         "zh-TW": [
-          "自 13 時起視人潮狀況彈性加開直達車班次疏運。"
+          "並依機場航班需求、視人潮狀況彈性加開直達車班次；"
         ],
         "en": [
-          "and additional express services are provided flexibly according to crowds from 13:00."
+          "with additional express services provided flexibly according to airport flight demand and crowds."
         ],
         "ja": [
-          "13:00から利用者の状況に応じて直達車を柔軟に増発します。"
+          "空港のフライト需要と利用者の状況に応じて直達車を柔軟に増発します。"
         ]
       }
     },
     {
-      "id": "tymc-actual-wind-dependent-mode-and-headway",
+      "id": "tymc-a1-a3-all-day-checkin-and-baggage-suspension",
       "system": "tymc",
       "fragments": {
         "zh-TW": [
-          "颱風期間仍依實際風速影響調整營運模式及班距。"
+          "A1 台北車站、A3 新北產業園區站預辦登機及行李託運服務全天暫停。"
         ],
         "en": [
-          "Operating patterns and headways remain subject to actual wind speeds during the typhoon."
+          "In-town check-in and baggage services at A1 Taipei Main Station and A3 New Taipei Industrial Park are suspended all day."
         ],
         "ja": [
-          "台風の期間中は引き続き実際の風速に応じて運行形態や運転間隔を調整します。"
+          "A1台北車站・A3新北産業園区の市内チェックインと受託手荷物受付は終日休止です。"
         ]
       }
     },
     {
-      "id": "tymc-no-fixed-express-headway-total-extra-count-or-normal-speed-time",
+      "id": "tymc-no-new-express-start-time",
       "system": "tymc",
       "fragments": {
         "zh-TW": [
-          "新稿未列固定直達車班距、增開班次總數或恢復正常速度時間，"
+          "新稿未重列直達車加開起始時刻，"
         ],
         "en": [
-          "The new notice gives no fixed express headway, total number of additional services or time for a return to normal speed."
+          "The new notice does not repeat an express-service start time"
         ],
         "ja": [
-          "新しい発表には直達車の固定運転間隔、増発本数の合計、通常速度に戻す時刻は記載されていません。"
+          "新しい発表には直達車の増発開始時刻の再掲、"
         ]
       }
     },
     {
-      "id": "tymc-flexible-extra-not-full-normal-express-timetable",
+      "id": "tymc-no-fixed-express-headway-count-or-normal-speed-time",
+      "system": "tymc",
+      "fragments": {
+        "zh-TW": [
+          "也未列固定直達車班距、增開班次總數或恢復正常速度時間，"
+        ],
+        "en": [
+          "or give a fixed express headway, total number of additional services or time for a return to normal speed."
+        ],
+        "ja": [
+          "固定運転間隔、増発本数の合計、通常速度に戻す時刻はありません。"
+        ]
+      }
+    },
+    {
+      "id": "tymc-not-full-normal-express-timetable",
       "system": "tymc",
       "fragments": {
         "zh-TW": [
           "不能把彈性加開寫成直達車已全面依正常班表運行。"
         ],
         "en": [
-          "Flexible additional express services do not mean that the full normal express timetable has resumed."
+          "Flexible additions do not mean that the full normal express timetable has resumed."
         ],
         "ja": [
-          "柔軟な増発を、直達車が通常ダイヤに全面復帰したという意味では扱っていません。"
+          "柔軟な増発を、直達車の通常ダイヤへの全面復帰とはしていません。"
         ]
       }
     },
     {
-      "id": "tymc-earlier-fifteen-and-full-day-cancellations-historical-not-latest",
+      "id": "tymc-previous-133740-holiday-from13-wind-plan",
       "system": "tymc",
       "fragments": {
         "zh-TW": [
-          "先前 10/24 模式所列普通車每 15 分鐘及直達、加班車全天取消，僅供新稿前方案參考，不再當作最新列車方案；"
+          "先前頁面顯示 10/24 13:37:40 的公告曾寫普通車依假日時刻、自 13 時起視人潮彈性加開直達，並依實際風速調整營運模式及班距；"
         ],
         "en": [
-          "The earlier Oct 24 plan of 15-minute commuter headways and all-day cancellation of express and extra services is retained only as the plan before this new notice, not as the latest train plan."
+          "The earlier notice displaying 13:37:40 on Oct 24 said commuter trains followed the holiday timetable, express services would be added flexibly according to crowds from 13:00, and operating patterns and headways would be adjusted to actual wind speeds."
         ],
         "ja": [
-          "先の10月24日計画にあった普通車15分間隔、直達車と増発列車の終日運休は、新しい発表より前の計画としてのみ残し、現在の最新の列車運行計画とはしていません。"
+          "先に10月24日13:37:40と表示された発表は、普通車を休日ダイヤどおりとし、13:00から利用状況に応じて直達車を柔軟に増発し、実際の風速に応じて運行形態や運転間隔を調整するとしていました。"
         ]
       }
     },
     {
-      "id": "tymc-earlier-a1-a3-checkin-and-baggage-full-day-suspension",
+      "id": "tymc-old-holiday-not-replace15-and-wind-omission-not-revocation",
       "system": "tymc",
       "fragments": {
         "zh-TW": [
-          "該先前公告亦明列 A1 台北車站、A3 新北產業園區站預辦登機及行李託運全天暫停，"
+          "僅作先前方案參考，不能把其假日時刻概括取代新稿明列的 15 分鐘，亦不把最新稿省略風速條件當成撤銷。"
         ],
         "en": [
-          "That earlier notice also suspended in-town check-in and baggage services at A1 Taipei Main Station and A3 New Taipei Industrial Park for the whole day."
+          "It is retained as the previous plan only: its general holiday-timetable wording does not replace the latest explicit 15-minute headway, and omission of the wind conditions from the new notice does not establish their withdrawal."
         ],
         "ja": [
-          "その先の発表は、A1台北車站・A3新北産業園区の市内チェックインと受託手荷物受付も終日休止としていました。"
+          "これは前の計画としてのみ残し、休日ダイヤという一般的な表現で最新の15分間隔を置き換えず、新しい発表に風速条件の再掲がないことを条件の撤回とは扱いません。"
         ]
       }
     },
     {
-      "id": "tymc-checkin-and-baggage-withdrawal-or-restoration-not-announced",
+      "id": "tymc-earlier-all-day-express-cancellation-historical",
       "system": "tymc",
       "fragments": {
         "zh-TW": [
-          "新稿未說明撤銷或恢復，不能推定這些服務已恢復。"
+          "更早 10/23 公布的 10/24 直達及加班車全天取消模式僅供歷史參考，不是最新列車方案。"
         ],
         "en": [
-          "The new notice does not say that these suspensions are withdrawn or that the services have resumed."
+          "The still earlier Oct 24 plan, published on Oct 23, cancelling express and extra services all day is historical only, not the latest train plan."
         ],
         "ja": [
-          "新しい発表には、この休止の撤回やサービス再開は記載されていないため、再開したとは推定できません。"
+          "さらに前の10月23日発表の10月24日直達車・増発列車終日運休は、過去の計画であり、最新の列車運行計画ではありません。"
         ]
       }
     },
     {
-      "id": "tymc-oct23-slow-article-history-last-success-0151",
+      "id": "tymc-old-slow-history-last-full-success0151",
       "system": "tymc",
       "fragments": {
         "zh-TW": [
@@ -1415,32 +1435,17 @@ const NT_TYMC_FACTS = {
       }
     },
     {
-      "id": "tymc-old-slow-link-redirects-not-successful-original-read",
+      "id": "tymc-historical-redirect-not-recovery-or-speed-proof",
       "system": "tymc",
       "fragments": {
         "zh-TW": [
-          "本輪原連結仍轉至首頁，"
+          "原連結最近核對仍轉至首頁，不能因轉址推定已恢復或保證今日正常速度。"
         ],
         "en": [
-          "Its original link still redirects to the homepage in this check."
+          "Its original link still redirected to the homepage in the most recent check. The redirect does not establish recovery or guarantee normal speed today."
         ],
         "ja": [
-          "元のリンクは今回もトップページへ転送されており、"
-        ]
-      }
-    },
-    {
-      "id": "tymc-redirect-not-recovery-or-normal-speed-guarantee",
-      "system": "tymc",
-      "fragments": {
-        "zh-TW": [
-          "不能因轉址推定已恢復或保證今日正常速度。"
-        ],
-        "en": [
-          "The redirect does not establish recovery or guarantee normal speed today."
-        ],
-        "ja": [
-          "転送は復旧を意味せず、本日の通常速度を保証しません。"
+          "元のリンクは直近の確認でもトップページへ転送されており、転送は復旧を意味せず、本日の通常速度を保証しません。"
         ]
       }
     }
@@ -1463,15 +1468,22 @@ const NT_TYMC_FACTS = {
     "ankengThirtyIsNewExplicitNotYesterdayCarryover": true
   },
   "tymc": {
-    "noticeTimestamp": "2026-10-24 13:37:40",
-    "timestampIsDisplayedNoticeTime": true,
-    "sourceCheckedAt": "2026-10-24T13:44:35+08:00",
-    "commuterHolidayTimetable": true,
-    "flexibleExtraExpressFromHour": 13,
+    "noticeTitleTime": "14:00",
+    "titleTimeDoesNotEstablishExactPublicationOrStart": true,
+    "pageDate": "2026-10-24",
+    "commuterHeadwayMinutes": 15,
+    "flightDemandDependentExtraExpress": true,
     "crowdDependentExtraExpress": true,
-    "windDependentModeAndHeadway": true,
+    "checkInBaggageAllDaySuspended": true,
+    "checkInBaggageStations": [
+      "A1",
+      "A3"
+    ],
+    "noNewExpressStartTimeGiven": true,
     "noFixedExpressHeadwayOrFullResumptionClaim": true,
-    "checkInBaggageResumptionUnconfirmed": true
+    "previousHolidayAnd1300HistoricalOnly": true,
+    "windConditionOmissionNotWithdrawal": true,
+    "oldSlowLinkRedirectNotFullRecheck": true
   }
 };
 
@@ -1571,51 +1583,73 @@ const NT_TYMC_CONTRADICTIONS = {
   ]
 };
 
+
+const J_TYMC_ADDITIONAL_CONTRADICTIONS = {
+ 'zh-TW': [/14:00.{0,18}(?:就是|確定為|即為).{0,8}(?:精確發布|生效|開始)/u, /普通車.{0,24}(?:目前|今日|現在|最新).{0,20}(?:假日時刻|休日班表)/u, /(?:今日|現在|最新).{0,15}普通車.{0,20}(?:假日時刻|休日班表)/u, /普通車.{0,20}(?:班距|每|維持).{0,10}(?:10|20|30)分鐘/u, /(?:桃捷|直達車).{0,25}(?:確定|精確|正式|自)14:00.{0,20}(?:開始|生效|復駛)/u, /(?:航班|人潮).{0,20}(?:無關|不影響|不需|不依)/u],
+ en: [/14:00.{0,15}(?:istheexact|provestheexact).{0,12}(?:publication|start|effective)/iu, /commuter(?:trains|services)?.{0,25}(?:now|today|currently|latest).{0,20}(?:holidaytimetable|holidayschedule)/iu, /(?:today|current|latest).{0,15}commuter(?:trains|services)?.{0,25}holiday/iu, /commuter(?:trains|services)?.{0,25}(?:every|headways|intervals).{0,10}(?:10|20|30)-?minutes?/iu, /(?:AirportMRT|express(?:trains|services)).{0,30}(?:exactly|effectivefrom|startsat|resumedat)14:00/iu, /(?:flightdemand|crowds).{0,25}(?:irrelevant|doesnotaffect|notrequired)/iu],
+ ja: [/14:00.{0,15}(?:正確な発表|適用開始|運転開始).{0,8}(?:です|である|を示す)/u, /(?:本日|現在|最新).{0,15}普通車.{0,20}休日ダイヤ/u, /普通車.{0,20}(?:現在|本日|最新).{0,20}休日ダイヤ/u, /普通車.{0,20}(?:10|20|30)分間隔/u, /(?:直達車|桃園MRT).{0,20}14:00.{0,20}(?:確定|正式開始|全面再開|適用開始です)/u, /(?:フライト需要|利用状況).{0,20}(?:関係なく|無関係|影響しない)/u]
+};
+
 const NT_TYMC_APPROVED_SUPPLEMENTAL = {
   "zh-TW": [
-    "薔琵颱風｜10/24 台鐵東部搶修，桃捷彈性直達、新北班距調整",
-    "台鐵北迴、宜蘭線仍搶修，15時為預估；保留東部停駛及截短車次。北捷五線逐步加密至8分至9分30秒、三重疊段約4分30秒。桃捷普通車依假日時刻正常營運、13時起依人潮彈性加開直達。新北環狀、三鶯約15分，安坑約30分，三線依運量調整、降速或暫停；淡海仍停駛，不推定精確復駛時刻或全面正常班表。",
-    "桃捷普通車依假日時刻、13時起彈性增開直達；環狀與三鶯約15分鐘、安坑約30分鐘，淡海仍停駛。",
-    "桃園機場捷運",
-    "普通車依假日時刻／13 時起彈性增開直達車",
-    "桃捷 10/24 公告（頁面顯示 13:37:40；普通車假日時刻、13 時起彈性增開直達）",
-    "桃捷先前 10/24 營運模式（10/23 公布；列車方案僅供新稿前參考，預辦登機與託運停辦未確認撤銷）",
-    "桃捷 10/23 21:55:16 慢速歷史原文（目前轉址，最近成功 10/24 01:51）",
+    "薔琵颱風｜10/24 桃捷普通 15 分鐘，林鐵沼平、神木 13 時起恢復",
+    "桃捷10/24「14:00」標題稿明列普通車15分鐘、依機場航班需求及人潮彈性加開直達，A1/A3預辦登機及行李託運全天停辦。林鐵官方列表標題列沼平、神木24日13時起恢復，本線、祝山25日恢復；新單篇全文、班次及附加條件尚未取得。台鐵東部15時仍是11:30原文預估，尚非實際復通確認；北捷逐步加密及新北15/15/30分方案保留。",
+    "桃捷普通15分鐘、依航班與人潮彈性加開直達；林鐵列表：沼平、神木24日13時起恢復，本線、祝山25日恢復。",
     "新北捷運（環狀、淡海、安坑、三鶯）",
     "環狀、三鶯約 15 分鐘／安坑約 30 分鐘／淡海停駛",
     "新北捷運官方首頁最新跑馬（環狀、三鶯約 15 分鐘；安坑約 30 分鐘）",
     "新北捷運 10/23 三線停駛原文（僅供歷史依據，不代表最新三鶯、安坑仍停駛）",
-    "新北捷運官方公開粉專（本輪登入頁，最近公開成功 10/24 07:15）"
+    "新北捷運官方公開粉專（本輪登入頁，最近公開成功 10/24 07:15）",
+    "桃園機場捷運",
+    "普通車 15 分鐘／依航班與人潮彈性增開直達",
+    "桃捷 10/24「14:00」營運模式（標題時間；普通 15 分鐘、彈性加開直達）",
+    "桃捷先前 10/24 公告（頁面顯示 13:37:40；假日時刻與 13 時起彈性直達僅供歷史參考）",
+    "桃捷更早 10/24 模式（10/23 公布；直達及加班車全天取消僅供歷史參考）",
+    "桃捷 10/23 21:55:16 慢速歷史原文（目前轉址，最近成功 10/24 01:51）",
+    "阿里山林鐵",
+    "沼平、神木 10/24 13 時起恢復／本線、祝山 10/25 恢復（列表標題）",
+    "林鐵官方最新列表（10/24 新標題；僅確認路線與恢復日期時段）",
+    "林鐵處 10/22 19:00 更新舊原文（僅歷史，10/24 15:05 成功重讀）"
   ],
   "en": [
-    "Typhoon Champi | Oct 24 TRA eastern repairs; flexible extra Airport MRT express services and New Taipei headway changes",
-    "Repairs continue on TRA's North-Link and Yilan lines; 15:00 is an estimate, with eastern cancellations and shortened routes retained. Taipei Metro is gradually reducing headways on five lines to 8–9 minutes 30 seconds, with three overlapping sections about every 4 minutes 30 seconds. Airport MRT commuter trains follow the normal holiday timetable, with flexible additional express services according to crowds from 13:00. New Taipei Metro's Circular and Sanying lines are about every 15 minutes, and Ankeng LRT about every 30 minutes, with headway changes, reduced speed or suspension according to demand on all three lines. Danhai remains suspended. Do not infer an exact resumption time or a return to full normal timetables.",
-    "Airport MRT commuter trains follow the holiday timetable, with flexible additional express services from 13:00. Circular and Sanying lines are about every 15 minutes, Ankeng about every 30 minutes; Danhai remains suspended.",
-    "桃園機場捷運",
-    "普通車依假日時刻／13 時起彈性增開直達車",
-    "桃捷 10/24 公告（頁面顯示 13:37:40；普通車假日時刻、13 時起彈性增開直達）",
-    "桃捷先前 10/24 營運模式（10/23 公布；列車方案僅供新稿前參考，預辦登機與託運停辦未確認撤銷）",
-    "桃捷 10/23 21:55:16 慢速歷史原文（目前轉址，最近成功 10/24 01:51）",
+    "Typhoon Champi | Oct 24 Airport MRT commuter trains every 15 minutes; Alishan Zhaoping and Shenmu lines resume from 13:00",
+    "Taoyuan Metro's Oct 24 notice headed '14:00' specifies 15-minute commuter headways and flexible extra express services according to airport flight demand and crowds; A1/A3 in-town check-in and baggage services remain closed all day. The Alishan official list headline gives Zhaoping and Shenmu resumption from 13:00 on Oct 24, and mainline/Zhushan resumption on Oct 25; the new article's full text, train services and additional conditions are unconfirmed. TRA's 15:00 eastern restoration remains an estimate from its 11:30 notice, not confirmation of actual resumption. Taipei Metro's gradual headway reductions and New Taipei's 15/15/30-minute plans are retained.",
+    "Airport MRT commuter trains run every 15 minutes, with flexible extra express services according to flights and crowds. The Alishan official list gives Zhaoping/Shenmu resumption from 13:00 on Oct 24 and mainline/Zhushan resumption on Oct 25.",
     "新北捷運（環狀、淡海、安坑、三鶯）",
     "環狀、三鶯約 15 分鐘／安坑約 30 分鐘／淡海停駛",
     "新北捷運官方首頁最新跑馬（環狀、三鶯約 15 分鐘；安坑約 30 分鐘）",
     "新北捷運 10/23 三線停駛原文（僅供歷史依據，不代表最新三鶯、安坑仍停駛）",
-    "新北捷運官方公開粉專（本輪登入頁，最近公開成功 10/24 07:15）"
+    "新北捷運官方公開粉專（本輪登入頁，最近公開成功 10/24 07:15）",
+    "桃園機場捷運",
+    "普通車 15 分鐘／依航班與人潮彈性增開直達",
+    "桃捷 10/24「14:00」營運模式（標題時間；普通 15 分鐘、彈性加開直達）",
+    "桃捷先前 10/24 公告（頁面顯示 13:37:40；假日時刻與 13 時起彈性直達僅供歷史參考）",
+    "桃捷更早 10/24 模式（10/23 公布；直達及加班車全天取消僅供歷史參考）",
+    "桃捷 10/23 21:55:16 慢速歷史原文（目前轉址，最近成功 10/24 01:51）",
+    "阿里山林鐵",
+    "沼平、神木 10/24 13 時起恢復／本線、祝山 10/25 恢復（列表標題）",
+    "林鐵官方最新列表（10/24 新標題；僅確認路線與恢復日期時段）",
+    "林鐵處 10/22 19:00 更新舊原文（僅歷史，10/24 15:05 成功重讀）"
   ],
   "ja": [
-    "台風情報｜10月24日 台鉄東部は復旧作業中、空港MRTは直達車を柔軟に増発・新北MRTは運転間隔を調整",
-    "台鉄の北廻線・宜蘭線は復旧作業が続き、15:00は見込みです。東部の運休・区間運休の列車は引き続き明記しています。台北MRTは5路線の運転間隔を順次8分～9分30秒に短縮し、3つの重複運転区間は約4分30秒間隔です。空港MRTの普通車は休日ダイヤどおりに正常運行し、13:00から利用状況に応じて直達車を柔軟に増発します。新北MRTの環状線・三鶯線は約15分間隔、安坑は約30分間隔で、3路線とも利用状況に応じて運転間隔の調整、減速、運休を行う場合があります。淡海は運休継続であり、正確な再開時刻や通常ダイヤへの全面復帰とは推定しません。",
-    "空港MRTの普通車は休日ダイヤどおり、13:00から直達車を柔軟に増発します。環状線・三鶯線は約15分間隔、安坑は約30分間隔、淡海は運休継続です。",
-    "桃園機場捷運",
-    "普通車依假日時刻／13 時起彈性增開直達車",
-    "桃捷 10/24 公告（頁面顯示 13:37:40；普通車假日時刻、13 時起彈性增開直達）",
-    "桃捷先前 10/24 營運模式（10/23 公布；列車方案僅供新稿前參考，預辦登機與託運停辦未確認撤銷）",
-    "桃捷 10/23 21:55:16 慢速歷史原文（目前轉址，最近成功 10/24 01:51）",
+    "台風情報｜10月24日 空港MRT普通車は15分間隔、阿里山の沼平・神木線は13:00から運転再開",
+    "桃園MRTの10月24日「14:00」という見出しの発表は、普通車15分間隔、空港のフライト需要と利用状況に応じた直達車の柔軟な増発、A1/A3の市内チェックイン・受託手荷物受付の終日休止を明記しています。林鉄の公式一覧の見出しは、沼平・神木線が10月24日13:00から再開、本線・祝山線が10月25日に再開としていますが、新記事の全文・列車・追加条件は未確認です。台鉄東部の15:00再開は11:30の発表にある見込みであり、実際の復旧確認ではありません。台北MRTの段階的な間隔短縮と、新北MRTの15・15・30分間隔の計画は保持しています。",
+    "空港MRT普通車は15分間隔、フライト需要と利用状況に応じて直達車を柔軟に増発します。林鉄公式一覧では沼平・神木線は10月24日13:00から、本線・祝山線は10月25日に再開予定です。",
     "新北捷運（環狀、淡海、安坑、三鶯）",
     "環狀、三鶯約 15 分鐘／安坑約 30 分鐘／淡海停駛",
     "新北捷運官方首頁最新跑馬（環狀、三鶯約 15 分鐘；安坑約 30 分鐘）",
     "新北捷運 10/23 三線停駛原文（僅供歷史依據，不代表最新三鶯、安坑仍停駛）",
-    "新北捷運官方公開粉專（本輪登入頁，最近公開成功 10/24 07:15）"
+    "新北捷運官方公開粉專（本輪登入頁，最近公開成功 10/24 07:15）",
+    "桃園機場捷運",
+    "普通車 15 分鐘／依航班與人潮彈性增開直達",
+    "桃捷 10/24「14:00」營運模式（標題時間；普通 15 分鐘、彈性加開直達）",
+    "桃捷先前 10/24 公告（頁面顯示 13:37:40；假日時刻與 13 時起彈性直達僅供歷史參考）",
+    "桃捷更早 10/24 模式（10/23 公布；直達及加班車全天取消僅供歷史參考）",
+    "桃捷 10/23 21:55:16 慢速歷史原文（目前轉址，最近成功 10/24 01:51）",
+    "阿里山林鐵",
+    "沼平、神木 10/24 13 時起恢復／本線、祝山 10/25 恢復（列表標題）",
+    "林鐵官方最新列表（10/24 新標題；僅確認路線與恢復日期時段）",
+    "林鐵處 10/22 19:00 更新舊原文（僅歷史，10/24 15:05 成功重讀）"
   ]
 };
 
@@ -1634,7 +1668,7 @@ function assertNtTymcFacts(text, language = 'zh-TW', {context = 'NT/TYMC updated
   approved.push(...NT_TYMC_APPROVED_SUPPLEMENTAL[language].map(normalizeNtTymc));
   let residual = actual;
   for (const fragment of [...new Set(approved)].sort((a,b)=>b.length-a.length)) residual = residual.split(fragment).join('');
-  for (const pattern of NT_TYMC_CONTRADICTIONS[language]) {
+  for (const pattern of [...NT_TYMC_CONTRADICTIONS[language], ...J_TYMC_ADDITIONAL_CONTRADICTIONS[language]]) {
     if (pattern.test(residual)) throw new Error(`${context}: contradictory or unsupported operating assertion (${language})`);
   }
   return {
@@ -1646,8 +1680,225 @@ function assertNtTymcFacts(text, language = 'zh-TW', {context = 'NT/TYMC updated
     historicalAndUnknownBoundariesRetained: true,
     noUnstatedStartOrRestoration: true,
     ntmetro: {sanyingHeadwayMinutes:15,circularHeadwayMinutes:15,ankengHeadwayMinutes:30,sanyingStartTimeNotGiven:true,ankengStartTimeNotGiven:true,danhaiSuspended:true,old914NotCurrentSanyingOrAnkengStop:true,ankengThirtyIsNewExplicitNotYesterdayCarryover:true},
-    tymc: {noticeTimestamp:'2026-10-24 13:37:40',timestampIsDisplayedNoticeTime:true,commuterHolidayTimetable:true,flexibleExtraExpressFromHour:13,crowdDependentExtraExpress:true,windDependentModeAndHeadway:true,noFixedExpressHeadwayOrFullResumptionClaim:true,checkInBaggageResumptionUnconfirmed:true}
+    tymc: {"noticeTitleTime": "14:00", "titleTimeDoesNotEstablishExactPublicationOrStart": true, "pageDate": "2026-10-24", "commuterHeadwayMinutes": 15, "flightDemandDependentExtraExpress": true, "crowdDependentExtraExpress": true, "checkInBaggageAllDaySuspended": true, "checkInBaggageStations": ["A1", "A3"], "noNewExpressStartTimeGiven": true, "noFixedExpressHeadwayOrFullResumptionClaim": true, "previousHolidayAnd1300HistoricalOnly": true, "windConditionOmissionNotWithdrawal": true, "oldSlowLinkRedirectNotFullRecheck": true}
   };
+}
+
+const AFR_LIST_FACTS = {
+  "schema": 1,
+  "revision": "20261024-1508",
+  "serviceDate": "2026-10-24",
+  "sourceUrl": "https://afrch.forest.gov.tw/AllNews",
+  "sourceCheckedAt": "2026-10-24T15:05:37+08:00",
+  "newFullArticleObtained": false,
+  "canonicalDraft": "/private/tmp/rail-weather-tymc-afr-1024-1508-bulletin-draft.json",
+  "canonicalDraftSHA256": "03133059d4aaf8e4f4f0fc6859ffc678dbdfcb02a26ff3a74990984cfa457693",
+  "checks": [
+    {
+      "id": "afr-official-list-real-success1505",
+      "fragments": {
+        "zh-TW": [
+          "本輪 10/24 15:05 成功核讀林鐵官方最新列表，日期 10/24 的新標題明列："
+        ],
+        "en": [
+          "The Alishan Forest Railway's latest official list was successfully read at 15:05 on Oct 24."
+        ],
+        "ja": [
+          "阿里山林業鉄道の公式最新一覧を10月24日15:05に正常閲覧しました。"
+        ]
+      }
+    },
+    {
+      "id": "afr-zhaoping-shenmu-oct24-from1300",
+      "fragments": {
+        "zh-TW": [
+          "沼平線、神木線 10/24 下午 1 時（13:00）起恢復營運；"
+        ],
+        "en": [
+          "A new entry dated Oct 24 states that the Zhaoping and Shenmu lines resume operations from 13:00 on Oct 24,"
+        ],
+        "ja": [
+          "10月24日付の新しい見出しは、沼平線・神木線が10月24日午後1時（13:00）から運転再開、"
+        ]
+      }
+    },
+    {
+      "id": "afr-mainline-zhushan-oct25-only",
+      "fragments": {
+        "zh-TW": [
+          "本線及祝山線 10/25 恢復營運。"
+        ],
+        "en": [
+          "while the mainline and Zhushan Line resume on Oct 25."
+        ],
+        "ja": [
+          "本線・祝山線が10月25日に運転再開と明記しています。"
+        ]
+      }
+    },
+    {
+      "id": "afr-only-title-route-date-time-confirmed",
+      "fragments": {
+        "zh-TW": [
+          "這裡僅依官方列表標題確認以上路線與日期時段，"
+        ],
+        "en": [
+          "Only the routes, dates and time stated in that official list headline are confirmed here."
+        ],
+        "ja": [
+          "ここで確認できたのは、この公式一覧の見出しにある路線・日付・時間帯のみです。"
+        ]
+      }
+    },
+    {
+      "id": "afr-not-today-mainline-zhushan-or-all-branches",
+      "fragments": {
+        "zh-TW": [
+          "不能把明日方案寫成今日本線或祝山線已復駛，也不能擴成今日全支線恢復。"
+        ],
+        "en": [
+          "Tomorrow's plan does not mean the mainline or Zhushan Line has resumed today, and the notice must not be expanded to all branch lines resuming today."
+        ],
+        "ja": [
+          "明日の計画を本線や祝山線が本日すでに再開したという意味にせず、本日の全支線再開にも拡大しません。"
+        ]
+      }
+    },
+    {
+      "id": "afr-later-normal-reads500-unavailable",
+      "fragments": {
+        "zh-TW": [
+          "隨後 15:08 再讀列表及 15:09 一次正常重讀皆回傳 HTTP 500 並顯示「Web Page Blocked!」，正常重讀受阻，"
+        ],
+        "en": [
+          "The subsequent list check at 15:08 and one normal retry at 15:09 both returned HTTP 500 and displayed “Web Page Blocked!”. Normal rereading was blocked,"
+        ],
+        "ja": [
+          "その後15:08の一覧再閲覧と15:09の通常の再試行1回はいずれもHTTP 500で「Web Page Blocked!」と表示され、通常の再閲覧が遮断されました。"
+        ]
+      }
+    },
+    {
+      "id": "afr-new-article-url-and-full-text-not-obtained",
+      "fragments": {
+        "zh-TW": [
+          "未取得這則新公告的單篇網址或完整正文，"
+        ],
+        "en": [
+          "and the new article's individual URL and complete text have not been obtained;"
+        ],
+        "ja": [
+          "新しい発表の個別URLや全文は取得できておらず、"
+        ]
+      }
+    },
+    {
+      "id": "afr-publication-trains-first-services-conditions-unconfirmed",
+      "fragments": {
+        "zh-TW": [
+          "精確發布時刻、班次、明日首班及其他附加條件尚未確認，"
+        ],
+        "en": [
+          "its exact publication time, train services, tomorrow's first departures and any additional conditions remain unconfirmed."
+        ],
+        "ja": [
+          "正確な発表時刻、列車、明日の始発、追加条件は未確認です。"
+        ]
+      }
+    },
+    {
+      "id": "afr-no-guess-or-normal-speed-guarantee",
+      "fragments": {
+        "zh-TW": [
+          "不能補推或保證正常速度，"
+        ],
+        "en": [
+          "Do not infer them or guarantee normal speed."
+        ],
+        "ja": [
+          "これらを推定したり通常速度を保証したりせず、"
+        ]
+      }
+    },
+    {
+      "id": "afr-announced1300-not-checktime",
+      "fragments": {
+        "zh-TW": [
+          "13:00 也不是本輪核讀時刻。"
+        ],
+        "en": [
+          "The announced 13:00 is not the time of this check."
+        ],
+        "ja": [
+          "13:00を今回の確認時刻ともしていません。"
+        ]
+      }
+    },
+    {
+      "id": "afr-old1900-read1505-historical-only",
+      "fragments": {
+        "zh-TW": [
+          "10/22 19:00 更新的舊原文於 10/24 15:05 再次成功核讀，僅保留為歷史依據；"
+        ],
+        "en": [
+          "The earlier article updated at 19:00 on Oct 22 was successfully re-read at 15:05 on Oct 24 and is retained as historical evidence only."
+        ],
+        "ja": [
+          "10月22日19:00更新の旧記事は10月24日15:05に再び正常閲覧できましたが、過去の根拠資料としてのみ残します。"
+        ]
+      }
+    },
+    {
+      "id": "afr-old-park-conditional-plan-not-override-new1300",
+      "fragments": {
+        "zh-TW": [
+          "不能用其支線配合遊樂區開放、尚未明列開行時間的先前方案覆蓋新列表已明列的沼平、神木 13:00。"
+        ],
+        "en": [
+          "Its earlier plan tying branch services to the recreation area's opening without a definite departure time does not override the new list's explicit 13:00 resumption for Zhaoping and Shenmu."
+        ],
+        "ja": [
+          "遊楽区の開園に合わせるとし、具体的な発車時刻を示していなかった従来の支線計画で、沼平線・神木線の13:00再開を明記した新しい一覧を上書きしません。"
+        ]
+      }
+    },
+    {
+      "id": "afr-village-opening-not-park-or-train-recovery",
+      "fragments": {
+        "zh-TW": [
+          "嘉義市檜意森活村及阿里山林業村開園不代表阿里山國家森林遊樂區開放或列車復駛，以上恢復資訊是依鐵道營運的新列表標題。"
+        ],
+        "en": [
+          "Reopening of the Hinoki Village and Alishan Forestry Village in Chiayi City does not establish reopening of the national forest recreation area or train services; the resumption information above comes from the new railway-operating headline on the official list."
+        ],
+        "ja": [
+          "嘉義市の檜意森活村・阿里山林業村の開園は、国家森林遊楽区の開園や列車再開を意味しません。上記の再開情報は、公式一覧の新しい鉄道運行見出しに基づきます。"
+        ]
+      }
+    }
+  ]
+};
+
+const AFR_LIST_CONTRADICTIONS = {
+ 'zh-TW': [/(?:本線|祝山線).{0,24}(?:今日|今天|10\/24|24日).{0,16}(?:已|恢復|復駛|正常營運)/u, /(?:今日|今天|10\/24|24日).{0,20}(?:本線|祝山線).{0,20}(?:復駛|恢復|正常營運)/u, /(?:林鐵|阿里山).{0,20}(?:今日|今天|24日).{0,16}(?:全線|全支線|所有支線).{0,15}(?:復駛|恢復|正常)/u, /(?:新公告|新文章|新稿).{0,25}(?:全文|單篇|網址).{0,15}(?:已取得|已核讀|完整成功|已確認)/u, /(?:沼平|神木).{0,25}(?:仍停駛|尚未復駛|待確認|明日|10\/25|25日)/u, /(?:沼平|神木).{0,20}(?:14:00|15:00|15:05).{0,12}(?:起恢復|起復駛|開始營運)/u, /(?:本線|祝山).{0,25}(?:首班|首班車).{0,12}[0-9]{1,2}(?:時|:)/u, /(?:林鐵|阿里山).{0,20}(?:正常速度|保證正常|全線正常)/u, /(?:林鐵|新公告).{0,24}(?:精確發布|發布時刻).{0,15}(?:就是|確認|13:00|15:05)/u, /(?:園區|遊樂區|森林遊樂區|檜意森活村|阿里山林業村).{0,30}(?:開放|開園).{0,20}(?:代表|證實|所以).{0,16}(?:列車|林鐵).{0,10}(?:復駛|恢復)/u],
+ en: [/(?:mainline|Zhushan).{0,30}(?:resumed|running|normal|operating).{0,20}(?:today|Oct24)/iu, /(?:all|every).{0,15}Alishan.{0,25}branchlines.{0,20}operat(?:e|ing).{0,20}(?:today|Oct24)/iu, /(?:mainline|Zhushan).{0,30}(?:today|Oct24).{0,20}(?:resumed|running|normal|operating)/iu, /(?:today|Oct24).{0,25}(?:mainline|Zhushan).{0,25}(?:resumed|running|normal|operating)/iu, /(?:all|every).{0,15}(?:Alishan|branchlines).{0,20}(?:resumed|reopened|operate).{0,20}(?:today|Oct24)/iu, /(?:newarticle|newnotice).{0,25}(?:fulltext|completebody|individualURL).{0,20}(?:obtained|verified|readsuccessfully)/iu, /(?:Zhaoping|Shenmu).{0,30}(?:stillsuspended|notyetresumed|tomorrow|Oct25)/iu, /(?:Zhaoping|Shenmu).{0,25}(?:14:00|15:00|15:05).{0,20}(?:resume|resumption|start)/iu, /(?:mainline|Zhushan).{0,25}first(?:train|departure).{0,15}[0-9]{1,2}:/iu, /Alishan.{0,25}(?:guarantees|nowrunsat).{0,15}normalspeed/iu, /(?:park|village).{0,25}reopening.{0,15}(?:proves|means|establishes).{0,20}(?:train|rail).{0,20}(?:resumption|recovery)/iu],
+ ja: [/(?:本線|祝山線).{0,25}(?:本日|今日|10月24日).{0,20}(?:再開済|再開しました|通常運転)/u, /(?:本日|今日|10月24日).{0,20}(?:本線|祝山線).{0,20}(?:再開しました|再開済|通常運転)/u, /(?:全支線|全線|すべての支線).{0,20}(?:本日|今日).{0,20}(?:再開|通常運転)/u, /(?:新記事|新しい発表).{0,20}(?:全文|個別URL).{0,15}(?:取得済|取得しました|確認済|閲覧済)/u, /(?:沼平|神木).{0,24}(?:運休継続|まだ再開していません|明日|10月25日)/u, /(?:沼平|神木).{0,20}(?:14:00|15:00|15:05).{0,15}(?:再開|開始)/u, /(?:本線|祝山線).{0,25}始発.{0,12}[0-9]{1,2}(?:時|:)/u, /林業鉄道.{0,20}(?:通常速度を保証|通常速度に復帰)/u, /(?:遊楽区|村).{0,20}開園.{0,20}(?:証明|意味します).{0,20}(?:列車|鉄道).{0,15}再開/u]
+};
+
+function assertAFRListFacts(text, language='zh-TW', {context='AFR official-list minimum facts'}={}) {
+ if(typeof text!=='string'||!text.trim())throw new Error(`${context}: nonempty text required`);
+ if(!Object.prototype.hasOwnProperty.call(AFR_LIST_CONTRADICTIONS,language))throw new Error(`${context}: unsupported language`);
+ const actual=normalizeNtTymc(text), approved=[];
+ for(const c of AFR_LIST_FACTS.checks)for(const fragment of c.fragments[language]){
+  const expected=normalizeNtTymc(fragment);
+  if(!actual.includes(expected))throw new Error(`${context}: missing or altered fact ${c.id} (${language})`);
+  approved.push(expected);
+ }
+ approved.push(...NT_TYMC_APPROVED_SUPPLEMENTAL[language].map(normalizeNtTymc));
+ let residual=actual;
+ for(const x of [...new Set(approved)].sort((a,b)=>b.length-a.length))residual=residual.split(x).join('');
+ for(const pattern of AFR_LIST_CONTRADICTIONS[language])if(pattern.test(residual))throw new Error(`${context}: contradictory or unsupported operating assertion (${language})`);
+ return {language,revision:AFR_LIST_FACTS.revision,factGroups:AFR_LIST_FACTS.checks.length,"sourceScope": "official-list-title-only", "titleOnly": true, "newArticleFullTextObtained": false, "newArticleURLObtained": false, "routeDateTimeBindingsVerified": true, "zhaopingShenmu": {"serviceDate": "2026-10-24", "from": "13:00"}, "mainlineZhushan": {"serviceDate": "2026-10-25", "firstTrainTimeUnconfirmed": true}, "precisePublicationTimeUnconfirmed": true, "trainServicesAndAdditionalConditionsUnconfirmed": true, "normalSpeedNotGuaranteed": true, "listLastSuccessfulCheckedAt": "2026-10-24T15:05:37+08:00", "listLaterNormalReadsUnavailable": true, "old1900SourceHistoricalOnly": true, "parkOpeningNotTrainResumption": true};
 }
 
 const tra = source.systems.find(s => s.id === 'tra');
@@ -1666,13 +1917,14 @@ for (const lang of ['zh-TW','en','ja']) assertTRAUpdatedFacts(lang==='zh-TW' ? t
 assert.doesNotMatch(tra.detailI18n.en, /free (?:ride|fare|of charge)/i);
 
 const afr = source.systems.find(s => s.id === 'afr');
-assert.equal(afr.sourceUrl, 'https://afrch.forest.gov.tw/AllNews/0079490');
-assert.equal(afr.sourceCheckedAt, '2026-10-24T08:45:02+08:00');
-assert.match(afr.detail, /^10\/24 本線嘉義至阿里山定期列車停駛.*阿里山國家森林遊樂區.*尚未取得明確開行時間/);
-assert.match(afr.detail, /最近於 10\/24 08:45 成功核讀 10\/22 19:00 更新原文及最新列表.*本輪 10\/24 12:30.*HTTP 500.*未重新核讀成功.*較早 13:30 原文不能覆蓋 19:00 更新/);
-assert.match(afr.detail, /文化|檜意森活村/);
-assert.match(afr.detailI18n.en, /On Oct 24.*mainline.*suspended.*no definite departure time.*successfully read at 08:45 on Oct 24.*earlier 13:30 text does not supersede the 19:00 update/);
-assert.match(afr.detailI18n.ja, /10月24日.*本線定期列車が運休.*具体的な発車時刻は未確認/);
+assert.equal(afr.status, "沼平、神木 10/24 13 時起恢復／本線、祝山 10/25 恢復（列表標題）");
+assert.equal(afr.sourceUrl, "https://afrch.forest.gov.tw/AllNews");
+assert.equal(afr.sourceCheckedAt, "2026-10-24T15:05:37+08:00");
+assert.equal(afr.sourceLabel, "林鐵官方最新列表（10/24 新標題；僅確認路線與恢復日期時段）");
+assert.equal(afr.additionalSources.length, 1);
+assert.equal(afr.additionalSources[0].sourceUrl, "https://afrch.forest.gov.tw/AllNews/0079490");
+assert.equal(afr.additionalSources[0].sourceLabel, "林鐵處 10/22 19:00 更新舊原文（僅歷史，10/24 15:05 成功重讀）");
+for(const lang of ['zh-TW','en','ja']) assertAFRListFacts(lang==='zh-TW'?afr.detail:afr.detailI18n[lang],lang,{context:'官方列表標題最小復駛範圍，非新文章全文'});
 const thsr = source.systems.find(s => s.id === 'thsr');
 assert.equal(thsr.sourceUrl, 'https://www.thsrc.com.tw/ArticleContent/0a67aca6-69e4-4a47-a3cf-ffbd2568648d');
 assert.match(thsr.detail, /10\/24 全線正常營運，各車次依時刻表發車/);
@@ -1699,15 +1951,17 @@ for (const lang of ['zh-TW','en','ja']) assertTRTCNoonFacts(lang==='zh-TW'?trtc.
 assert.doesNotMatch(trtc.status,/12:00 起|已全部|完成調整/);
 const tymc = source.systems.find(s => s.id === 'tymc');
 const ntmetro = source.systems.find(s => s.id === 'ntmetro');
-assert.equal(tymc.status, "普通車依假日時刻／13 時起彈性增開直達車");
-assert.equal(tymc.sourceUrl, "https://www.tymetro.com.tw/tymetro-new/tw/_pages/general/show-23-1.html");
-assert.equal(tymc.sourceCheckedAt, "2026-10-24T13:44:35+08:00");
-assert.equal(tymc.sourceLabel, "桃捷 10/24 公告（頁面顯示 13:37:40；普通車假日時刻、13 時起彈性增開直達）");
-assert.equal(tymc.additionalSources.length, 2);
-assert.equal(tymc.additionalSources[0].sourceUrl, "https://www.tymetro.com.tw/tymetro-new/tw/_pages/news/show-2439-1.html");
-assert.equal(tymc.additionalSources[0].sourceLabel, "桃捷先前 10/24 營運模式（10/23 公布；列車方案僅供新稿前參考，預辦登機與託運停辦未確認撤銷）");
-assert.equal(tymc.additionalSources[1].sourceUrl, "https://www.tymetro.com.tw/tymetro-new/tw/_pages/general/show-22-1.html");
-assert.equal(tymc.additionalSources[1].sourceLabel, "桃捷 10/23 21:55:16 慢速歷史原文（目前轉址，最近成功 10/24 01:51）");
+assert.equal(tymc.status, "普通車 15 分鐘／依航班與人潮彈性增開直達");
+assert.equal(tymc.sourceUrl, "https://www.tymetro.com.tw/tymetro-new/tw/_pages/news/show-2440-1.html");
+assert.equal(tymc.sourceCheckedAt, "2026-10-24T15:08:38+08:00");
+assert.equal(tymc.sourceLabel, "桃捷 10/24「14:00」營運模式（標題時間；普通 15 分鐘、彈性加開直達）");
+assert.equal(tymc.additionalSources.length, 3);
+assert.equal(tymc.additionalSources[0].sourceUrl, "https://www.tymetro.com.tw/tymetro-new/tw/_pages/general/show-23-1.html");
+assert.equal(tymc.additionalSources[0].sourceLabel, "桃捷先前 10/24 公告（頁面顯示 13:37:40；假日時刻與 13 時起彈性直達僅供歷史參考）");
+assert.equal(tymc.additionalSources[1].sourceUrl, "https://www.tymetro.com.tw/tymetro-new/tw/_pages/news/show-2439-1.html");
+assert.equal(tymc.additionalSources[1].sourceLabel, "桃捷更早 10/24 模式（10/23 公布；直達及加班車全天取消僅供歷史參考）");
+assert.equal(tymc.additionalSources[2].sourceUrl, "https://www.tymetro.com.tw/tymetro-new/tw/_pages/general/show-22-1.html");
+assert.equal(tymc.additionalSources[2].sourceLabel, "桃捷 10/23 21:55:16 慢速歷史原文（目前轉址，最近成功 10/24 01:51）");
 assert.equal(ntmetro.status, "環狀、三鶯約 15 分鐘／安坑約 30 分鐘／淡海停駛");
 assert.equal(ntmetro.sourceUrl, "https://www.ntmetro.com.tw/");
 assert.equal(ntmetro.sourceCheckedAt, "2026-10-24T13:56:31+08:00");
@@ -1887,6 +2141,7 @@ try {
             assertTRAUpdatedFacts(renderedWeatherText,'zh-TW',{context:name+'/'+width+'/'+mode+' 實際手機公告'});
             assertTRTCNoonFacts(renderedWeatherText,'zh-TW',{context:'actual mobile/legacy noon TRTC'});
             assertNtTymcFacts(renderedWeatherText,'zh-TW',{context:'actual mobile/legacy NT TYMC'});
+            assertAFRListFacts(renderedWeatherText,'zh-TW',{context:'actual mobile/legacy AFR title-only minimum scope'});
             for (const system of source.systems) assert.equal(renderedWeatherText.split(system.detail).length-1,1,system.id+' 手機畫面完整且恰好一次');
             const link = await measure(page, '#alertDetail a[href$="weather-status.html"]');
             assert.ok(link.visible && link.hitSelf && link.rect.height >= 44, `${name}/${width}/${mode}: 來源入口被裁切 ${JSON.stringify(link)}`);
@@ -1947,7 +2202,8 @@ try {
           assert.equal(await page.locator('section').count(), 9);
           assert.equal(await page.locator('section[aria-labelledby="trtc"] a').count(), 4, '北捷12:00新稿與三份歷史來源均保留可查閱');
           assert.equal(await page.locator('section[aria-labelledby="tra"] a').count(), 3, '11:30新方案與08:30及中午前歷史來源共三筆均可查閱');
-          assert.equal(await page.locator('section[aria-labelledby="tymc"] a').count(), 3, '13時彈性增開新稿、先前今日模式與歷史慢速來源均可查閱');
+          assert.equal(await page.locator('section[aria-labelledby="tymc"] a').count(), 4, '14:00新稿、13:37歷史、先前今日模式與歷史慢速來源均保留');
+          assert.equal(await page.locator('section[aria-labelledby="afr"] a').count(), 2, '官方新列表標題與舊19時歷史原文分列');
           assert.equal(await page.locator('section[aria-labelledby="ntmetro"] a').count(), 3, '最近停駛原文與今日待確認的官方最新入口都可查閱');
           const pageOverflow = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth);
           assert.ok(pageOverflow <= 1);
@@ -1962,8 +2218,8 @@ try {
           assert.match(await page.locator('#ageNote').innerText(), /已過適用日期/);
           if (width === 375) {
             const languageTitles = {
-              en: "Typhoon Champi | Oct 24 TRA eastern repairs; flexible extra Airport MRT express services and New Taipei headway changes",
-              ja: "台風情報｜10月24日 台鉄東部は復旧作業中、空港MRTは直達車を柔軟に増発・新北MRTは運転間隔を調整",
+              en: "Typhoon Champi | Oct 24 Airport MRT commuter trains every 15 minutes; Alishan Zhaoping and Shenmu lines resume from 13:00",
+              ja: "台風情報｜10月24日 空港MRT普通車は15分間隔、阿里山の沼平・神木線は13:00から運転再開",
             };
             await page.clock.setSystemTime(new Date(when));
             for (const lang of ['en','ja']) {
@@ -1977,6 +2233,7 @@ try {
               const traFacts = assertTRAUpdatedFacts(translatedText,lang,{context:name+' '+lang+' 手機實際公告'});
               traFacts.trtcNoon = assertTRTCNoonFacts(translatedText,lang,{context:'actual mobile/legacy noon TRTC'});
               traFacts.ntTymc = assertNtTymcFacts(translatedText,lang,{context:'actual mobile/legacy NT TYMC'});
+              traFacts.afr = assertAFRListFacts(translatedText,lang,{context:'actual mobile/legacy AFR title-only minimum scope'});
               assert.ok(await page.evaluate(() => document.documentElement.scrollWidth-innerWidth <= 1),lang+' 無水平溢出');
               states.push({mode:'language-'+lang,operatorDetailsOnce:true,traFacts});
               await page.screenshot({path:path.join(outDir,name+'-375-'+lang+'-notice.png')});
@@ -2029,6 +2286,7 @@ try {
         assertTRAUpdatedFacts(text,'zh-TW',{context:'已開啟的舊網頁台鐵完整方案'});
         assertTRTCNoonFacts(text,'zh-TW',{context:'actual mobile/legacy noon TRTC'});
         assertNtTymcFacts(text,'zh-TW',{context:'actual mobile/legacy NT TYMC'});
+        assertAFRListFacts(text,'zh-TW',{context:'actual mobile/legacy AFR title-only minimum scope'});
         assert.ok(text.includes(thsr.detail), '舊網頁完整保留今日高鐵方案與昨日取消的日期區別');
         assert.ok(text.includes(trtc.detail), '舊網頁完整保留今日北捷五線方案與時刻限制');
 
@@ -2051,6 +2309,7 @@ try {
         assertTRAUpdatedFacts(text,'zh-TW',{context:'已發行App台鐵完整方案'});
         assertTRTCNoonFacts(text,'zh-TW',{context:'actual mobile/legacy noon TRTC'});
         assertNtTymcFacts(text,'zh-TW',{context:'actual mobile/legacy NT TYMC'});
+        assertAFRListFacts(text,'zh-TW',{context:'actual mobile/legacy AFR title-only minimum scope'});
         assert.ok(text.includes(thsr.detail), '已發行App須顯示今日高鐵正常營運與日期區別');
         // 已發行App的 HTML normal white-space 會把新公告段落換行合併為空白；仍比較整張完整內容。
         assert.ok(text.replace(/\s+/g, ' ').includes(trtc.detail.replace(/\s+/g, ' ')), '已發行App保留今日北捷五線完整方案與時刻限制');

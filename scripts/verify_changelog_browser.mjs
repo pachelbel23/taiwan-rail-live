@@ -133,7 +133,8 @@ const widths = [360, 375, 414, 768];
 // 10/24: TRA 11:30 east repair bulletin adds one to the existing 516 entries.
 // 10/24: Taipei Metro noon gradual headway adjustment adds one (517 -> 518).
 // 10/24: Sanying/Circular headways and flexible Airport MRT express additions add one (518 -> 519).
-const expectedHistoryCount = 519;
+// 10/24: latest Airport MRT 15-minute plan and explicit Alishan list-title resumption scope.
+const expectedHistoryCount = 520;
 
 try {
   for (const [engineName, engine] of Object.entries({ chromium, webkit })) {

@@ -4,6 +4,8 @@
   if (!messages || !messages.en || !messages.ja) return;
 
   Object.assign(messages.en, {
+    "桃捷普通15分鐘、依航班與人潮彈性加開直達；林鐵列表：沼平、神木24日13時起恢復，本線、祝山25日恢復。": "Airport MRT commuter trains run every 15 minutes, with flexible extra express services according to flights and crowds. The Alishan official list gives Zhaoping/Shenmu resumption from 13:00 on Oct 24 and mainline/Zhushan resumption on Oct 25.",
+    "薔琵颱風｜10/24 桃捷普通 15 分鐘，林鐵沼平、神木 13 時起恢復": "Typhoon Champi | Oct 24 Airport MRT commuter trains every 15 minutes; Alishan Zhaoping and Shenmu lines resume from 13:00",
     "桃捷普通車依假日時刻、13時起彈性增開直達；環狀與三鶯約15分鐘、安坑約30分鐘，淡海仍停駛。": "Airport MRT commuter trains follow the holiday timetable, with flexible additional express services from 13:00. Circular and Sanying lines are about every 15 minutes, Ankeng about every 30 minutes; Danhai remains suspended.",
     "薔琵颱風｜10/24 台鐵東部搶修，桃捷彈性直達、新北班距調整": "Typhoon Champi | Oct 24 TRA eastern repairs; flexible extra Airport MRT express services and New Taipei headway changes",
     "北捷公告五線逐步加密至 8 分至 9 分 30 秒，三段重疊區間約 4 分 30 秒；保留台鐵東部搶修、改班與停駛例外": "Taipei Metro announces gradual headways on five lines of 8 minutes to 9 minutes 30 seconds, with about 4 minutes 30 seconds on three overlapping sections; TRA eastern repairs, service changes and specified cancellations remain included.",
@@ -311,6 +313,8 @@
   });
 
   Object.assign(messages.ja, {
+    "桃捷普通15分鐘、依航班與人潮彈性加開直達；林鐵列表：沼平、神木24日13時起恢復，本線、祝山25日恢復。": "空港MRT普通車は15分間隔、フライト需要と利用状況に応じて直達車を柔軟に増発します。林鉄公式一覧では沼平・神木線は10月24日13:00から、本線・祝山線は10月25日に再開予定です。",
+    "薔琵颱風｜10/24 桃捷普通 15 分鐘，林鐵沼平、神木 13 時起恢復": "台風情報｜10月24日 空港MRT普通車は15分間隔、阿里山の沼平・神木線は13:00から運転再開",
     "桃捷普通車依假日時刻、13時起彈性增開直達；環狀與三鶯約15分鐘、安坑約30分鐘，淡海仍停駛。": "空港MRTの普通車は休日ダイヤどおり、13:00から直達車を柔軟に増発します。環状線・三鶯線は約15分間隔、安坑は約30分間隔、淡海は運休継続です。",
     "薔琵颱風｜10/24 台鐵東部搶修，桃捷彈性直達、新北班距調整": "台風情報｜10月24日 台鉄東部は復旧作業中、空港MRTは直達車を柔軟に増発・新北MRTは運転間隔を調整",
     "北捷公告五線逐步加密至 8 分至 9 分 30 秒，三段重疊區間約 4 分 30 秒；保留台鐵東部搶修、改班與停駛例外": "台北MRTは5路線を8分～9分30秒間隔へ段階的に短縮し、3つの重複区間は約4分30秒間隔と発表。台湾鉄道東部の復旧作業・運行変更・個別の運休情報も引き続き掲載。",
