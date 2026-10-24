@@ -5643,6 +5643,7 @@
            內容 li 上限 8 條(li.grp 是標題不算)。 -->
       <ul class="foot-list foot-recent">
         <li class="grp">最近更新</li>
+        <li data-cl-of="weathernttymc1024"><span class="d">10/24</span><span>桃捷普通車依假日時刻、13時起彈性增開直達；環狀與三鶯約15分鐘、安坑約30分鐘，淡海仍停駛。</span></li>
         <li data-cl-of="weathertrtcnoon1024"><span class="d">10/24</span><span>北捷公告五線逐步加密至 8 分至 9 分 30 秒，三段重疊區間約 4 分 30 秒；保留台鐵東部搶修、改班與停駛例外</span></li>
         <li data-cl-of="weathertraeast1024"><span class="d">10/24</span><span>台鐵更新北迴、宜蘭線搶修與東部班次，5216 次改停駛，432、273 次列出新時刻；請留意截短、停駛與支線待巡查資訊</span></li>
         <li data-cl-of="weathertramidday1024"><span class="d">10/24</span><span>台鐵公布今日中午後分批恢復方案，補上仍停駛、截短與支線待巡查資訊；成追線 2608 次另按成功 11:39 開車，出發前請核對官方班次</span></li>
@@ -5650,13 +5651,13 @@
         <li data-cl-of="weatherntstop1024"><span class="d">10/24</span><span>更新新北捷運本輪核讀的最新跑馬：淡海、安坑、三鶯維持停駛，環狀約 15 分鐘；未列復駛時間，保留北捷與台鐵今日方案</span></li>
         <li data-cl-of="weatherntcircle1024"><span class="d">10/24</span><span>補列新北環狀線 10/24 約 15 分鐘班距；淡海、安坑、三鶯今日首班與復駛仍待確認，保留北捷各線方案及風雨調整提醒</span></li>
         <li data-cl-of="weathertrtcnormal1024"><span class="d">10/24</span><span>更新北捷 10/24 各線正常營運方案與約 12／6 分鐘班距；速報標題不作即時復駛依據，仍視風雨調整</span></li>
-        <li data-cl-of="weather1024"><span class="d">10/24</span><span>更新 10/24 颱風公告：台鐵中午前分區行駛、北捷部分首班待通知與今日班距；未確認的復駛資訊另標提醒</span></li>
       </ul>
       <!-- 第二層:完整歷史。刻意不掛 .foot-box 類名——placeFootBoxes() 用
            `.site-foot .foot-box` 搬移面板,巢狀同名會被當成另一個盒子一起搬走。 -->
       <details class="foot-more">
         <summary>完整更新歷史（依主題分類）</summary>
         <ul class="foot-list">
+        <li data-cl="weathernttymc1024"><span class="d">10/24</span><span>桃捷普通車依假日時刻、13時起彈性增開直達；環狀與三鶯約15分鐘、安坑約30分鐘，淡海仍停駛。</span></li>
         <li data-cl="weathertrtcnoon1024"><span class="d">10/24</span><span>北捷公告五線逐步加密至 8 分至 9 分 30 秒，三段重疊區間約 4 分 30 秒；保留台鐵東部搶修、改班與停駛例外</span></li>
         <li data-cl="weathertraeast1024"><span class="d">10/24</span><span>台鐵更新北迴、宜蘭線搶修與東部班次，5216 次改停駛，432、273 次列出新時刻；請留意截短、停駛與支線待巡查資訊</span></li>
         <li data-cl="weathertramidday1024"><span class="d">10/24</span><span>台鐵公布今日中午後分批恢復方案，補上仍停駛、截短與支線待巡查資訊；成追線 2608 次另按成功 11:39 開車，出發前請核對官方班次</span></li>
@@ -7055,7 +7056,7 @@ const RAIL_3D_BOOT_PARAMS = new URLSearchParams(location.search);
 // v1019b：台鐵同鍵、中途停靠型態不同的班往下借路徑、不退回示意線形，且把自己那份計畫留在模板候選裡（3bde26de、1a781914）；另併入待避窗口逐日掃描報告（28c906cd、7232d41e，不進網站產物）；更新紀錄加一條。
 // v1020a：併入通行證專屬的自製列車；更新紀錄改成這次上線的一條。
 // v1020b：自製列車表單的起訖站點了就列出站名清單（常用大站＋依路線），選完起站自動攤開訖站、可對調、打完整站名即選定；更新紀錄加一條。
-const BUILD = 'v1024h';
+const BUILD = 'v1024i';
 const LANDSCAPE_REQUESTED = new URLSearchParams(location.search).get('map') === 'landscape';
 const GARAGE_QUERY = new URLSearchParams(location.search).get('garage');
 // 輕量多語 runtime：繁中原文同時是安全 fallback，外語字典只存差異字串。

@@ -132,7 +132,8 @@ const widths = [360, 375, 414, 768];
 // 10/24: latest three-line continued-suspension notice (513 -> 514).
 // 10/24: TRA 11:30 east repair bulletin adds one to the existing 516 entries.
 // 10/24: Taipei Metro noon gradual headway adjustment adds one (517 -> 518).
-const expectedHistoryCount = 518;
+// 10/24: Sanying/Circular headways and flexible Airport MRT express additions add one (518 -> 519).
+const expectedHistoryCount = 519;
 
 try {
   for (const [engineName, engine] of Object.entries({ chromium, webkit })) {

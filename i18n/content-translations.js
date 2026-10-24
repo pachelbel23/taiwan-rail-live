@@ -4,6 +4,8 @@
   if (!messages || !messages.en || !messages.ja) return;
 
   Object.assign(messages.en, {
+    "桃捷普通車依假日時刻、13時起彈性增開直達；環狀與三鶯約15分鐘、安坑約30分鐘，淡海仍停駛。": "Airport MRT commuter trains follow the holiday timetable, with flexible additional express services from 13:00. Circular and Sanying lines are about every 15 minutes, Ankeng about every 30 minutes; Danhai remains suspended.",
+    "薔琵颱風｜10/24 台鐵東部搶修，桃捷彈性直達、新北班距調整": "Typhoon Champi | Oct 24 TRA eastern repairs; flexible extra Airport MRT express services and New Taipei headway changes",
     "北捷公告五線逐步加密至 8 分至 9 分 30 秒，三段重疊區間約 4 分 30 秒；保留台鐵東部搶修、改班與停駛例外": "Taipei Metro announces gradual headways on five lines of 8 minutes to 9 minutes 30 seconds, with about 4 minutes 30 seconds on three overlapping sections; TRA eastern repairs, service changes and specified cancellations remain included.",
     "薔琵颱風｜10/24 台鐵北迴、宜蘭線搶修，北捷逐步加密班距": "Typhoon Champi · Oct 24: TRA North-Link/Yilan repairs; Taipei Metro plans to gradually shorten headways",
     "台鐵更新北迴、宜蘭線搶修與東部班次，5216 次改停駛，432、273 次列出新時刻；請留意截短、停駛與支線待巡查資訊": "TRA has updated North-Link and Yilan repair information and eastern services: Train 5216 is now cancelled, and new times are listed for Trains 432 and 273. Check shortened and cancelled services and branch lines awaiting inspection.",
@@ -309,6 +311,8 @@
   });
 
   Object.assign(messages.ja, {
+    "桃捷普通車依假日時刻、13時起彈性增開直達；環狀與三鶯約15分鐘、安坑約30分鐘，淡海仍停駛。": "空港MRTの普通車は休日ダイヤどおり、13:00から直達車を柔軟に増発します。環状線・三鶯線は約15分間隔、安坑は約30分間隔、淡海は運休継続です。",
+    "薔琵颱風｜10/24 台鐵東部搶修，桃捷彈性直達、新北班距調整": "台風情報｜10月24日 台鉄東部は復旧作業中、空港MRTは直達車を柔軟に増発・新北MRTは運転間隔を調整",
     "北捷公告五線逐步加密至 8 分至 9 分 30 秒，三段重疊區間約 4 分 30 秒；保留台鐵東部搶修、改班與停駛例外": "台北MRTは5路線を8分～9分30秒間隔へ段階的に短縮し、3つの重複区間は約4分30秒間隔と発表。台湾鉄道東部の復旧作業・運行変更・個別の運休情報も引き続き掲載。",
     "薔琵颱風｜10/24 台鐵北迴、宜蘭線搶修，北捷逐步加密班距": "台風情報｜10/24 台湾鉄道の北廻線・宜蘭線は復旧作業中、台北MRTは段階的に間隔短縮",
     "台鐵更新北迴、宜蘭線搶修與東部班次，5216 次改停駛，432、273 次列出新時刻；請留意截短、停駛與支線待巡查資訊": "台湾鉄道の北廻線・宜蘭線の復旧作業と東部列車の情報を更新。5216次は運休に変更され、432・273次には新たな時刻が記載されています。運転区間の短縮・運休と、巡回点検待ちの支線情報をご確認ください。",

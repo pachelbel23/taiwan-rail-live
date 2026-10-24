@@ -20,7 +20,7 @@ assert.equal(source.serviceDate, '2026-10-24');
 assert.equal(source.displayFrom, '2026-10-24T00:00:00+08:00');
 assert.equal(source.expiresAt, '2026-10-25T00:00:00+08:00');
 assert.ok(Date.parse(source.checkedAt) >= Date.parse(source.displayFrom));
-assert.match(source.title, /10\/24.*台鐵北迴、宜蘭線搶修.*北捷逐步加密班距/);
+assert.equal(source.title, "薔琵颱風｜10/24 台鐵東部搶修，桃捷彈性直達、新北班距調整");
 assert.doesNotMatch(railWeatherNotice(when).descI18n.en, /[\u3400-\u9fff]/);
 assert.ok(railWeatherNotice(when).descI18n.ja.includes('10月24日'));
 assert.equal(source.systems.length, 9);
@@ -31,7 +31,7 @@ for (const system of source.systems) {
 const TRA_UPDATED_FACTS = {
   "schema": 1,
   "serviceDate": "2026-10-24",
-  "revision": "20261024-1232",
+  "revision": "20261024-1356",
   "newPlanTrainNumbers": [
     "432",
     "273",
@@ -590,7 +590,7 @@ function assertTRAUpdatedFacts(text, language, {context = 'TRA'} = {}) {
 const TRTC_NOON_FACTS = {
   "schema": 1,
   "serviceDate": "2026-10-24",
-  "revision": "20261024-1232",
+  "revision": "20261024-1356",
   "sourceUrl": "https://www.metro.taipei/News_Content.aspx?n=30CCEFD2A45592BF&sms=72544237BBE4C5F6&s=07211C1B52E9F4FE",
   "sourceCheckedAt": "2026-10-24T12:32:41+08:00",
   "rawEvidence": "/private/tmp/rail-weather-trtc-noon-1024-1232-source.json",
@@ -1034,6 +1034,622 @@ function assertTRTCNoonFacts(text, language = 'zh-TW', { context = 'TRTC noon op
   };
 }
 
+const NT_TYMC_FACTS = {
+  "schema": 1,
+  "revision": "20261024-1356",
+  "serviceDate": "2026-10-24",
+  "checkedAt": "2026-10-24T13:56:31+08:00",
+  "expiresAt": "2026-10-25T00:00:00+08:00",
+  "rawEvidence": "/private/tmp/rail-weather-ntmetro-ankeng-readonly-1024-1400.json",
+  "sourceEvidenceFiles": [
+    {
+      "path": "/private/tmp/rail-weather-ntmetro-ankeng-readonly-1024-1400.json",
+      "sha256": "e49461fe39fe6021865f55ba93aba9cc3902fdf8ddbeff6e9467969c0fd69321"
+    },
+    {
+      "path": "/private/tmp/rail-weather-nt-tymc-new-source-1024-1345.json",
+      "sha256": "4adf9f1a8cfe8a896809cf9aa6e968ca8c3d91eded1fca6a66e6befdf2db8718"
+    }
+  ],
+  "canonicalDraft": "/private/tmp/rail-weather-nt-tymc-1024-1356-bulletin-draft.json",
+  "canonicalDraftSHA256": "560fbd94e268e53b39ebb77c4fbbc33e7a23d6ac979f81fc71678e7d57eacb1b",
+  "checks": [
+    {
+      "id": "nt-circular-and-sanying-approximately-fifteen",
+      "system": "ntmetro",
+      "fragments": {
+        "zh-TW": [
+          "10/24 本輪核對新北捷運官方首頁已載入的最新跑馬，環狀線與三鶯線班距皆約 15 分鐘，"
+        ],
+        "en": [
+          "In this Oct 24 check, the fully loaded scrolling notices on New Taipei Metro's official homepage give headways of about 15 minutes for both the Circular and Sanying lines,"
+        ],
+        "ja": [
+          "10月24日の今回の確認では、新北MRT公式トップページで読み込みが完了した最新スクロール案内に、環状線と三鶯線はいずれも約15分間隔、"
+        ]
+      }
+    },
+    {
+      "id": "nt-ankeng-approximately-thirty",
+      "system": "ntmetro",
+      "fragments": {
+        "zh-TW": [
+          "安坑輕軌班距約 30 分鐘；"
+        ],
+        "en": [
+          "and about 30 minutes for Ankeng LRT."
+        ],
+        "ja": [
+          "安坑ライトレールは約30分間隔と記載されています。"
+        ]
+      }
+    },
+    {
+      "id": "nt-three-lines-demand-dependent-adjust-slow-or-suspend",
+      "system": "ntmetro",
+      "fragments": {
+        "zh-TW": [
+          "三線各自註明將視運量調整班距、降速行駛或暫停營運。"
+        ],
+        "en": [
+          "Each of the three notices says headways may be adjusted, trains may slow down or service may be suspended according to demand."
+        ],
+        "ja": [
+          "3路線とも利用状況に応じて運転間隔の調整、減速、運休を行う場合があります。"
+        ]
+      }
+    },
+    {
+      "id": "nt-ankeng-normal-tab-extended-headway-field",
+      "system": "ntmetro",
+      "fragments": {
+        "zh-TW": [
+          "正常點選首頁安坑輕軌欄位後，顯示「全線班距延長」。"
+        ],
+        "en": [
+          "A normal click on the homepage's Ankeng LRT tab shows 'extended headways throughout the line'."
+        ],
+        "ja": [
+          "トップページの安坑ライトレールのタブを通常の操作で選ぶと、「全線で運転間隔を延長」と表示されます。"
+        ]
+      }
+    },
+    {
+      "id": "nt-ankeng-thirty-new-explicit-not-yesterday-carryover",
+      "system": "ntmetro",
+      "fragments": {
+        "zh-TW": [
+          "安坑約 30 分鐘是本輪官方最新明文，並非把昨日停駛前的班距自動延用。"
+        ],
+        "en": [
+          "The approximately 30-minute Ankeng headway is explicitly stated in the latest official notice in this check; it is not an automatic carry-over of yesterday's pre-suspension headway."
+        ],
+        "ja": [
+          "安坑の約30分間隔は今回の最新の公式案内に明記されたもので、昨日の運休前の運転間隔を自動的に引き継いだものではありません。"
+        ]
+      }
+    },
+    {
+      "id": "nt-short-notice-no-service-date-publication-start-or-resumption",
+      "system": "ntmetro",
+      "fragments": {
+        "zh-TW": [
+          "短訊本身未列適用日期、精確發布、開始或復駛時刻，"
+        ],
+        "en": [
+          "The short notices give no service date, exact publication time, start time or resumption time."
+        ],
+        "ja": [
+          "短文自体には適用日、正確な発表時刻、開始時刻、再開時刻は記載されていません。"
+        ]
+      }
+    },
+    {
+      "id": "nt-check-time-not-sanying-or-ankeng-resumption-time",
+      "system": "ntmetro",
+      "fragments": {
+        "zh-TW": [
+          "不能把核讀時刻當成三鶯或安坑的復駛起點，"
+        ],
+        "en": [
+          "The check time is not a confirmed Sanying or Ankeng resumption time,"
+        ],
+        "ja": [
+          "確認時刻を三鶯線や安坑の再開時刻とはせず、"
+        ]
+      }
+    },
+    {
+      "id": "nt-not-full-normal-timetable-restoration",
+      "system": "ntmetro",
+      "fragments": {
+        "zh-TW": [
+          "也不能寫成全面恢復正常班表。"
+        ],
+        "en": [
+          "and this is not a statement that the full normal timetable has resumed."
+        ],
+        "ja": [
+          "通常ダイヤへの全面復帰ともしていません。"
+        ]
+      }
+    },
+    {
+      "id": "nt-danhai-entire-line-still-not-operating",
+      "system": "ntmetro",
+      "fragments": {
+        "zh-TW": [
+          "首頁淡海輕軌欄位仍顯示「全線停止運作」，"
+        ],
+        "en": [
+          "The homepage's Danhai LRT field still reads 'entire line out of operation'."
+        ],
+        "ja": [
+          "トップページの淡海ライトレール欄は引き続き「全線運行停止」です。"
+        ]
+      }
+    },
+    {
+      "id": "nt-no-danhai-resumption-from-other-three-lines",
+      "system": "ntmetro",
+      "fragments": {
+        "zh-TW": [
+          "本輪尚未取得淡海復駛的明確公告，不能由其他三線的班距推定淡海已復駛。"
+        ],
+        "en": [
+          "No explicit Danhai resumption notice was obtained in this check; the other three lines' headways do not establish resumption on Danhai."
+        ],
+        "ja": [
+          "淡海の再開を明記した発表は今回確認できておらず、ほかの3路線の運転間隔から淡海の再開を推定できません。"
+        ]
+      }
+    },
+    {
+      "id": "nt-earlier-three-line-stop-history-not-current-sanying-or-ankeng-stop",
+      "system": "ntmetro",
+      "fragments": {
+        "zh-TW": [
+          "先前 08:44 核對的「三線維持停駛」跑馬及 10/23 15:00 起三線預防性停駛原文，僅保留為歷史依據，不能當成最新三鶯線、安坑輕軌仍停駛的公告；"
+        ],
+        "en": [
+          "The scrolling notice checked at 08:44 saying that all three lines remained suspended and the notice of preventive suspension from 15:00 on Oct 23 are retained as historical evidence only, not as the latest statement that Sanying and Ankeng are still suspended."
+        ],
+        "ja": [
+          "08:44に確認した「3路線は運休継続」というスクロール案内と、10月23日15:00から3路線を予防的に運休する発表は、過去の根拠資料としてのみ残し、三鶯線や安坑が現在も運休中という最新発表としては扱っていません。"
+        ]
+      }
+    },
+    {
+      "id": "nt-yesterday-safety-inspection-conditions-historical",
+      "system": "ntmetro",
+      "fragments": {
+        "zh-TW": [
+          "昨日原文要求風雨趨緩並完成軌道、供電與沿線安全巡檢確認後才能恢復。"
+        ],
+        "en": [
+          "Yesterday's notice required wind and rain to ease and safety confirmation after inspections of track, power supply and lineside conditions before resumption."
+        ],
+        "ja": [
+          "昨日の発表は、風雨が弱まり、軌道・電力設備・沿線の安全点検を終えて安全を確認してから再開するとしていました。"
+        ]
+      }
+    },
+    {
+      "id": "nt-yesterday-danhai-thirty-not-todays-plan",
+      "system": "ntmetro",
+      "fragments": {
+        "zh-TW": [
+          "昨日停駛前的淡海每 30 分鐘班距不能自動延用為今日方案，"
+        ],
+        "en": [
+          "Yesterday's pre-suspension 30-minute headway on Danhai is not automatically today's plan."
+        ],
+        "ja": [
+          "昨日の運休前の淡海30分間隔を本日の計画に自動的に引き継ぐことはせず、"
+        ]
+      }
+    },
+    {
+      "id": "nt-missing-notice-or-indicators-not-resumption",
+      "system": "ntmetro",
+      "fragments": {
+        "zh-TW": [
+          "公告缺失或一般燈號也不等於復駛。"
+        ],
+        "en": [
+          "Missing notices or generic operating indicators do not establish resumption."
+        ],
+        "ja": [
+          "発表の消失や一般的な運行表示だけでは再開を確認できません。"
+        ]
+      }
+    },
+    {
+      "id": "tymc-displayed-notice-timestamp-and-today",
+      "system": "tymc",
+      "fragments": {
+        "zh-TW": [
+          "桃捷本次公告頁面顯示 10/24 13:37:40，公布今日營運模式："
+        ],
+        "en": [
+          "The notice displayed at 13:37:40 on Oct 24 gives today's plan:"
+        ],
+        "ja": [
+          "10月24日13:37:40と表示された桃園MRTの発表による本日の運行計画では、"
+        ]
+      }
+    },
+    {
+      "id": "tymc-all-commuter-trains-normal-holiday-timetable",
+      "system": "tymc",
+      "fragments": {
+        "zh-TW": [
+          "機場捷運普通車皆依照假日時刻表發車、維持正常營運；"
+        ],
+        "en": [
+          "all Airport MRT commuter trains operate normally to the holiday timetable,"
+        ],
+        "ja": [
+          "普通車はすべて休日ダイヤどおりに正常運行し、"
+        ]
+      }
+    },
+    {
+      "id": "tymc-flexible-crowd-dependent-additional-express-from-thirteen",
+      "system": "tymc",
+      "fragments": {
+        "zh-TW": [
+          "自 13 時起視人潮狀況彈性加開直達車班次疏運。"
+        ],
+        "en": [
+          "and additional express services are provided flexibly according to crowds from 13:00."
+        ],
+        "ja": [
+          "13:00から利用者の状況に応じて直達車を柔軟に増発します。"
+        ]
+      }
+    },
+    {
+      "id": "tymc-actual-wind-dependent-mode-and-headway",
+      "system": "tymc",
+      "fragments": {
+        "zh-TW": [
+          "颱風期間仍依實際風速影響調整營運模式及班距。"
+        ],
+        "en": [
+          "Operating patterns and headways remain subject to actual wind speeds during the typhoon."
+        ],
+        "ja": [
+          "台風の期間中は引き続き実際の風速に応じて運行形態や運転間隔を調整します。"
+        ]
+      }
+    },
+    {
+      "id": "tymc-no-fixed-express-headway-total-extra-count-or-normal-speed-time",
+      "system": "tymc",
+      "fragments": {
+        "zh-TW": [
+          "新稿未列固定直達車班距、增開班次總數或恢復正常速度時間，"
+        ],
+        "en": [
+          "The new notice gives no fixed express headway, total number of additional services or time for a return to normal speed."
+        ],
+        "ja": [
+          "新しい発表には直達車の固定運転間隔、増発本数の合計、通常速度に戻す時刻は記載されていません。"
+        ]
+      }
+    },
+    {
+      "id": "tymc-flexible-extra-not-full-normal-express-timetable",
+      "system": "tymc",
+      "fragments": {
+        "zh-TW": [
+          "不能把彈性加開寫成直達車已全面依正常班表運行。"
+        ],
+        "en": [
+          "Flexible additional express services do not mean that the full normal express timetable has resumed."
+        ],
+        "ja": [
+          "柔軟な増発を、直達車が通常ダイヤに全面復帰したという意味では扱っていません。"
+        ]
+      }
+    },
+    {
+      "id": "tymc-earlier-fifteen-and-full-day-cancellations-historical-not-latest",
+      "system": "tymc",
+      "fragments": {
+        "zh-TW": [
+          "先前 10/24 模式所列普通車每 15 分鐘及直達、加班車全天取消，僅供新稿前方案參考，不再當作最新列車方案；"
+        ],
+        "en": [
+          "The earlier Oct 24 plan of 15-minute commuter headways and all-day cancellation of express and extra services is retained only as the plan before this new notice, not as the latest train plan."
+        ],
+        "ja": [
+          "先の10月24日計画にあった普通車15分間隔、直達車と増発列車の終日運休は、新しい発表より前の計画としてのみ残し、現在の最新の列車運行計画とはしていません。"
+        ]
+      }
+    },
+    {
+      "id": "tymc-earlier-a1-a3-checkin-and-baggage-full-day-suspension",
+      "system": "tymc",
+      "fragments": {
+        "zh-TW": [
+          "該先前公告亦明列 A1 台北車站、A3 新北產業園區站預辦登機及行李託運全天暫停，"
+        ],
+        "en": [
+          "That earlier notice also suspended in-town check-in and baggage services at A1 Taipei Main Station and A3 New Taipei Industrial Park for the whole day."
+        ],
+        "ja": [
+          "その先の発表は、A1台北車站・A3新北産業園区の市内チェックインと受託手荷物受付も終日休止としていました。"
+        ]
+      }
+    },
+    {
+      "id": "tymc-checkin-and-baggage-withdrawal-or-restoration-not-announced",
+      "system": "tymc",
+      "fragments": {
+        "zh-TW": [
+          "新稿未說明撤銷或恢復，不能推定這些服務已恢復。"
+        ],
+        "en": [
+          "The new notice does not say that these suspensions are withdrawn or that the services have resumed."
+        ],
+        "ja": [
+          "新しい発表には、この休止の撤回やサービス再開は記載されていないため、再開したとは推定できません。"
+        ]
+      }
+    },
+    {
+      "id": "tymc-oct23-slow-article-history-last-success-0151",
+      "system": "tymc",
+      "fragments": {
+        "zh-TW": [
+          "10/23 21:55:16 強風慢速稿僅保留歷史依據，最近成功核讀為 10/24 01:51；"
+        ],
+        "en": [
+          "The Oct 23 21:55:16 strong-wind reduced-speed article is retained as historical evidence only; it was last successfully read at 01:51 on Oct 24."
+        ],
+        "ja": [
+          "10月23日21:55:16の強風による減速記事は過去の根拠資料としてのみ残し、最後に正常閲覧できたのは10月24日01:51です。"
+        ]
+      }
+    },
+    {
+      "id": "tymc-old-slow-link-redirects-not-successful-original-read",
+      "system": "tymc",
+      "fragments": {
+        "zh-TW": [
+          "本輪原連結仍轉至首頁，"
+        ],
+        "en": [
+          "Its original link still redirects to the homepage in this check."
+        ],
+        "ja": [
+          "元のリンクは今回もトップページへ転送されており、"
+        ]
+      }
+    },
+    {
+      "id": "tymc-redirect-not-recovery-or-normal-speed-guarantee",
+      "system": "tymc",
+      "fragments": {
+        "zh-TW": [
+          "不能因轉址推定已恢復或保證今日正常速度。"
+        ],
+        "en": [
+          "The redirect does not establish recovery or guarantee normal speed today."
+        ],
+        "ja": [
+          "転送は復旧を意味せず、本日の通常速度を保証しません。"
+        ]
+      }
+    }
+  ],
+  "independenceAudit": {
+    "groups": 26,
+    "ntmetroGroups": 14,
+    "tymcGroups": 12,
+    "duplicateOrContainedFragments": 0
+  },
+  "ntmetro": {
+    "sanyingHeadwayMinutes": 15,
+    "circularHeadwayMinutes": 15,
+    "ankengHeadwayMinutes": 30,
+    "sourceCheckedAt": "2026-10-24T13:56:31+08:00",
+    "sanyingStartTimeNotGiven": true,
+    "ankengStartTimeNotGiven": true,
+    "danhaiSuspended": true,
+    "old914NotCurrentSanyingOrAnkengStop": true,
+    "ankengThirtyIsNewExplicitNotYesterdayCarryover": true
+  },
+  "tymc": {
+    "noticeTimestamp": "2026-10-24 13:37:40",
+    "timestampIsDisplayedNoticeTime": true,
+    "sourceCheckedAt": "2026-10-24T13:44:35+08:00",
+    "commuterHolidayTimetable": true,
+    "flexibleExtraExpressFromHour": 13,
+    "crowdDependentExtraExpress": true,
+    "windDependentModeAndHeadway": true,
+    "noFixedExpressHeadwayOrFullResumptionClaim": true,
+    "checkInBaggageResumptionUnconfirmed": true
+  }
+};
+
+function normalizeNtTymc(value) {
+  return String(value).normalize('NFC').replace(/[\s\u00a0\u200b\ufeff]+/g, '');
+}
+const NT_TYMC_CONTRADICTIONS = {
+  'zh-TW': [
+    /安坑.{0,24}(?:仍|維持|繼續|目前|現在|尚未).{0,12}(?:停駛|停止營運|停止運作|復駛)/u,
+    /安坑.{0,20}(?:營運方案|班距).{0,12}(?:待確認|未確認|不明|未知)/u,
+    /安坑.{0,24}(?:已於|自|於|開始).{0,15}[0-9]{1,2}(?:[:：][0-9]{2}|時).{0,15}(?:復駛|恢復|營運)/u,
+    /安坑.{0,24}(?:全面|正常班表|正常時刻表)/u,
+    /安坑.{0,20}(?:約|每|班距為)15(?:分|分鐘)/u,
+    /(?:三鶯|環狀).{0,20}(?:約|每|班距為)30(?:分|分鐘)/u,
+    /三鶯(?:線)?.{0,24}(?:尚未|仍未|未曾).{0,12}(?:復駛|恢復|載客)/u,
+    /淡海.{0,24}(?:恢復服務|開始載客|恢復載客|運作中)/u,
+    /直達車.{0,25}(?:恢復|依照|按).{0,10}(?:例行|正常)(?:時刻表|班表)/u,
+    /(?:預辦登機|行李託運).{0,25}(?:可正常使用|可使用|已可辦理|開放辦理)/u,
+    /(?:三鶯|環狀).{0,24}(?:不會|不再|不受|不依).{0,20}(?:運量|調整|降速|暫停)/u,
+    /普通車.{0,20}(?:每(?:隔)?|班距(?:為|是)|維持)15(?:分|分鐘)/u,
+    /直達車.{0,20}(?:不再|不會|不予|不)(?:加開|增開)/u,
+    /(?:桃捷|機場捷運|營運模式|班距).{0,25}(?:不再|不會|不受|不依).{0,20}(?:風速|風力|調整)/u,
+    /(?:三鶯(?:線)?|新北三線).{0,28}(?:仍|維持|繼續|目前|現在).{0,12}(?:停駛|停止營運|停止運作)/u,
+    /(?:三鶯(?:線)?).{0,28}(?:(?:自|於|已在|確定|開始|復駛).{0,15}[0-9]{1,2}(?:[:：][0-9]{2}|時|點)|(?:已|全面).{0,12}(?:正常班表|正常時刻|正常營運))/u,
+    /淡海.{0,20}(?:已(?:經)?復駛|恢復(?:正常)?(?:營運|行駛)|正常(?:營運|行駛)|開放行駛)/u,
+    /(?:三鶯(?:線)?|環狀線|安坑輕軌|安坑線).{0,26}(?:(?:固定|保證|每隔|班距為)[0-9]|(?:班距|間隔).{0,12}(?:固定|保證|確定)[0-9])/u,
+    /(?:普通車|機場捷運普通車|桃捷普通車).{0,24}(?:固定|保證|確定|現在每|目前每).{0,8}15(?:分|分鐘)/u,
+    /(?:直達車).{0,28}(?:全面|全數|全部|已經|已).{0,18}(?:復駛|恢復正常|正常班表|正常時刻表)/u,
+    /(?:直達車).{0,28}(?:全天|全日).{0,8}(?:取消|停駛)/u,
+    /(?:直達車).{0,24}(?:固定|每隔|班距為|保證).{0,8}[0-9]+(?:分|分鐘)/u,
+    /(?:增開|加開).{0,12}[0-9]+(?:班|列).{0,8}直達車/u,
+    /(?:預辦登機|行李託運|託運服務).{0,24}(?:已恢復|恢復辦理|已重啟|正常辦理|已開放)/u,
+    /(?:桃捷|機場捷運).{0,24}(?:已恢復|保證|維持).{0,10}正常速度/u,
+    /(?:13:37:40).{0,18}(?:就是|確定為|即為).{0,8}(?:精確發布|生效|開始)/u
+  ],
+  en: [
+    /Ankeng.{0,28}(?:still|remains?|notyet|hasnot).{0,15}(?:suspended|closed|resumed|reopened)/iu,
+    /Ankeng.{0,24}(?:plan|headway).{0,16}(?:unconfirmed|unknown)/iu,
+    /Ankeng.{0,24}(?:resumed|reopened|started).{0,15}(?:at|from)[0-9]{1,2}:[0-9]{2}/iu,
+    /Ankeng.{0,24}(?:fullnormal|normaltimetable|regularschedule)/iu,
+    /Ankeng.{0,24}(?:about|every)15(?:-?minutes?)/iu,
+    /(?:Sanying|Circular).{0,24}(?:about|every)30(?:-?minutes?)/iu,
+    /Sanying.{0,24}(?:hasnot|havenot|notyet).{0,12}(?:resumed|reopened)/iu,
+    /Danhai.{0,24}(?:isback|hasrestored|hasreturned)/iu,
+    /(?:AirportMRTexpress(?:trains|services)?|expresstrains|expressservices).{0,35}(?:returned|restored|running).{0,18}(?:regular|normal).{0,10}(?:timetable|schedule)/iu,
+    /(?:check-in|checkin|baggage).{0,35}(?:areopenagain|isopenagain|availableagain|canbeused)/iu,
+    /(?:Sanying|Circular).{0,30}(?:not|never|nolonger).{0,30}(?:demand|slowdown|suspend|adjust)/iu,
+    /Danhai.{0,25}(?:isbackinservice|isnowoperating|hasreturnedtonormal)/iu,
+    /commuter(?:trains|services)?.{0,25}(?:every|headwaysof|intervalsof)15(?:-?minute)/iu,
+    /(?:AirportMRTexpress(?:trains|services)?|express(?:trains|services)).{0,25}(?:remain|are|still).{0,15}(?:cancelled|canceled|suspended).{0,18}(?:allday|throughouttheday)/iu,
+    /(?:no|not|never).{0,15}(?:additional|extra).{0,15}express(?:trains|services)?/iu,
+    /(?:operatingpatterns|operatingmodes|headways|AirportMRT).{0,35}(?:nolonger|not).{0,30}wind/iu,
+    /(?:Sanying|allthreeNewTaipeilines).{0,30}(?:remains?|still|currently|is).{0,14}(?:suspended|closed|outofoperation)/iu,
+    /Sanying.{0,40}(?:resumed|resumes|reopened|reopens|started|starts).{0,20}(?:at|from)[0-9]{1,2}:[0-9]{2}/iu,
+    /Sanying.{0,35}(?:hasreturned|hasresumed|nowruns|hasfully).{0,20}(?:normal|timetable|service)/iu,
+    /Danhai.{0,30}(?:hasresumed|haveresumed|reopened|operatesnormally|runsnormally|isrunning)/iu,
+    /(?:Sanying|Circular|Ankeng).{0,35}(?:fixed|exactly|guaranteed).{0,15}[0-9]+-?(?:minute|second)/iu,
+    /(?:commuter(?:trains|services)?).{0,35}(?:fixed|guaranteed|exactly|nowevery|currentlyevery).{0,12}15(?:-?minute)/iu,
+    /(?:express(?:trains|services)?).{0,35}(?:all|fully|complete|normal).{0,25}(?:resumed|restored|timetable|schedule)/iu,
+    /(?:all|every).{0,15}express(?:trains|services)?.{0,22}(?:cancelled|canceled|suspended).{0,12}(?:allday|forthewholeday)/iu,
+    /express(?:trains|services)?.{0,30}(?:fixed|exactly|every|guaranteed).{0,10}[0-9]+(?:-?minute)/iu,
+    /(?:adds?|additional|extra).{0,12}[0-9]+(?:expressservices|expresstrains)/iu,
+    /(?:check-in|checkin|baggage(?:services)?).{0,35}(?:hasresumed|haveresumed|arenowopen|isnowavailable|havebeenrestored|isavailableagain)/iu,
+    /(?:AirportMRT|TaoyuanMetro).{0,30}(?:hasreturnedto|guarantees|nowrunsat).{0,12}normalspeed/iu,
+    /13:37:40.{0,15}(?:istheexact|provestheexact).{0,12}(?:publication|start|effective)/iu
+  ],
+  ja: [
+    /安坑.{0,24}(?:現在も|今も|引き続き|まだ).{0,15}(?:運休|停止|再開していません)/u,
+    /安坑.{0,24}(?:運行計画|運転間隔).{0,10}(?:未確認|不明)/u,
+    /安坑.{0,20}[0-9]{1,2}(?:[:：][0-9]{2}|時).{0,12}(?:再開|復帰|開始)/u,
+    /安坑.{0,24}(?:通常ダイヤ|全面再開|全面復帰)/u,
+    /安坑.{0,20}(?:約|毎)15分/u,
+    /(?:三鶯|環状).{0,20}(?:約|毎)30分/u,
+    /三鶯線.{0,24}(?:まだ|なお|いまだ).{0,15}(?:再開していません|再開していない|運休)/u,
+    /淡海.{0,25}(?:運転再開|再開して|運行中)/u,
+    /直達車.{0,25}(?:通常の時刻表|通常ダイヤ).{0,15}(?:運行|運転|復帰|戻り)/u,
+    /普通車.{0,20}15分おき/u,
+    /(?:チェックイン|受託手荷物|荷物受付).{0,25}(?:再開して|受付可能|利用できます)/u,
+    /(?:三鶯線|環状線).{0,30}(?:利用状況|需要).{0,15}(?:関係なく|影響しない|調整しない)/u,
+    /普通車.{0,20}15分(?:間隔|ごと)/u,
+    /直達車.{0,25}(?:通常ダイヤ|通常運転).{0,15}(?:戻り|復帰|再開)/u,
+    /直達車.{0,20}(?:増発しません|増発しない|追加しない)/u,
+    /(?:運行形態|運転間隔|空港MRT).{0,30}(?:風速|風力).{0,15}(?:影響しない|関係ない|応じません|調整しません)/u,
+    /(?:三鶯線|新北MRTの3路線).{0,28}(?:現在も|今も|引き続き|依然|なお).{0,10}(?:運休|停止)/u,
+    /三鶯線.{0,24}[0-9]{1,2}(?:[:：][0-9]{2}|時).{0,12}(?:再開|復帰|運転開始)/u,
+    /三鶯線.{0,25}(?:全面|すべて|すでに).{0,15}(?:通常ダイヤ|通常運転|再開)/u,
+    /淡海.{0,25}(?:再開しました|運転を再開|通常運転|通常営業|再開済)/u,
+    /(?:三鶯線|環状線|安坑線).{0,25}(?:正確に|固定|必ず|保証).{0,10}[0-9]+分/u,
+    /普通車.{0,25}(?:固定|必ず|正確に|現在は).{0,10}15分/u,
+    /直達車.{0,30}(?:全面|すべて|全て|完全に).{0,15}(?:再開|復帰|通常ダイヤ)/u,
+    /(?:直達車|全直達車).{0,24}(?:終日運休|終日取消)/u,
+    /直達車.{0,24}(?:固定|正確に|必ず).{0,10}[0-9]+分/u,
+    /直達車.{0,12}[0-9]+本.{0,8}(?:増発|追加)/u,
+    /(?:チェックイン|受託手荷物|荷物受付).{0,24}(?:再開しました|再開済|受付再開|通常営業|利用可能)/u,
+    /(?:桃園MRT|空港MRT).{0,25}(?:通常速度に復帰|通常速度を保証|通常速度に戻りました)/u,
+    /13:37:40.{0,15}(?:正確な発表|適用開始|運転開始).{0,8}(?:です|である|を示す)/u
+  ]
+};
+
+const NT_TYMC_APPROVED_SUPPLEMENTAL = {
+  "zh-TW": [
+    "薔琵颱風｜10/24 台鐵東部搶修，桃捷彈性直達、新北班距調整",
+    "台鐵北迴、宜蘭線仍搶修，15時為預估；保留東部停駛及截短車次。北捷五線逐步加密至8分至9分30秒、三重疊段約4分30秒。桃捷普通車依假日時刻正常營運、13時起依人潮彈性加開直達。新北環狀、三鶯約15分，安坑約30分，三線依運量調整、降速或暫停；淡海仍停駛，不推定精確復駛時刻或全面正常班表。",
+    "桃捷普通車依假日時刻、13時起彈性增開直達；環狀與三鶯約15分鐘、安坑約30分鐘，淡海仍停駛。",
+    "桃園機場捷運",
+    "普通車依假日時刻／13 時起彈性增開直達車",
+    "桃捷 10/24 公告（頁面顯示 13:37:40；普通車假日時刻、13 時起彈性增開直達）",
+    "桃捷先前 10/24 營運模式（10/23 公布；列車方案僅供新稿前參考，預辦登機與託運停辦未確認撤銷）",
+    "桃捷 10/23 21:55:16 慢速歷史原文（目前轉址，最近成功 10/24 01:51）",
+    "新北捷運（環狀、淡海、安坑、三鶯）",
+    "環狀、三鶯約 15 分鐘／安坑約 30 分鐘／淡海停駛",
+    "新北捷運官方首頁最新跑馬（環狀、三鶯約 15 分鐘；安坑約 30 分鐘）",
+    "新北捷運 10/23 三線停駛原文（僅供歷史依據，不代表最新三鶯、安坑仍停駛）",
+    "新北捷運官方公開粉專（本輪登入頁，最近公開成功 10/24 07:15）"
+  ],
+  "en": [
+    "Typhoon Champi | Oct 24 TRA eastern repairs; flexible extra Airport MRT express services and New Taipei headway changes",
+    "Repairs continue on TRA's North-Link and Yilan lines; 15:00 is an estimate, with eastern cancellations and shortened routes retained. Taipei Metro is gradually reducing headways on five lines to 8–9 minutes 30 seconds, with three overlapping sections about every 4 minutes 30 seconds. Airport MRT commuter trains follow the normal holiday timetable, with flexible additional express services according to crowds from 13:00. New Taipei Metro's Circular and Sanying lines are about every 15 minutes, and Ankeng LRT about every 30 minutes, with headway changes, reduced speed or suspension according to demand on all three lines. Danhai remains suspended. Do not infer an exact resumption time or a return to full normal timetables.",
+    "Airport MRT commuter trains follow the holiday timetable, with flexible additional express services from 13:00. Circular and Sanying lines are about every 15 minutes, Ankeng about every 30 minutes; Danhai remains suspended.",
+    "桃園機場捷運",
+    "普通車依假日時刻／13 時起彈性增開直達車",
+    "桃捷 10/24 公告（頁面顯示 13:37:40；普通車假日時刻、13 時起彈性增開直達）",
+    "桃捷先前 10/24 營運模式（10/23 公布；列車方案僅供新稿前參考，預辦登機與託運停辦未確認撤銷）",
+    "桃捷 10/23 21:55:16 慢速歷史原文（目前轉址，最近成功 10/24 01:51）",
+    "新北捷運（環狀、淡海、安坑、三鶯）",
+    "環狀、三鶯約 15 分鐘／安坑約 30 分鐘／淡海停駛",
+    "新北捷運官方首頁最新跑馬（環狀、三鶯約 15 分鐘；安坑約 30 分鐘）",
+    "新北捷運 10/23 三線停駛原文（僅供歷史依據，不代表最新三鶯、安坑仍停駛）",
+    "新北捷運官方公開粉專（本輪登入頁，最近公開成功 10/24 07:15）"
+  ],
+  "ja": [
+    "台風情報｜10月24日 台鉄東部は復旧作業中、空港MRTは直達車を柔軟に増発・新北MRTは運転間隔を調整",
+    "台鉄の北廻線・宜蘭線は復旧作業が続き、15:00は見込みです。東部の運休・区間運休の列車は引き続き明記しています。台北MRTは5路線の運転間隔を順次8分～9分30秒に短縮し、3つの重複運転区間は約4分30秒間隔です。空港MRTの普通車は休日ダイヤどおりに正常運行し、13:00から利用状況に応じて直達車を柔軟に増発します。新北MRTの環状線・三鶯線は約15分間隔、安坑は約30分間隔で、3路線とも利用状況に応じて運転間隔の調整、減速、運休を行う場合があります。淡海は運休継続であり、正確な再開時刻や通常ダイヤへの全面復帰とは推定しません。",
+    "空港MRTの普通車は休日ダイヤどおり、13:00から直達車を柔軟に増発します。環状線・三鶯線は約15分間隔、安坑は約30分間隔、淡海は運休継続です。",
+    "桃園機場捷運",
+    "普通車依假日時刻／13 時起彈性增開直達車",
+    "桃捷 10/24 公告（頁面顯示 13:37:40；普通車假日時刻、13 時起彈性增開直達）",
+    "桃捷先前 10/24 營運模式（10/23 公布；列車方案僅供新稿前參考，預辦登機與託運停辦未確認撤銷）",
+    "桃捷 10/23 21:55:16 慢速歷史原文（目前轉址，最近成功 10/24 01:51）",
+    "新北捷運（環狀、淡海、安坑、三鶯）",
+    "環狀、三鶯約 15 分鐘／安坑約 30 分鐘／淡海停駛",
+    "新北捷運官方首頁最新跑馬（環狀、三鶯約 15 分鐘；安坑約 30 分鐘）",
+    "新北捷運 10/23 三線停駛原文（僅供歷史依據，不代表最新三鶯、安坑仍停駛）",
+    "新北捷運官方公開粉專（本輪登入頁，最近公開成功 10/24 07:15）"
+  ]
+};
+
+function assertNtTymcFacts(text, language = 'zh-TW', {context = 'NT/TYMC updated facts'} = {}) {
+  if (typeof text !== 'string' || text.trim().length === 0) throw new Error(`${context}: nonempty text required`);
+  if (!Object.prototype.hasOwnProperty.call(NT_TYMC_CONTRADICTIONS, language)) throw new Error(`${context}: unsupported language ${language}`);
+  const actual = normalizeNtTymc(text);
+  const approved = [];
+  for (const check of NT_TYMC_FACTS.checks) {
+    for (const fragment of check.fragments[language]) {
+      const expected = normalizeNtTymc(fragment);
+      if (!actual.includes(expected)) throw new Error(`${context}: missing or altered fact ${check.id} (${language})`);
+      approved.push(expected);
+    }
+  }
+  approved.push(...NT_TYMC_APPROVED_SUPPLEMENTAL[language].map(normalizeNtTymc));
+  let residual = actual;
+  for (const fragment of [...new Set(approved)].sort((a,b)=>b.length-a.length)) residual = residual.split(fragment).join('');
+  for (const pattern of NT_TYMC_CONTRADICTIONS[language]) {
+    if (pattern.test(residual)) throw new Error(`${context}: contradictory or unsupported operating assertion (${language})`);
+  }
+  return {
+    language, revision: NT_TYMC_FACTS.revision,
+    factGroups: NT_TYMC_FACTS.checks.length,
+    ntmetroFactGroups: NT_TYMC_FACTS.checks.filter(c=>c.system==='ntmetro').length,
+    tymcFactGroups: NT_TYMC_FACTS.checks.filter(c=>c.system==='tymc').length,
+    exactServiceAndConditionBindings: true,
+    historicalAndUnknownBoundariesRetained: true,
+    noUnstatedStartOrRestoration: true,
+    ntmetro: {sanyingHeadwayMinutes:15,circularHeadwayMinutes:15,ankengHeadwayMinutes:30,sanyingStartTimeNotGiven:true,ankengStartTimeNotGiven:true,danhaiSuspended:true,old914NotCurrentSanyingOrAnkengStop:true,ankengThirtyIsNewExplicitNotYesterdayCarryover:true},
+    tymc: {noticeTimestamp:'2026-10-24 13:37:40',timestampIsDisplayedNoticeTime:true,commuterHolidayTimetable:true,flexibleExtraExpressFromHour:13,crowdDependentExtraExpress:true,windDependentModeAndHeadway:true,noFixedExpressHeadwayOrFullResumptionClaim:true,checkInBaggageResumptionUnconfirmed:true}
+  };
+}
+
 const tra = source.systems.find(s => s.id === 'tra');
 assert.equal(tra.sourceUrl, "https://www.railway.gov.tw/tra-tip-web/tip/tip009/tip911/newsDtl?newsNo=8ae4cac2a16a254301a16c15868d53b5&page=0");
 assert.equal(tra.sourceCheckedAt, '2026-10-24T12:15:45+08:00');
@@ -1082,34 +1698,26 @@ assert.ok(trtc.additionalSources[2].sourceUrl.includes('649A1A69E7BC170D'));
 for (const lang of ['zh-TW','en','ja']) assertTRTCNoonFacts(lang==='zh-TW'?trtc.detail:trtc.detailI18n[lang],lang,{context:'北捷12:00新原文完整獨立核對'});
 assert.doesNotMatch(trtc.status,/12:00 起|已全部|完成調整/);
 const tymc = source.systems.find(s => s.id === 'tymc');
-assert.equal(tymc.sourceUrl, 'https://www.tymetro.com.tw/tymetro-new/tw/_pages/news/show-2439-1.html');
-assert.equal(tymc.additionalSources.length, 1);
-assert.ok(tymc.additionalSources[0].sourceUrl.includes('general/show-22-1'));
-assert.match(tymc.detail, /^10\/24 全天取消直達車及加班車.*普通車維持 15 分鐘.*A1.*A3.*全天暫停/);
-assert.match(tymc.detail, /10\/23 21:55:16 強風慢速稿.*未列今日新班距、特定區段或恢復正常速度時間/);
-assert.match(tymc.detail, /本輪原連結轉至首頁，無法讀到該原文.*不能因轉址推定已恢復/);
-assert.match(tymc.detailI18n.en, /original link now redirects to the homepage.*redirect does not establish recovery/);
-assert.match(tymc.detailI18n.en, /On Oct 24.*all express and extra services are cancelled.*15 minutes.*does not guarantee normal speed today/);
-assert.match(tymc.detailI18n.ja, /10月24日.*直達車と増発列車が終日運休.*15分間隔.*通常速度を保証するものではありません/);
 const ntmetro = source.systems.find(s => s.id === 'ntmetro');
-assert.equal(ntmetro.sourceUrl, 'https://www.ntmetro.com.tw/');
-assert.equal(ntmetro.sourceCheckedAt, '2026-10-24T08:44:57+08:00');
+assert.equal(tymc.status, "普通車依假日時刻／13 時起彈性增開直達車");
+assert.equal(tymc.sourceUrl, "https://www.tymetro.com.tw/tymetro-new/tw/_pages/general/show-23-1.html");
+assert.equal(tymc.sourceCheckedAt, "2026-10-24T13:44:35+08:00");
+assert.equal(tymc.sourceLabel, "桃捷 10/24 公告（頁面顯示 13:37:40；普通車假日時刻、13 時起彈性增開直達）");
+assert.equal(tymc.additionalSources.length, 2);
+assert.equal(tymc.additionalSources[0].sourceUrl, "https://www.tymetro.com.tw/tymetro-new/tw/_pages/news/show-2439-1.html");
+assert.equal(tymc.additionalSources[0].sourceLabel, "桃捷先前 10/24 營運模式（10/23 公布；列車方案僅供新稿前參考，預辦登機與託運停辦未確認撤銷）");
+assert.equal(tymc.additionalSources[1].sourceUrl, "https://www.tymetro.com.tw/tymetro-new/tw/_pages/general/show-22-1.html");
+assert.equal(tymc.additionalSources[1].sourceLabel, "桃捷 10/23 21:55:16 慢速歷史原文（目前轉址，最近成功 10/24 01:51）");
+assert.equal(ntmetro.status, "環狀、三鶯約 15 分鐘／安坑約 30 分鐘／淡海停駛");
+assert.equal(ntmetro.sourceUrl, "https://www.ntmetro.com.tw/");
+assert.equal(ntmetro.sourceCheckedAt, "2026-10-24T13:56:31+08:00");
+assert.equal(ntmetro.sourceLabel, "新北捷運官方首頁最新跑馬（環狀、三鶯約 15 分鐘；安坑約 30 分鐘）");
 assert.equal(ntmetro.additionalSources.length, 2);
-assert.equal(ntmetro.additionalSources[0].sourceUrl, 'https://www.ntmetro.com.tw/basic/?mode=detail&node=914');
-assert.match(ntmetro.additionalSources[0].sourceLabel, /歷史依據/);
-assert.equal(ntmetro.additionalSources[1].sourceUrl, 'https://www.facebook.com/NewTaipeiMetro/');
-assert.match(ntmetro.status, /三線維持停駛.*環狀約 15 分鐘/);
-assert.match(ntmetro.detail, /10\/24 本輪核對.*首頁最新跑馬.*三鶯線、安坑輕軌及淡海輕軌維持停駛.*環狀線班距約 15 分鐘/);
-assert.match(ntmetro.detail, /新版短訊本身未列日期、精確發布時刻、停駛起始或復駛時間.*不能把核讀時刻當成停駛起點/);
-assert.match(ntmetro.detail, /先前首頁明列 10\/24.*約 15 分鐘.*依運量及風速調整.*最新短訊未重列調整條件/);
-assert.match(ntmetro.detail, /10\/23 15:00 起三線預防性停駛.*歷史依據.*軌道、供電與沿線安全巡檢/);
-assert.match(ntmetro.detail, /不能把昨日停駛前淡海、安坑每 30 分鐘及三鶯每 15 分鐘班距當成今日方案.*不能因首頁一般燈號或舊公告消失推定三線已復駛/);
-assert.match(ntmetro.detailI18n.en, /In this Oct 24 check.*latest official homepage.*Sanying Line, Ankeng LRT and Danhai LRT remain suspended.*15 minutes/);
-assert.match(ntmetro.detailI18n.en, /new short notice itself gives no date, exact publication time, suspension start time or resumption time.*check time is not a suspension start time/);
-assert.match(ntmetro.detailI18n.en, /earlier homepage plan explicitly dated Oct 24.*demand and wind.*latest short notice does not repeat/);
-assert.match(ntmetro.detailI18n.ja, /10月24日の今回の確認.*最新スクロール案内.*三鶯線・安坑ライトレール・淡海ライトレールは運休継続、環状線は約15分間隔/);
-assert.match(ntmetro.detailI18n.ja, /短文自体には日付、正確な発表時刻、運休開始時刻、再開時刻は記載されておらず.*確認時刻を運休開始時刻とはしていません/);
-assert.doesNotMatch(ntmetro.status, /待確認|06:00.*起|三線.*已復駛/);
+assert.equal(ntmetro.additionalSources[0].sourceUrl, "https://www.ntmetro.com.tw/basic/?mode=detail&node=914");
+assert.equal(ntmetro.additionalSources[0].sourceLabel, "新北捷運 10/23 三線停駛原文（僅供歷史依據，不代表最新三鶯、安坑仍停駛）");
+assert.equal(ntmetro.additionalSources[1].sourceUrl, "https://www.facebook.com/NewTaipeiMetro/");
+assert.equal(ntmetro.additionalSources[1].sourceLabel, "新北捷運官方公開粉專（本輪登入頁，最近公開成功 10/24 07:15）");
+for (const lang of ['zh-TW','en','ja']) assertNtTymcFacts([tymc,ntmetro].map(s=>lang==='zh-TW'?s.detail:s.detailI18n[lang]).join('\n'),lang,{context:'新北與桃捷最新原文完整獨立核對'});
 const krtc = source.systems.find(s => s.id === 'krtc');
 const klrt = source.systems.find(s => s.id === 'klrt');
 for (const system of [krtc, klrt]) {
@@ -1278,6 +1886,7 @@ try {
             const renderedWeatherText = await page.locator('#alertDetail').innerText();
             assertTRAUpdatedFacts(renderedWeatherText,'zh-TW',{context:name+'/'+width+'/'+mode+' 實際手機公告'});
             assertTRTCNoonFacts(renderedWeatherText,'zh-TW',{context:'actual mobile/legacy noon TRTC'});
+            assertNtTymcFacts(renderedWeatherText,'zh-TW',{context:'actual mobile/legacy NT TYMC'});
             for (const system of source.systems) assert.equal(renderedWeatherText.split(system.detail).length-1,1,system.id+' 手機畫面完整且恰好一次');
             const link = await measure(page, '#alertDetail a[href$="weather-status.html"]');
             assert.ok(link.visible && link.hitSelf && link.rect.height >= 44, `${name}/${width}/${mode}: 來源入口被裁切 ${JSON.stringify(link)}`);
@@ -1338,7 +1947,7 @@ try {
           assert.equal(await page.locator('section').count(), 9);
           assert.equal(await page.locator('section[aria-labelledby="trtc"] a').count(), 4, '北捷12:00新稿與三份歷史來源均保留可查閱');
           assert.equal(await page.locator('section[aria-labelledby="tra"] a').count(), 3, '11:30新方案與08:30及中午前歷史來源共三筆均可查閱');
-          assert.equal(await page.locator('section[aria-labelledby="tymc"] a').count(), 2, '今日模式與歷史慢速來源可查閱');
+          assert.equal(await page.locator('section[aria-labelledby="tymc"] a').count(), 3, '13時彈性增開新稿、先前今日模式與歷史慢速來源均可查閱');
           assert.equal(await page.locator('section[aria-labelledby="ntmetro"] a').count(), 3, '最近停駛原文與今日待確認的官方最新入口都可查閱');
           const pageOverflow = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth);
           assert.ok(pageOverflow <= 1);
@@ -1353,8 +1962,8 @@ try {
           assert.match(await page.locator('#ageNote').innerText(), /已過適用日期/);
           if (width === 375) {
             const languageTitles = {
-              en: "Typhoon Champi · Oct 24: TRA North-Link/Yilan repairs; Taipei Metro plans to gradually shorten headways",
-              ja: "台風情報｜10/24 台湾鉄道の北廻線・宜蘭線は復旧作業中、台北MRTは段階的に間隔短縮",
+              en: "Typhoon Champi | Oct 24 TRA eastern repairs; flexible extra Airport MRT express services and New Taipei headway changes",
+              ja: "台風情報｜10月24日 台鉄東部は復旧作業中、空港MRTは直達車を柔軟に増発・新北MRTは運転間隔を調整",
             };
             await page.clock.setSystemTime(new Date(when));
             for (const lang of ['en','ja']) {
@@ -1367,6 +1976,7 @@ try {
               for (const system of source.systems) assert.equal(translatedText.split(system.detailI18n[lang]).length-1,1,system.id+' '+lang+' 完整且恰好一次');
               const traFacts = assertTRAUpdatedFacts(translatedText,lang,{context:name+' '+lang+' 手機實際公告'});
               traFacts.trtcNoon = assertTRTCNoonFacts(translatedText,lang,{context:'actual mobile/legacy noon TRTC'});
+              traFacts.ntTymc = assertNtTymcFacts(translatedText,lang,{context:'actual mobile/legacy NT TYMC'});
               assert.ok(await page.evaluate(() => document.documentElement.scrollWidth-innerWidth <= 1),lang+' 無水平溢出');
               states.push({mode:'language-'+lang,operatorDetailsOnce:true,traFacts});
               await page.screenshot({path:path.join(outDir,name+'-375-'+lang+'-notice.png')});
@@ -1418,11 +2028,12 @@ try {
         assert.ok(text.includes(ntmetro.detail), '舊網頁仍須顯示最新完整新北公告');
         assertTRAUpdatedFacts(text,'zh-TW',{context:'已開啟的舊網頁台鐵完整方案'});
         assertTRTCNoonFacts(text,'zh-TW',{context:'actual mobile/legacy noon TRTC'});
+        assertNtTymcFacts(text,'zh-TW',{context:'actual mobile/legacy NT TYMC'});
         assert.ok(text.includes(thsr.detail), '舊網頁完整保留今日高鐵方案與昨日取消的日期區別');
         assert.ok(text.includes(trtc.detail), '舊網頁完整保留今日北捷五線方案與時刻限制');
-        assert.match(text,/三鶯線、安坑輕軌及淡海輕軌維持停駛.*環狀線班距約 15 分鐘/);
-        assert.match(text,/新版短訊本身未列日期、精確發布時刻、停駛起始或復駛時間/);
-        assert.match(text,/三線須待風雨趨緩，並完成軌道、供電與沿線安全巡檢確認後才能恢復/);
+
+
+
         record(`${name} 已開啟的 v1022b 舊網頁仍收到單一完整彙整`,{});
       } finally { await oldWebContext.close(); }
       const context = await browser.newContext({ viewport: { width: 375, height: 900 }, isMobile: true, hasTouch: true, locale: 'zh-TW' });
@@ -1439,6 +2050,7 @@ try {
         assert.match(text, /阿里山/);
         assertTRAUpdatedFacts(text,'zh-TW',{context:'已發行App台鐵完整方案'});
         assertTRTCNoonFacts(text,'zh-TW',{context:'actual mobile/legacy noon TRTC'});
+        assertNtTymcFacts(text,'zh-TW',{context:'actual mobile/legacy NT TYMC'});
         assert.ok(text.includes(thsr.detail), '已發行App須顯示今日高鐵正常營運與日期區別');
         // 已發行App的 HTML normal white-space 會把新公告段落換行合併為空白；仍比較整張完整內容。
         assert.ok(text.replace(/\s+/g, ' ').includes(trtc.detail.replace(/\s+/g, ' ')), '已發行App保留今日北捷五線完整方案與時刻限制');
