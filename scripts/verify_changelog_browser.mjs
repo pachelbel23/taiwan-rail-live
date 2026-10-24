@@ -127,7 +127,10 @@ const widths = [360, 375, 414, 768];
 // 10/23：補列10/24北捷班距與首班待通知，保留今晚停駛（508→509）。
 // 10/23: Taoyuan reduced speed and next-day TRA sections (509 -> 510).
 // 10/24: fresh dated typhoon snapshot (510 -> 511).
-const expectedHistoryCount = 511;
+// 10/24: dated Taipei Metro all-route operating plan (511 -> 512).
+// 10/24: dated New Taipei Circular Line15minute plan (512 -> 513).
+// 10/24: latest three-line continued-suspension notice (513 -> 514).
+const expectedHistoryCount = 514;
 
 try {
   for (const [engineName, engine] of Object.entries({ chromium, webkit })) {
