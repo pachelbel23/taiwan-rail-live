@@ -127,9 +127,11 @@ export async function railAiDetect(env, { now = Date.now(), fetch: fetchImpl = f
   for (const { s, items } of sources) {
     const prev = await kvGet(db, 'src:' + s.id);
     writes.push(kvPut(db, 'src:' + s.id, items, now));
-    if (!prev) { // 第一次看到這個來源：只記基準。列表上跟營運有關的既有公告先存原文，之後整理時才有依據
-      events.push({ source: s.id, system: s.system, type: 'baseline', key: null, value: String(Object.keys(items).length), prev: null, relevant: 0 });
-      if (s.kind === 'list') for (const [url, title] of Object.entries(items)) if (RELEVANT.test(title)) newArticles.push({ url, system: s.system, title, relevant: 1 });
+    if (!prev) { // 第一次看到這個來源（剛上線、或第一次拿到 TDX）：記基準。上面已經有營運相關的公告或燈號，就存原文、
+      // 直接整理一次——不然頁面會在官方還掛著停駛公告時顯示「沒有異常」，要等下一則新公告才補上
+      const rel = Object.entries(items).filter(([k, v]) => RELEVANT.test(s.kind === 'list' ? v : k + v));
+      events.push({ source: s.id, system: s.system, type: 'baseline', key: null, value: String(Object.keys(items).length), prev: null, relevant: rel.length ? 1 : 0 });
+      if (s.kind === 'list') for (const [url, title] of rel) newArticles.push({ url, system: s.system, title, relevant: 1 });
       continue;
     }
     for (const [k, v] of Object.entries(items)) {
@@ -165,7 +167,7 @@ export async function railAiDetect(env, { now = Date.now(), fetch: fetchImpl = f
 
   // 待整理的系統：每個系統一列 pending:<id>，值＝最後一次相關變化的時間。整理成功時只刪掉不晚於整理開始的，
   // 整理途中下一輪偵測到的新變化會留著（一列一系統，增刪都是單句 SQL，不會互相蓋掉）
-  const dirty = [...new Set(events.filter(e => e.relevant && e.type !== 'baseline').map(e => e.system))];
+  const dirty = [...new Set(events.filter(e => e.relevant).map(e => e.system))];
   for (const sys of dirty) writes.push(db.prepare(`INSERT INTO rail_ai_kv (k, v, updated_ms) VALUES (?, ?, ?)
     ON CONFLICT(k) DO UPDATE SET v = MAX(CAST(rail_ai_kv.v AS INTEGER), CAST(excluded.v AS INTEGER)), updated_ms = excluded.updated_ms`)
     .bind('pending:' + sys, String(now), now));
@@ -178,12 +180,19 @@ const SYSTEM_PROMPT = `你負責軌島 App 的「即時營運整理」：把鐵�
 
 原則：
 - 只轉述官方原文寫明的內容，不推定。「預計」「視情況」要照原樣保留成預估，不寫成已確認。
-- 寫出依據的官方公告時間；原文標題上的時刻不等於生效或發布時刻，除非原文明說。
-- 被新公告取代的舊方案只能當歷史參考，要明講不是最新確認。
+- 寫出依據的是哪一則官方公告、發布時間；原文標題上的時刻不等於生效或發布時刻，除非原文明說。
+- 被新公告取代的舊方案不能寫成現況。
 - 文章消失、轉址、讀不到、或首頁只顯示一般「正常營運」，都不能當作復駛或恢復正常的證據；讀不到就寫讀不到。
-- 車次、時刻、區間、班距照原文抄，不自行合併或四捨五入。
-- 列車照常不代表附屬服務（停車場、行李託運、商品館等）都恢復；原文有列才寫。
+- 寫出來的車次、時刻、區間、班距照原文抄，不自行合併或四捨五入。
+- 列車照常不代表附屬服務（停車場、行李託運、商品館等）都恢復；原文沒寫就不寫。
 - 跟營運無關的公告（促銷、活動、招標、徵才）不寫進去。
+
+寫法（讀者是正要出門的乘客，在手機上看）：
+- detail 先講現在能不能搭、哪些路線區段或車次受影響、預計什麼時候恢復。250 字內；台鐵這類一次調整很多車次的公告最多 400 字。最多三段。
+- 時刻只寫關鍵的：起訖、首末班、預計恢復，以及特開、替代、恢復的那幾班的車次與起站開車時刻。逐站時刻表不要抄，寫「各站時刻見官方公告」。
+- 不要寫你的查核過程或判斷理由，例如讀取時間、哪個欄位無法核實、為什麼不採用某個時刻。原文沒寫的事直接不寫。整理時間與原文連結頁面會另外顯示。
+- 舊方案與歷史只在不寫會讓人誤會時才提，一句帶過。
+- 附屬服務只寫乘客會用到的，一句帶過。
 - 中文用台灣用語。英文、日文版內容要跟中文版一致，不增不減。
 - impacts 只列原文寫明的影響；state 用「停駛」「部分停駛」「減班或改點」「正常」「未確認」其中之一，trains 只放原文明列的車次。
 - sourceUrls 只放這次實際依據、而且在下方原文裡出現過的網址。`;
@@ -204,7 +213,7 @@ const ENTRY_SCHEMA = {
   properties: {
     status: { type: 'string', description: '15 字內的狀態摘要' },
     statusEn: { type: 'string' }, statusJa: { type: 'string' },
-    detail: { type: 'string' }, detailEn: { type: 'string' }, detailJa: { type: 'string' },
+    detail: { type: 'string', description: '給乘客看的說明，250 字內（台鐵大量調整時最多 400 字）' }, detailEn: { type: 'string' }, detailJa: { type: 'string' },
     sourceUrls: { type: 'array', items: { type: 'string' } },
     impacts: { type: 'array', items: IMPACT },
   },
@@ -234,7 +243,7 @@ async function buildPrompt(db, sys, prevEntry, now) {
   return `現在時間：${twTime(now)}（台灣時間）
 系統：${sys}（${labelOf(sys)}）
 
-${prevView ? `<previous_entry>\n${JSON.stringify(prevView, null, 1)}\n</previous_entry>` : '（這個系統之前沒有整理過，從零寫。）'}
+${prevView ? `<previous_entry>\n${JSON.stringify(prevView, null, 1)}\n</previous_entry>` : '（這個系統之前沒有整理過，從零寫。下面的原文是目前列表上看得到的營運相關公告，first_seen 是第一次讀到的時間、不是發布時間；以原文的發布日期判斷新舊，已經過去的方案不要寫成現況。）'}
 
 這次偵測到的變化：
 ${ev.length ? ev.map(e => `- ${twTime(e.at_ms)} ${e.source} ${({ new: '新出現', changed: '內容改變', removed: '消失' })[e.type] || e.type}：${e.item_key || ''} ${e.value || e.prev || ''}`.slice(0, 600)).join('\n') : '（無）'}
@@ -243,8 +252,8 @@ ${ev.length ? ev.map(e => `- ${twTime(e.at_ms)} ${e.source} ${({ new: '新出現
 ${blocks.join('\n') || '（目前沒有可讀的官方原文）'}
 ${prevView ? `
 請以上一版為基礎更新：
-- 原文跟上一版一致的部分，沿用上一版的內容與歷史註記，不要丟掉。
-- 有新公告就改寫成新方案，被取代的舊方案改列歷史參考。
+- 原文跟上一版一致的部分，沿用上一版的內容。
+- 有新公告就改寫成新方案；被取代的舊方案不寫成現況，只在不寫會讓人誤會時一句帶過。
 - 上一版有依據、但這次讀不到的來源，保留上一版的方案並寫明最後成功核讀的時間，不能當作已撤銷或已恢復。` : ''}`;
 }
 

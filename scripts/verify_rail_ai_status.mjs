@@ -72,11 +72,14 @@ const env = { DELAY_DB, ANTHROPIC_API_KEY: 'test-key' };
 const T0 = Date.parse('2026-10-24T09:00:00+08:00');
 const api = async (now, qs = '') => { const r = await railAiStatus(new Request('https://railisland.tw/api/rail-status' + qs), env, now); return { status: r.status, body: await r.json() }; };
 
-// 1. 第一輪只記基準，不叫模型
+// 1. 第一輪記基準；列表上已經有營運相關公告（台鐵加開）、燈號有營運狀況（新北捷）的系統直接排整理
 world.claude = () => { throw new Error('不該叫模型'); };
 let d = await railAiDetect(env, { now: T0, fetch: fakeFetch });
-check('第一輪：每個來源都記基準、沒有待整理', d.dirty.length === 0 && d.errors.length === 0 && db.prepare(`SELECT COUNT(*) n FROM rail_ai_events WHERE type='baseline'`).get().n === RAIL_AI_SOURCES.length, JSON.stringify(d));
-check('第一輪：列表上既有的營運相關公告先存原文', db.prepare('SELECT text FROM rail_ai_articles WHERE url = ?').get(traUrl('aa01'))?.text.includes('加開 3 列'));
+check('第一輪：每個來源都記基準，有營運相關內容的系統排整理', d.dirty.join() === 'tra,ntmetro' && d.relevant === 0 && d.errors.length === 0 && db.prepare(`SELECT COUNT(*) n FROM rail_ai_events WHERE type='baseline'`).get().n === RAIL_AI_SOURCES.length, JSON.stringify(d));
+check('第一輪：列表上既有的營運相關公告先存原文、不相關的不存', db.prepare('SELECT text FROM rail_ai_articles WHERE url = ?').get(traUrl('aa01'))?.text.includes('加開 3 列')
+  && db.prepare('SELECT COUNT(*) n FROM rail_ai_articles').get().n === 1);
+// 第一輪的整理在第 17 節用另一個庫驗；這裡清掉，下面的流程從沒有待整理開始
+db.prepare(`DELETE FROM rail_ai_kv WHERE k LIKE 'pending:%'`).run();
 let s = await railAiSummarize(env, { now: T0, fetch: fakeFetch });
 check('沒有待整理就不呼叫模型', s.skipped === 'nothing pending' && world.claudeCalls.length === 0);
 
@@ -194,7 +197,7 @@ check('官網抓不到只記錯誤、不產生消失事件', d.errors.length ===
 const alerts = { tra: [{ bulletin: true, sysLabel: '軌島', title: '彙整' }, { status: 1, title: '全線營運正常' }],
   thsr: [], metro: [{ sysLabel: '高雄輕軌', status: 2, title: '輕軌部分區間停駛', desc: '因強風', lines: ['C'] }] };
 d = await railAiDetect(env, { now: later + 18 * 60e3, fetch: fakeFetch, alerts });
-check('第一次拿到 TDX 只記基準', d.dirty.length === 0);
+check('第一次拿到 TDX：已經有營運相關公告的系統直接排整理（高雄輕軌）', d.dirty.join() === 'klrt', JSON.stringify(d));
 alerts.metro[0].desc = '因強風，預計 16 時恢復';
 d = await railAiDetect(env, { now: later + 21 * 60e3, fetch: fakeFetch, alerts });
 check('TDX 公告內容改變標成待整理（高雄輕軌）', d.dirty.join() === 'klrt', JSON.stringify(d));
@@ -202,6 +205,20 @@ check('TDX 公告內容改變標成待整理（高雄輕軌）', d.dirty.join() 
 // 16. 資料表不存在（正式庫漏套 migration）時 API 回 503，不丟例外
 const bad = await railAiStatus(new Request('https://railisland.tw/api/rail-status'), { DELAY_DB: { prepare() { throw new Error('no such table: rail_ai_revisions'); } } });
 check('資料表不存在回 503', bad.status === 503);
+
+// 17. 剛上線的第一輪：直接整理，提示裡要說明 first_seen 不是發布時間
+{
+  const fresh = openTestDb();
+  const env2 = { DELAY_DB: fresh.DELAY_DB, ANTHROPIC_API_KEY: 'test-key' };
+  world.claudeCalls.length = 0;
+  world.claude = () => claudeReply(entry('加開列車', '正常', traUrl('aa01')));
+  await railAiDetect(env2, { now: T0, fetch: fakeFetch });
+  const s2 = await railAiSummarize(env2, { now: T0, fetch: fakeFetch });
+  const prompts = world.claudeCalls.map(c => c.body.messages[0].content);
+  check('剛上線第一輪就整理有營運相關內容的系統', s2.done && s2.done.sort().join() === 'ntmetro,tra' && fresh.db.prepare('SELECT COUNT(*) n FROM rail_ai_revisions').get().n === 1, JSON.stringify(s2));
+  check('第一輪的提示說明 first_seen 不是發布時間，並附上既有公告原文', prompts.length === 2 && prompts.every(p => p.includes('不是發布時間'))
+    && prompts.some(p => p.includes('加開 3 列')) && prompts.some(p => p.includes('全線正常營運')));
+}
 
 console.log(fails ? `\n${fails} 項失敗` : '\n全部通過');
 process.exit(fails ? 1 : 0);
