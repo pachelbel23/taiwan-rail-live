@@ -125,7 +125,13 @@
 - **自動降級（對應 App 的中低階模式）**：8× 量到 2D 可用、3D 不可用（10–14 fps）。做法可以比照 App 的建議卡：偵測到「立體列車開著、連續幾秒 rAF 幀距中位數 > 60 ms、沒在互動」就把立體列車切回平面並吐司「這台電腦跑立體列車太吃力，已改用平面；可在觀看設定重新開啟」。只影響這次開啟（不改 `ri-trains-enabled` 的使用者設定）。這會改變使用者看到的畫面，等使用者決定要不要做、要不要用更保守的門檻。既有的 30 fps 省電模式對 2D 幫助不大（8× 下 2D 瓶頸是每幀的工作量，不是幀率上限），不建議拿它當兜底。
 - ~~`verify_easedshift_key` 白天再補跑一次~~：10/24 09:43 已補跑，K1–K7 全 ✓。
 
-## 六、怎麼重跑
+## 六、出貨紀錄
+
+- 10/24 11:52 以 main `9d1f821c`（BUILD **v1024e**）`npm run ship-web` 出貨成功：railisland.tw 逐 byte＝stripped(9d1f821c)，1,887,448 bytes，API 200；升版前正式站是 `7d9bcfa9`（v1024d）。原本 go 的是 v1024b，因 main 同日已出到 v1024d 而改號。
+- 出貨鏈前四發分別被擋在：樹沒有 `node_modules`（符號連結主 repo 的即可）、別條線的出貨鎖（08:48 那發跑到 10:01）、近期更新缺 en／ja、i18n 瀏覽器驗收的 `settle3d`（首屏延後掛載）、實體股道互穿閘門（鍵快取被展開複製帶走）。每一發 15～70 分鐘。
+- 出貨後 curl 確認：`const BUILD = 'v1024e'`、`rail-3d/physical/client.js` 含 `ensureProfiles`、`rail-3d.js` 含 `attachDue`／`deferred`／`rendererWanted`、更新紀錄第一條是 webperf1024。
+
+## 七、怎麼重跑
 
 ```bash
 # dev server（worktree 根）
