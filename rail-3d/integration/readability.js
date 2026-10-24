@@ -1,4 +1,6 @@
-export const routeWidth=zoom=>Math.min(6.5,4.5+Math.max(0,zoom-14)*.4);
+// 近景 4.5px 起隨縮放加寬；14 級以下只有起伏地形的遠景示意線會用到（map3d buildFarLines），
+// 收到 3px 對齊 GL 線圖層的 line-width（data/track_style_layers.json），切換地形時線寬不跳。
+export const routeWidth=zoom=>zoom>=14?Math.min(6.5,4.5+(zoom-14)*.4):Math.max(3,4.5-(14-zoom)*1.5);
 
 export function readableScale(model,p,angle,ratio,zoom,project,mode){
   if(mode==='scale'||zoom>=19)return 1;

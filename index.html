@@ -14023,7 +14023,9 @@ function glFollowRouteSync(raw, theme) {
     }] : [] });
     glTracks.followPts = pts; glTracks.followColor = followColor;
   }
-  const visible = !!pts && state.trackStyle !== 'hidden' && !(window.railIslandIntegration?.profileKeys().length);
+  // 近景（raw zoom ≥14）示意線形被實體股道抽換時，GL 的跟隨路線不畫；起伏地形的遠景雖也由 3D 層畫線
+  // （profileKeys 非空），跟隨路線仍留給 GL 這層，不然低縮放跟車就沒有路線高亮。
+  const visible = !!pts && state.trackStyle !== 'hidden' && !(raw.getZoom() >= 14 && window.railIslandIntegration?.profileKeys().length);
   const sig = [theme, visible].join('#');
   if (sig === glTracks.followSig) return;
   glTracks.followSig = sig;
