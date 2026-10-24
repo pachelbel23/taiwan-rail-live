@@ -4,6 +4,7 @@
   if (!messages || !messages.en || !messages.ja) return;
 
   Object.assign(messages.en, {
+    "網站效能：省掉每幀重複計算與多餘的版面重排，立體列車與股道剖面改為放大時才載入；一般筆電開機更快、拖曳與跟車更順": "Site performance: removed per-frame recomputation and needless layout reflows; 3D trains and track profiles now load only when you zoom in. Ordinary laptops start faster, and dragging and following run more smoothly.",
     "更新新北捷運本輪核讀的最新跑馬：淡海、安坑、三鶯維持停駛，環狀約 15 分鐘；未列復駛時間，保留北捷與台鐵今日方案": "Updated New Taipei Metro's latest scrolling notice: Danhai, Ankeng and Sanying remain suspended; Circular Line headways are about 15 minutes. No resumption time is given; today's Taipei Metro and TRA plans are retained.",
     "薔琵颱風｜10/24 新北三線維持停駛、台鐵中午前分區行駛": "Typhoon Champi · Oct 24: three New Taipei Metro lines remain suspended; TRA regional services before noon",
     "補列新北環狀線 10/24 約 15 分鐘班距；淡海、安坑、三鶯今日首班與復駛仍待確認，保留北捷各線方案及風雨調整提醒": "Added the Circular Line’s Oct 24 plan at about 15-minute headways. First services and resumption on Danhai, Ankeng and Sanying remain unconfirmed; Taipei Metro’s plan and weather-related adjustments are retained.",
@@ -302,6 +303,7 @@
   });
 
   Object.assign(messages.ja, {
+    "網站效能：省掉每幀重複計算與多餘的版面重排，立體列車與股道剖面改為放大時才載入；一般筆電開機更快、拖曳與跟車更順": "サイトの性能改善：毎フレームの重複計算と不要なレイアウト再計算を削減し、立体列車と線路断面はズームイン時にのみ読み込むように変更。一般的なノートPCでも起動が速くなり、ドラッグや追尾がより滑らかになりました。",
     "更新新北捷運本輪核讀的最新跑馬：淡海、安坑、三鶯維持停駛，環狀約 15 分鐘；未列復駛時間，保留北捷與台鐵今日方案": "新北MRTの最新スクロール案内を更新：淡海・安坑・三鶯は運休継続、環状線は約15分間隔です。再開時刻は示されておらず、本日の台北MRTと台湾鉄道の計画も掲載しています。",
     "薔琵颱風｜10/24 新北三線維持停駛、台鐵中午前分區行駛": "台風情報｜10/24 新北MRTの3路線は運休継続・台湾鉄道は正午前に区間別運転",
     "補列新北環狀線 10/24 約 15 分鐘班距；淡海、安坑、三鶯今日首班與復駛仍待確認，保留北捷各線方案及風雨調整提醒": "新北MRT環状線の10月24日の約15分間隔を追記しました。淡海・安坑・三鶯の本日の始発と再開は未確認で、台北MRTの計画と風雨による調整条件も掲載しています。",
