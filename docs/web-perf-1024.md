@@ -93,7 +93,7 @@
 | `scripts/verify_phys_speed_cap.mjs`（實體股道速度上限） | 7 PASS / 0 FAIL |
 | `scripts/verify_all_metro_motion.mjs`（全捷運運動，chromium） | 通過（輸出 `output/perf-web/gates/metro-motion.json`） |
 | `scripts/verify_changelog_copy.mjs`（更新紀錄字數） | 通過 |
-| `scripts/verify_easedshift_key.mjs`（台鐵∩林鐵撞號） | **深夜無法量**（林鐵只跑白天，腳本自行中止）；鍵的內容沒改，只是改成記在車上 |
+| `scripts/verify_easedshift_key.mjs`（台鐵∩林鐵撞號） | 深夜跑會自行中止（林鐵只跑白天）；10/24 09:43 白天補跑 K1–K7 全 ✓、rc=0 |
 
 3D 延後掛載的行為抽查（`output/perf-web/check-lazy3d.mjs`，五種進場）：全台 z7.96 → 沒有算繪器、three.js 與三份剖面都沒下載；放大到台北 z16 → 掛上、54 輛模型、3,689 段橋梁結構、剖面已載；`?scene=3d` 深連結、`?map=landscape`、漫遊 → 一開始就掛；五個情境零頁面錯誤。
 
@@ -113,7 +113,7 @@
 
 - **3D 在 4× 降速只有 33 fps**，瓶頸是 MapLibre 的繪製（建築擠出＋地形＋傾斜 60°）。可做的是「省電模式再降 dpr 到 1.5、或在 3D 關掉建築層」這類畫質取捨，需要使用者看過畫面再決定。
 - **自動降級（對應 App 的中低階模式）**：8× 量到 2D 可用、3D 不可用（10–14 fps）。做法可以比照 App 的建議卡：偵測到「立體列車開著、連續幾秒 rAF 幀距中位數 > 60 ms、沒在互動」就把立體列車切回平面並吐司「這台電腦跑立體列車太吃力，已改用平面；可在觀看設定重新開啟」。只影響這次開啟（不改 `ri-trains-enabled` 的使用者設定）。這會改變使用者看到的畫面，等使用者決定要不要做、要不要用更保守的門檻。既有的 30 fps 省電模式對 2D 幫助不大（8× 下 2D 瓶頸是每幀的工作量，不是幀率上限），不建議拿它當兜底。
-- `verify_easedshift_key` 白天再補跑一次。
+- ~~`verify_easedshift_key` 白天再補跑一次~~：10/24 09:43 已補跑，K1–K7 全 ✓。
 
 ## 六、怎麼重跑
 
