@@ -30,7 +30,7 @@
   let landscapeGround=(params.get('ground')||read('ri-landscape-ground','terrain'))==='flat'?'flat':'terrain';
   const effectiveGround=()=>state.basemap==='landscape'?landscapeGround:groundMode;
   formationMode=formationMode==='three'?'three':'actual';groundMode=groundMode==='terrain'?'terrain':'flat';trainSizeMode=trainSizeMode==='scale'?'scale':'readable';
-  let renderer=null,lastFrame=null,loading=false,loadSerial=Promise.resolve(),epoch=0,manualTarget=null,appearanceKey='',noteAt=0,renderAt=-Infinity,noteLang='';
+  let renderer=null,lastFrame=null,loading=false,loadSerial=Promise.resolve(),epoch=0,manualTarget=null,appearanceKey='',noteAt=0,renderAt=-Infinity,farAt=0,noteLang='';
   let trainIds=new WeakMap(),lineIds=new WeakMap();
   const shapeCache=new WeakMap(),lineBounds=new WeakMap(),stationIds=new WeakMap(),tripKeys=new WeakMap(),targets=new Map(),stationTargets=new Map(),motionItems=new Map(),headings=new Map(),errors=[];
   const save=(key,value)=>{try{localStorage.setItem(key,String(value));}catch{}};
@@ -47,7 +47,8 @@
     if(!coordinates){coordinates=shape?shape.map(c=>[c[1],c[0]]):(ln.stations||[]).map(s=>[s.lon,s.lat]);shapeCache.set(shape||ln,coordinates);}
     return {id:systemId+':'+ln.id,systemId,routeId:String(ln.id),lineKey:(ln._sys||ln.sys||systemId)+'|'+ln.id,color:ln.color||'#547466',coordinates,loop:!!ln.loop};
   }
-  function capture({cull=false}={}){
+  function capture({cull=false,linesOnly=false}={}){
+    const skipVehicles=state.collectMap||linesOnly; // linesOnly：遠景的起伏地形只要路線（給 3D 層畫示意線），車輛一輛都不收
     const epoch=Date.now()/1000,day=taipeiServiceDayStr(),vehicles=[],routes=[],stations=[];
     // 近景只送附近車輛進 3D；遠方捷運不用每幀再反查線形、換算實體股道。
     // 來源示意線與股道可能略有差距，邊界額外保留約兩公里，跟隨車一律保留。
@@ -76,7 +77,7 @@
     if(state.mode==='sched'){
       for(const ln of state.trackLines||[])if(!state.trackVisible||state.trackVisible.has(ln.id))routes.push(lineRecord(ln,ln.sys||ln._sys||'rail'));
       for(const st of state.schedStations||[])station(st,st.sys);
-      if(!state.collectMap)for(const tr of state.trains){
+      if(!skipVehicles)for(const tr of state.trains){
         if(tr!==state.followTrain&&!state.visible.has(tr.typeName))continue;
         const pos=trainPos(tr,state.simSec);if(!pos||!nearby(pos,state.followTrain===tr))continue;
         const g=trainSeg(tr,state.simSec-liveDelaySec(tr)-blockHoldSec(tr));
@@ -88,7 +89,7 @@
       // 自製列車:另外掃一輪,條件跟 2D(ownTrainDraw2D)一樣——系統有載入、chip 開著,
       // 正在跟著它時不管 chip。實體股道借用不必額外接線:trainPos()內部的
       // window.railIslandPhysical.sample()對任何 tr 物件一視同仁,自製車形狀比照真車。
-      if(!state.collectMap)for(const tr of state.myTrains||[]){
+      if(!skipVehicles)for(const tr of state.myTrains||[]){
         const followed=state.followTrain===tr;
         if(!followed&&!(ownTrainOnTab(tr.sys)&&state.ownTrainShow))continue;
         const pos=trainPos(tr,state.simSec);if(!pos)continue;
@@ -105,7 +106,7 @@
       if(state.mode!=='sched'&&!state.visible.has(ln.id))continue;
       const sys=freqSysIdOf(ln),route=lineRecord(ln,sys),common={systemId:sys,routeId:String(ln.id),route,color:ln.color,publicLabel:ln.abbr||ln.name};
       routes.push(route);for(const st of ln.stations||[])station(st,sys,ln);
-      if(state.collectMap||!nearbyLine(ln))continue;
+      if(skipVehicles||!nearbyLine(ln))continue;
       const core=metroCoreItemsForLine(ln,epoch),official=core===null?trtcOfficialItemsForLine(ln,epoch):null;
       if(core!==null||official!==null){
         for(const item of core??official){const kind=core!==null?'core':'official',f=state.freqFollow;
@@ -177,14 +178,20 @@
     // tick 才節流；選項呼叫 render() 時立即生效，暫停中的跳時也不受間隔限制。
     // 相機有動作維持全速，同一視角的列車更新則與主 canvas 的待機頻率一致。
     // 暫停時仍低頻檢查資料與模型到貨；官方即時捷運使用牆鐘，不能因回放暫停而降成靜態。
+    let fullRate=true;
     if(Number.isFinite(now)){
-      const fullRate=state.followTrain||state.freqFollow||state.ambient||renderer.interacting||M.raw.isMoving()||now-(state._interactAt||0)<1500;
+      fullRate=state.followTrain||state.freqFollow||state.ambient||renderer.interacting||M.raw.isMoving()||now-(state._interactAt||0)<1500;
       const live=lastFrame?.vehicles.some(v=>v.sourceKind==='core'||v.sourceKind==='official');
       const interval=fullRate?0:state.playing||live?30:250;
       if(now-renderAt<interval&&(state.playing||lastFrame?.clock.simSec===state.simSec))return;
     }
     renderAt=Number.isFinite(now)?now:performance.now();
-    if(M.raw.getZoom()<13.8&&!followHeadLocked()){if(lastFrame?.vehicles.length){lastFrame={...lastFrame,vehicles:[],selectedVehicleId:null};renderer.update(lastFrame);}return;}
+    if(M.raw.getZoom()<13.8&&!followHeadLocked()){
+      // 起伏地形的遠景示意線改由 3D 層畫（map3d buildFarLines，不進 MapLibre 的地形 RTT），frame 要照送、只省掉車輛；
+      // 沒有車要動，鏡頭不動時每 250ms 送一次就夠（路線開關、DEM 到貨要不要重建都在 map3d 的 update 裡判斷）。
+      // 平面照舊：清空一次車輛就停，遠景沒有東西要畫。
+      if(effectiveGround()==='terrain'){if(!fullRate&&lastFrame&&renderAt-farAt<250)return;farAt=renderAt;lastFrame=capture({cull:true,linesOnly:true});renderer.update(lastFrame);return;}
+      if(lastFrame?.vehicles.length){lastFrame={...lastFrame,vehicles:[],selectedVehicleId:null};renderer.update(lastFrame);}return;}
     lastFrame=capture({cull:true});renderer.update(lastFrame);syncAppearance();updateNote();
   }catch(e){if(errors.length<5){errors.push(String(e.stack||e));console.error('3D 顯示',e);}enabled=false;syncUI();}}
   // renderer.interacting 期間本來一律讓位;純旋轉／傾斜手勢改交給 followCoordinate 自己判斷
@@ -211,7 +218,8 @@
   }
   const labels={perspective:['地圖視角','俯視','傾斜'],enabled:['立體列車','開啟','關閉'],formation:['列車編組','完整編組','三節示意'],ground:['地形','平坦','起伏試驗'],size:['列車大小','容易辨認','原始比例'],models:['顯示列車','全部近景','只看選取'],inspection:['透視顯示','透視','實體'],camera:['賞車視角','側拍','環繞']};
   function syncUI(){for(const row of document.querySelectorAll('[data-rail3d]')){const key=row.dataset.rail3d,value={perspective:M.getPitch()<1?'flat':'tilt',enabled:enabled?'on':'off',formation:formationMode,ground:effectiveGround(),size:trainSizeMode,models:modelMode,inspection:inspectionEnabled()?'on':'off',camera:ambientCamera}[key];for(const b of row.querySelectorAll('button')){b.setAttribute('aria-pressed',String(b.dataset.value===value));b.classList.toggle('on',b.dataset.value===value);b.disabled=loading;}}}
-  function setOption(key,value){switch(key){case 'perspective':void setPerspective(value);return;case 'enabled':enabled=value==='on';save('ri-trains-enabled',enabled?'1':'0');break;
+  // persist=false 給 index.html 的 3D 自動降級用:只關這一次,不動使用者記住的 ri-trains-enabled,下次開頁重新判斷。
+  function setOption(key,value,persist=true){switch(key){case 'perspective':void setPerspective(value);return;case 'enabled':enabled=value==='on';if(persist)save('ri-trains-enabled',enabled?'1':'0');break;
     case 'formation':formationMode=value==='three'?'three':'actual';save('ri-formation-mode',formationMode);renderer?.setFormationMode(formationMode);break;
     case 'ground':if(state.basemap==='landscape'){landscapeGround=value==='terrain'?'terrain':'flat';save('ri-landscape-ground',landscapeGround);}else{groundMode=value==='terrain'?'terrain':'flat';save('ri-ground-mode',groundMode);}renderer?.setGroundMode(effectiveGround());glTracks.sig='';M.raw.getLayer('building-glass-edges')?.implementation?.schedule();break;
     case 'size':trainSizeMode=value==='scale'?'scale':'readable';save('ri-train-size-v21',trainSizeMode);renderer?.setTrainSizeMode(trainSizeMode);break;
@@ -254,7 +262,7 @@
     keepBearing(){return !!renderer?.transitioning||(!state.followHeadingUp&&enabled&&M?.raw?.getZoom()>=14&&(sameTarget(manualTarget,currentTarget())||state.ambient&&state.ambientStyle==='follow'));},
     hasModel(target){const id=idFor(target);return enabled&&id&&!!M.raw.getLayer('live-vehicles-3d')&&renderer?.hasModel(id);},
     hits(point,freq){if(!enabled||!M.raw.getLayer('live-vehicles-3d'))return [];return renderer?.hitTest(point).map(hit=>({...targets.get(hit.id),dist:hit.dist,boxed:true})).filter(hit=>!!hit.ln===freq)||[];},
-    profileKeys(){return renderer?.profileKeys()||[];},syncLayerOrder(){renderer?.syncLayerOrder();},setMode:value=>setOption('enabled',value?'on':'off'),setGroundMode:value=>setOption('ground',value),setFormationMode:value=>setOption('formation',value),setTrainSize:value=>setOption('size',value),setModelMode:value=>setOption('models',value),setAmbientCamera:value=>setOption('camera',value),setInspection:value=>setOption('inspection',value?'on':'off'),syncAppearance,
+    profileKeys(){return renderer?.profileKeys()||[];},syncLayerOrder(){renderer?.syncLayerOrder();},setMode:(value,persist)=>setOption('enabled',value?'on':'off',persist),setGroundMode:value=>setOption('ground',value),setFormationMode:value=>setOption('formation',value),setTrainSize:value=>setOption('size',value),setModelMode:value=>setOption('models',value),setAmbientCamera:value=>setOption('camera',value),setInspection:value=>setOption('inspection',value?'on':'off'),syncAppearance,
     shareParams(url){if(state.basemap==='landscape'){url.searchParams.set('map','landscape');url.searchParams.set('ground',effectiveGround());}if(!enabled)url.searchParams.set('scene','2d');if(effectiveGround()==='terrain')url.searchParams.set('ground','terrain');if(formationMode==='three')url.searchParams.set('formation','three');return url;}};
   if(state.ready)setup();else{const timer=setInterval(()=>{if(state.ready){clearInterval(timer);setup();}},100);}
 })().catch(error=>console.error('3D 接點',error));
