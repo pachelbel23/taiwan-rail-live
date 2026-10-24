@@ -20,7 +20,7 @@ assert.equal(source.serviceDate, '2026-10-24');
 assert.equal(source.displayFrom, '2026-10-24T00:00:00+08:00');
 assert.equal(source.expiresAt, '2026-10-25T00:00:00+08:00');
 assert.ok(Date.parse(source.checkedAt) >= Date.parse(source.displayFrom));
-assert.match(source.title, /10\/24.*新北三線維持停駛.*台鐵中午前分區行駛/);
+assert.match(source.title, /10\/24.*台鐵中午後分批恢復.*新北三線維持停駛/);
 assert.doesNotMatch(railWeatherNotice(when).descI18n.en, /[\u3400-\u9fff]/);
 assert.ok(railWeatherNotice(when).descI18n.ja.includes('10月24日'));
 assert.equal(source.systems.length, 9);
@@ -28,25 +28,544 @@ for (const system of source.systems) {
   assert.ok(Number.isFinite(Date.parse(system.sourceCheckedAt)), system.id + ' 保留原文真實最近成功核對時間');
   assert.ok(Date.parse(system.sourceCheckedAt) <= when, system.id + ' 不能虛報未來核對時間');
 }
+const TRA_UPDATED_FACTS = {
+  "schema": 1,
+  "serviceDate": "2026-10-24",
+  "revision": "20261024-0845",
+  "newPlanTrainNumbers": [
+    "118",
+    "120",
+    "137",
+    "125",
+    "133",
+    "5120",
+    "2608",
+    "2615",
+    "2534",
+    "2527",
+    "5216",
+    "426",
+    "219",
+    "5233",
+    "5249",
+    "271",
+    "277",
+    "281"
+  ],
+  "newPlanDepartureTimes": [
+    "12:31",
+    "12:15",
+    "12:57",
+    "11:39",
+    "12:26",
+    "12:49",
+    "12:30",
+    "12:25",
+    "12:40",
+    "12:14",
+    "12:35",
+    "12:45",
+    "17:09",
+    "17:38",
+    "19:01",
+    "19:30"
+  ],
+  "checks": [
+    {
+      "id": "new-train-118-route-time-scope",
+      "fragments": {
+        "zh-TW": [
+          "西部對號順行自屏東至七堵 118 次（彰化 12:31）及海線 120 次起恢復；"
+        ],
+        "en": [
+          "Restoration schedule after noon: Western Main Line reserved-seat services resume from Train 118, Pingtung–Qidu (Changhua departure 12:31), and Trains 137 and 125, Qidu–Chaozhou (Taipei departures 12:15 and 12:57 respectively)."
+        ],
+        "ja": [
+          "正午以降の再開計画：西部幹線の指定席列車は、屏東～七堵118次（彰化12:31発）と七堵～潮州137次・125次（台北12:15発・12:57発）から再開します。"
+        ]
+      }
+    },
+    {
+      "id": "new-train-120-route-time-scope",
+      "fragments": {
+        "zh-TW": [
+          "西部對號順行自屏東至七堵 118 次（彰化 12:31）及海線 120 次起恢復；"
+        ],
+        "en": [
+          "Coast Line reserved-seat services resume from Train 120 (clockwise) and Train 133 (counterclockwise), in their respective directions; the notice gives no termini or departure times for these two trains."
+        ],
+        "ja": [
+          "海線の指定席列車は120次（時計回り）・133次（反時計回り）から、それぞれの方向で再開。"
+        ]
+      }
+    },
+    {
+      "id": "new-train-137-route-time-scope",
+      "fragments": {
+        "zh-TW": [
+          "逆行自七堵至潮州 137 次（臺北 12:15）、125 次（臺北 12:57）及海線 133 次起恢復，鳳山至七堵 5120 次停駛。"
+        ],
+        "en": [
+          "Restoration schedule after noon: Western Main Line reserved-seat services resume from Train 118, Pingtung–Qidu (Changhua departure 12:31), and Trains 137 and 125, Qidu–Chaozhou (Taipei departures 12:15 and 12:57 respectively)."
+        ],
+        "ja": [
+          "正午以降の再開計画：西部幹線の指定席列車は、屏東～七堵118次（彰化12:31発）と七堵～潮州137次・125次（台北12:15発・12:57発）から再開します。"
+        ]
+      }
+    },
+    {
+      "id": "new-train-125-route-time-scope",
+      "fragments": {
+        "zh-TW": [
+          "逆行自七堵至潮州 137 次（臺北 12:15）、125 次（臺北 12:57）及海線 133 次起恢復，鳳山至七堵 5120 次停駛。"
+        ],
+        "en": [
+          "Restoration schedule after noon: Western Main Line reserved-seat services resume from Train 118, Pingtung–Qidu (Changhua departure 12:31), and Trains 137 and 125, Qidu–Chaozhou (Taipei departures 12:15 and 12:57 respectively)."
+        ],
+        "ja": [
+          "正午以降の再開計画：西部幹線の指定席列車は、屏東～七堵118次（彰化12:31発）と七堵～潮州137次・125次（台北12:15発・12:57発）から再開します。"
+        ]
+      }
+    },
+    {
+      "id": "new-train-133-route-time-scope",
+      "fragments": {
+        "zh-TW": [
+          "逆行自七堵至潮州 137 次（臺北 12:15）、125 次（臺北 12:57）及海線 133 次起恢復，鳳山至七堵 5120 次停駛。"
+        ],
+        "en": [
+          "Coast Line reserved-seat services resume from Train 120 (clockwise) and Train 133 (counterclockwise), in their respective directions; the notice gives no termini or departure times for these two trains."
+        ],
+        "ja": [
+          "海線の指定席列車は120次（時計回り）・133次（反時計回り）から、それぞれの方向で再開。"
+        ]
+      }
+    },
+    {
+      "id": "new-train-5120-route-time-scope",
+      "fragments": {
+        "zh-TW": [
+          "逆行自七堵至潮州 137 次（臺北 12:15）、125 次（臺北 12:57）及海線 133 次起恢復，鳳山至七堵 5120 次停駛。"
+        ],
+        "en": [
+          "Train 5120, Fongshan–Qidu, is cancelled because of typhoon-related rolling-stock arrangements."
+        ],
+        "ja": [
+          "台風による車両運用の影響で、鳳山～七堵5120次は運休します。"
+        ]
+      }
+    },
+    {
+      "id": "new-train-2608-route-time-scope",
+      "fragments": {
+        "zh-TW": [
+          "西部非對號成追線順行自臺中至通霄 2608 次（成功 11:39）、逆行自通霄至豐原 2615 次（追分 12:26）恢復；"
+        ],
+        "en": [
+          "Non-reserved services on the Chengzhui Line resume from Train 2608, Taichung–Tongxiao (Chenggong departure 11:39), and Train 2615, Tongxiao–Fengyuan (Zhuifen departure 12:26)."
+        ],
+        "ja": [
+          "成追線の非指定席列車は、台中～通霄2608次（成功11:39発）と通霄～豊原2615次（追分12:26発）から再開します。"
+        ]
+      }
+    },
+    {
+      "id": "new-train-2615-route-time-scope",
+      "fragments": {
+        "zh-TW": [
+          "西部非對號成追線順行自臺中至通霄 2608 次（成功 11:39）、逆行自通霄至豐原 2615 次（追分 12:26）恢復；"
+        ],
+        "en": [
+          "Non-reserved services on the Chengzhui Line resume from Train 2608, Taichung–Tongxiao (Chenggong departure 11:39), and Train 2615, Tongxiao–Fengyuan (Zhuifen departure 12:26)."
+        ],
+        "ja": [
+          "成追線の非指定席列車は、台中～通霄2608次（成功11:39発）と通霄～豊原2615次（追分12:26発）から再開します。"
+        ]
+      }
+    },
+    {
+      "id": "new-train-2534-route-time-scope",
+      "fragments": {
+        "zh-TW": [
+          "海線順行自彰化至新竹 2534 次（彰化 12:49）、逆行自竹南至彰化 2527 次（竹南 12:30）恢復。"
+        ],
+        "en": [
+          "Coast Line non-reserved services resume from Train 2534, Changhua–Hsinchu (Changhua departure 12:49), and Train 2527, Zhunan–Changhua (Zhunan departure 12:30)."
+        ],
+        "ja": [
+          "海線の非指定席列車は、彰化～新竹2534次（彰化12:49発）と竹南～彰化2527次（竹南12:30発）から再開します。"
+        ]
+      }
+    },
+    {
+      "id": "new-train-2527-route-time-scope",
+      "fragments": {
+        "zh-TW": [
+          "海線順行自彰化至新竹 2534 次（彰化 12:49）、逆行自竹南至彰化 2527 次（竹南 12:30）恢復。"
+        ],
+        "en": [
+          "Coast Line non-reserved services resume from Train 2534, Changhua–Hsinchu (Changhua departure 12:49), and Train 2527, Zhunan–Changhua (Zhunan departure 12:30)."
+        ],
+        "ja": [
+          "海線の非指定席列車は、彰化～新竹2534次（彰化12:49発）と竹南～彰化2527次（竹南12:30発）から再開します。"
+        ]
+      }
+    },
+    {
+      "id": "new-train-5216-route-time-scope",
+      "fragments": {
+        "zh-TW": [
+          "東部對號順行自樹林至花蓮 5216 次（臺北 12:25）、樹林至臺東 426 次（臺北 12:40），逆行自花蓮至樹林 219 次（花蓮 12:14）恢復；"
+        ],
+        "en": [
+          "Eastern Main Line reserved-seat services resume from Train 5216, Shulin–Hualien (Taipei departure 12:25), Train 426, Shulin–Taitung (Taipei departure 12:40), and Train 219, Hualien–Shulin (Hualien departure 12:14)."
+        ],
+        "ja": [
+          "東部幹線の指定席列車は、樹林～花蓮5216次（台北12:25発）、樹林～台東426次（台北12:40発）、花蓮～樹林219次（花蓮12:14発）から再開します。"
+        ]
+      }
+    },
+    {
+      "id": "new-train-426-route-time-scope",
+      "fragments": {
+        "zh-TW": [
+          "東部對號順行自樹林至花蓮 5216 次（臺北 12:25）、樹林至臺東 426 次（臺北 12:40），逆行自花蓮至樹林 219 次（花蓮 12:14）恢復；"
+        ],
+        "en": [
+          "Eastern Main Line reserved-seat services resume from Train 5216, Shulin–Hualien (Taipei departure 12:25), Train 426, Shulin–Taitung (Taipei departure 12:40), and Train 219, Hualien–Shulin (Hualien departure 12:14)."
+        ],
+        "ja": [
+          "東部幹線の指定席列車は、樹林～花蓮5216次（台北12:25発）、樹林～台東426次（台北12:40発）、花蓮～樹林219次（花蓮12:14発）から再開します。"
+        ]
+      }
+    },
+    {
+      "id": "new-train-219-route-time-scope",
+      "fragments": {
+        "zh-TW": [
+          "東部對號順行自樹林至花蓮 5216 次（臺北 12:25）、樹林至臺東 426 次（臺北 12:40），逆行自花蓮至樹林 219 次（花蓮 12:14）恢復；"
+        ],
+        "en": [
+          "Eastern Main Line reserved-seat services resume from Train 5216, Shulin–Hualien (Taipei departure 12:25), Train 426, Shulin–Taitung (Taipei departure 12:40), and Train 219, Hualien–Shulin (Hualien departure 12:14)."
+        ],
+        "ja": [
+          "東部幹線の指定席列車は、樹林～花蓮5216次（台北12:25発）、樹林～台東426次（台北12:40発）、花蓮～樹林219次（花蓮12:14発）から再開します。"
+        ]
+      }
+    },
+    {
+      "id": "new-train-5233-route-time-scope",
+      "fragments": {
+        "zh-TW": [
+          "花蓮至樹林 5233 次、臺東至樹林 5249 次停駛，部分非對號仍截短或停駛。"
+        ],
+        "en": [
+          "Trains 5233, Hualien–Shulin, and 5249, Taitung–Shulin, are cancelled because of rolling-stock arrangements; some non-reserved services remain shortened or cancelled."
+        ],
+        "ja": [
+          "車両運用の影響で、花蓮～樹林5233次と台東～樹林5249次は運休。"
+        ]
+      }
+    },
+    {
+      "id": "new-train-5249-route-time-scope",
+      "fragments": {
+        "zh-TW": [
+          "花蓮至樹林 5233 次、臺東至樹林 5249 次停駛，部分非對號仍截短或停駛。"
+        ],
+        "en": [
+          "Trains 5233, Hualien–Shulin, and 5249, Taitung–Shulin, are cancelled because of rolling-stock arrangements; some non-reserved services remain shortened or cancelled."
+        ],
+        "ja": [
+          "車両運用の影響で、花蓮～樹林5233次と台東～樹林5249次は運休。"
+        ]
+      }
+    },
+    {
+      "id": "new-train-271-route-time-scope",
+      "fragments": {
+        "zh-TW": [
+          "跨線花蓮至彰化 271 次的花蓮至松山間停駛，改由松山特開（松山 12:35、臺北 12:45）；"
+        ],
+        "en": [
+          "Cross-line reserved-seat services have partial cancellations: Train 271, originally Hualien–Changhua, is cancelled between Hualien and Songshan and instead starts at Songshan (12:35; Taipei 12:45)."
+        ],
+        "ja": [
+          "花蓮～彰化271次は花蓮～松山が運休となり、松山を始発（12:35発、台北12:45発）に変更。"
+        ]
+      }
+    },
+    {
+      "id": "new-train-277-route-time-scope",
+      "fragments": {
+        "zh-TW": [
+          "花蓮至斗南 277 次的花蓮至七堵間停駛，改由七堵特開（七堵 17:09、臺北 17:38）；"
+        ],
+        "en": [
+          "Train 277, originally Hualien–Dounan, is cancelled between Hualien and Qidu and instead starts at Qidu (17:09; Taipei 17:38)."
+        ],
+        "ja": [
+          "花蓮～斗南277次は花蓮～七堵が運休となり、七堵を始発（17:09発、台北17:38発）に変更。"
+        ]
+      }
+    },
+    {
+      "id": "new-train-281-route-time-scope",
+      "fragments": {
+        "zh-TW": [
+          "花蓮至屏東 281 次的花蓮至七堵間停駛，改由七堵特開（七堵 19:01、臺北 19:30），不是整班取消。"
+        ],
+        "en": [
+          "Train 281, originally Hualien–Pingtung, is cancelled between Hualien and Qidu and instead starts at Qidu (19:01; Taipei 19:30)."
+        ],
+        "ja": [
+          "花蓮～屏東281次は花蓮～七堵が運休となり、七堵を始発（19:01発、台北19:30発）に変更します。"
+        ]
+      }
+    },
+    {
+      "id": "morning-plan-including-cancelled-and-normal-exceptions",
+      "fragments": {
+        "zh-TW": [
+          "10/24 12:00 前仍依先前分區方案：西部對號列車基隆至彰化停駛，彰化經高雄至枋寮正常；基隆至彰化間非對號列車原海線、成追線全區間停駛，其餘視風雨機動行駛，彰化至枋寮正常。但最新公告明列成追線臺中至通霄 2608 次由成功 11:39 開車，為先前中午前停駛方案的例外。東部樹林經宜蘭至花蓮對號及非對號列車停駛，花蓮至臺東正常；南迴線對號及非對號正常。472、102、280、270、207 次全區間停駛；101、191 次台中至潮州及 371 次台中至臺東全區間正常。上午六家、集集、沙崙正常，平溪、深澳、內灣全區間停駛；行經停駛區間的加班車全區間停駛。"
+        ],
+        "en": [
+          "TRA's Oct 24 notice, published at 08:30, announces a gradual restoration of services after 12:00, with the specific trains and exceptions below; it does not mean that every train resumes at noon. Before 12:00, the earlier regional plan remains the reference, except for the explicitly announced Chengzhui Line Train 2608 restart at Chenggong at 11:39: western reserved-seat services are suspended between Keelung and Changhua, while Changhua–Kaohsiung–Fangliao operates normally. Between Keelung and Changhua, non-reserved services on the Coast and Chengzhui lines are suspended under that earlier plan; other routes operate subject to weather, and Changhua–Fangliao operates normally. Reserved and non-reserved services on Shulin–Yilan–Hualien are suspended, while Hualien–Taitung and the South-Link Line operate normally. The earlier notice lists Trains 472, 102, 280, 270 and 207 as suspended throughout, with Trains 101 and 191 on Taichung–Chaozhou and Train 371 on Taichung–Taitung operating throughout. Under the earlier before-noon plan, Liujia, Jiji and Shalun operate normally, while Pingxi, Shen-ao and Neiwan are suspended throughout. Extra trains passing through suspended sections are cancelled throughout under that plan."
+        ],
+        "ja": [
+          "台鉄が10月24日08:30に発表した公告では、12:00以降、下記の列車から段階的に運転を再開します。正午に全列車が一斉に通常運転へ戻るという意味ではありません。12:00より前は先の区間別運転計画を参照してください。ただし、今回明示された成追線2608次の成功11:39発は例外です。先の計画では、西部の指定席列車は基隆～彰化が運休、彰化～高雄～枋寮は通常運転。基隆～彰化の非指定席列車は海線・成追線が全区間運休、その他は天候に応じて運転し、彰化～枋寮は通常運転です。樹林～宜蘭～花蓮は指定席・非指定席とも運休、花蓮～台東と南廻線は通常運転。472・102・280・270・207次は全区間運休、101・191次の台中～潮州と371次の台中～台東は全区間運転とされています。先の正午前の計画では、六家線・集集線・沙崙線は通常運転、平渓線・深澳線・内湾線は全区間運休です。運休区間を通る増発列車は、その計画では全区間運休です。"
+        ]
+      }
+    },
+    {
+      "id": "early-1139-exception",
+      "fragments": {
+        "zh-TW": [
+          "但最新公告明列成追線臺中至通霄 2608 次由成功 11:39 開車，為先前中午前停駛方案的例外。"
+        ],
+        "en": [
+          "Before 12:00, the earlier regional plan remains the reference, except for the explicitly announced Chengzhui Line Train 2608 restart at Chenggong at 11:39: western reserved-seat services are suspended between Keelung and Changhua, while Changhua–Kaohsiung–Fangliao operates normally."
+        ],
+        "ja": [
+          "ただし、今回明示された成追線2608次の成功11:39発は例外です。"
+        ]
+      }
+    },
+    {
+      "id": "phased-not-all-at-noon",
+      "fragments": {
+        "zh-TW": [
+          "台鐵 10/24 08:30 新公告公布 12:00 後陸續恢復方案，並非 12:00 整點所有列車已正常。"
+        ],
+        "en": [
+          "TRA's Oct 24 notice, published at 08:30, announces a gradual restoration of services after 12:00, with the specific trains and exceptions below; it does not mean that every train resumes at noon."
+        ],
+        "ja": [
+          "正午に全列車が一斉に通常運転へ戻るという意味ではありません。"
+        ]
+      }
+    },
+    {
+      "id": "east-local-limits",
+      "fragments": {
+        "zh-TW": [
+          "花蓮至樹林 5233 次、臺東至樹林 5249 次停駛，部分非對號仍截短或停駛。"
+        ],
+        "en": [
+          "Trains 5233, Hualien–Shulin, and 5249, Taitung–Shulin, are cancelled because of rolling-stock arrangements; some non-reserved services remain shortened or cancelled."
+        ],
+        "ja": [
+          "一部の非指定席列車は区間短縮または運休となります。"
+        ]
+      }
+    },
+    {
+      "id": "south-link-normal",
+      "fragments": {
+        "zh-TW": [
+          "南迴線新左營至臺東正常。"
+        ],
+        "en": [
+          "The South-Link Line, Xinzuoying–Taitung, operates normally."
+        ],
+        "ja": [
+          "南廻線の新左営～台東は通常運転です。"
+        ]
+      }
+    },
+    {
+      "id": "cross-partial-only",
+      "fragments": {
+        "zh-TW": [
+          "花蓮至屏東 281 次的花蓮至七堵間停駛，改由七堵特開（七堵 19:01、臺北 19:30），不是整班取消。"
+        ],
+        "en": [
+          "These are shortened services, not restorations of the cancelled sections."
+        ],
+        "ja": [
+          "路線をまたぐ指定席列車には一部区間の運休があります。"
+        ]
+      }
+    },
+    {
+      "id": "normal-branches",
+      "fragments": {
+        "zh-TW": [
+          "六家、集集、沙崙正常；平溪、深澳、內灣須路線巡查完畢後恢復"
+        ],
+        "en": [
+          "The Liujia, Jiji and Shalun lines operate normally."
+        ],
+        "ja": [
+          "六家線・集集線・沙崙線は通常運転です。"
+        ]
+      }
+    },
+    {
+      "id": "inspection-before-branch-resumption",
+      "fragments": {
+        "zh-TW": [
+          "平溪、深澳、內灣須路線巡查完畢後恢復，未列明確時間。"
+        ],
+        "en": [
+          "The Pingxi, Shen-ao and Neiwan lines will resume only after track inspections are complete; no resumption time is stated."
+        ],
+        "ja": [
+          "平渓線・深澳線・内湾線は線路点検が完了してから運転を再開する予定で、再開時刻は明示されていません。"
+        ]
+      }
+    },
+    {
+      "id": "tourist-blue-normal-others-all-day",
+      "fragments": {
+        "zh-TW": [
+          "觀光列車除藍皮解憂號正常外，海風、山嵐、鳴日廚房及 1、2 次環島之星全日停駛；"
+        ],
+        "en": [
+          "Breezy Blue operates normally; tourist services including Haifeng, Shanlan, Mingri Kitchen and Formosa Express Nos. 1 and 2 are suspended all day."
+        ],
+        "ja": [
+          "観光列車は藍皮解憂号が通常運転する一方、海風・山嵐・鳴日厨房・環島之星1次と2次などは終日運休します。"
+        ]
+      }
+    },
+    {
+      "id": "science-train-transfer-and-closing",
+      "fragments": {
+        "zh-TW": [
+          "科普列車全日停駛並辦理迴送，閉幕活動取消。"
+        ],
+        "en": [
+          "The Science Train is suspended all day and will be repositioned without passengers; its closing event is cancelled."
+        ],
+        "ja": [
+          "科学普及列車は終日運休して回送を行い、閉幕行事も中止。"
+        ]
+      }
+    },
+    {
+      "id": "remaining-local-limits-check-before-travel",
+      "fragments": {
+        "zh-TW": [
+          "部分非對號仍可能截短或停駛，出發前須查官方班次。"
+        ],
+        "en": [
+          "Some non-reserved services may still be shortened or cancelled; check TRA's latest information before departure."
+        ],
+        "ja": [
+          "一部の非指定席列車には引き続き区間短縮や運休があるため、出発前に台鉄の最新情報を確認してください。"
+        ]
+      }
+    },
+    {
+      "id": "yesterday-extra-trains-excluded",
+      "fragments": {
+        "zh-TW": [
+          "10/23 的 6115、6117 次加開不屬於今日方案。"
+        ],
+        "en": [
+          "The Oct 23 extra trains 6115 and 6117 are not part of today's plan."
+        ],
+        "ja": [
+          "10月23日の増発6115・6117次は、本日の計画には含まれません。"
+        ]
+      }
+    }
+  ],
+  "forbidden": {
+    "zh-TW": [
+      "10/24 12:00 後資訊預定於當日 08:00 公告，尚不能推定中午後恢復。"
+    ],
+    "en": [
+      "resumption after noon is not yet confirmed."
+    ],
+    "ja": [
+      "正午以降の再開は未確認です。"
+    ]
+  }
+};
+
+// Additive fact assertions only. Keep every existing version/window/CORS/
+// uniqueness/mobile/real-touch/scroll/native/HTTP/source-link assertion.
+const normalizeTRA = value => String(value).normalize('NFC').replace(/\s+/g, ' ').trim();
+const hasTRAToken = (text, token) => new RegExp('(?:^|[^0-9])' + token + '(?![0-9])').test(text);
+function assertTRAUpdatedFacts(text, language, {context = 'TRA'} = {}) {
+  if (TRA_UPDATED_FACTS.checks.length !== 30 || new Set(TRA_UPDATED_FACTS.checks.map(x => x.id)).size !== 30
+      || TRA_UPDATED_FACTS.newPlanTrainNumbers.length !== 18 || new Set(TRA_UPDATED_FACTS.newPlanTrainNumbers).size !== 18
+      || TRA_UPDATED_FACTS.newPlanDepartureTimes.length !== 16 || new Set(TRA_UPDATED_FACTS.newPlanDepartureTimes).size !== 16) {
+    throw new Error(context + ': incomplete TRA fact inventory');
+  }
+  const lang = language === 'zh' ? 'zh-TW' : language;
+  if (!['zh-TW', 'en', 'ja'].includes(lang)) throw new Error(context + ': unsupported TRA language ' + language);
+  if (typeof text !== 'string' || !text.trim()) throw new Error(context + ': missing rendered TRA text');
+  const actual = normalizeTRA(text), failed = [];
+  for (const check of TRA_UPDATED_FACTS.checks) {
+    const fragments = check.fragments[lang];
+    if (!Array.isArray(fragments) || !fragments.length) throw new Error('Incomplete multilingual TRA rule ' + check.id);
+    for (const fragment of fragments) {
+      if (!actual.includes(normalizeTRA(fragment))) failed.push({id: check.id, fragment});
+    }
+  }
+  for (const token of TRA_UPDATED_FACTS.newPlanTrainNumbers) {
+    if (!hasTRAToken(actual, token)) failed.push({id: 'new-train-' + token});
+  }
+  for (const token of TRA_UPDATED_FACTS.newPlanDepartureTimes) {
+    if (!hasTRAToken(actual, token)) failed.push({id: 'new-time-' + token});
+  }
+  for (const fragment of TRA_UPDATED_FACTS.forbidden[lang]) {
+    if (actual.includes(normalizeTRA(fragment))) failed.push({id: 'obsolete-noon-placeholder', fragment});
+  }
+  if (failed.length) {
+    const error = new Error(context + ' [' + lang + '] TRA facts failed: ' + failed.map(x => x.id).join(', '));
+    error.traFactFailures = failed;
+    throw error;
+  }
+  return {language: lang, revision: TRA_UPDATED_FACTS.revision,
+    factGroups: TRA_UPDATED_FACTS.checks.length, newPlanTrains: 18, newPlanDepartureTimes: 16,
+    exactRouteTimeScopeBindings: true, morningAndEarlyExceptionVerified: true,
+    previousDayExtrasExcluded: true};
+}
+
 const tra = source.systems.find(s => s.id === 'tra');
-assert.equal(tra.sourceUrl, 'https://www.railway.gov.tw/tra-tip-web/tip/tip009/tip911/newsDtl?newsNo=8ae4cac3a1650e3a01a16906f5681318&page=0');
-assert.match(tra.detail, /^10\/24 12:00 前.*基隆至彰化停駛.*彰化經高雄至枋寮正常/);
-assert.match(tra.detail, /海線、成追線全區間停駛.*樹林經宜蘭至花蓮.*花蓮至臺東正常.*南迴線/);
-assert.match(tra.detail, /472、102、280、270、207.*101、191.*371.*六家、集集、沙崙.*平溪、深澳、內灣/);
-assert.match(tra.detail, /藍皮解憂號正常.*海風、山嵐、鳴日廚房.*全日停駛.*科普列車全日停駛、閉幕活動取消/);
-assert.match(tra.detail, /12:00 後資訊預定於當日 08:00 公告.*尚不能推定中午後恢復/);
-assert.match(tra.detail, /10\/23 的 6115、6117 次加開不屬於今日方案/);
-assert.match(tra.detailI18n.en, /Oct 24 before 12:00.*Keelung and Changhua.*Shulin, Yilan and Hualien.*472, 102, 280, 270 and 207.*101 and 191.*371/);
-assert.match(tra.detailI18n.en, /6115 and 6117 are not part of today's plan/);
+assert.equal(tra.sourceUrl, "https://www.railway.gov.tw/tra-tip-web/tip/tip009/tip911/newsDtl?newsNo=8ae4cac3a1650e3a01a16b5888661c31&page=0");
+assert.equal(tra.sourceCheckedAt, '2026-10-24T08:45:33+08:00');
+assert.match(tra.sourceLabel, /10\/24 08:30.*中午後陸續恢復/);
+assert.equal(tra.additionalSources.length, 1);
+assert.ok(tra.additionalSources[0].sourceUrl.includes('8ae4cac3a1650e3a01a16906f5681318'));
+assert.match(tra.additionalSources[0].sourceLabel, /中午前.*2608 次 11:39 例外依最新稿/);
+assert.match(tra.detail, /^10\/24 12:00 前仍依先前分區方案.*基隆至彰化停駛.*彰化經高雄至枋寮正常/);
+assert.match(tra.detail, /但最新公告明列成追線臺中至通霄 2608 次由成功 11:39 開車.*中午前停駛方案的例外/);
+assert.match(tra.detail, /472、102、280、270、207.*101、191.*371.*上午六家、集集、沙崙.*平溪、深澳、內灣/);
+assert.match(tra.detail, /12:00 後陸續恢復方案.*並非 12:00 整點所有列車已正常/);
+for (const lang of ['zh-TW','en','ja']) assertTRAUpdatedFacts(lang==='zh-TW' ? tra.detail : tra.detailI18n[lang],lang,{context:'官方原文獨立核對的台鐵完整方案'});
 assert.doesNotMatch(tra.detailI18n.en, /free (?:ride|fare|of charge)/i);
-assert.match(tra.detailI18n.ja, /10月24日12:00.*基隆～彰化.*樹林～宜蘭～花蓮.*472・102・280・270・207/);
 const afr = source.systems.find(s => s.id === 'afr');
 assert.equal(afr.sourceUrl, 'https://afrch.forest.gov.tw/AllNews/0079490');
-assert.equal(afr.sourceCheckedAt, '2026-10-24T04:30:42+08:00');
+assert.equal(afr.sourceCheckedAt, '2026-10-24T08:45:02+08:00');
 assert.match(afr.detail, /^10\/24 本線嘉義至阿里山定期列車停駛.*阿里山國家森林遊樂區.*尚未取得明確開行時間/);
-assert.match(afr.detail, /本輪 10\/24 06:00 原文與列表讀取失敗.*不能宣稱已重新確認/);
+assert.match(afr.detail, /本輪 10\/24 08:45 成功核讀 10\/22 19:00 更新原文.*較早 13:30 原文不能覆蓋 19:00 更新/);
 assert.match(afr.detail, /文化|檜意森活村/);
-assert.match(afr.detailI18n.en, /On Oct 24.*mainline.*suspended.*no definite departure time.*not a fresh confirmation/);
+assert.match(afr.detailI18n.en, /On Oct 24.*mainline.*suspended.*no definite departure time.*successfully read at 08:45 on Oct 24.*earlier 13:30 text does not supersede the 19:00 update/);
 assert.match(afr.detailI18n.ja, /10月24日.*本線定期列車が運休.*具体的な発車時刻は未確認/);
 const thsr = source.systems.find(s => s.id === 'thsr');
 assert.equal(thsr.sourceUrl, 'https://www.thsrc.com.tw/ArticleContent/0a67aca6-69e4-4a47-a3cf-ffbd2568648d');
@@ -88,7 +607,7 @@ assert.match(tymc.detailI18n.en, /On Oct 24.*all express and extra services are 
 assert.match(tymc.detailI18n.ja, /10月24日.*直達車と増発列車が終日運休.*15分間隔.*通常速度を保証するものではありません/);
 const ntmetro = source.systems.find(s => s.id === 'ntmetro');
 assert.equal(ntmetro.sourceUrl, 'https://www.ntmetro.com.tw/');
-assert.equal(ntmetro.sourceCheckedAt, '2026-10-24T06:00:51+08:00');
+assert.equal(ntmetro.sourceCheckedAt, '2026-10-24T08:44:57+08:00');
 assert.equal(ntmetro.additionalSources.length, 2);
 assert.equal(ntmetro.additionalSources[0].sourceUrl, 'https://www.ntmetro.com.tw/basic/?mode=detail&node=914');
 assert.match(ntmetro.additionalSources[0].sourceLabel, /歷史依據/);
@@ -113,6 +632,11 @@ for (const system of [krtc, klrt]) {
   assert.match(system.detail, /空稿.*不能/);
   assert.match(system.detailI18n.en, /Oct 24/);
   assert.match(system.detailI18n.ja, /10月24日/);
+}
+for (const system of [krtc,klrt]) {
+  assert.match(system.detail, /官方公開粉專本輪要求登入.*最近成功公開核讀為 10\/24 07:15.*不能宣稱本輪重新讀到最新貼文/);
+  assert.match(system.detailI18n.en, /requires login in this check.*07:15 on Oct 24.*not been freshly verified/);
+  assert.match(system.detailI18n.ja, /今回ログインを求められ.*10月24日07:15.*今回最新投稿を再確認できたとはしていません/);
 }
 assert.match(krtc.detail, /慢速稿最近成功核讀為 10\/23 20:59.*不能因原文消失或網站一般正常燈號推定已恢復/);
 assert.match(krtc.detail, /昨日 14:30 起 10 分鐘、23:00 後 20 分鐘方案不直接延用為今日班距/);
@@ -265,6 +789,9 @@ try {
             assert.deepEqual(chip.collisions, [], `${name}/${width}/${mode}: 入口碰撞`);
             await page.tap('#alertChip');
             await page.waitForFunction(() => !document.getElementById('alertDetail').hidden);
+            const renderedWeatherText = await page.locator('#alertDetail').innerText();
+            assertTRAUpdatedFacts(renderedWeatherText,'zh-TW',{context:name+'/'+width+'/'+mode+' 實際手機公告'});
+            for (const system of source.systems) assert.equal(renderedWeatherText.split(system.detail).length-1,1,system.id+' 手機畫面完整且恰好一次');
             const link = await measure(page, '#alertDetail a[href$="weather-status.html"]');
             assert.ok(link.visible && link.hitSelf && link.rect.height >= 44, `${name}/${width}/${mode}: 來源入口被裁切 ${JSON.stringify(link)}`);
             assert.deepEqual(link.collisions, [], `${name}/${width}/${mode}: 來源連結碰撞`);
@@ -322,7 +849,7 @@ try {
           }
           await page.goto(base + '/weather-status.html');
           assert.equal(await page.locator('section').count(), 9);
-          assert.equal(await page.locator('section[aria-labelledby="tra"] a').count(), 1, '今日中午前方案來源可查閱');
+          assert.equal(await page.locator('section[aria-labelledby="tra"] a').count(), 2, '中午後新方案與中午前限時參考來源均可查閱');
           assert.equal(await page.locator('section[aria-labelledby="tymc"] a').count(), 2, '今日模式與歷史慢速來源可查閱');
           assert.equal(await page.locator('section[aria-labelledby="ntmetro"] a').count(), 3, '最近停駛原文與今日待確認的官方最新入口都可查閱');
           const pageOverflow = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth);
@@ -336,6 +863,26 @@ try {
           await page.clock.setSystemTime(new Date('2026-10-25T00:01:00+08:00'));
           await page.reload();
           assert.match(await page.locator('#ageNote').innerText(), /已過適用日期/);
+          if (width === 375) {
+            const languageTitles = {
+              en: 'Typhoon Champi · Oct 24: TRA services resume in stages after noon; three New Taipei Metro lines remain suspended',
+              ja: '台風情報｜10/24 台湾鉄道は正午以降順次再開・新北MRTの3路線は運休継続',
+            };
+            await page.clock.setSystemTime(new Date(when));
+            for (const lang of ['en','ja']) {
+              await page.goto(base+'/?lang='+lang, {waitUntil:'domcontentloaded'});
+              await page.waitForFunction(() => state.ready && activeAlertList().some(a => a.bulletin), null, {timeout:60000});
+              await page.tap('#alertChip');
+              await page.waitForFunction(() => !document.getElementById('alertDetail').hidden);
+              const translatedText = await page.locator('#alertDetail').innerText();
+              assert.ok(translatedText.includes(languageTitles[lang]),name+' '+lang+' 完整翻譯標題');
+              for (const system of source.systems) assert.equal(translatedText.split(system.detailI18n[lang]).length-1,1,system.id+' '+lang+' 完整且恰好一次');
+              const traFacts = assertTRAUpdatedFacts(translatedText,lang,{context:name+' '+lang+' 手機實際公告'});
+              assert.ok(await page.evaluate(() => document.documentElement.scrollWidth-innerWidth <= 1),lang+' 無水平溢出');
+              states.push({mode:'language-'+lang,operatorDetailsOnce:true,traFacts});
+              await page.screenshot({path:path.join(outDir,name+'-375-'+lang+'-notice.png')});
+            }
+          }
           assert.deepEqual(errors, []);
           record(`${name} ${width}px 觸控／四種面板狀態／全控件碰撞／來源頁與過期警告`, { states });
         } finally { await context.close(); }
@@ -380,6 +927,7 @@ try {
         await page.tap('#alertChip');
         const text=await page.locator('#alertDetail').innerText();
         assert.ok(text.includes(ntmetro.detail), '舊網頁仍須顯示最新完整新北公告');
+        assertTRAUpdatedFacts(text,'zh-TW',{context:'已開啟的舊網頁台鐵完整方案'});
         assert.ok(text.includes(thsr.detail), '舊網頁完整保留今日高鐵方案與昨日取消的日期區別');
         assert.ok(text.includes(trtc.detail), '舊網頁完整保留今日北捷五線方案與時刻限制');
         assert.match(text,/三鶯線、安坑輕軌及淡海輕軌維持停駛.*環狀線班距約 15 分鐘/);
@@ -399,6 +947,7 @@ try {
         const text = await page.locator('#alertDetail').innerText();
         assert.match(text, /台鐵.*停駛/s);
         assert.match(text, /阿里山/);
+        assertTRAUpdatedFacts(text,'zh-TW',{context:'已發行App台鐵完整方案'});
         assert.ok(text.includes(thsr.detail), '已發行App須顯示今日高鐵正常營運與日期區別');
         assert.ok(text.includes(trtc.detail), '已發行App保留今日北捷五線方案與時刻限制');
         assert.match(text, /動畫仍可能依原班表/);
