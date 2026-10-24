@@ -4,9 +4,9 @@
 <title>即時營運整理｜軌島</title>
 <meta name="description" content="軌島依各鐵道營運單位官方原文自動整理的即時營運狀況，附官方原文連結與整理時間。">
 <!-- AI 營運整理頁：資料來自 /api/rail-status（scripts/rail_ai_status.mjs）。樣式沿用 weather-status.html。
-     ?rev=<id> 看指定的一版（核對用）。 -->
+     ?rev=<id> 看指定的一版（核對用）。#sys-<系統> 讀完後捲到那一段並框起來（App 從推播點進來用）。 -->
 <style>
-*{box-sizing:border-box}body{margin:0;background:#f4edda;color:#302f29;font:16px/1.8 system-ui,-apple-system,sans-serif}main{max-width:900px;margin:auto;padding:24px max(20px,env(safe-area-inset-right)) 48px max(20px,env(safe-area-inset-left))}a{color:#245c59;text-underline-offset:4px;overflow-wrap:anywhere}a:focus-visible,button:focus-visible{outline:3px solid #be5f26;outline-offset:3px}nav{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;border-bottom:2px solid #302f29;padding-bottom:10px}nav a{display:inline-flex;align-items:center;min-height:44px}.langs{display:flex;gap:6px}.langs button{font:inherit;font-size:14px;min-height:36px;padding:0 10px;border:1px solid #aaa38e;border-radius:6px;background:#fffaf0;color:#302f29;cursor:pointer}.langs button[aria-pressed=true]{background:#302f29;color:#fffaf0;border-color:#302f29}.eyebrow{letter-spacing:.12em;font-size:13px;margin:25px 0 8px}h1{font-size:clamp(26px,5vw,40px);line-height:1.35;margin:0 0 16px}h2{font-size:20px;line-height:1.5;margin:0}.warning{border:2px solid #a24424;border-left-width:7px;background:#fff1dc;padding:16px 20px;color:#6f2917}.warning strong{display:block;font-size:20px}.warning p{margin:8px 0 0}.meta{color:#615d51;font-size:14px}.row-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.badges{display:flex;gap:8px;flex-wrap:wrap;align-items:center}section{margin-top:16px;padding:20px;border:1px solid #aaa38e;background:#fffaf0;border-radius:8px}section.alert{border-color:#a24424;border-left-width:5px}section p{margin:12px 0 4px}.status{font-size:13px;border:1px solid #a27e3a;border-radius:4px;padding:2px 8px;background:#f5e8c9}.tag{font-size:12px;border-radius:99px;padding:1px 9px;border:1px solid #5b3cc4;color:#5b3cc4;white-space:nowrap}.tag.manual{border-color:#615d51;color:#615d51}.sources{margin:10px 0 0;padding-left:20px;font-size:14px}.sources li{margin:2px 0}.notice{margin:12px 0 0;padding:10px 14px;border-left:4px solid #be5f26;background:#fff1dc;font-size:14px}.notice ul{margin:4px 0 0;padding-left:20px}.empty{margin-top:16px;padding:20px;border:1px dashed #aaa38e;border-radius:8px;background:#fffaf0}footer{margin-top:28px;border-top:1px solid #aaa38e;padding-top:16px;font-size:14px}@media(max-width:480px){main{padding-top:16px}section{padding:16px}.warning{padding:14px}.row-head{display:block}.badges{margin-top:8px}nav{font-size:14px}}
+*{box-sizing:border-box}body{margin:0;background:#f4edda;color:#302f29;font:16px/1.8 system-ui,-apple-system,sans-serif}main{max-width:900px;margin:auto;padding:24px max(20px,env(safe-area-inset-right)) 48px max(20px,env(safe-area-inset-left))}a{color:#245c59;text-underline-offset:4px;overflow-wrap:anywhere}a:focus-visible,button:focus-visible{outline:3px solid #be5f26;outline-offset:3px}nav{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;border-bottom:2px solid #302f29;padding-bottom:10px}nav a{display:inline-flex;align-items:center;min-height:44px}.langs{display:flex;gap:6px}.langs button{font:inherit;font-size:14px;min-height:36px;padding:0 10px;border:1px solid #aaa38e;border-radius:6px;background:#fffaf0;color:#302f29;cursor:pointer}.langs button[aria-pressed=true]{background:#302f29;color:#fffaf0;border-color:#302f29}.eyebrow{letter-spacing:.12em;font-size:13px;margin:25px 0 8px}h1{font-size:clamp(26px,5vw,40px);line-height:1.35;margin:0 0 16px}h2{font-size:20px;line-height:1.5;margin:0}.warning{border:2px solid #a24424;border-left-width:7px;background:#fff1dc;padding:16px 20px;color:#6f2917}.warning strong{display:block;font-size:20px}.warning p{margin:8px 0 0}.meta{color:#615d51;font-size:14px}.row-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.badges{display:flex;gap:8px;flex-wrap:wrap;align-items:center}section{margin-top:16px;padding:20px;border:1px solid #aaa38e;background:#fffaf0;border-radius:8px}section.alert{border-color:#a24424;border-left-width:5px}section.target{box-shadow:0 0 0 3px #245c59}section p{margin:12px 0 4px}.status{font-size:13px;border:1px solid #a27e3a;border-radius:4px;padding:2px 8px;background:#f5e8c9}.tag{font-size:12px;border-radius:99px;padding:1px 9px;border:1px solid #5b3cc4;color:#5b3cc4;white-space:nowrap}.tag.manual{border-color:#615d51;color:#615d51}.sources{margin:10px 0 0;padding-left:20px;font-size:14px}.sources li{margin:2px 0}.notice{margin:12px 0 0;padding:10px 14px;border-left:4px solid #be5f26;background:#fff1dc;font-size:14px}.notice ul{margin:4px 0 0;padding-left:20px}.empty{margin-top:16px;padding:20px;border:1px dashed #aaa38e;border-radius:8px;background:#fffaf0}footer{margin-top:28px;border-top:1px solid #aaa38e;padding-top:16px;font-size:14px}@media(max-width:480px){main{padding-top:16px}section{padding:16px}.warning{padding:14px}.row-head{display:block}.badges{margin-top:8px}nav{font-size:14px}}
 </style></head><body><main>
 <nav aria-label="網站導覽"><a href="./" id="back">← 軌島即時地圖</a><div class="langs" role="group" aria-label="語言"><button data-lang="zh" aria-pressed="true">中文</button><button data-lang="en" aria-pressed="false">EN</button><button data-lang="ja" aria-pressed="false">日本語</button></div></nav>
 <p class="eyebrow">RAIL ISLAND · <span id="eyebrow">即時營運整理</span></p><h1 id="h1">全台鐵道即時營運整理</h1>
@@ -43,6 +43,8 @@ let lang = params.get('lang');
 if (!T[lang]) { try { lang = localStorage.getItem('railStatusLang'); } catch (e) {} }
 if (!T[lang]) lang = /^ja/.test(navigator.language) ? 'ja' : /^zh/.test(navigator.language) ? 'zh' : (navigator.language ? 'en' : 'zh');
 let data = null;
+const target = (location.hash.match(/^#sys-([a-z]+)$/) || [])[1];
+let scrolled = false;
 const fmt = ms => new Date(ms).toLocaleString(lang === 'zh' ? 'zh-TW' : lang, { timeZone: 'Asia/Taipei', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false });
 const hostOf = u => { try { return new URL(u).hostname; } catch (e) { return u; } };
 const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
@@ -71,7 +73,7 @@ function render() {
   if (!data.systems.length) { if (!(data.lagging && data.lagging.length)) list.append(el('div', 'empty', t.empty)); return; }
   for (const s of data.systems) {
     const affected = (s.impacts || []).some(i => i.state !== '正常');
-    const sec = el('section', affected ? 'alert' : null);
+    const sec = el('section', [affected ? 'alert' : '', s.id === target ? 'target' : ''].join(' ').trim() || null);
     sec.setAttribute('aria-labelledby', 'sys-' + s.id);
     const head = el('div', 'row-head');
     const h2 = el('h2', null, s.label); h2.id = 'sys-' + s.id;
@@ -103,6 +105,8 @@ async function load() {
     data = r.ok ? d : { error: true };
   } catch (e) { if (!data) data = { error: true }; }
   render();
+  const h = !scrolled && target && document.getElementById('sys-' + target);
+  if (h) { h.closest('section').scrollIntoView({ block: 'start' }); scrolled = true; }
 }
 for (const b of document.querySelectorAll('.langs button')) b.addEventListener('click', () => {
   lang = b.dataset.lang;

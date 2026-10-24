@@ -19,12 +19,12 @@ export const RAIL_AI_SYSTEMS = [
   { id: 'klrt', label: '高雄輕軌' },
 ];
 const SYSTEM_IDS = new Set(RAIL_AI_SYSTEMS.map(s => s.id));
-const labelOf = id => (RAIL_AI_SYSTEMS.find(s => s.id === id) || {}).label || id;
+export const labelOf = id => (RAIL_AI_SYSTEMS.find(s => s.id === id) || {}).label || id;
 
 const EVERY_MIN = 3;
 const MODEL = 'claude-opus-5-5';
 const PRICE = { input: 4, output: 20, cacheWrite: 5, cacheRead: 0.2 }; // US$／百萬 tokens（Opus 5.5，10-06 價目）
-const MONTHLY_CAP_USD = 60; // 這個功能每月最多花多少；超過就只偵測不整理（每月 US$400 額度還要留給其他功能）
+export const MONTHLY_CAP_USD = 60; // 這個功能（含 rail_push.mjs 的推播草稿與檢查）每月最多花多少；超過就只偵測不整理（每月 US$400 額度還要留給其他功能）
 const AI_LOCK_MS = 12 * 60e3; // 一輪整理最長多久；超過視為上一輪已死、可以接手
 const PAGE_CAP = 20000; // 單篇原文本文上限（字元）
 const CONTEXT_CAP = 60000; // 一個系統一次送給模型的原文總量上限（字元）
@@ -99,13 +99,13 @@ function tdxItems(alerts) {
 const routineNormal = v => /^\[1\]/.test(v); // TDX 例行「正常營運」：本身出現或消失都不算變化，非正常那筆消失才算
 
 const twTime = ms => new Date(ms).toLocaleString('sv-SE', { timeZone: 'Asia/Taipei' }).slice(0, 16);
-const monthKey = ms => 'spend:' + new Date(ms + 8 * 3600e3).toISOString().slice(0, 7);
+export const monthKey = ms => 'spend:' + new Date(ms + 8 * 3600e3).toISOString().slice(0, 7);
 
-async function kvGet(db, k) {
+export async function kvGet(db, k) {
   const row = await db.prepare('SELECT v FROM rail_ai_kv WHERE k = ?').bind(k).first();
   return row ? JSON.parse(row.v) : null;
 }
-const kvPut = (db, k, v, now) => db.prepare('INSERT INTO rail_ai_kv (k, v, updated_ms) VALUES (?, ?, ?) ON CONFLICT(k) DO UPDATE SET v = excluded.v, updated_ms = excluded.updated_ms')
+export const kvPut = (db, k, v, now) => db.prepare('INSERT INTO rail_ai_kv (k, v, updated_ms) VALUES (?, ?, ?) ON CONFLICT(k) DO UPDATE SET v = excluded.v, updated_ms = excluded.updated_ms')
   .bind(k, JSON.stringify(v), now);
 
 async function getText(fetchImpl, url) {
@@ -247,10 +247,9 @@ const ENTRY_SCHEMA = {
   },
 };
 
-async function buildPrompt(db, sys, prevEntry, now) {
-  const since = prevEntry ? prevEntry.updatedAt : now - ARTICLE_WINDOW_MS;
-  const ev = (await db.prepare('SELECT at_ms, source, type, item_key, value, prev FROM rail_ai_events WHERE system = ? AND relevant = 1 AND type != ? AND at_ms > ? ORDER BY at_ms DESC, id DESC LIMIT 40')
-    .bind(sys, 'baseline', since).all()).results.reverse();
+// 給模型看的官方原文：72 小時內的營運相關公告、首頁燈號、TDX 公告。推播的 AI 檢查（rail_push.mjs）也用這一份。
+// urls＝這次附上的原文與這個系統的來源網址（模型只能引用這些）。
+export async function sourceBlocks(db, sys, now) {
   const arts = (await db.prepare('SELECT url, title, first_seen_ms, fetched_ms, text FROM rail_ai_articles WHERE system = ? AND relevant = 1 AND first_seen_ms > ? ORDER BY first_seen_ms DESC LIMIT 8')
     .bind(sys, now - ARTICLE_WINDOW_MS).all()).results;
   let budget = CONTEXT_CAP;
@@ -266,10 +265,19 @@ async function buildPrompt(db, sys, prevEntry, now) {
   }
   const tdx = await kvGet(db, 'src:tdx-' + sys);
   if (tdx && Object.keys(tdx).length) blocks.push(`<tdx>\n${Object.entries(tdx).map(([k, v]) => `${k}\n${v}`).join('\n\n')}\n</tdx>`);
+  return { blocks, urls: [...arts.map(a => a.url), ...RAIL_AI_SOURCES.filter(x => x.system === sys).map(x => x.url)] };
+}
+
+async function buildPrompt(db, sys, prevEntry, now) {
+  const since = prevEntry ? prevEntry.updatedAt : now - ARTICLE_WINDOW_MS;
+  const ev = (await db.prepare('SELECT at_ms, source, type, item_key, value, prev FROM rail_ai_events WHERE system = ? AND relevant = 1 AND type != ? AND at_ms > ? ORDER BY at_ms DESC, id DESC LIMIT 40')
+    .bind(sys, 'baseline', since).all()).results.reverse();
+  const src = await sourceBlocks(db, sys, now);
+  const blocks = src.blocks;
 
   const prevView = prevEntry && { status: prevEntry.status, detail: prevEntry.detail, sourceUrls: prevEntry.sourceUrls, updatedAt: twTime(prevEntry.updatedAt) };
   // 模型能引用的網址：這次附上的原文、首頁燈號來源，加上一版已經引用過的（沿用上一版內容時）
-  const urls = new Set([...arts.map(a => a.url), ...RAIL_AI_SOURCES.filter(x => x.system === sys).map(x => x.url), ...((prevEntry && prevEntry.sourceUrls) || [])]);
+  const urls = new Set([...src.urls, ...((prevEntry && prevEntry.sourceUrls) || [])]);
   const text = `現在時間：${twTime(now)}（台灣時間）
 系統：${sys}（${labelOf(sys)}）
 
@@ -339,6 +347,10 @@ async function callClaude(env, userText, fetchImpl) {
   } catch (e) { throw Object.assign(new Error('claude output not JSON: ' + e.message), { cost }); }
 }
 
+// 當月花費用 SQL 累加，不用開頭讀到的值回寫（避免蓋掉別處同時寫入的；推播草稿與檢查也記在同一列）
+export const addSpend = (db, cost, now) => db.prepare(`INSERT INTO rail_ai_kv (k, v, updated_ms) VALUES (?, ?, ?)
+  ON CONFLICT(k) DO UPDATE SET v = CAST(CAST(rail_ai_kv.v AS REAL) + CAST(excluded.v AS REAL) AS TEXT), updated_ms = excluded.updated_ms`).bind(monthKey(now), String(cost), now);
+
 export async function latestRevision(db) {
   const row = await db.prepare('SELECT id, at_ms, changed, systems, cost_usd, meta FROM rail_ai_revisions ORDER BY id DESC LIMIT 1').first();
   return row ? { ...row, systems: JSON.parse(row.systems), changed: JSON.parse(row.changed) } : null;
@@ -377,9 +389,7 @@ export async function railAiSummarize(env, { now = Date.now(), fetch: fetchImpl 
         done.push(sys);
       } catch (e) { cost += e.cost || 0; failed.push(`${sys}: ${String(e.message || e).slice(0, 300)}`); }
     }));
-    // 當月花費用 SQL 累加，不用開頭讀到的值回寫（避免蓋掉別處同時寫入的）
-    const writes = [db.prepare(`INSERT INTO rail_ai_kv (k, v, updated_ms) VALUES (?, ?, ?)
-      ON CONFLICT(k) DO UPDATE SET v = CAST(CAST(rail_ai_kv.v AS REAL) + CAST(excluded.v AS REAL) AS TEXT), updated_ms = excluded.updated_ms`).bind(monthKey(now), String(cost), now)];
+    const writes = [addSpend(db, cost, now)];
     for (const sys of done) writes.push(db.prepare('DELETE FROM rail_ai_kv WHERE k = ?').bind('fail:' + sys));
     for (const f of failed) { const sys = f.split(':')[0]; writes.push(kvPut(db, 'fail:' + sys, { n: ((fails.get(sys) || {}).n || 0) + 1, at: now }, now)); }
     if (done.length) {
@@ -420,7 +430,7 @@ async function tdxStillOpen(db, now) {
 }
 
 // ── /api/rail-status ─────────────────────────────────────────────────────────────────────────
-const isNormal = e => !e.impacts || !e.impacts.length || e.impacts.every(i => i.state === '正常');
+export const isNormal = e => !e.impacts || !e.impacts.length || e.impacts.every(i => i.state === '正常');
 
 function manualEntry(id, now) {
   if (!(now >= Date.parse(manualBulletin.displayFrom) && now < Date.parse(manualBulletin.expiresAt))) return null;

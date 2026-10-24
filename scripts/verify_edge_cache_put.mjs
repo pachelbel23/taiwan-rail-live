@@ -285,6 +285,8 @@ await hit('/api/thsr-schedule', '/api/thsr-schedule', { DELAY_DB }, 200);
 await hit('/api/bounty-board', '/api/bounty-board', { DELAY_DB, ASSETS }, 200);
 // bodyResCached 路徑(D1 存的 JSON 字串原樣送出,不經 JSON.stringify)——形狀與上面那組不同,要各驗一次
 await hit('/api/delay-stats', '/api/delay-stats', { DELAY_DB }, 200);
+// AI 營運整理（最新一版走邊緣快取；本體是 railAiStatus 回應讀成的字串）
+await hit('/api/rail-status', '/api/rail-status', { DELAY_DB }, 200);
 // catch 分支的軟失敗/負向快取(上游打不通)——這些路徑同樣會寫快取,同樣會踩到同一個 bug
 await hit('/api/ntmetro-live(上游掛)', '/api/ntmetro-live?sys=circular', {}, 200);
 await hit('/api/klrt-position(上游掛)', '/api/klrt-position', {}, 200);

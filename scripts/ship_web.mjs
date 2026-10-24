@@ -160,6 +160,10 @@ try {
   const railAi = spawnSync('node', [path.join(wt, 'scripts', 'verify_rail_ai_status.mjs')], { cwd: wt, encoding: 'utf8' });
   process.stdout.write(railAi.stdout || ''); process.stderr.write(railAi.stderr || '');
   if (railAi.status !== 0) fail('AI 營運整理守門未過（單獨重跑：npm run check-rail-ai-status）');
+  // AI 營運整理推播（草稿分級、核可、分批送）：本機 D1＋假 Claude＋假 APNs，不推任何東西。
+  const railPush = spawnSync('node', [path.join(wt, 'scripts', 'verify_rail_push.mjs')], { cwd: wt, encoding: 'utf8' });
+  process.stdout.write(railPush.stdout || ''); process.stderr.write(railPush.stderr || '');
+  if (railPush.status !== 0) fail('AI 營運整理推播守門未過（單獨重跑：npm run check-rail-push）');
 
   // 🔴 位置不可移到 strip 之後:check_i18n 的 evaluateConstBlock 拿【註解】當區塊結束標記
   //    （'// 有精選特色'、'// 播放/速度/時間'），strip 把註解刪光之後它會報「找不到內容區塊」

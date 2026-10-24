@@ -1,5 +1,6 @@
 import { withRailWeatherNotice } from './scripts/rail_weather_bulletin.mjs';
 import { railAiScheduled, railAiStatus } from './scripts/rail_ai_status.mjs';
+import { railPushScheduled, railPushRegister, railPushUnregister, railPushDecide } from './scripts/rail_push.mjs';
 import traScheduleSupplements from './scripts/tra_schedule_supplements.json' with { type: 'json' };
 import {createPlatformProxy} from './scripts/tra_platform_proxy.mjs';
 import {
@@ -3726,6 +3727,27 @@ async function laUnbind(request, env) {
   return jsonRes({ ok: true }, 200, 'no-store');
 }
 
+// AI 營運整理推播的三個端點（scripts/rail_push.mjs）：只收 POST，限流沿用跟車卡那顆。
+async function railPushRoute(handler, request, env) {
+  if (request.method !== 'POST') return jsonRes({ error: 'method not allowed' }, 405, 'no-store');
+  if (await rateLimited(env.LA_LIMITER, request, true)) return jsonRes({ error: 'rate_limited' }, 429, 'no-store');
+  return handler(request, env);
+}
+
+// /api/rail-status：只有最新一版（不帶 rev、list）走邊緣快取 30 秒，App 從推播點進整理頁時不會一人打一次 D1。
+// 失敗（503）不快取。本體先定成字串再各自造 Response（理由見 bodyResCached）。
+async function railStatusCached(request, env) {
+  const url = new URL(request.url);
+  if (url.searchParams.has('rev') || url.searchParams.has('list')) return railAiStatus(request, env);
+  const edge = caches.default;
+  const cacheKey = new Request(new URL('/api/rail-status', request.url), { method: 'GET' });
+  const hit = await edge.match(cacheKey);
+  if (hit) return hit;
+  const res = await railAiStatus(request, env);
+  if (res.status !== 200) return res;
+  return await bodyResCached(edge, cacheKey, await res.text(), 200, 'public, s-maxage=30');
+}
+
 // 軌道邊卡片：只保存通過清單，付費身分與限流沿用跟車卡。
 const TS_MAX_ROWS_PER_UID = 3;
 async function tracksideBind(request, env) {
@@ -6475,7 +6497,7 @@ const APP_ORIGINS = new Set(['capacitor://localhost', 'https://localhost']);
 // 不可以改成「全部放行」——擋掉的是「隨手對唯讀端點打 POST」這類探測,而那正是最便宜的防線。
 // ⚠️ 這道門的粒度是「路徑」不是「方法」：列進來等於該路徑的所有非 GET 方法都到得了處理函式。
 // /api/pass-admin 正是需要這樣（POST 匯入、DELETE 清批），它自己在函式內分派方法、未知的回 405。
-const API_POST_ALLOWED = new Set(['/api/account-delete', '/api/bounty-claim', '/api/bounty-submit', '/api/bounty-merge', '/api/revenuecat-webhook', '/api/la/bind', '/api/la/unbind', '/api/metro-wait/bind', '/api/metro-wait/unbind', '/api/tra-wait/bind', '/api/tra-wait/unbind', '/api/trackside/bind', '/api/trackside/unbind', '/api/pass-claim', '/api/pass-admin', '/api/journey-share']);
+const API_POST_ALLOWED = new Set(['/api/account-delete', '/api/bounty-claim', '/api/bounty-submit', '/api/bounty-merge', '/api/revenuecat-webhook', '/api/la/bind', '/api/la/unbind', '/api/metro-wait/bind', '/api/metro-wait/unbind', '/api/tra-wait/bind', '/api/tra-wait/unbind', '/api/trackside/bind', '/api/trackside/unbind', '/api/pass-claim', '/api/pass-admin', '/api/journey-share', '/api/push/register', '/api/push/unregister', '/api/rail-push/decide']);
 // /api 端點白名單——只給流量埋點的 blob 用(不是路由閘門,路由在 fetch 裡)。不在名單內一律記成
 // 'other',否則隨便打 /api/<亂數> 就能把 blob 基數炸開。新增端點時要一起加進來。
 const API_ENDPOINTS = new Set([
@@ -6484,7 +6506,7 @@ const API_ENDPOINTS = new Set([
   'delay-stats', 'delay-history', 'thsr-schedule', 'thsr-freeseat', 'thsr-seat', 'station-events', 'today-board', 'basemap-token', 'basemap-session', 'basemap-src', 'basemap-fallback', 'account-delete',
   'bounty-board', 'bounty-claim', 'bounty-submit', 'bounty-me', 'bounty-merge', 'plus-status', 'revenuecat-webhook',
   'la/bind', 'la/unbind', 'metro-wait/bind', 'metro-wait/unbind', 'tra-wait/bind', 'tra-wait/unbind', 'pass-claim', 'pass-admin',
-  'trackside/bind', 'trackside/unbind',
+  'trackside/bind', 'trackside/unbind', 'push/register', 'push/unregister', 'rail-push/decide',
 ]);
 
 function addAppCors(headers, origin) {
@@ -8498,6 +8520,14 @@ export default {
       // (429 TooManyProviderTokenUpdates),沒必要為此多產生一把。先暖一次,兩邊之後都是快取命中。
       // 失敗吞掉:金鑰壞掉時兩條迴圈各自會再拋一次並記錄,這裡不是報錯的地方。
       if (env.APNS_KEY_P8) { try { await laJwt(env); } catch (e) {} }
+      // AI 營運整理的推播（scripts/rail_push.mjs）：核可過的推播每分鐘送一批；整理出新的一版就寫草稿、送核可請求。
+      // 不等 railAiTask：整理一輪要幾分鐘，核可後的發送不能被它拖住（新的一版下一分鐘就會被看到）。
+      // 放在 JWT 預熱之後（理由同上）。自帶 .catch ⇒ 不可能改變 scheduled 的成功/失敗契約。
+      const railPushTask = railPushScheduled(event, env).catch(e => {
+        console.error('[cron rail-push] 失敗:', (e && e.stack) || String(e));
+        return { error: String((e && e.message) || e) };
+      });
+      if (ctx && typeof ctx.waitUntil === 'function') ctx.waitUntil(railPushTask);
       // 同一次執行內 +30 秒還有一輪只挪車的(跟車卡進站軌道契約,見 waitCardHalfMinute)。
       const laTask = laPushWithHalf(env, ctx, 'https://railisland.tw').catch(e => {
         console.error('[cron la-push] 失敗:', (e && e.stack) || String(e));
@@ -8670,7 +8700,7 @@ export default {
     else if (url.pathname === '/api/thsr-alert') res = await withRailWeatherNotice(await thsrAlert(request, env), Date.now(), url.searchParams.get('weather') === 'full' || !APP_ORIGINS.has(origin) ? 'full' : 'thsr-alert');
     else if (url.pathname === '/api/metro-alert') res = await withRailWeatherNotice(await metroAlert(request, env), Date.now(), url.searchParams.get('weather') === 'full' || !APP_ORIGINS.has(origin) ? 'full' : 'metro-alert');
     else if (url.pathname === '/api/hazard-alert') res = await hazardAlert(request, env);
-    else if (url.pathname === '/api/rail-status') res = await railAiStatus(request, env);
+    else if (url.pathname === '/api/rail-status') res = await railStatusCached(request, env);
     else if (url.pathname === '/api/metro-live') {
       const sys = url.searchParams.get('sys');
       // hasOwnProperty.call 而非 METRO_LIVE_OPS[sys]:後者吃原型鏈,sys='constructor' 等會誤過閘門
@@ -8719,6 +8749,9 @@ export default {
     else if (url.pathname === '/api/tra-wait/unbind') res = await traWaitUnbind(request, env);
     else if (url.pathname === '/api/trackside/bind') res = await tracksideBind(request, env);
     else if (url.pathname === '/api/trackside/unbind') res = await tracksideUnbind(request, env);
+    else if (url.pathname === '/api/push/register') res = await railPushRoute(railPushRegister, request, env);
+    else if (url.pathname === '/api/push/unregister') res = await railPushRoute(railPushUnregister, request, env);
+    else if (url.pathname === '/api/rail-push/decide') res = await railPushRoute(railPushDecide, request, env);
     else res = await env.ASSETS.fetch(request);
     const h = new Headers(res.headers);
     for (const [k, v] of Object.entries(SEC_HEADERS)) h.set(k, v);
