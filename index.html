@@ -18643,6 +18643,37 @@ function armTick() {
 // 相機簽名(中心+zoom+bearing+pitch):syncDraw 的「同視圖不重畫」與 tick 的「GL 還沒 render 到這個相機就不畫」都用它。
 // 只比中心與 zoom 會把 MapLibre 的純旋轉/傾斜當成同視圖而跳過重繪(09-04 真機錄影對照組抓到的坑)。
 function camKey() { const c = M.getCenter(); return c.lat + ',' + c.lng + ',' + M.getZoom() + ',' + M.getBearing() + ',' + (M.raw && typeof M.raw.getPitch === 'function' ? M.raw.getPitch() : 0); }
+// 3D 自動降級(對應 App 的中低階模式):老舊電腦開立體列車時瓶頸在 MapLibre 的地圖繪製(建築擠出＋地形＋傾斜),
+// 我們這邊再省幾毫秒也救不了,需要的是「別開 3D」。條件全部成立才降:立體算繪器真的在跑(active,非 loading／deferred)、
+// 分頁可見、掛上超過 10 秒(資產還在載時幀距本來就高)、離上次真實手勢超過 1.5 秒、且連續 3 秒 rAF 幀距中位數 > 60ms
+// (約低於 16fps)。幀距直接取 tick 的 now 差,不另開 rAF;省電模式的 30fps 節流只管 draw,不影響 rAF 幀距。
+// 動作只走立體列車開關原本的路徑(與觀看設定的「立體列車」按鈕同一條),不動視角與 3D 建築。本次分頁只降一次
+// (sessionStorage),不寫 localStorage:下次開頁重新判斷,使用者手動再開就不再自動關。
+// 手勢只認 _gestureAt 與進行中的拖曳／旋轉:_interactAt 會被跟車／漫遊的程式相機每幀刷新(見 markInteract),
+// 拿它當閘=漫遊永遠不會降級;漫遊鏡頭一直在動不算互動,照樣可以降。
+const AUTO_2D_KEY = 'trainmap-3d-autodegraded';
+function watch3dFrameBudget(now) {
+  const w = state._fb3d || (state._fb3d = { done: null, activeAt: 0, at: 0, last: 0, gaps: [] });
+  if (w.done === null) { try { w.done = sessionStorage.getItem(AUTO_2D_KEY) === '1'; } catch (e) { w.done = false; } }
+  if (w.done) return;
+  const r3d = window.railIslandIntegration;
+  const gap = now - (w.last || now); w.last = now;
+  if (!r3d || !r3d.active || r3d.loading || r3d.deferred) { w.activeAt = 0; w.at = 0; w.gaps.length = 0; return; }
+  if (!w.activeAt) w.activeAt = now;
+  const busy = document.hidden || now - w.activeAt < 10000 || now - (state._gestureAt || 0) < 1500 ||
+               r3d.interacting || M.raw.dragPan.isActive() || M.raw.dragRotate.isActive();
+  if (busy) { w.at = 0; w.gaps.length = 0; return; }
+  if (!w.at) { w.at = now; return; } // 這一拍的幀距跨到忙碌期,不算
+  w.gaps.push(gap);
+  if (now - w.at < 3000) return;
+  const sorted = w.gaps.slice().sort((a, b) => a - b), median = sorted[sorted.length >> 1];
+  w.at = 0; w.gaps.length = 0; w.lastMedian = median; // 診斷用:最近一個 3 秒視窗的中位數
+  if (!(median > 60)) return;
+  w.done = true;
+  try { sessionStorage.setItem(AUTO_2D_KEY, '1'); } catch (e) {}
+  r3d.setMode(false, false);
+  showToast(t('這台電腦跑立體列車不夠順，已切回平面；要再試可在觀看設定重新開啟'), { wrap: true });
+}
 function tick(now) {
   state._inTick = true; // tick 內部發的 map move(跟車鏡頭 setView)不走 'move' 同步重繪,由本幀尾端統一畫
   try { tickCore(now); } catch (e) {
@@ -18713,6 +18744,7 @@ function tickCore(now) {
   // 維持「相機與繪製同閘、列車不與底圖錯位」的既有約束(見下方 draw 節流)。與非省電路徑 fullRate 的 1.5s 窗一致。
   if (psActive) { renderNow = (now - (state._interactAt || 0) < 1500) || (now - (state._psAt || 0) >= 33); if (renderNow) state._psAt = now; }
   if (renderNow && !document.hidden) window.railIslandIntegration?.render(now);
+  watch3dFrameBudget(now);
   if (state.mode === 'sched' && state.followTrain) {
     if (renderNow) updateFollowCamera(); // 省電時降 30fps 置中(讀絕對位置,不積分,半速置中仍平順)
     state._evClock = (state._evClock || 0) + dt;

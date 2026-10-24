@@ -1351,3 +1351,7 @@ Object.assign(window.RAIL_I18N_MESSAGES.ja, {"容易辨認會在遠景加寬車�
 Object.assign(window.RAIL_I18N_MESSAGES.en, {"觀看設定移到網站右側；手機可按「觀看」切換視角、地圖與列車設定，沉浸模式也能隨時重新開啟；修正地形切換時橋墩閃現與遠景列車大小設定未生效；9/18 起開著車站卡或列車卡也能直接進觀看設定":"View settings now live on the right side of the website. On mobile, tap View to adjust the scene, including in immersive mode. Fixed flashing bridge piers when switching terrain and restored distant train size settings. Since 9/18, View is also available while a station or train card is open."});
 
 Object.assign(window.RAIL_I18N_MESSAGES.ja, {"觀看設定移到網站右側；手機可按「觀看」切換視角、地圖與列車設定，沉浸模式也能隨時重新開啟；修正地形切換時橋墩閃現與遠景列車大小設定未生效；9/18 起開著車站卡或列車卡也能直接進觀看設定":"表示設定をウェブサイトの右側に移動しました。モバイルでは「表示」から変更でき、没入モード中も開き直せます。地形切替時に橋脚が一瞬伸びる問題と、遠景の列車サイズ設定を修正しました。9/18からは駅カードや列車カードを開いたままでも「表示」を使えます。"});
+
+// 3D 自動降級吐司(index.html watch3dFrameBudget)
+Object.assign(window.RAIL_I18N_MESSAGES.en, {"這台電腦跑立體列車不夠順，已切回平面；要再試可在觀看設定重新開啟": "This computer can't run 3D trains smoothly, so they're back to flat. To try again, turn them on in View settings."});
+Object.assign(window.RAIL_I18N_MESSAGES.ja, {"這台電腦跑立體列車不夠順，已切回平面；要再試可在觀看設定重新開啟": "このパソコンでは立体列車の表示が重いため、平面表示に戻しました。もう一度試すには、表示設定で立体列車をオンにしてください。"});
