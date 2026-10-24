@@ -60,10 +60,13 @@ async function preparePage(context) {
 // pageerror（每個被擋的檔一筆；catalog.json、placement.json、各棟 model.json 輪流中），v0929e 與 v0929f 都重現。
 // attach() 本身有 try/catch，錯誤會記進 railIslandIntegration.errors，不是未處理的 rejection；這些 pageerror 是測試自己
 // 換頁的時機造成的。等載完（renderer 就緒或失敗已記錄）再換頁，「不准有 pageerror」的判準不變。
+// v1024e 起算繪器只在放大、漫遊、衛星原貌等視角才掛（rail-3d.js 的 rendererWanted）：全台首屏不掛、也沒有任何
+// 資產在途，integration.deferred 為 true 就是「沒有東西要等」，同樣可以換頁；一旦視角需要它，deferred 轉 false、
+// 走回 loading → renderer 那條路，等的條件不變。
 async function settle3d(page) {
   await page.waitForFunction(() => {
     const r = window.railIslandIntegration;
-    return !!r && !r.loading && (!!r.renderer || r.errors.length > 0);
+    return !!r && !r.loading && (!!r.renderer || r.errors.length > 0 || r.deferred === true);
   }, null, { timeout: 90_000 });
 }
 async function settleMap(page) {

@@ -127,7 +127,8 @@ async function reloadQuietly(page) {
   const url = page.url();
   await page.waitForFunction(() => {
     const r = window.railIslandIntegration, map = window.__ofmGl;
-    return (!r || (!r.loading && (!!r.renderer || r.errors.length > 0))) && (!map || (map.loaded() && !map.isMoving()));
+    // deferred＝算繪器在這個視角不掛、也沒有東西在途（v1024e 起首屏延後掛載），同樣算安靜。
+    return (!r || (!r.loading && (!!r.renderer || r.errors.length > 0 || r.deferred === true))) && (!map || (map.loaded() && !map.isMoving()));
   }, null, { timeout: 20_000, polling: 100 }).catch(() => console.warn('reloadQuietly:頁面 20 秒內沒安靜下來，照常換頁'));
   await page.goto('about:blank');
   await page.goto(url, { waitUntil: 'domcontentloaded' });

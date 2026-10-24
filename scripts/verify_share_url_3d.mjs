@@ -92,8 +92,11 @@ try {
         const query = new URLSearchParams({ ...scenario.params, lang: 'zh-TW' });
         await page.goto(`${base}?${query}`, { waitUntil: 'domcontentloaded' });
         if (scenario.id === 'settings' || scenario.id === 'tracks-default') {
+          // v1024e 起 2d 首屏不掛算繪器（rail-3d.js 的 rendererWanted）：settings 帶 ground=terrain 所以照舊會掛，
+          // 下面讀 renderer.stats 時沒掛就直接紅；tracks-default 只驗 2d 與實體股道有載，等到「沒有東西要等」即可。
           await page.waitForFunction(() => typeof state !== 'undefined'
-            && state.ready && window.railIslandIntegration?.renderer?.stats,
+            && state.ready && !!window.railIslandIntegration && !railIslandIntegration.loading
+            && (!!railIslandIntegration.renderer?.stats || railIslandIntegration.deferred === true),
             null, { timeout: 120000 });
         } else if (scenario.id === 'zoom') {
           await page.waitForFunction(() => typeof state !== 'undefined'

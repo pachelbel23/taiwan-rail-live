@@ -166,10 +166,13 @@
   // 立體算繪器(three.js、整合模組、約 23 MB 的股道剖面)等到看得到立體列車的視角才掛:全台平面視角
   // 掛了也畫不出東西(下面 13.8 以下直接清空),卻讓每個人開機多載、多解析這一大包。
   // 漫遊、鎖頭跟車、衛星原貌／地形、?scene=3d 與 ?visit 深連結一律視為要用,照舊一開始就掛。
-  let attachPending=false;
+  let attachPending=false,attachFailed=false;
   function rendererWanted(){return state.basemap==='landscape'||effectiveGround()==='terrain'||!!state.ambient||followHeadLocked()||M.raw.getZoom()>=12.5||params.get('scene')==='3d'||params.has('visit');}
+  // 「該掛還沒掛」：render() 下一幀就會開始掛。對外的 loading 也把這一幀算進去,輪詢 loading／renderer 的驗收
+  // 不會搶在 attach 之前過。掛失敗(map3d.js 或剖面載不到)不在每幀重試,等下一次 style.load 或選項呼叫 attach()。
+  function attachDue(){return !renderer&&!loading&&!attachPending&&!attachFailed&&state.ready&&M.isStyleReady()&&rendererWanted();}
   function render(now){
-    if(!renderer){if(!loading&&!attachPending&&state.ready&&!document.hidden&&M.isStyleReady()&&rendererWanted()){attachPending=true;attach();}return;}
+    if(!renderer){if(attachDue()){attachPending=true;attach();}return;}
     if(!M.raw.getLayer('live-vehicles-3d')||!state.ready||document.hidden)return;try{
     // tick 才節流；選項呼叫 render() 時立即生效，暫停中的跳時也不受間隔限制。
     // 相機有動作維持全速，同一視角的列車更新則與主 canvas 的待機頻率一致。
@@ -191,12 +194,12 @@
     const padding={...mapInsets()};for(const key of ['top','bottom','left','right'])padding[key]=Math.max(0,Number(padding[key])||0);
     state._autoPan=true;try{const v=lastFrame?.vehicles.find(v=>v.id===lastFrame.selectedVehicleId);renderer.followCoordinate(v?.route?.physical?[v.longitude,v.latitude]:[lon,lat],padding);}finally{state._autoPan=false;}return true;
   }
-  function attach(){const ticket=++epoch;loadSerial=loadSerial.catch(()=>{}).then(async()=>{attachPending=false;if(ticket!==epoch)return;loading=true;syncUI();renderer?.destroy();renderer=null;appearanceKey='';
+  function attach(){const ticket=++epoch;loadSerial=loadSerial.catch(()=>{}).then(async()=>{attachPending=false;attachFailed=false;if(ticket!==epoch)return;loading=true;syncUI();renderer?.destroy();renderer=null;appearanceKey='';
     try{const [{createLiveMap},phys]=await Promise.all([import(base+'map3d.js'),physicalLoad]);if(ticket!==epoch)return;
       if(phys?.ensureProfiles)await phys.ensureProfiles();if(ticket!==epoch)return; // 股道剖面延後到這裡才載(client.js):算繪器建立前就要在位,橋隧結構才不會先用平地剖面蓋一次
       const next=await createLiveMap({map:M.raw,isCurrent:()=>ticket===epoch&&M.isStyleReady(),landscape:state.basemap==='landscape',groundMode:effectiveGround(),formationMode,trainSizeMode,getHeading:headingFor,onGesture:()=>{if(!followHeadLocked())setFollowLock(false);},onInteract:()=>{state._gestureAt=state._interactAt=performance.now();},onError:e=>{if(errors.length<20)errors.push(e);}});
       if(ticket!==epoch){next.destroy();return;}renderer=next;syncAppearance();render();
-    }catch(e){if(e.name!=='AbortError'){errors.push(String(e.stack||e));showToast(t('立體顯示載入失敗，請重試'));}}finally{loading=false;syncUI();}});}
+    }catch(e){attachFailed=true;if(e.name!=='AbortError'){errors.push(String(e.stack||e));showToast(t('立體顯示載入失敗，請重試'));}}finally{loading=false;syncUI();}});}
   async function setPerspective(mode){
     if(!renderer){if(!loading)attach();await loadSerial;}if(!renderer)return false;
     const r=renderer,v=r.getView();
@@ -242,7 +245,7 @@
     if(state.basemap==='landscape'){setMap3d(true);if(M.getPitch()<20)M.setPitch(50);}
     if(params.get('scene')==='3d'){setMap3d(true);M.setPitch(55);const zoom=Number(params.get('z'));if(Number.isFinite(zoom)&&zoom>=14&&zoom<=21){M.stop();M.raw.setZoom(zoom-ML_Z);}}if(M.isStyleReady()&&rendererWanted())attach();syncUI();
   }
-  window.railIslandIntegration={version:26,get guide(){return guide;},setPerspective,beforeStyleChange(){epoch++;renderer?.destroy();renderer=null;appearanceKey='';},get active(){return !!renderer&&enabled&&!!M.raw.getLayer('live-vehicles-3d');},get renderer(){return renderer;},get loading(){return loading;},errors,capture,render,recenter,select,
+  window.railIslandIntegration={version:26,get guide(){return guide;},setPerspective,beforeStyleChange(){epoch++;renderer?.destroy();renderer=null;appearanceKey='';},get active(){return !!renderer&&enabled&&!!M.raw.getLayer('live-vehicles-3d');},get renderer(){return renderer;},get loading(){return loading||attachDue();},get deferred(){return !renderer&&!loading&&!attachPending&&!rendererWanted();},errors,capture,render,recenter,select,
     syncCameraLock(){return cameraLock?.sync()||false;},
     get frame(){return lastFrame;},
     get formationMode(){return formationMode;},get groundMode(){return effectiveGround();},get interacting(){return renderer?.interacting||false;},

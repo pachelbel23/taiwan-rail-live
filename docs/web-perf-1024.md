@@ -76,6 +76,8 @@
 - `capture()` 的車站 id 以 WeakMap 快取（連同 sys）。
 - 新增 `rendererWanted()`：衛星原貌、地形、漫遊、鎖頭跟車、zoom ≥ 12.5、`?scene=3d`、`?visit` 之一成立才掛算繪器；`render()` 在沒有算繪器時每幀檢查一次，`style.load` 與開機也改成「要用才掛」。`attach()` 等 `physicalLoad` 與 `ensureProfiles()` 都到位才 `createLiveMap`。
 
+- 出貨鏈第一次跑出來的缺口（10/24 上午補）：`attachDue()`＝「該掛還沒掛」，對外的 `loading` 把這一幀算進去（輪詢 loading／renderer 的驗收不會搶在 attach 之前過）；`deferred`＝這個視角不掛、也沒有東西在途；attach 失敗記 `attachFailed`，不再每幀重試，等下一次 `style.load` 或選項呼叫 `attach()`。
+
 `rail-3d/physical/client.js`
 - `loadPhysicalMotion()` 開機只抓 network／dispatch／metro-network；三份剖面改成空殼物件，`ensureProfiles()` 時再抓、填進同一個物件（route-runtime 的 elevation／level／levelAt 都是查詢當下才讀 `profiles.entries`，所以不用改）。`portals` 改 getter，`portalPaths` 載入後重綁。
 
@@ -94,8 +96,15 @@
 | `scripts/verify_all_metro_motion.mjs`（全捷運運動，chromium） | 通過（輸出 `output/perf-web/gates/metro-motion.json`） |
 | `scripts/verify_changelog_copy.mjs`（更新紀錄字數） | 通過 |
 | `scripts/verify_easedshift_key.mjs`（台鐵∩林鐵撞號） | 深夜跑會自行中止（林鐵只跑白天）；10/24 09:43 白天補跑 K1–K7 全 ✓、rc=0 |
+| `scripts/verify_i18n.mjs`（i18n 瀏覽器驗收，Chromium＋WebKit） | 36 個情境通過（改 `settle3d` 後；見下方裁示） |
+| `scripts/verify_share_url_3d.mjs`（分享網址 3D 參數，ROUNDS=1） | 8/8 通過（`settings` 帶 ground=terrain 仍會掛算繪器） |
+| `scripts/verify_night_design.mjs`（夜間設計：暗色建築、玻璃細線、看板、觸控版面） | 全 PASS |
+| `scripts/verify_transfer_follow_pin.mjs`／`verify_transfer_collapse.mjs`（手機跟車時冷掛算繪器，等編組說明） | 46/46、110 條通過 |
+| `output/perf-web/probe-deferred.mjs`（首屏 deferred、放大當幀 loading、掛上） | 通過；放大後 348 ms 掛上，無 pageerror |
 
 3D 延後掛載的行為抽查（`output/perf-web/check-lazy3d.mjs`，五種進場）：全台 z7.96 → 沒有算繪器、three.js 與三份剖面都沒下載；放大到台北 z16 → 掛上、54 輛模型、3,689 段橋梁結構、剖面已載；`?scene=3d` 深連結、`?map=landscape`、漫遊 → 一開始就掛；五個情境零頁面錯誤。
+
+**裁示（出貨鏈 10/24 第三發擋下後）**：`verify_i18n` 的 `settle3d`、`verify_share_url_3d` 的 2d 情境、`verify_font_scale` 的 `reloadQuietly` 原本都拿「算繪器就緒或已記錯」當「頁面安靜」的訊號，首屏延後掛載後在全台視角永遠等不到而逾時。改成也接受 `deferred`（這個視角不掛、沒有東西在途）——這是把就緒探針對上新的掛載時機，不是放寬判準：`settings` 情境仍讀 `renderer.stats`，沒掛就紅；「不准有 pageerror」與各情境的斷言都沒動。錯了的代價：若某個該掛的視角被誤判為 deferred，閘門會早換頁、可能漏掉換頁競態的 pageerror，但 `rendererWanted()` 的條件同時是產品自己決定要不要掛的條件，兩者同源。全鏈 107 支裡直接看 `railIslandIntegration` 的只有上面幾支，其餘開 3D 的都帶 `?scene=3d` 或會放大。
 
 3D A/B 閘門 `scripts/verify_3d_performance.mjs`：通過（「可見車廂與列車投影逐值相同、無渲染例外」）。跑法是 `BASE_URL` 指基準樹的 server、`PERF_BASE_DIR` 指本樹——閘門只替換 index.html／rail-3d.js／map3d.js／night-map.js 四個檔，client.js 的延遲載入由上面的行為抽查覆蓋。
 
