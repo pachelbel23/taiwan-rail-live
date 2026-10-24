@@ -20,7 +20,7 @@ assert.equal(source.serviceDate, '2026-10-24');
 assert.equal(source.displayFrom, '2026-10-24T00:00:00+08:00');
 assert.equal(source.expiresAt, '2026-10-25T00:00:00+08:00');
 assert.ok(Date.parse(source.checkedAt) >= Date.parse(source.displayFrom));
-assert.match(source.title, /10\/24.*台鐵北迴、宜蘭線搶修.*預計 15 時恢復/);
+assert.match(source.title, /10\/24.*台鐵北迴、宜蘭線搶修.*北捷逐步加密班距/);
 assert.doesNotMatch(railWeatherNotice(when).descI18n.en, /[\u3400-\u9fff]/);
 assert.ok(railWeatherNotice(when).descI18n.ja.includes('10月24日'));
 assert.equal(source.systems.length, 9);
@@ -31,7 +31,7 @@ for (const system of source.systems) {
 const TRA_UPDATED_FACTS = {
   "schema": 1,
   "serviceDate": "2026-10-24",
-  "revision": "20261024-1215",
+  "revision": "20261024-1232",
   "newPlanTrainNumbers": [
     "432",
     "273",
@@ -587,6 +587,453 @@ function assertTRAUpdatedFacts(text, language, {context = 'TRA'} = {}) {
     previousDayExtrasExcluded: true};
 }
 
+const TRTC_NOON_FACTS = {
+  "schema": 1,
+  "serviceDate": "2026-10-24",
+  "revision": "20261024-1232",
+  "sourceUrl": "https://www.metro.taipei/News_Content.aspx?n=30CCEFD2A45592BF&sms=72544237BBE4C5F6&s=07211C1B52E9F4FE",
+  "sourceCheckedAt": "2026-10-24T12:32:41+08:00",
+  "rawEvidence": "/private/tmp/rail-weather-trtc-noon-1024-1232-source.json",
+  "rawEvidenceSHA256": "e387002a603683eec9d71395b1c05a82efb66d653c405472a197c00caae3def8",
+  "lineCount": 5,
+  "overlapSectionCount": 3,
+  "headwayRangeSeconds": [
+    480,
+    570
+  ],
+  "overlapHeadwaySeconds": 270,
+  "checks": [
+    {
+      "id": "moving-away-gradual-headway-plan",
+      "fragments": {
+        "zh-TW": [
+          "因颱風逐漸遠離，將逐步加密列車班距，"
+        ],
+        "en": [
+          "as the typhoon moves away, train headways will be shortened gradually,"
+        ],
+        "ja": [
+          "台風が次第に遠ざかることを受けて列車の運転間隔を段階的に短縮し、"
+        ]
+      }
+    },
+    {
+      "id": "crowd-dependent-extra-trains",
+      "fragments": {
+        "zh-TW": [
+          "並持續觀察人潮狀況機動加發列車。"
+        ],
+        "en": [
+          "with extra trains added as needed after monitoring crowds."
+        ],
+        "ja": [
+          "利用者の混雑状況を引き続き確認しながら臨機応変に増発するとしています。"
+        ]
+      }
+    },
+    {
+      "id": "five-line-exact-headway-range-binding",
+      "fragments": {
+        "zh-TW": [
+          "文湖線、淡水信義線、松山新店線、板南線及中和新蘆線班距由 12 分鐘逐步調整至 8 分鐘至 9 分 30 秒；"
+        ],
+        "en": [
+          "Headways on the Wenhu, Tamsui-Xinyi, Songshan-Xindian, Bannan and Zhonghe-Xinlu lines will gradually change from 12 minutes to between 8 minutes and 9 minutes 30 seconds."
+        ],
+        "ja": [
+          "文湖線・淡水信義線・松山新店線・板南線・中和新蘆線は、12分間隔から8分～9分30秒間隔へ段階的に調整します。"
+        ]
+      }
+    },
+    {
+      "id": "three-overlapping-sections-exact-headway-binding",
+      "fragments": {
+        "zh-TW": [
+          "南勢角至大橋頭、北投至大安、南港展覽館至亞東醫院三段重疊區間，班距均約 4 分 30 秒。"
+        ],
+        "en": [
+          "The three overlapping service sections, Nanshijiao–Daqiaotou, Beitou–Daan and Taipei Nangang Exhibition Center–Far Eastern Hospital, will have headways of about 4 minutes 30 seconds."
+        ],
+        "ja": [
+          "南勢角～大橋頭、北投～大安、南港展覧館～亜東医院の3つの重複運行区間は、いずれも約4分30秒間隔です。"
+        ]
+      }
+    },
+    {
+      "id": "gradual-not-completed-at-check",
+      "fragments": {
+        "zh-TW": [
+          "這是逐步調整方案，未確認查核時已全部調整完成；"
+        ],
+        "en": [
+          "This is a gradual adjustment plan, not confirmation that every adjustment was complete at the check time."
+        ],
+        "ja": [
+          "これは段階的な調整計画であり、確認時点ですべての調整が完了したと確認したものではありません。"
+        ]
+      }
+    },
+    {
+      "id": "no-explicit-exact-start",
+      "fragments": {
+        "zh-TW": [
+          "原文未列精確開始時刻，"
+        ],
+        "en": [
+          "The text gives no exact start time;"
+        ],
+        "ja": [
+          "本文には正確な開始時刻がなく、"
+        ]
+      }
+    },
+    {
+      "id": "headline-no-exact-publication-start-or-completion-proof",
+      "fragments": {
+        "zh-TW": [
+          "不能把標題「12:00」當作精確發布時刻或生效起點，亦非已於 12:00 全部完成的證明。"
+        ],
+        "en": [
+          "the headline '12:00' does not establish an exact publication time or effective start time, nor prove that all adjustments were completed by 12:00."
+        ],
+        "ja": [
+          "見出しの「12:00」だけでは正確な発表時刻や適用開始時刻を確定できず、12:00までにすべて完了したことを示すものでもありません。"
+        ]
+      }
+    },
+    {
+      "id": "new-notice-does-not-repeat-old-safety-and-underground-conditions",
+      "fragments": {
+        "zh-TW": [
+          "新稿未重列 06:00 舊稿的安全與地下段條件。"
+        ],
+        "en": [
+          "The new notice does not repeat the safety and underground-section conditions from the earlier '06:00' notice."
+        ],
+        "ja": [
+          "新しい発表は、先の「06:00」発表の安全条件や地下区間の扱いを再掲していません。"
+        ]
+      }
+    },
+    {
+      "id": "historical-twelve-six-demand-wind",
+      "fragments": {
+        "zh-TW": [
+          "舊稿所列約 12／6 分鐘及依運量、風速調整，"
+        ],
+        "en": [
+          "That earlier notice's approximately 12/6-minute headways and adjustments for demand and wind,"
+        ],
+        "ja": [
+          "先の発表にある約12分／6分間隔と利用状況・風速に応じた調整、"
+        ]
+      }
+    },
+    {
+      "id": "historical-ground-elevated-wind-thresholds",
+      "fragments": {
+        "zh-TW": [
+          "以及平面、高架路段若瞬間風速達 10 級以上或 10 分鐘內平均風速達 7 級即暫停營運、"
+        ],
+        "en": [
+          "its suspension of ground-level and elevated services when gusts reach force 10 or above or the 10-minute average reaches force 7,"
+        ],
+        "ja": [
+          "地上・高架区間で瞬間風速が10級以上または10分間平均が7級に達した場合の運転見合わせ、"
+        ]
+      }
+    },
+    {
+      "id": "historical-underground-continued-crowd-adjustment",
+      "fragments": {
+        "zh-TW": [
+          "地下段維持運轉並依人潮調整班距，"
+        ],
+        "en": [
+          "and continued underground operation with headways adjusted to crowds"
+        ],
+        "ja": [
+          "地下区間の運転維持と混雑に応じた間隔調整は、"
+        ]
+      }
+    },
+    {
+      "id": "old-conditions-historical-not-newly-confirmed",
+      "fragments": {
+        "zh-TW": [
+          "均僅作歷史條件參考，不是本次新確認；"
+        ],
+        "en": [
+          "are retained only as historical conditions, not newly confirmed by this notice."
+        ],
+        "ja": [
+          "いずれも過去の条件としてのみ参照し、今回新たに確認された条件とはしていません。"
+        ]
+      }
+    },
+    {
+      "id": "omission-not-withdrawal",
+      "fragments": {
+        "zh-TW": [
+          "不能因新稿未重列就推定條件已撤銷，"
+        ],
+        "en": [
+          "Their omission does not establish that they have been withdrawn;"
+        ],
+        "ja": [
+          "再掲されていないことだけで条件が撤回されたとは判断せず、"
+        ]
+      }
+    },
+    {
+      "id": "old-twelve-six-not-new-headway",
+      "fragments": {
+        "zh-TW": [
+          "舊 12／6 分鐘也不是此次新班距。"
+        ],
+        "en": [
+          "the old 12/6-minute headways are not the new headways in this update."
+        ],
+        "ja": [
+          "旧12分／6分間隔も今回の新しい間隔ではありません。"
+        ]
+      }
+    },
+    {
+      "id": "first-pending-and-oct23-stops-historical-only",
+      "fragments": {
+        "zh-TW": [
+          "更早部分首班待通知及 10/23 停駛區段稿亦僅保留為歷史，"
+        ],
+        "en": [
+          "The still earlier first-service-pending plan and Oct 23 suspension-section notice are also historical references only,"
+        ],
+        "ja": [
+          "さらに前の一部始発の続報待ち計画と10月23日の運休区間の発表も過去の参考情報のみであり、"
+        ]
+      }
+    },
+    {
+      "id": "no-current-section-stop-or-resumption-inference",
+      "fragments": {
+        "zh-TW": [
+          "不據此認定當下特定區段仍停駛或已復駛。"
+        ],
+        "en": [
+          "and do not establish whether any particular section is still suspended or has resumed at the check time."
+        ],
+        "ja": [
+          "確認時点で特定の区間がなお運休中か、すでに再開したかを判断する根拠にはしていません。"
+        ]
+      }
+    },
+    {
+      "id": "muzha-free-parking-only",
+      "fragments": {
+        "zh-TW": [
+          "木柵機廠停車場配合疏散水門政策開放免費停車，"
+        ],
+        "en": [
+          "Muzha Depot's car park offers free parking under the city's floodgate evacuation policy;"
+        ],
+        "ja": [
+          "市の水門からの車両避難方針に合わせて木柵車両基地の駐車場を無料開放し、"
+        ]
+      }
+    },
+    {
+      "id": "other-car-parks-normal",
+      "fragments": {
+        "zh-TW": [
+          "其餘停車場正常營運；"
+        ],
+        "en": [
+          "other car parks operate normally."
+        ],
+        "ja": [
+          "その他の駐車場は通常営業するとあります。"
+        ]
+      }
+    },
+    {
+      "id": "two-table-tennis-facilities-normal",
+      "fragments": {
+        "zh-TW": [
+          "南港展覽館站及板橋站桌球場正常營運。"
+        ],
+        "en": [
+          "The table-tennis facilities at Taipei Nangang Exhibition Center and Banqiao stations also operate normally."
+        ],
+        "ja": [
+          "南港展覧館駅と板橋駅の卓球場も通常営業です。"
+        ]
+      }
+    },
+    {
+      "id": "three-ancillary-services-suspended",
+      "fragments": {
+        "zh-TW": [
+          "跑馬資訊仍列遺失物中心、北投會館、捷運商品館暫停服務，"
+        ],
+        "en": [
+          "The scrolling notices still list the Lost and Found Center, Beitou Resort and Metro souvenir shops as temporarily closed;"
+        ],
+        "ja": [
+          "スクロール案内では遺失物センター・北投会館・MRTグッズショップが引き続き休業とされており、"
+        ]
+      }
+    },
+    {
+      "id": "continued-trains-not-all-ancillary-resumed",
+      "fragments": {
+        "zh-TW": [
+          "不能把列車維持營運擴大為所有附屬服務均已恢復。"
+        ],
+        "en": [
+          "continued train operation does not mean all ancillary services have resumed."
+        ],
+        "ja": [
+          "列車の運行継続がすべての付帯サービスの再開を意味するわけではありません。"
+        ]
+      }
+    },
+    {
+      "id": "headline-date-and-data-update-metadata",
+      "fragments": {
+        "zh-TW": [
+          "北捷 10/24「12:00」營運速報（資料更新 12:24）表示，"
+        ],
+        "en": [
+          "Taipei Metro's Oct 24 update headed '12:00' (data updated at 12:24) says that,"
+        ],
+        "ja": [
+          "台北MRTの10月24日「12:00」運転速報（データ更新12:24）は、"
+        ]
+      }
+    }
+  ],
+  "independenceAudit": {
+    "duplicateOrContainedFragments": 0,
+    "operatingAndScopeGroups": 21,
+    "metadataGroups": 1
+  }
+};
+
+// Pure, self-contained assertions. The approved groups bind every route and time
+// to its scope; residual scanning rejects contradictory additions even if all
+// approved sentences were kept. No browser, clock, filesystem or import is used.
+function normalizeTRTCNoon(value) {
+  return String(value).normalize('NFC').replace(/[\s\u00a0\u200b\ufeff]+/g, '');
+}
+const TRTC_NOON_CONTRADICTIONS = {
+  'zh-TW': [
+    /(?:北捷|台北捷運).{0,24}(?:現在|目前|仍為|仍是|固定|仍).{0,18}12[／/]6/u,
+    /(?:新稿|本次|此次).{0,16}(?:確認|重申).{0,24}(?:地下段|地下區間).{0,18}(?:運轉|運行)/u,
+    /(?:北捷|台北捷運|捷運)?列車.{0,12}(?:不用付費|免付費|免費)/u,
+    /(?:五線|全線|台北捷運|北捷).{0,28}(?:已(?:於|在)?12[:：]00|已全部|全部已|皆已|均已|已經全部).{0,25}(?:完成|加密|調整)/u,
+    /(?:五線|全線|台北捷運|北捷).{0,28}(?:精確|確定|正式|統一)(?:自|於|在)?12[:：]00.{0,20}(?:起|開始|生效|完成)/u,
+    /(?:標題|見出).{0,12}12[:：]00.{0,18}(?:就是|明示|證實|確定為|即為)(?:精確)?(?:發布|生效|開始)/u,
+    /(?:本次|新稿|新方案|目前|現行).{0,16}(?:固定|維持|採用|仍為|仍是|班距為).{0,10}12[／/]6/u,
+    /(?:安全|風速|地下段|舊稿).{0,20}(?:條件|規則).{0,10}(?:已撤銷|已撤回|已取消|本次新確認|本次重新確認)/u,
+    /(?:所有|全部).{0,12}附屬服務.{0,15}(?:已恢復|正常營運|全部正常)/u,
+    /(?:列車|捷運|全線).{0,8}(?:免費乘車|免費搭乘|免票|免車資)/u,
+    /(?:文湖線|淡水信義線|松山新店線|板南線|中和新蘆線|南勢角|大橋頭|北投至大安|南港展覽館至亞東醫院).{0,90}(?:(?:班距|間隔|每).{0,18}[0-9]|[0-9](?:分|秒))/u
+  ],
+  en: [
+    /(?:newnotice|thisnotice|newupdate).{0,25}(?:reconfirms?|confirms?).{0,55}(?:safety|wind|underground)/iu,
+    /TaipeiMetro.{0,50}(?:stillruns|nowruns|current).{0,35}12[\/-]6/iu,
+    /(?:TaipeiMetro|Metrotrains|trains).{0,35}free(?:train|rail|ride|travel)/iu,
+    /(?:allfive|alllines|TaipeiMetro).{0,50}(?:already|completed|finished|fullyadjusted).{0,35}(?:12:00|headway|adjustment)/iu,
+    /(?:allfive|alllines|TaipeiMetro).{0,50}(?:exactly|precisely|effectivefrom|startsat)12:00/iu,
+    /(?:headline).{0,20}12:00.{0,20}(?:proves|establishes|is)(?:theexact)?(?:publication|start|effective)/iu,
+    /(?:current|new|now).{0,25}(?:headways|plan|notice).{0,30}(?:fixed|are|is|uses|retains)12[\/-]6/iu,
+    /(?:safety|wind|underground).{0,30}(?:conditions|rules).{0,30}(?:withdrawn|cancelled|newlyconfirmed|reconfirmed)/iu,
+    /(?:allancillaryservices|allfacilities).{0,25}(?:have(?:now)?resumed|operate(?:normally)?|arenowopen)/iu,
+    /(?:Metro|trains|rail).{0,15}(?:fare-free|freeofcharge|freefares|free(?:rides|travel))/iu,
+    /(?:Wenhu|Tamsui-Xinyi|Songshan-Xindian|Bannan|Zhonghe-Xinlu|Nanshijiao|Daqiaotou|Beitou.Daan|NangangExhibitionCenter.FarEasternHospital).{0,110}(?:headway|every|minutes?|seconds?)/iu
+  ],
+  ja: [
+    /(?:安全|風速).{0,20}条件.{0,16}(?:撤回|撤廃|取消)/u,
+    /(?:新発表|今回|新しい発表).{0,40}(?:地下区間|地下).{0,40}(?:改めて確認|確認しました|再確認)/u,
+    /(?:台北MRT|列車).{0,15}(?:列車は)?無料(?:です|で|に)/u,
+    /(?:台北MRT|5路線|全線).{0,30}(?:今も|現在も|依然).{0,15}12分[／/]6分/u,
+    /(?:5路線|全線|台北MRT).{0,35}(?:12[:：]00.{0,10}(?:すべて|全て)|すでに|既に).{0,25}(?:完了|短縮済|調整済)/u,
+    /(?:5路線|全線|台北MRT).{0,25}(?:正確に|一斉に|確定した開始時刻は)12[:：]00/u,
+    /(?:見出し).{0,15}12[:：]00.{0,15}(?:正確な発表時刻|正確な適用開始時刻)(?:を示す|である|です)/u,
+    /(?:今回|新しい|現在).{0,20}(?:間隔|計画).{0,15}(?:12分[／/]6分|12[／/]6分)/u,
+    /(?:安全|風速|地下区間).{0,20}(?:条件|規則).{0,15}(?:撤回された|撤廃された|新たに確認|再確認)/u,
+    /(?:すべて|全て).{0,12}付帯サービス.{0,18}(?:再開済|再開しました|通常営業)/u,
+    /(?:列車|MRT|全線).{0,8}(?:無料乗車|運賃無料|無料運行)/u,
+    /(?:文湖線|淡水信義線|松山新店線|板南線|中和新蘆線|南勢角|大橋頭|北投～大安|南港展覧館～亜東医院).{0,90}(?:間隔|分ごと|秒ごと)/u
+  ]
+};
+
+const TRTC_NOON_APPROVED_SUPPLEMENTAL = {
+  "zh-TW": [
+    "薔琵颱風｜10/24 台鐵北迴、宜蘭線搶修，北捷逐步加密班距",
+    "北捷公告五線逐步加密至 8 分至 9 分 30 秒，三段重疊區間約 4 分 30 秒；保留台鐵東部搶修、改班與停駛例外",
+    "逐步加密至 8 分～9 分 30 秒／重疊約 4 分 30 秒",
+    "北捷 10/24「12:00」逐步加密班距速報（12:24 資料更新）",
+    "北捷 10/24「06:00」舊 12／6 分鐘方案（僅歷史，非此次新班距）",
+    "北捷先前部分首班待通知方案（10/23 公布，當時資料更新 20:06，僅供歷史參考）",
+    "北捷 10/23「17:10」停駛區段稿（僅供歷史參考）"
+  ],
+  "en": [
+    "Typhoon Champi · Oct 24: TRA North-Link/Yilan repairs; Taipei Metro plans to gradually shorten headways",
+    "Taipei Metro announces gradual headways on five lines of 8 minutes to 9 minutes 30 seconds, with about 4 minutes 30 seconds on three overlapping sections; TRA eastern repairs, service changes and specified cancellations remain included.",
+    "Gradually 8min–9min30s; overlapping sections about 4min30s",
+    "Taipei Metro's Oct 24 '12:00' gradual headway update (data updated at 12:24)",
+    "Taipei Metro's earlier Oct 24 '06:00' 12/6-minute plan (historical only; not this update's new headways)",
+    "Taipei Metro's earlier first-service-pending plan (published Oct 23; data updated at 20:06 at that time; historical reference only)",
+    "Taipei Metro's Oct 23 '17:10' suspension-section notice (historical reference only)"
+  ],
+  "ja": [
+    "台風情報｜10/24 台湾鉄道の北廻線・宜蘭線は復旧作業中、台北MRTは段階的に間隔短縮",
+    "台北MRTは5路線を8分～9分30秒間隔へ段階的に短縮し、3つの重複区間は約4分30秒間隔と発表。台湾鉄道東部の復旧作業・運行変更・個別の運休情報も引き続き掲載。",
+    "段階的に8分～9分30秒間隔、重複区間は約4分30秒",
+    "台北MRT 10/24「12:00」の段階的な運転間隔短縮速報（12:24データ更新）",
+    "台北MRT 10/24「06:00」の旧12分／6分間隔計画（過去の参考のみ。今回の新間隔ではありません）",
+    "台北MRTの以前の一部始発続報待ち計画（10/23公表、当時のデータ更新20:06、過去の参考のみ）",
+    "台北MRT 10/23「17:10」の運休区間発表（過去の参考のみ）"
+  ]
+};
+
+function assertTRTCNoonFacts(text, language = 'zh-TW', { context = 'TRTC noon operating facts' } = {}) {
+  if (typeof text !== 'string' || text.trim().length === 0) throw new Error(`${context}: nonempty text required`);
+  if (!Object.prototype.hasOwnProperty.call(TRTC_NOON_CONTRADICTIONS, language)) throw new Error(`${context}: unsupported language ${language}`);
+  const actual = normalizeTRTCNoon(text);
+  const approved = [];
+  for (const check of TRTC_NOON_FACTS.checks) {
+    for (const fragment of check.fragments[language]) {
+      const expected = normalizeTRTCNoon(fragment);
+      if (!actual.includes(expected)) throw new Error(`${context}: missing or altered fact ${check.id} (${language})`);
+      approved.push(expected);
+    }
+  }
+  approved.push(...TRTC_NOON_APPROVED_SUPPLEMENTAL[language].map(normalizeTRTCNoon));
+  let residual = actual;
+  for (const fragment of [...new Set(approved)].sort((a, b) => b.length - a.length)) residual = residual.split(fragment).join('');
+  for (const pattern of TRTC_NOON_CONTRADICTIONS[language]) {
+    if (pattern.test(residual)) throw new Error(`${context}: contradictory or unsupported operating assertion (${language})`);
+  }
+  return {
+    language,
+    revision: TRTC_NOON_FACTS.revision,
+    factGroups: TRTC_NOON_FACTS.checks.length,
+    lines: TRTC_NOON_FACTS.lineCount,
+    overlapSections: TRTC_NOON_FACTS.overlapSectionCount,
+    headwayRangeSeconds: [...TRTC_NOON_FACTS.headwayRangeSeconds],
+    overlapHeadwaySeconds: TRTC_NOON_FACTS.overlapHeadwaySeconds,
+    exactHeadwayScopeBindings: true,
+    gradualNotCompleted: true,
+    headlineNotExplicitStartTime: true,
+    headlineNotProofOfExactPublicationTime: true,
+    oldTwelveSixHistoricalOnly: true,
+    oldSafetyConditionsHistoricalNotReconfirmed: true,
+    noOmissionAsRevocation: true
+  };
+}
+
 const tra = source.systems.find(s => s.id === 'tra');
 assert.equal(tra.sourceUrl, "https://www.railway.gov.tw/tra-tip-web/tip/tip009/tip911/newsDtl?newsNo=8ae4cac2a16a254301a16c15868d53b5&page=0");
 assert.equal(tra.sourceCheckedAt, '2026-10-24T12:15:45+08:00');
@@ -606,7 +1053,7 @@ const afr = source.systems.find(s => s.id === 'afr');
 assert.equal(afr.sourceUrl, 'https://afrch.forest.gov.tw/AllNews/0079490');
 assert.equal(afr.sourceCheckedAt, '2026-10-24T08:45:02+08:00');
 assert.match(afr.detail, /^10\/24 本線嘉義至阿里山定期列車停駛.*阿里山國家森林遊樂區.*尚未取得明確開行時間/);
-assert.match(afr.detail, /最近於 10\/24 08:45 成功核讀 10\/22 19:00 更新原文及最新列表.*本輪 10\/24 12:15.*HTTP 500.*未重新核讀成功.*較早 13:30 原文不能覆蓋 19:00 更新/);
+assert.match(afr.detail, /最近於 10\/24 08:45 成功核讀 10\/22 19:00 更新原文及最新列表.*本輪 10\/24 12:30.*HTTP 500.*未重新核讀成功.*較早 13:30 原文不能覆蓋 19:00 更新/);
 assert.match(afr.detail, /文化|檜意森活村/);
 assert.match(afr.detailI18n.en, /On Oct 24.*mainline.*suspended.*no definite departure time.*successfully read at 08:45 on Oct 24.*earlier 13:30 text does not supersede the 19:00 update/);
 assert.match(afr.detailI18n.ja, /10月24日.*本線定期列車が運休.*具体的な発車時刻は未確認/);
@@ -623,21 +1070,17 @@ assert.match(tmrt.detail, /不代表本輪已確認實際降速或停駛/);
 assert.match(tmrt.detailI18n.en, /On Oct 24.*15 minutes.*not confirmation that a speed restriction or suspension is currently in effect/);
 assert.match(tmrt.detailI18n.ja, /10月24日.*15分間隔.*実際の減速・運休を確認したという意味ではありません/);
 const trtc = source.systems.find(s => s.id === 'trtc');
-assert.equal(trtc.sourceUrl, 'https://www.metro.taipei/News_Content.aspx?n=30CCEFD2A45592BF&sms=72544237BBE4C5F6&s=1E432CD2383523BA');
-assert.equal(trtc.additionalSources.length, 2);
-assert.ok(trtc.additionalSources[0].sourceUrl.includes('D24768D861F3702F'));
-assert.ok(trtc.additionalSources[1].sourceUrl.includes('649A1A69E7BC170D'));
-for (const old of trtc.additionalSources) assert.match(old.sourceLabel, /僅供歷史參考/);
-assert.match(trtc.sourceLabel, /06:00.*04:32 資料更新/);
-assert.match(trtc.detail, /^北捷 10\/24.*各路線正常營運.*文湖線、淡水信義線、松山新店線、板南線及中和新蘆線班距約 12 分鐘.*南勢角至大橋頭.*約 6 分鐘/);
-assert.match(trtc.detail, /平面、高架路段.*瞬間風速達 10 級以上.*10 分鐘內平均風速達 7 級.*暫停營運.*地下段維持運轉/);
-assert.match(trtc.detail, /06:00.*不是明示的首班或復駛起始時刻.*未逐段列出復駛時間.*不能據此認定查核當下已開行/);
-assert.match(trtc.detail, /先前部分首班待通知及 10\/23 停駛稿僅保留為歷史參考/);
-assert.doesNotMatch(trtc.status, /待通知|已復駛|06:00 起/);
-assert.match(trtc.detailI18n.en, /Oct 24.*normal operation on all routes.*Wenhu, Tamsui-Xinyi, Songshan-Xindian, Bannan and Zhonghe-Xinlu.*12-minute.*6 minutes.*Nanshijiao.*Daqiaotou/);
-assert.match(trtc.detailI18n.en, /gusts reach force 10 or above.*10-minute average reaches force 7.*not an explicitly stated first-service or resumption start time.*Do not infer that services were already running at the check time/);
-assert.match(trtc.detailI18n.ja, /10月24日.*各路線の通常運転.*文湖線・淡水信義線・松山新店線・板南線・中和新蘆線.*約12分間隔.*約6分間隔/);
-assert.match(trtc.detailI18n.ja, /10級以上.*10分間平均が7級.*始発や運転再開の開始時刻を明示したものではなく.*確認時点ですでに運転中とは判断していません/);
+assert.equal(trtc.sourceUrl, "https://www.metro.taipei/News_Content.aspx?n=30CCEFD2A45592BF&sms=72544237BBE4C5F6&s=07211C1B52E9F4FE");
+assert.equal(trtc.sourceCheckedAt, '2026-10-24T12:32:41+08:00');
+assert.equal(trtc.sourceLabel, "北捷 10/24「12:00」逐步加密班距速報（12:24 資料更新）");
+assert.equal(trtc.additionalSources.length,3);
+for (const old of trtc.additionalSources) assert.match(old.sourceLabel,/歷史/);
+assert.ok(trtc.additionalSources[0].sourceUrl.includes('1E432CD2383523BA'));
+assert.match(trtc.additionalSources[0].sourceLabel,/06:00.*歷史/);
+assert.ok(trtc.additionalSources[1].sourceUrl.includes('D24768D861F3702F'));
+assert.ok(trtc.additionalSources[2].sourceUrl.includes('649A1A69E7BC170D'));
+for (const lang of ['zh-TW','en','ja']) assertTRTCNoonFacts(lang==='zh-TW'?trtc.detail:trtc.detailI18n[lang],lang,{context:'北捷12:00新原文完整獨立核對'});
+assert.doesNotMatch(trtc.status,/12:00 起|已全部|完成調整/);
 const tymc = source.systems.find(s => s.id === 'tymc');
 assert.equal(tymc.sourceUrl, 'https://www.tymetro.com.tw/tymetro-new/tw/_pages/news/show-2439-1.html');
 assert.equal(tymc.additionalSources.length, 1);
@@ -834,6 +1277,7 @@ try {
             await page.waitForFunction(() => !document.getElementById('alertDetail').hidden);
             const renderedWeatherText = await page.locator('#alertDetail').innerText();
             assertTRAUpdatedFacts(renderedWeatherText,'zh-TW',{context:name+'/'+width+'/'+mode+' 實際手機公告'});
+            assertTRTCNoonFacts(renderedWeatherText,'zh-TW',{context:'actual mobile/legacy noon TRTC'});
             for (const system of source.systems) assert.equal(renderedWeatherText.split(system.detail).length-1,1,system.id+' 手機畫面完整且恰好一次');
             const link = await measure(page, '#alertDetail a[href$="weather-status.html"]');
             assert.ok(link.visible && link.hitSelf && link.rect.height >= 44, `${name}/${width}/${mode}: 來源入口被裁切 ${JSON.stringify(link)}`);
@@ -892,6 +1336,7 @@ try {
           }
           await page.goto(base + '/weather-status.html');
           assert.equal(await page.locator('section').count(), 9);
+          assert.equal(await page.locator('section[aria-labelledby="trtc"] a').count(), 4, '北捷12:00新稿與三份歷史來源均保留可查閱');
           assert.equal(await page.locator('section[aria-labelledby="tra"] a').count(), 3, '11:30新方案與08:30及中午前歷史來源共三筆均可查閱');
           assert.equal(await page.locator('section[aria-labelledby="tymc"] a').count(), 2, '今日模式與歷史慢速來源可查閱');
           assert.equal(await page.locator('section[aria-labelledby="ntmetro"] a').count(), 3, '最近停駛原文與今日待確認的官方最新入口都可查閱');
@@ -908,8 +1353,8 @@ try {
           assert.match(await page.locator('#ageNote').innerText(), /已過適用日期/);
           if (width === 375) {
             const languageTitles = {
-              en: "Typhoon Champi · Oct 24: TRA North-Link and Yilan lines under repair; service expected to resume at 15:00",
-              ja: "台風情報｜10/24 台湾鉄道の北廻線・宜蘭線は復旧作業中、15時再開見込み",
+              en: "Typhoon Champi · Oct 24: TRA North-Link/Yilan repairs; Taipei Metro plans to gradually shorten headways",
+              ja: "台風情報｜10/24 台湾鉄道の北廻線・宜蘭線は復旧作業中、台北MRTは段階的に間隔短縮",
             };
             await page.clock.setSystemTime(new Date(when));
             for (const lang of ['en','ja']) {
@@ -921,6 +1366,7 @@ try {
               assert.ok(translatedText.includes(languageTitles[lang]),name+' '+lang+' 完整翻譯標題');
               for (const system of source.systems) assert.equal(translatedText.split(system.detailI18n[lang]).length-1,1,system.id+' '+lang+' 完整且恰好一次');
               const traFacts = assertTRAUpdatedFacts(translatedText,lang,{context:name+' '+lang+' 手機實際公告'});
+              traFacts.trtcNoon = assertTRTCNoonFacts(translatedText,lang,{context:'actual mobile/legacy noon TRTC'});
               assert.ok(await page.evaluate(() => document.documentElement.scrollWidth-innerWidth <= 1),lang+' 無水平溢出');
               states.push({mode:'language-'+lang,operatorDetailsOnce:true,traFacts});
               await page.screenshot({path:path.join(outDir,name+'-375-'+lang+'-notice.png')});
@@ -971,6 +1417,7 @@ try {
         const text=await page.locator('#alertDetail').innerText();
         assert.ok(text.includes(ntmetro.detail), '舊網頁仍須顯示最新完整新北公告');
         assertTRAUpdatedFacts(text,'zh-TW',{context:'已開啟的舊網頁台鐵完整方案'});
+        assertTRTCNoonFacts(text,'zh-TW',{context:'actual mobile/legacy noon TRTC'});
         assert.ok(text.includes(thsr.detail), '舊網頁完整保留今日高鐵方案與昨日取消的日期區別');
         assert.ok(text.includes(trtc.detail), '舊網頁完整保留今日北捷五線方案與時刻限制');
         assert.match(text,/三鶯線、安坑輕軌及淡海輕軌維持停駛.*環狀線班距約 15 分鐘/);
@@ -991,8 +1438,10 @@ try {
         assert.match(text, /台鐵.*停駛/s);
         assert.match(text, /阿里山/);
         assertTRAUpdatedFacts(text,'zh-TW',{context:'已發行App台鐵完整方案'});
+        assertTRTCNoonFacts(text,'zh-TW',{context:'actual mobile/legacy noon TRTC'});
         assert.ok(text.includes(thsr.detail), '已發行App須顯示今日高鐵正常營運與日期區別');
-        assert.ok(text.includes(trtc.detail), '已發行App保留今日北捷五線方案與時刻限制');
+        // 已發行App的 HTML normal white-space 會把新公告段落換行合併為空白；仍比較整張完整內容。
+        assert.ok(text.replace(/\s+/g, ' ').includes(trtc.detail.replace(/\s+/g, ' ')), '已發行App保留今日北捷五線完整方案與時刻限制');
         assert.match(text, /動畫仍可能依原班表/);
         const combined = await page.evaluate(() => activeAlertList().filter(a => a.bulletin));
         assert.equal(combined.length, 3, '全台同框保留三則內容不同的系統公告');

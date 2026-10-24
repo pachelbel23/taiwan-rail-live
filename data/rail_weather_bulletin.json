@@ -1,11 +1,11 @@
 {
   "id": "champi-20261024",
-  "revision": "20261024-1215",
-  "checkedAt": "2026-10-24T12:15:45+08:00",
+  "revision": "20261024-1232",
+  "checkedAt": "2026-10-24T12:32:41+08:00",
   "displayFrom": "2026-10-24T00:00:00+08:00",
   "expiresAt": "2026-10-25T00:00:00+08:00",
   "serviceDate": "2026-10-24",
-  "title": "薔琵颱風｜10/24 台鐵北迴、宜蘭線搶修，預計 15 時恢復",
+  "title": "薔琵颱風｜10/24 台鐵北迴、宜蘭線搶修，北捷逐步加密班距",
   "warning": "動畫仍可能依原班表顯示列車，不能據此判斷有車可搭。停駛、臨時班距與復駛請以各營運單位最新公告為準，出發前務必再確認。",
   "weatherUrl": "https://www.cwa.gov.tw/V8/C/P/Typhoon/TY_WARN.html",
   "systems": [
@@ -56,7 +56,7 @@
       "id": "afr",
       "label": "阿里山林鐵",
       "status": "本線停駛／支線配合遊樂區開放",
-      "detail": "10/24 本線嘉義至阿里山定期列車停駛，祝山、沼平、神木等支線配合阿里山國家森林遊樂區開放時間營運，尚未取得明確開行時間。最近於 10/24 08:45 成功核讀 10/22 19:00 更新原文及最新列表；本輪 10/24 12:15 原文、較早原文與列表皆回傳 HTTP 500，未重新核讀成功，保留最後核實方案；較早 13:30 原文不能覆蓋 19:00 更新。嘉義市檜意森活村及阿里山林業村開園不代表阿里山國家森林遊樂區開放或列車復駛。",
+      "detail": "10/24 本線嘉義至阿里山定期列車停駛，祝山、沼平、神木等支線配合阿里山國家森林遊樂區開放時間營運，尚未取得明確開行時間。最近於 10/24 08:45 成功核讀 10/22 19:00 更新原文及最新列表；本輪 10/24 12:30 原文、較早原文與列表皆回傳 HTTP 500，未重新核讀成功，保留最後核實方案；較早 13:30 原文不能覆蓋 19:00 更新。嘉義市檜意森活村及阿里山林業村開園不代表阿里山國家森林遊樂區開放或列車復駛。",
       "sourceLabel": "林鐵處 10/22 19:00 更新（10/24 08:45 成功核讀）",
       "sourceUrl": "https://afrch.forest.gov.tw/AllNews/0079490",
       "sourceCheckedAt": "2026-10-24T08:45:02+08:00",
@@ -65,8 +65,8 @@
         "ja": "阿里山林業鉄道"
       },
       "detailI18n": {
-        "en": "On Oct 24, scheduled mainline services between Chiayi and Alishan are suspended. Branch services including Zhushan, Zhaoping and Shenmu depend on the opening of Alishan National Forest Recreation Area; no definite departure time has been confirmed. The notice updated at 19:00 on Oct 22 and the latest list were last successfully read at 08:45 on Oct 24. In this 12:15 check, that notice, the earlier article and the list all returned HTTP 500, so they were not successfully re-read; the last verified plan is retained. The earlier 13:30 text does not supersede the 19:00 update. Reopening of the Hinoki Village and Alishan Forestry Village in Chiayi City does not establish reopening of the national forest recreation area or train services.",
-        "ja": "10月24日は嘉義～阿里山の本線定期列車が運休。祝山・沼平・神木などの支線は阿里山国家森林遊楽区の開園時間に合わせて運転する予定ですが、具体的な発車時刻は未確認です。10月22日19:00更新の原文と最新一覧を最後に正常閲覧できたのは10月24日08:45です。今回10月24日12:15の確認では、この原文・旧記事・一覧の3ページともHTTP 500となり、再閲覧に成功していないため、最後に確認できた運転計画を保持しています。先の13:30の記事で19:00の更新内容を上書きしていません。嘉義市の檜意森活村・阿里山林業村の開園は、国家森林遊楽区の開園や列車再開を意味しません。"
+        "en": "On Oct 24, scheduled mainline services between Chiayi and Alishan are suspended. Branch services including Zhushan, Zhaoping and Shenmu depend on the opening of Alishan National Forest Recreation Area; no definite departure time has been confirmed. The notice updated at 19:00 on Oct 22 and the latest list were last successfully read at 08:45 on Oct 24. In this 12:30 check, that notice, the earlier article and the list all returned HTTP 500, so they were not successfully re-read; the last verified plan is retained. The earlier 13:30 text does not supersede the 19:00 update. Reopening of the Hinoki Village and Alishan Forestry Village in Chiayi City does not establish reopening of the national forest recreation area or train services.",
+        "ja": "10月24日は嘉義～阿里山の本線定期列車が運休。祝山・沼平・神木などの支線は阿里山国家森林遊楽区の開園時間に合わせて運転する予定ですが、具体的な発車時刻は未確認です。10月22日19:00更新の原文と最新一覧を最後に正常閲覧できたのは10月24日08:45です。今回10月24日12:30の確認では、この原文・旧記事・一覧の3ページともHTTP 500となり、再閲覧に成功していないため、最後に確認できた運転計画を保持しています。先の13:30の記事で19:00の更新内容を上書きしていません。嘉義市の檜意森活村・阿里山林業村の開園は、国家森林遊楽区の開園や列車再開を意味しません。"
       }
     },
     {
@@ -152,18 +152,34 @@
     {
       "id": "trtc",
       "label": "台北捷運",
-      "status": "各線正常營運方案／約 12／6 分鐘",
-      "detail": "北捷 10/24「06:00」營運速報公布各路線正常營運：文湖線、淡水信義線、松山新店線、板南線及中和新蘆線班距約 12 分鐘，南勢角至大橋頭重疊區段約 6 分鐘，仍依運量及風速調整。平面、高架路段若瞬間風速達 10 級以上，或 10 分鐘內平均風速達 7 級，仍將暫停營運；地下段維持運轉並依人潮調整班距。標題「06:00」不是明示的首班或復駛起始時刻，原文未逐段列出復駛時間，不能據此認定查核當下已開行；先前部分首班待通知及 10/23 停駛稿僅保留為歷史參考。",
-      "sourceLabel": "北捷 10/24「06:00」營運速報（04:32 資料更新）",
-      "sourceUrl": "https://www.metro.taipei/News_Content.aspx?n=30CCEFD2A45592BF&sms=72544237BBE4C5F6&s=1E432CD2383523BA",
-      "sourceCheckedAt": "2026-10-24T08:45:03+08:00",
+      "status": "逐步加密至 8 分～9 分 30 秒／重疊約 4 分 30 秒",
+      "detail": "北捷 10/24「12:00」營運速報（資料更新 12:24）表示，因颱風逐漸遠離，將逐步加密列車班距，並持續觀察人潮狀況機動加發列車。\n文湖線、淡水信義線、松山新店線、板南線及中和新蘆線班距由 12 分鐘逐步調整至 8 分鐘至 9 分 30 秒；南勢角至大橋頭、北投至大安、南港展覽館至亞東醫院三段重疊區間，班距均約 4 分 30 秒。\n這是逐步調整方案，未確認查核時已全部調整完成；原文未列精確開始時刻，不能把標題「12:00」當作精確發布時刻或生效起點，亦非已於 12:00 全部完成的證明。\n新稿未重列 06:00 舊稿的安全與地下段條件。舊稿所列約 12／6 分鐘及依運量、風速調整，以及平面、高架路段若瞬間風速達 10 級以上或 10 分鐘內平均風速達 7 級即暫停營運、地下段維持運轉並依人潮調整班距，均僅作歷史條件參考，不是本次新確認；不能因新稿未重列就推定條件已撤銷，舊 12／6 分鐘也不是此次新班距。\n更早部分首班待通知及 10/23 停駛區段稿亦僅保留為歷史，不據此認定當下特定區段仍停駛或已復駛。\n新稿另列木柵機廠停車場配合疏散水門政策開放免費停車，其餘停車場正常營運；南港展覽館站及板橋站桌球場正常營運。\n跑馬資訊仍列遺失物中心、北投會館、捷運商品館暫停服務，不能把列車維持營運擴大為所有附屬服務均已恢復。",
+      "sourceLabel": "北捷 10/24「12:00」逐步加密班距速報（12:24 資料更新）",
+      "sourceUrl": "https://www.metro.taipei/News_Content.aspx?n=30CCEFD2A45592BF&sms=72544237BBE4C5F6&s=07211C1B52E9F4FE",
+      "sourceCheckedAt": "2026-10-24T12:32:41+08:00",
       "additionalSources": [
         {
-          "sourceLabel": "北捷先前 10/24 部分首班待通知方案（僅供歷史參考）",
+          "sourceLabel": "北捷 10/24「06:00」舊 12／6 分鐘方案（僅歷史，非此次新班距）",
+          "sourceLabelI18n": {
+            "en": "Taipei Metro's earlier Oct 24 '06:00' 12/6-minute plan (historical only; not this update's new headways)",
+            "ja": "台北MRT 10/24「06:00」の旧12分／6分間隔計画（過去の参考のみ。今回の新間隔ではありません）"
+          },
+          "sourceUrl": "https://www.metro.taipei/News_Content.aspx?n=30CCEFD2A45592BF&sms=72544237BBE4C5F6&s=1E432CD2383523BA"
+        },
+        {
+          "sourceLabel": "北捷先前部分首班待通知方案（10/23 公布，當時資料更新 20:06，僅供歷史參考）",
+          "sourceLabelI18n": {
+            "en": "Taipei Metro's earlier first-service-pending plan (published Oct 23; data updated at 20:06 at that time; historical reference only)",
+            "ja": "台北MRTの以前の一部始発続報待ち計画（10/23公表、当時のデータ更新20:06、過去の参考のみ）"
+          },
           "sourceUrl": "https://www.metro.taipei/News_Content.aspx?n=30CCEFD2A45592BF&sms=72544237BBE4C5F6&s=D24768D861F3702F"
         },
         {
-          "sourceLabel": "北捷 10/23 17:10 停駛區段原文（僅供歷史參考）",
+          "sourceLabel": "北捷 10/23「17:10」停駛區段稿（僅供歷史參考）",
+          "sourceLabelI18n": {
+            "en": "Taipei Metro's Oct 23 '17:10' suspension-section notice (historical reference only)",
+            "ja": "台北MRT 10/23「17:10」の運休区間発表（過去の参考のみ）"
+          },
           "sourceUrl": "https://www.metro.taipei/News_Content.aspx?n=30CCEFD2A45592BF&sms=72544237BBE4C5F6&s=649A1A69E7BC170D"
         }
       ],
@@ -172,8 +188,16 @@
         "ja": "台北MRT"
       },
       "detailI18n": {
-        "en": "Taipei Metro's Oct 24 operating update, headed '06:00', announces normal operation on all routes: the Wenhu, Tamsui-Xinyi, Songshan-Xindian, Bannan and Zhonghe-Xinlu lines run at about 12-minute headways, or about 6 minutes on the shared Nanshijiao–Daqiaotou section, subject to demand and wind. Ground-level and elevated sections will still suspend service if gusts reach force 10 or above, or the 10-minute average reaches force 7. Underground sections continue operating, with headways adjusted to demand. The headline '06:00' is not an explicitly stated first-service or resumption start time, and the article does not list resumption times for individual sections. Do not infer that services were already running at the check time. The earlier pending-first-service plan and Oct 23 suspension notice are retained as historical references only.",
-        "ja": "台北MRTの10月24日「06:00」運転速報は、各路線の通常運転を発表しています。文湖線・淡水信義線・松山新店線・板南線・中和新蘆線は約12分間隔、南勢角～大橋頭の共通区間は約6分間隔で、利用状況と風速に応じて調整します。地上・高架区間では瞬間風速が10級以上、または10分間平均が7級に達した場合、引き続き運転を見合わせます。地下区間は運転を維持し、利用状況に応じて間隔を調整します。見出しの「06:00」は始発や運転再開の開始時刻を明示したものではなく、本文にも区間ごとの再開時刻は記載されていません。確認時点ですでに運転中とは判断していません。一部の始発について続報待ちとしていた従来の計画と10月23日の運休発表は、過去の参考情報としてのみ残しています。"
+        "en": "Taipei Metro's Oct 24 update headed '12:00' (data updated at 12:24) says that, as the typhoon moves away, train headways will be shortened gradually, with extra trains added as needed after monitoring crowds.\nHeadways on the Wenhu, Tamsui-Xinyi, Songshan-Xindian, Bannan and Zhonghe-Xinlu lines will gradually change from 12 minutes to between 8 minutes and 9 minutes 30 seconds. The three overlapping service sections, Nanshijiao–Daqiaotou, Beitou–Daan and Taipei Nangang Exhibition Center–Far Eastern Hospital, will have headways of about 4 minutes 30 seconds.\nThis is a gradual adjustment plan, not confirmation that every adjustment was complete at the check time. The text gives no exact start time; the headline '12:00' does not establish an exact publication time or effective start time, nor prove that all adjustments were completed by 12:00.\nThe new notice does not repeat the safety and underground-section conditions from the earlier '06:00' notice. That earlier notice's approximately 12/6-minute headways and adjustments for demand and wind, its suspension of ground-level and elevated services when gusts reach force 10 or above or the 10-minute average reaches force 7, and continued underground operation with headways adjusted to crowds are retained only as historical conditions, not newly confirmed by this notice. Their omission does not establish that they have been withdrawn; the old 12/6-minute headways are not the new headways in this update.\nThe still earlier first-service-pending plan and Oct 23 suspension-section notice are also historical references only, and do not establish whether any particular section is still suspended or has resumed at the check time.\nThe new notice also says that Muzha Depot's car park offers free parking under the city's floodgate evacuation policy; other car parks operate normally. The table-tennis facilities at Taipei Nangang Exhibition Center and Banqiao stations also operate normally.\nThe scrolling notices still list the Lost and Found Center, Beitou Resort and Metro souvenir shops as temporarily closed; continued train operation does not mean all ancillary services have resumed.",
+        "ja": "台北MRTの10月24日「12:00」運転速報（データ更新12:24）は、台風が次第に遠ざかることを受けて列車の運転間隔を段階的に短縮し、利用者の混雑状況を引き続き確認しながら臨機応変に増発するとしています。\n文湖線・淡水信義線・松山新店線・板南線・中和新蘆線は、12分間隔から8分～9分30秒間隔へ段階的に調整します。南勢角～大橋頭、北投～大安、南港展覧館～亜東医院の3つの重複運行区間は、いずれも約4分30秒間隔です。\nこれは段階的な調整計画であり、確認時点ですべての調整が完了したと確認したものではありません。本文には正確な開始時刻がなく、見出しの「12:00」だけでは正確な発表時刻や適用開始時刻を確定できず、12:00までにすべて完了したことを示すものでもありません。\n新しい発表は、先の「06:00」発表の安全条件や地下区間の扱いを再掲していません。先の発表にある約12分／6分間隔と利用状況・風速に応じた調整、地上・高架区間で瞬間風速が10級以上または10分間平均が7級に達した場合の運転見合わせ、地下区間の運転維持と混雑に応じた間隔調整は、いずれも過去の条件としてのみ参照し、今回新たに確認された条件とはしていません。再掲されていないことだけで条件が撤回されたとは判断せず、旧12分／6分間隔も今回の新しい間隔ではありません。\nさらに前の一部始発の続報待ち計画と10月23日の運休区間の発表も過去の参考情報のみであり、確認時点で特定の区間がなお運休中か、すでに再開したかを判断する根拠にはしていません。\n新しい発表には、市の水門からの車両避難方針に合わせて木柵車両基地の駐車場を無料開放し、その他の駐車場は通常営業するとあります。南港展覧館駅と板橋駅の卓球場も通常営業です。\nスクロール案内では遺失物センター・北投会館・MRTグッズショップが引き続き休業とされており、列車の運行継続がすべての付帯サービスの再開を意味するわけではありません。"
+      },
+      "statusI18n": {
+        "en": "Gradually 8min–9min30s; overlapping sections about 4min30s",
+        "ja": "段階的に8分～9分30秒間隔、重複区間は約4分30秒"
+      },
+      "sourceLabelI18n": {
+        "en": "Taipei Metro's Oct 24 '12:00' gradual headway update (data updated at 12:24)",
+        "ja": "台北MRT 10/24「12:00」の段階的な運転間隔短縮速報（12:24データ更新）"
       }
     },
     {

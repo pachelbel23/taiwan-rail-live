@@ -4,6 +4,8 @@
   if (!messages || !messages.en || !messages.ja) return;
 
   Object.assign(messages.en, {
+    "北捷公告五線逐步加密至 8 分至 9 分 30 秒，三段重疊區間約 4 分 30 秒；保留台鐵東部搶修、改班與停駛例外": "Taipei Metro announces gradual headways on five lines of 8 minutes to 9 minutes 30 seconds, with about 4 minutes 30 seconds on three overlapping sections; TRA eastern repairs, service changes and specified cancellations remain included.",
+    "薔琵颱風｜10/24 台鐵北迴、宜蘭線搶修，北捷逐步加密班距": "Typhoon Champi · Oct 24: TRA North-Link/Yilan repairs; Taipei Metro plans to gradually shorten headways",
     "台鐵更新北迴、宜蘭線搶修與東部班次，5216 次改停駛，432、273 次列出新時刻；請留意截短、停駛與支線待巡查資訊": "TRA has updated North-Link and Yilan repair information and eastern services: Train 5216 is now cancelled, and new times are listed for Trains 432 and 273. Check shortened and cancelled services and branch lines awaiting inspection.",
     "薔琵颱風｜10/24 台鐵北迴、宜蘭線搶修，預計 15 時恢復": "Typhoon Champi · Oct 24: TRA North-Link and Yilan lines under repair; service expected to resume at 15:00",
     "台鐵公布今日中午後分批恢復方案，補上仍停駛、截短與支線待巡查資訊；成追線 2608 次另按成功 11:39 開車，出發前請核對官方班次": "TRA has announced staged restoration after noon today, including remaining cancellations, shortened services and branches awaiting inspection. Chengzhui Train 2608 departs Chenggong at 11:39. Check the official train information before travel.",
@@ -307,6 +309,8 @@
   });
 
   Object.assign(messages.ja, {
+    "北捷公告五線逐步加密至 8 分至 9 分 30 秒，三段重疊區間約 4 分 30 秒；保留台鐵東部搶修、改班與停駛例外": "台北MRTは5路線を8分～9分30秒間隔へ段階的に短縮し、3つの重複区間は約4分30秒間隔と発表。台湾鉄道東部の復旧作業・運行変更・個別の運休情報も引き続き掲載。",
+    "薔琵颱風｜10/24 台鐵北迴、宜蘭線搶修，北捷逐步加密班距": "台風情報｜10/24 台湾鉄道の北廻線・宜蘭線は復旧作業中、台北MRTは段階的に間隔短縮",
     "台鐵更新北迴、宜蘭線搶修與東部班次，5216 次改停駛，432、273 次列出新時刻；請留意截短、停駛與支線待巡查資訊": "台湾鉄道の北廻線・宜蘭線の復旧作業と東部列車の情報を更新。5216次は運休に変更され、432・273次には新たな時刻が記載されています。運転区間の短縮・運休と、巡回点検待ちの支線情報をご確認ください。",
     "薔琵颱風｜10/24 台鐵北迴、宜蘭線搶修，預計 15 時恢復": "台風情報｜10/24 台湾鉄道の北廻線・宜蘭線は復旧作業中、15時再開見込み",
     "台鐵公布今日中午後分批恢復方案，補上仍停駛、截短與支線待巡查資訊；成追線 2608 次另按成功 11:39 開車，出發前請核對官方班次": "台湾鉄道の本日正午以降の段階的な再開、運休・区間短縮・点検待ちの支線を追加しました。成追線2608次は成功11:39発です。出発前に公式列車情報をご確認ください。",
