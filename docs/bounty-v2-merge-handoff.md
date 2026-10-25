@@ -208,9 +208,10 @@ q() { w d1 execute DELAY_DB --remote --json --command "$1"; }
 
 ### 5.2 出貨前（步驟 A）
 
-1. ~~valuation F1~~ 已修 `21400e80`；~~hardening PLb~~ 已修 `74c78869`。修完總閘門 18/18（3.1）。
-2. **BUILD 已 bump**：`e5a771bd` 把 `index.html:7076` 的 `v1024l` 改成 `v1025a`。ship-web 第 4 步（`scripts/ship_web.mjs:932-937`）在「內容與正式站不同、BUILD 卻相同」時擋下，整併版的 index.html 與正式站不同。出貨前 index.html 若又變了、而正式站已經是 `v1025a`，要再 bump。更新紀錄沒有加條目（2.45 只守字數，不要求新條目）；要不要加由主線決定。
+1. ~~valuation F1~~ 已修 `21400e80`；~~hardening PLb~~ 已修 `74c78869`。修完總閘門 18/18（3.1）。BUILD bump 之後在 `ff0ca179`（程式與 `e5a771bd` 相同，之後只改文件）重跑一次：18 支全綠、1880 條，rc=0。
+2. **BUILD 已 bump**：`e5a771bd` 把 `index.html:7076` 的 `v1024l` 改成 `v1025a`。ship-web 第 4 步（`scripts/ship_web.mjs:932-937`）在「內容與正式站不同、BUILD 卻相同」時擋下，整併版的 index.html 與正式站不同。出貨前 index.html 若又變了、而正式站已經是 `v1025a`，要再 bump。10-25 13:2x 確認：正式站首頁是 `v1024l`，origin/main 仍是 `ef09beef`（BUILD `v1024l`），沒有撞號、也不用重併。更新紀錄沒有加條目（2.45 只守字數，不要求新條目）；要不要加由主線決定。
 3. **`bounty_units.json` 出貨當天重產**：`npm run build-bounty-units`，有差異就 commit。這次重產是 10-25 的班表；ship-web 的資料閘不會擋舊的單位檔（R11 只守站表、R13 只守算法），而台鐵班表每週重抓、尖峰小時可能跟著換。
+   - 10-25 13:2x 重產過一次：3533 單位（軌道 1810／停站 1723）、29 條線、尖峰小時都與 commit 裡那份相同，**只有 `generatedAt` 不同**，所以沒有 commit（只為時間戳改檔還得連帶重產 manifest）。出貨若不在 10-25，當天再跑一次。
 4. 視需要：根目錄 `verify_bounty.mjs` 退役或改寫（3.5）。不擋出貨。
 5. 註解衛生：v2 新增行裡沒有引用使用者原話（`原話`／`裁示` 0 筆、`verify_public_repo_hygiene` ALL PASS）。main 10-18 做過「註解只留做法與理由」的清理，v2 的註解還有 `brief §…` 之類指向其他文件的代號，要不要比照清理由主線決定，不擋出貨。
 6. 這份交接檔本身要不要進公開 repo，push 前由主線決定（裡面有本機路徑）。
