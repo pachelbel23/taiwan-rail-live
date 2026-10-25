@@ -834,7 +834,7 @@ if (M) {
     { track: 'data/thsr_track.json', sys: 'thsr_sched' },
     { track: 'data/afr.json', sys: 'afr_sched' },
   ];
-  const realSegKeys = new Set();          // track 的真值："sys|lnId|A|B"（A<B 字典序），275 個
+  const realSegKeys = new Set();          // track 的真值："sys|lnId|A|B"（A<B 字典序），276 個（10-02 平鎮臨時站把縱貫線北段的中壢|埔心拆成兩段，275→276）
   const realStations = {};                // dwell 的真值："sys|lnId" → Set(站名)
   const bySys = {};
   for (const src of SOURCES) {
@@ -852,8 +852,8 @@ if (M) {
       }
     }
   }
-  ok('F1 獨立重算的真實區間鍵數與參考值一致（275：tra_sched 244／thsr_sched 11／afr_sched 20）',
-    realSegKeys.size === 275 && bySys.tra_sched === 244 && bySys.thsr_sched === 11 && bySys.afr_sched === 20,
+  ok('F1 獨立重算的真實區間鍵數與參考值一致（276：tra_sched 245／thsr_sched 11／afr_sched 20）',
+    realSegKeys.size === 276 && bySys.tra_sched === 245 && bySys.thsr_sched === 11 && bySys.afr_sched === 20,
     JSON.stringify({ total: realSegKeys.size, ...bySys }));
 
   const missTrack = [], missDwell = [];
