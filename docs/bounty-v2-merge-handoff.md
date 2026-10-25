@@ -6,7 +6,7 @@
 ## 0. 結論
 
 - 整併完成：`8ef76a8a`＝`origin/main` `ef09beef` ＋ `origin/fix/bounty-gate-env-flakes` `7a28cd16`（v2＝`origin/feat/bounty-chips-v2` `428e30c2` 再加兩顆總閘門修正）。只在本機。
-- 懸賞總閘門 18 支套件 16 支綠、2 支各紅 1 條，兩條都**不是整併造成的**（第 3.2 節）。但 ship-web 第 615 行跑的就是這支總閘門，**這兩條不處理，ship-web 會擋下**。
+- 懸賞總閘門：整併當下 18 支套件 16 支綠、2 支各紅 1 條，兩條都**不是整併造成的**（第 3.2 節）。主線依規則定了處理方式，已各修一顆 commit（`21400e80`、`74c78869`），修完重跑結果見第 3.1 節。
 - main 原有的 worker 相關檢查 40 支：沒有一支被整併弄紅（第 3.3 節）。
 - 用 `wrangler dev --local` 起整併版，照 10-24 真機請求的形狀打 21 發（看板 → 接卡 → 上傳 → me → chips-me → 雲端搭乘 → 兌換 ＋ 錯誤路徑），21/21 符合 App 的預期（第 3.6 節）。
 - App 契約（原生 origin/main `83a195b69`）：七個端點的請求欄位、回應欄位、錯誤碼都對得上；沒有會讓 App 壞掉的不一致，差異列在第 4 節。
@@ -19,7 +19,8 @@
 | 樹 | `.claude/worktrees/magical-wilson-2c343d` |
 | 分支 | `bounty/v2-merge`（本機，**未 push**） |
 | 合併 commit | `8ef76a8a`，parents `ef09beef`（origin/main）、`7a28cd16`（v2） |
-| 交接檔 commit | 這份檔案所在的那一顆（`git log -1 -- docs/bounty-v2-merge-handoff.md`） |
+| 判準修正 | `21400e80`（valuation F1 參考值）、`74c78869`（hardening PLb 一句只比排序後的行） |
+| 交接檔 commit | `4c8b9d0c` 初版；之後的更新看 `git log -- docs/bounty-v2-merge-handoff.md` |
 | 合併基準 | `cbe6e603`（09-28） |
 
 每個衝突怎麼解，逐條寫在合併 commit 的訊息裡：`git show -s --format=%B 8ef76a8a`。摘要：
@@ -33,14 +34,19 @@
 ## 2. 重現環境
 
 - 全部指令在本樹根目錄跑。wrangler 一律 `arch -arm64 node ./node_modules/wrangler/bin/wrangler.js`（這台的 `npx wrangler` 會被 Rosetta 拉成 x64）。
-- node `v24.22.1`（內建 SQLite 3.53.4），10-23 前後裝的；v2 開發時是 SQLite 3.51.2（`scripts/verify_bounty_hardening.mjs:1987` 的註解）。這個差別跟第 3.2 節的 PLb 有關。
+- 系統 node `v24.22.1`（內建 SQLite 3.53.4），10-23 前後裝的；v2 開發時是 SQLite 3.51.2（`scripts/verify_bounty_hardening.mjs:1987` 的註解）。這個差別就是第 3.2 節 PLb 的根因。
+- 對照用的 portable node `v24.14.1`（內建 SQLite 3.51.2，Node 官方 changelog：3.51.2 從 24.13.1 進來、24.15.0 換成 3.52.0）放在本樹的 `tmp/portable-node/`（`.gitignore:106` 忽略的路徑，沒有全域安裝、沒有換系統 node）。來源 `https://nodejs.org/dist/v24.14.1/node-v24.14.1-darwin-arm64.tar.gz`，SHA256 `25495ff8…cb1fe` 對過官方 `SHASUMS256.txt`。用法：`PATH=$PWD/tmp/portable-node/node-v24.14.1-darwin-arm64/bin:$PATH node scripts/verify_bounty_hardening.mjs`。
 - 驗收紀錄、實打腳本、模擬腳本的副本在主線共用筆記資料夾的 `bounty-v2-merge/`（`side-session-notes/local_aa7e619a-…/bounty-v2-merge/`）：`verify_bounty_all_merged.log`、`v2_alone_hardening.log`、`worker_checks_{merged,main}.tsv`、`e2e.mjs`、`e2e_result.json`、`guard_sim.mjs`、`segkeys.mjs`。
 
 ## 3. 驗收
 
 ### 3.1 懸賞總閘門
 
-指令：`node scripts/verify_bounty_all.mjs`（ship-web 第 615 行跑的同一支）。結果 rc=1：
+指令：`node scripts/verify_bounty_all.mjs`（ship-web 第 615 行跑的同一支）。
+
+**修正後（`74c78869`，系統 node 24.22.1）：rc=0，18 支全綠，共 1880 條判準**（hardening 183/183、valuation 88/88，其餘 16 支數字與下表相同）。
+
+整併當下（`8ef76a8a`）的結果 rc=1：
 
 | 套件 | 結果 | 套件 | 結果 |
 |---|---|---|---|
@@ -63,15 +69,19 @@
 - 根因：main 的 `9310ed8c`（10-02，平鎮臨時站 10/3 啟用）在 `data/tra.json` 加了平鎮站，縱貫線北段的 `中壢|埔心` 拆成 `中壢|平鎮`＋`埔心|平鎮`。v2 的基準在這之前。
 - 證據：`segkeys.mjs` 對 v2 原樣樹 244 鍵、對 main 與整併版都是 245 鍵，`diff` 只差這三行。v2 原樣樹跑 valuation 88/88。
 - F 組其餘斷言（每個單位的 seg_key 都落在真實鍵空間裡）全過，所以新的單位檔沒有壞鍵。
-- 待決：F1 的參考值改成 276／245，同一顆 commit 寫明是平鎮站。這是改期望值，本線不做，交主線決定。
+- 處理（主線依規則定：判準過期、根因已證實）：`21400e80` 把參考值改成 276／245，訊息寫明平鎮臨時站。改後 valuation 88/88。
 
-**hardening PLb：v2 原樣就紅，最可能是 SQLite 版本換了。**
+**hardening PLb：v2 原樣就紅，根因是 SQLite 版本換了（已實證）。**
 
 - PLb 要求碰六張懸賞表的 61 句，在 8 種 ANALYZE 統計形狀下的查詢計畫跟「沒有統計」時逐行相同。
 - 紅的只有一句：`bountyMerge` 搬車庫解鎖的 `INSERT OR IGNORE INTO chip_ledger … SELECT … FROM garage_unlocks d … EXISTS (bounty_points …)`，在 one／tiny3／cheap 三種形狀下，計畫的三行**順序**變了（`EXISTS` 那行從第一行移到最後一行）。用的索引完全一樣，沒有全表掃描（`scans: []`）。
 - v2 原樣樹（`7a28cd16`）在這台跑出同一個 182/183、同一句。所以跟整併無關。
-- 最可能的原因：v2 是在 SQLite 3.51.2 下寫、下綠的，這台的 node 10-23 前後換成內建 3.53.4 的版本，planner 對相關子查詢的排列不同。**沒有實證**：這台只有一個 node，沒法在 3.51.2 下重跑。
-- 待決（交主線）：(a) 找一台 node 內建 SQLite 3.51.x 的環境重跑確認；(b) 確認後決定要讓 PLb 對這句只比「用了哪些索引」不比順序，或改寫那一句讓計畫固定。正式 D1 用的是 Cloudflare 自己的 SQLite，這條判準要守的是「不會變成全表掃描」，這一點三種形狀都還守得住。
+- 根因：v2 是在 SQLite 3.51.2 下寫、下綠的，這台的 node 10-23 前後換成內建 3.53.4 的版本，兩版對這個相關子查詢的 EXPLAIN 列印順序不同。
+- 實證：同一棵樹（整併版）用 portable node 24.14.1（SQLite 3.51.2）跑 hardening → 183/183，PLb 綠；系統 node 24.22.1（3.53.4）→ 182/183，只紅這一句。
+- 處理（主線依規則定）：`74c78869` 新增 `PL_ORDER_FREE`（`scripts/verify_bounty_hardening.mjs`，`PL_CTRL` 之後），清單裡只有這一句。它比「排序後逐行相同」，而且每一種統計形狀下都要沒有全表掃描；比對式要恰好攔到一句，否則 PLb 紅。其他 60 句照舊逐行比。
+  - 改後：3.51.2 → 183/183；3.53.4 → 183/183。
+  - 對照（判準還有牙）：在暫用樹拿掉 `u` 的 `INDEXED BY`，用 3.53.4 跑 → PLb 紅，one／cheap 出現 `SCAN u`、tiny3 是 `SCAN u` 在外層（同時 PLc、PLc2 也紅）。
+- 正式 D1 用的是 Cloudflare 自己的 SQLite，版本跟這兩個都不一定相同。這條判準要守的是「統計怎麼偏都不會變成全表掃描」，放寬的只有一句的行序。
 
 ### 3.3 main 原有的 worker 相關檢查（確認沒弄紅別的功能）
 
@@ -165,7 +175,7 @@
 
 | 步驟 | 動作 | 寫正式環境？ | 可回頭？ |
 |---|---|---|---|
-| A | 處理擋 ship-web 的兩條紅（3.2） | 否（本機 commit） | 是 |
+| A | 出貨前的本機準備（5.1；擋 ship-web 的兩條紅已修） | 否（本機 commit） | 是 |
 | B | push 分支／併 main | 是（公開 repo） | 難 |
 | C | 唯讀查正式庫 schema、看板、B6 髒列、Worker 變數名單 | 只讀 | — |
 | D | 照 C 的結果補套 0014 → 0015 → 0016（懸賞三支） | 是 | 欄位與表只加不刪，見 5.2 |
@@ -178,8 +188,8 @@ D 一定早於 E：v2 的 Worker 遇到沒套 0014 的庫，`/api/account-delete
 
 ### 5.1 出貨前要先處理（步驟 A）
 
-1. **valuation F1**：參考值 275／244 → 276／245，訊息寫明平鎮臨時站。主線決定。
-2. **hardening PLb**：照 3.2 的 (a)(b) 決定。沒處理前 `verify_bounty_all` 恆紅、ship-web 擋在第 615 行。
+1. ~~valuation F1~~：已修（`21400e80`）。
+2. ~~hardening PLb~~：已修（`74c78869`）。修完總閘門 18/18（3.1）。
 3. **`bounty_units.json` 出貨當天重產**：`npm run build-bounty-units`，有差異就 commit。這次重產是 10-25 的班表；ship-web 的資料閘不會擋舊的單位檔（R11 只守站表、R13 只守算法），而台鐵班表每週重抓、尖峰小時可能跟著換。
 4. 視需要：根目錄 `verify_bounty.mjs` 退役或改寫（3.5）。不擋出貨。
 5. 註解衛生：v2 新增行裡沒有引用使用者原話（`原話`／`裁示` 0 筆、`verify_public_repo_hygiene` ALL PASS）。main 10-18 做過「註解只留做法與理由」的清理，v2 的註解還有 `brief §…` 之類指向其他文件的代號，要不要比照清理由主線決定，不擋出貨。
@@ -294,7 +304,6 @@ npm run ship-web
 ## 6. 沒做、沒驗、不確定
 
 - 沒對正式庫做任何查詢，正式庫的 schema 現況未知（5.2 C）。
-- PLb 的 SQLite 版本假說沒有在 3.51.x 下實證（3.2）。
 - 帶 Bearer 的路徑、真錄程的判定結果，本機實打沒蓋到（3.6），只靠離線套件。
 - 退場守門的模擬假設正式板＝07-28／29 的清單（5.6）。
 - `wrangler secret put` 與 `vars` 哪個適合設 `BOUNTY_WRITES`，沒實測（5.5）。
