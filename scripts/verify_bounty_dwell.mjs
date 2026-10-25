@@ -1,14 +1,16 @@
 // dwell 結構洞迴歸：真實單位／真實 line metadata／正式匯出函式／本機假 D1。
 // 跑法：node scripts/verify_bounty_dwell.mjs
-import { readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { _bounty } from '../worker.js';
 import { openTestDb } from './d1_local.mjs';
+import { POS_SPEED_WINDOW_REJECT, POS_SPEED_WINDOW_ACCEPT } from './bounty_guard_cases.mjs';
 
 globalThis.caches = { default: { match: async () => undefined, put: async () => {} } };
 
 const RULES = JSON.parse(readFileSync('data/bounty_rules.json', 'utf8'));
 const UNITS = JSON.parse(readFileSync('data/bounty_units.json', 'utf8'));
-const CARD_ID = 'tra_sched|山線|0|其他|dwell|peak';
+// 車種用題庫裡真的有的卡（09-07 重產題庫後「其他」這個車種在新烏日尖峰已不存在，卡片 404）。
+const CARD_ID = 'tra_sched|山線|0|自強|dwell|peak';
 const DWELL_KEY = 'tra_sched|山線|新烏日|新烏日';
 const LINE = UNITS.lines['tra_sched|山線'];
 const R = [];
@@ -73,8 +75,13 @@ ok('D3 dwell 卡即使沒有跟隨班次而先送 dir=0，完整反向軌跡仍�
 const asset = name => new Response(readFileSync(`data/${name}`, 'utf8'), {
   status: 200, headers: { 'content-type': 'application/json' },
 });
-const ASSETS = { fetch: async request =>
-  asset(new URL(request.url).pathname.endsWith('/bounty_units.json') ? 'bounty_units.json' : 'bounty_rules.json') };
+// 🔴 2026-09-29（路段懸賞 v2）：收滿改看「去重人數」，真設定是台鐵 50 人。這支 E2E 只有一個 actor，
+// 原本要驗的是「一趟 ok 就收滿、其他車種不受影響、之後估值衰減」這個情境（D4／D7），所以把 coverDistinct
+// 調成 1 人來維持它——只改門檻的數字，斷言本身一個字沒動。真設定（50）下的收滿行為在 verify_bounty_ledger.mjs。
+const STUB_RULES = JSON.stringify({ ...RULES, coverDistinct: { TRA: 1, THSR: 1 } });
+const ASSETS = { fetch: async request => new URL(request.url).pathname.endsWith('/bounty_units.json')
+  ? asset('bounty_units.json')
+  : new Response(STUB_RULES, { status: 200, headers: { 'content-type': 'application/json' } }) };
 const limiter = { limit: async () => ({ success: true }) };
 const NOW = Date.parse('2026-07-29T08:00:00Z');
 
@@ -84,7 +91,7 @@ async function e2e(actor, samples) {
   _bounty.bountyResetMemCaches();
   const valuation = await _bounty.bountyValuationCron(env);
   const before = db.prepare(
-    "SELECT points,sample_count,covered_at FROM bounty_board WHERE seg_key=? AND train_kind='其他'" +
+    "SELECT points,sample_count,covered_at FROM bounty_board WHERE seg_key=? AND train_kind='自強'" +
     " AND dir=0 AND kind='dwell' AND slot='peak'"
   ).get(DWELL_KEY);
   const claimRes = await _bounty.bountyClaim(new Request('http://local.test/api/bounty-claim', {
@@ -92,7 +99,7 @@ async function e2e(actor, samples) {
     body: JSON.stringify({ actor, cardId: CARD_ID }),
   }), env);
   const claim = await claimRes.json();
-  // 同 actor、同站／時段故意再塞另一車種的 open claim。驗證後只能關這次真正接的「其他」，
+  // 同 actor、同站／時段故意再塞另一車種的 open claim。驗證後只能關這次真正接的「自強」，
   // 不可因 coverage 本身不帶 trainKind 就把兩張卡一起完成。
   db.prepare(
     "INSERT INTO bounty_claims (id,actor,seg_key,train_kind,dir,kind,slot,points_locked,claimed_at,expires_at,status)" +
@@ -103,12 +110,16 @@ async function e2e(actor, samples) {
     body: JSON.stringify({
       actor, sys: 'tra_sched', lnId: '山線', trainNo: 'T1',
       dir: 0, tripDate: '2026-07-29', batch: 1, samples,
+      client: { platform: 'ios', app: '1.6.13', simulator: false },   // v2：GPS 錄程限 App，沒帶會 400 app_only
     }),
   }), env);
   const submit = await submitRes.json();
-  const verify = await _bounty.bountyVerifyCron(env);
+  // 判定只挑「乘車日早於台北今天」的樣本；這趟的乘車日 07-29 ＝ BOUNTY_NOW 那一天，今天的趟不判。
+  // 所以 cron 的時鐘往後推一天（隔天那一發才會判到它）。只改時鐘，這支腳本的斷言一個字沒動；
+  // 上面的估值、認領、上傳仍用原本的 NOW（乘車日窗與認領有效期都以 NOW 為準）。
+  const verify = await _bounty.bountyVerifyCron({ ...env, BOUNTY_NOW: String(NOW + 86400000) });
   const after = db.prepare(
-    "SELECT points,sample_count,covered_at FROM bounty_board WHERE seg_key=? AND train_kind='其他'" +
+    "SELECT points,sample_count,covered_at FROM bounty_board WHERE seg_key=? AND train_kind='自強'" +
     " AND dir=0 AND kind='dwell' AND slot='peak'"
   ).get(DWELL_KEY);
   const otherKindAfter = db.prepare(
@@ -127,7 +138,7 @@ async function e2e(actor, samples) {
   ).get(actor);
   const valuationAfterCovered = await _bounty.bountyValuationCron(env);
   const repriced = db.prepare(
-    "SELECT points,sample_count,covered_at FROM bounty_board WHERE seg_key=? AND train_kind='其他'" +
+    "SELECT points,sample_count,covered_at FROM bounty_board WHERE seg_key=? AND train_kind='自強'" +
     " AND dir=0 AND kind='dwell' AND slot='peak'"
   ).get(DWELL_KEY);
   return {
@@ -138,12 +149,15 @@ async function e2e(actor, samples) {
 }
 
 const stoppedE2e = await e2e('device-dwell-stop', stopped);
-ok('D4 真 D1 路徑：估值→認領→上傳→驗證後 dwell sample_count 加 1 且 covered_at 有值',
+// 🔴 2026-09-29（路段懸賞 v2）：收滿改成「整段」——人數是按 seg_key 計的，同站同時段的另一車種列（區間車）
+// 跟著一起收滿（covered_at 有值）；但 sample_count 仍是逐列累加，只有被計功的自強那一列 +1，區間車那列還是 0。
+// 原本這裡斷言區間車列 covered_at 為空（逐列語意）；改成釘新語意，不是放寬——「沒收滿」與「收滿」是相反的判準。
+ok('D4 真 D1 路徑：估值→認領→上傳→驗證後 dwell sample_count 加 1 且 covered_at 有值；同站另一車種列整段一起收滿（covered_at 有值），sample_count 仍逐列（0）',
   stoppedE2e.claimStatus === 200 && stoppedE2e.submitStatus === 200 &&
     stoppedE2e.sample.verdict === 'ok' && stoppedE2e.after.sample_count === 1 && !!stoppedE2e.after.covered_at &&
-    stoppedE2e.otherKindAfter.sample_count === 0 && !stoppedE2e.otherKindAfter.covered_at,
+    stoppedE2e.otherKindAfter.sample_count === 0 && stoppedE2e.otherKindAfter.covered_at === stoppedE2e.after.covered_at,
   JSON.stringify({ claim: stoppedE2e.claimStatus, submit: stoppedE2e.submitStatus,
-    verdict: stoppedE2e.sample.verdict, board: stoppedE2e.after }));
+    verdict: stoppedE2e.sample.verdict, board: stoppedE2e.after, otherKind: stoppedE2e.otherKindAfter }));
 ok('D5 同一路徑真的給點且只關閉該車種 dwell claim，另一車種同站 claim 保持 open',
   stoppedE2e.points.points > 0 && stoppedE2e.claimAfter.status === 'fulfilled' &&
     stoppedE2e.decoyClaimAfter.status === 'open',
@@ -195,6 +209,115 @@ for (let k = 2; k < lowIdx.length; k++) crawl[lowIdx[k]].v = RULES.quality.dwell
 ok('D11 站心低速只維持 2 秒（慢速爬行通過）時不算錄到——守住 stopMinSec',
   !hitsDwell(crawl), JSON.stringify({ 低速點數: lowIdx.length, dwell: covOf(crawl).filter(c => c.kind === 'dwell') }));
 
+// D12 守 posSpeedVetoMps：回報的速度再低，位置微分超過否決門檻（10 m/s）就不算低速。
+// Android 沒有速度時送 0.0（不是 null）；舊版（加否決門檻之前）整趟送 0 的話通過的站全都算停靠，偽造者送 0 或任何小的數也一樣。
+// 每秒一點、站心取整數公尺（位置微分在二進位下精確，邊界才比得出「剛好」），兩個方向：
+//   a 每點回報 0、等速 10 m/s 通過（位置微分剛好 10，不超過）→ 信回報的 0 → 算停靠
+//   b 每點回報 0、等速 10.5 m/s 通過 → 否決 → 不算；c 回報 0.3（不是剛好 0）、10.5 m/s → 一樣不算
+//   d 對照：沒有速度（null）、10 m/s → 位置微分 10 ＞ 1.5 → 不算（否決只影響「有回報低速」的點，null 本來就看位置微分）
+//   e 真的停靠：20 m/s 進站 → 停 60 秒（每點回報 0、GPS 每秒左右晃 ±2 m，位置微分 4 m/s）→ 20 m/s 離站 → 算停靠。
+//     否決門檻若設成 stopSpeedMaxMps（1.5）這一趟就算不到——停著時 GPS 晃動的位置微分常超過 1.5，那樣會把回報 0 的誠實裝置的真停靠也否決掉。
+{
+  const c0 = Math.round(centerM);
+  const steady = (sg, speed, v) => Array.from({ length: Math.floor(1200 / speed) + 1 },
+    (_, k) => ({ d: c0 + sg * (-600 + speed * k), t: 7 * 3600 + k, v, acc: 8 }));
+  const jitterStop = sg => {
+    const xs = [];
+    for (let k = 0; k <= 30; k++) xs.push(-600 + 20 * k);
+    for (let k = 1; k <= 60; k++) xs.push(k % 2 ? 2 : -2);
+    for (let k = 1; k <= 30; k++) xs.push(20 * k);
+    return xs.map((x, k) => ({ d: c0 + sg * x, t: 7 * 3600 + k, v: 0, acc: 8 }));
+  };
+  const got = {};
+  for (const sg of [1, -1]) {
+    got[`a${sg}`] = hitsDwell(steady(sg, 10, 0));
+    got[`b${sg}`] = hitsDwell(steady(sg, 10.5, 0));
+    got[`c${sg}`] = hitsDwell(steady(sg, 10.5, 0.3));
+    got[`d${sg}`] = hitsDwell(steady(sg, 10, null));
+    got[`e${sg}`] = hitsDwell(jitterStop(sg));
+  }
+  ok('D12 回報低速、位置微分超過 10 m/s 就不算停靠：回報 0 等速 10 m/s 通過 → 算、10.5 m/s → 不算、回報 0.3 的 10.5 m/s → 不算；對照：沒有速度的 10 m/s → 不算；回報 0 的真停靠（GPS 晃 ±2 m）→ 算（兩個方向）',
+    [1, -1].every(sg => got[`a${sg}`] === true && got[`b${sg}`] === false && got[`c${sg}`] === false && got[`d${sg}`] === false && got[`e${sg}`] === true),
+    JSON.stringify(got));
+}
+
+// D13 否決門檻少了或不合理就直接中止：posSpeedVetoMps 不在時 coverageOf 裡的比較式恆為假，
+// Android 送 0 又會回到每站都算停靠——所以跟 quality.dwell 整段不在一樣丟 invalid bounty rule，不偷偷降級。等於 stopSpeedMaxMps 也丟（否決會蓋掉真的停靠）。
+{
+  const dwellWith = veto => ({ ...RULES, quality: { ...RULES.quality, dwell: { ...RULES.quality.dwell, posSpeedVetoMps: veto } } });
+  const threw = rules => { try { _bounty.coverageOf(trip(stopped), LINE, rules, UNITS.peakHoursBySys); return 'no-throw'; } catch (e) { return String(e && e.message); } };
+  const got = { missing: threw(dwellWith(undefined)), equal: threw(dwellWith(RULES.quality.dwell.stopSpeedMaxMps)), real: threw(RULES) };
+  ok('D13 quality.dwell.posSpeedVetoMps 不在、或不大於 stopSpeedMaxMps → coverageOf 丟 invalid bounty rule（對照：正式設定檔不丟）',
+    got.missing === 'invalid bounty rule: quality.dwell' && got.equal === 'invalid bounty rule: quality.dwell' && got.real === 'no-throw', JSON.stringify(got));
+}
+
+// D14 位置微分跟「至少 posSpeedWindowSec（5 秒）以前的那一點」比。
+// 舊版跟前一點比：GPS 每一點獨立晃得大時，停著的位置微分就超過否決門檻 10，回報 0 的真停靠被否決掉。
+// 每秒一點、站心取整數公尺，GPS 晃動是逐點正負交替（5 秒前那一點的晃動方向一定相反），兩個方向：
+//   a 回報 0 的真停靠：20 m/s 從站前 600 m 開過來、停 12 秒（每點晃 ±8 m：跟前一點比 16 m/s，跟 5 秒前比 3.2 m/s）→ 算停靠。
+//     停的頭兩點，5 秒前那一點還在進站途中（17.6、10.4 m/s）照樣否決，第三點起才低速。
+//     停得短是刻意的：位置微分若改成「跟站窗第一點比」，12 秒內都還超過 10（站窗從站前 250 m 起算），這一趟就算不到。
+//   b 回報 0、以 15 m/s 通過（同樣晃 ±8 m：5 秒內走 75 m ±16 m，11.8–18.2 m/s）→ 仍否決、不算。
+//   c 沒有速度（null）的真停靠：20 m/s 開過來、停 30 秒（每點晃 ±2 m：跟前一點比 4 m/s＞1.5，跟 5 秒前比 0.8）→ 算停靠。
+{
+  const c0 = Math.round(centerM);
+  const stopWith = (sg, amp, stopSec, v) => {
+    const xs = [];
+    for (let k = 0; k <= 30; k++) xs.push(-600 + 20 * k);
+    for (let k = 1; k <= stopSec; k++) xs.push(k % 2 ? amp : -amp);
+    for (let k = 1; k <= 30; k++) xs.push(20 * k);
+    return xs.map((x, k) => ({ d: c0 + sg * x, t: 7 * 3600 + k, v: v === 'null' ? null : k > 30 && k <= 30 + stopSec ? 0 : v, acc: 8 }));
+  };
+  const jitterPass = sg => Array.from({ length: 81 }, (_, k) => ({ d: c0 + sg * (-600 + 15 * k + (k % 2 ? 8 : -8)), t: 7 * 3600 + k, v: 0, acc: 8 }));
+  const got = {};
+  for (const sg of [1, -1]) {
+    got[`a${sg}`] = hitsDwell(stopWith(sg, 8, 12, 20));
+    got[`b${sg}`] = hitsDwell(jitterPass(sg));
+    got[`c${sg}`] = hitsDwell(stopWith(sg, 2, 30, 'null'));
+  }
+  ok('D14 位置微分跟 5 秒前那一點比：回報 0 的真停靠、GPS 每點晃 ±8 m → 算；回報 0、15 m/s 通過（同樣晃 ±8 m）→ 不算；沒有速度的真停靠、晃 ±2 m → 算（兩個方向；跟前一點比的話 a、c 都算不到）',
+    [1, -1].every(sg => got[`a${sg}`] === true && got[`b${sg}`] === false && got[`c${sg}`] === true), JSON.stringify(got));
+}
+
+// D15 posSpeedWindowSec 少了或小於 1 就直接中止：找不到基準點，位置微分就沒有定義。
+//   字串 "5" 不收（舊版轉型成 5 照跑）；超過 10 秒也中止（60 秒的窗比停靠還長，沒有速度的停靠整段拿不到低速）。
+//   對照：1、10（兩端）與正式設定檔不丟。
+//   加 10.5，案例改從 scripts/bounty_guard_cases.mjs 拿（網頁的 D 用同一份）。
+//   加緊貼兩端外側的 0.9375、10.0625；這幾個值還在不在清單上，這裡另外手寫核對。
+{
+  const dwellWith = w => ({ ...RULES, quality: { ...RULES.quality, dwell: { ...RULES.quality.dwell, posSpeedWindowSec: w } } });
+  const threw = rules => { try { _bounty.coverageOf(trip(stopped), LINE, rules, UNITS.peakHoursBySys); return 'no-throw'; } catch (e) { return String(e && e.message); } };
+  const got = { ...Object.fromEntries([...POS_SPEED_WINDOW_REJECT, ...POS_SPEED_WINDOW_ACCEPT].map(([k, w]) => [k, threw(dwellWith(w))])), real: threw(RULES) };
+  const E = 'invalid bounty rule: quality.dwell';
+  ok('D15 quality.dwell.posSpeedWindowSec 不在、是 0、0.5、0.9375、字串 "5"、10.0625、10.5、60 或 Infinity → coverageOf 丟 invalid bounty rule；1、10 與正式設定檔不丟（案例與網頁的 D 共用）',
+    [0.9375, 10.0625, 10.5].every(v => POS_SPEED_WINDOW_REJECT.some(([, w]) => w === v)) && POS_SPEED_WINDOW_REJECT.every(([k]) => got[k] === E) &&
+      POS_SPEED_WINDOW_ACCEPT.every(([k]) => got[k] === 'no-throw') && got.real === 'no-throw', JSON.stringify(got));
+}
+
+// D16 位置微分往回看幾秒，照設定檔的 posSpeedWindowSec：D14 a 的停法（回報 0、每點晃 ±8 m），停 8 秒，
+//   5（正式值）→ 算（停下第 3 秒起，5 秒前的點已經在站前 40 m 內，連續 5 秒低速）；1（跟前一點比，16 m/s 被否決）→ 不算；
+//   10（守門的上限）→ 不算（10 秒前的點還在進站途中，只剩最後 2 秒低速，不到 stopMinSec 3 秒）。
+//   程式把 5 寫死、或自己乘了倍數（×2 或 ×½），1、5、10 至少有一個結果不會照著變。（先前用 12 秒的停法配 30 秒的窗；上限 10 之後改成這一組。）
+{
+  const c0 = Math.round(centerM);
+  const jstop = sg => {
+    const xs = [];
+    for (let k = 0; k <= 30; k++) xs.push(-600 + 20 * k);
+    for (let k = 1; k <= 8; k++) xs.push(k % 2 ? 8 : -8);
+    for (let k = 1; k <= 30; k++) xs.push(20 * k);
+    return xs.map((x, k) => ({ d: c0 + sg * x, t: 7 * 3600 + k, v: k > 30 && k <= 38 ? 0 : 20, acc: 8 }));
+  };
+  const withWin = w => ({ ...RULES, quality: { ...RULES.quality, dwell: { ...RULES.quality.dwell, posSpeedWindowSec: w } } });
+  const hitsWith = (pts, rules) => _bounty.coverageOf(trip(pts), LINE, rules, UNITS.peakHoursBySys).some(c => c.key === DWELL_KEY && c.kind === 'dwell');
+  // 包 try：守門被改緊（例如 1 秒也不收）時 coverageOf 會丟錯，這裡印 FAIL 繼續跑，不讓整支中止。
+  const got = {};
+  try { for (const sg of [1, -1]) for (const w of [1, 5, 10]) got[`w${w}_${sg}`] = hitsWith(jstop(sg), withWin(w)); }
+  catch (e) { got.threw = String((e && e.message) || e); }
+  ok('D16 位置微分往回看的秒數照設定檔：D14 a 的停法停 8 秒，posSpeedWindowSec＝5 → 算；＝1 → 不算（跟前一點比被否決）；＝10 → 不算（停 8 秒，10 秒前的點還在進站途中）（兩個方向）',
+    RULES.quality.dwell.posSpeedWindowSec === 5 && [1, -1].every(sg => got[`w5_${sg}`] === true && got[`w1_${sg}`] === false && got[`w10_${sg}`] === false),
+    JSON.stringify(got));
+}
+
 const out = {
   criterion: RULES.quality.dwell,
   cardId: CARD_ID,
@@ -205,6 +328,7 @@ const out = {
   stoppedE2e,
   passedE2e,
 };
+mkdirSync('scratchpad', { recursive: true });   // scratchpad/ 被 .gitignore 忽略，乾淨的 worktree 裡沒有（寫檔丟 ENOENT、整支假紅）
 writeFileSync('scratchpad/bounty_dwell_e2e_fixed.json', JSON.stringify(out, null, 2) + '\n');
 const pass = R.filter(x => x.pass).length;
 console.log(`\n${pass}/${R.length} 通過`);

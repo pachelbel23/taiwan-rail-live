@@ -3,6 +3,11 @@
 // 跑法：node scripts/verify_bounty_schema.mjs
 // 註：node:sqlite 會印一行 ExperimentalWarning，那是正常輸出。
 import { openTestDb, applySchemaFiles } from './d1_local.mjs';
+import { readFileSync, writeFileSync, mkdtempSync } from 'node:fs';
+import { join, dirname } from 'node:path';
+import { tmpdir } from 'node:os';
+import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 
 const R = [];
 const ok = (n, p, msg = '') => { R.push({ n, p }); console.log(`${p ? '  ok ' : 'FAIL '} ${n}${msg ? ' — ' + msg : ''}`); };
@@ -14,7 +19,7 @@ const { db } = openTestDb();
   const names = db.prepare("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name").all().map(r => r.name);
   const want = ['bounty_board', 'bounty_claims', 'bounty_points', 'bounty_samples'];
   ok('A1 懸賞四張表都在', want.every(t => names.includes(t)), names.join(','));
-  // 既有三張表也要在——驗證閘的第二重要查 tra_station_events，測試環境沒有它就等於沒驗到
+  // 既有三張表也要在（tra_station_events 是逐站歷程的寫入與讀取用的），測試環境沒有它就等於沒驗到
   ok('A2 既有三張表也重建了',
     ['tra_delay_daily', 'tra_station_events', 'kv_blobs'].every(t => names.includes(t)), names.join(','));
 }
@@ -26,6 +31,8 @@ const { db } = openTestDb();
   ok('A3 bounty_board 欄位', eq(cols('bounty_board'), [
     'seg_key', 'sys', 'train_kind', 'dir', 'kind', 'slot', 'l1', 'l2', 'points', 'per_day',
     'first_listed_at', 'first_claimable_at', 'l2_capped_at', 'sample_count', 'covered_at', 'unlocked_offer',
+    'distinct_ok_users',       // 0014（路段懸賞 v2）：每段去重貢獻人數
+    'retired',                 // 0015：最新一份單位清單已經沒有這個單位（換班表之後退場）
   ]), cols('bounty_board').join(','));
   ok('A4 bounty_claims 欄位', eq(cols('bounty_claims'), [
     'id', 'actor', 'seg_key', 'train_kind', 'dir', 'kind', 'slot', 'points_locked', 'claimed_at', 'expires_at', 'status',
@@ -33,6 +40,8 @@ const { db } = openTestDb();
   ok('A5 bounty_samples 欄位', eq(cols('bounty_samples'), [
     'id', 'actor', 'sys', 'ln_id', 'train_no', 'dir', 'trip_date', 'payload', 'segs',
     'submitted_at', 'verdict', 'verdict_at', 'quality_code', 'reject_code',
+    'client',                 // 0014（路段懸賞 v2）：上傳當下的 {platform,app,simulator} JSON 字串
+    'kept_d0', 'kept_d1',     // 0016：判定當下這一組收下點的最小與最大沿線里程（只有 ok 組寫）
   ]), cols('bounty_samples').join(','));
   ok('A6 bounty_points 欄位', eq(cols('bounty_points'), ['actor', 'uid', 'points', 'merged_into', 'updated_at']),
     cols('bounty_points').join(','));
@@ -95,8 +104,20 @@ const { db } = openTestDb();
   const want = [
     'idx_board_open', 'idx_claims_actor', 'idx_claims_expiry', 'idx_claims_unit',
     'idx_samples_pending', 'idx_samples_trip',
+    'idx_chip_ledger_actor_day',   // 0014：每日籌碼上限與餘額查詢都以 actor 起頭
+    'idx_seg_contrib_actor',       // 0014：合併與刪帳號都以 actor 找 bounty_seg_contrib 的列（PK 的 actor 在第二欄）
+    'idx_seg_contrib_first',       // 0014：bounty-me 的首位校正者，每段讀 first_ok_at 最早的一列
   ];
-  ok('A11 六個索引都在', want.every(n => idxNames.includes(n)), idxNames.join(','));
+  ok('A11 九個索引都在', want.every(n => idxNames.includes(n)), idxNames.join(','));
+  // 名字在不夠：索引建在錯的表或錯的欄，查詢照樣回對的結果只是不走索引。直接讀索引的定義。
+  const info = db.prepare("SELECT m.tbl_name AS t, ii.name AS c FROM sqlite_master m, pragma_index_info(m.name) ii WHERE m.type='index' AND m.name='idx_seg_contrib_actor'").all()
+    .map(r => `${r.t}.${r.c}`);
+  ok('A11b idx_seg_contrib_actor 建在 bounty_seg_contrib 的 actor 欄（且只有這一欄）', JSON.stringify(info) === '["bounty_seg_contrib.actor"]', JSON.stringify(info));
+  // 欄位順序就是用途：seg_key 等號、first_ok_at 排序、actor 同時刻的次序——順序錯了每段又要讀遍所有貢獻者再排序。
+  const first = db.prepare("SELECT m.tbl_name AS t, ii.name AS c FROM sqlite_master m, pragma_index_info(m.name) ii WHERE m.type='index' AND m.name='idx_seg_contrib_first' ORDER BY ii.seqno").all()
+    .map(r => `${r.t}.${r.c}`);
+  ok('A11c idx_seg_contrib_first 建在 bounty_seg_contrib 的 (seg_key, first_ok_at, actor)，順序照這樣',
+    JSON.stringify(first) === '["bounty_seg_contrib.seg_key","bounty_seg_contrib.first_ok_at","bounty_seg_contrib.actor"]', JSON.stringify(first));
 }
 
 // A12 0001 重建表接得住 worker.js「現在」的真實查詢語句（複審 Important 1）——A1/A2 只驗表名存在，
@@ -147,6 +168,264 @@ const { db } = openTestDb();
       .bind('dev-x', undefined, 1, null, 1700000000000).run();
   } catch (e) { threw = true; msg = String(e.message || e); }
   ok('A13 coerce() 對 undefined 拋錯', threw === true, msg);
+}
+
+// ── 0014 路段懸賞 v2：去重貢獻、籌碼帳本、車庫解鎖、雲端搭乘 ──────────────────────
+// 期望值寫死在測試裡，不從 schema 檔反推。
+const NEW_TABLES = ['bounty_seg_contrib', 'chip_ledger', 'garage_unlocks', 'cloud_rides'];
+const colsOf = (d, t) => d.prepare(`PRAGMA table_info(${t})`).all().map(r => r.name).sort();
+const pkOf = (d, t) => d.prepare(`PRAGMA table_info(${t})`).all().filter(r => r.pk > 0)
+  .sort((a, b) => a.pk - b.pk).map(r => r.name);
+const sameSet = (a, b) => JSON.stringify(a) === JSON.stringify(b.slice().sort());
+// 丟例外就回訊息字串，沒丟回 ''——CHECK／UNIQUE／NOT NULL 都靠「插入時被擋」來證明，不是靠讀 DDL 文字
+const tryRun = (d, sql, ...p) => { try { d.prepare(sql).run(...p); return ''; } catch (e) { return String(e.message || e); } };
+
+// A14 四張新表都建起來了
+{
+  const names = db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all().map(r => r.name);
+  ok('A14 0014 四張新表都在', NEW_TABLES.every(t => names.includes(t)), names.join(','));
+}
+
+// A15 欄位逐一比對
+{
+  ok('A15a bounty_seg_contrib 欄位', sameSet(colsOf(db, 'bounty_seg_contrib'), ['seg_key', 'actor', 'first_ok_at']),
+    colsOf(db, 'bounty_seg_contrib').join(','));
+  ok('A15b chip_ledger 欄位', sameSet(colsOf(db, 'chip_ledger'),
+    ['id', 'actor', 'kind', 'delta', 'ref', 'day', 'created_at']), colsOf(db, 'chip_ledger').join(','));
+  ok('A15c garage_unlocks 欄位', sameSet(colsOf(db, 'garage_unlocks'),
+    ['actor', 'scene', 'nth', 'cost', 'created_at']), colsOf(db, 'garage_unlocks').join(','));
+  ok('A15d cloud_rides 欄位', sameSet(colsOf(db, 'cloud_rides'),
+    ['actor', 'day', 'train_key', 'sec', 'request_id', 'created_at', 'simulator']), colsOf(db, 'cloud_rides').join(','));
+}
+
+// A16 主鍵（順序也算：複合主鍵的欄位順序決定前綴索引能服務哪種查詢）
+{
+  const got = {
+    bounty_seg_contrib: pkOf(db, 'bounty_seg_contrib'), chip_ledger: pkOf(db, 'chip_ledger'),
+    garage_unlocks: pkOf(db, 'garage_unlocks'), cloud_rides: pkOf(db, 'cloud_rides'),
+  };
+  ok('A16 四張新表的主鍵：contrib(seg_key,actor)、ledger(id)、unlocks(actor,scene)、rides(actor,day)',
+    JSON.stringify(got.bounty_seg_contrib) === '["seg_key","actor"]' && JSON.stringify(got.chip_ledger) === '["id"]' &&
+    JSON.stringify(got.garage_unlocks) === '["actor","scene"]' && JSON.stringify(got.cloud_rides) === '["actor","day"]',
+    JSON.stringify(got));
+}
+
+// A17 UNIQUE(kind, ref)：同一個來源只能入帳一次；換 kind 則是不同來源（不是「ref 全域唯一」）
+{
+  const { db: d } = openTestDb();
+  const ins = (id, kind, ref) => tryRun(d,
+    'INSERT INTO chip_ledger (id,actor,kind,delta,ref,day,created_at) VALUES (?,?,?,?,?,?,?)',
+    id, 'device-u', kind, 1, ref, '2026-10-10', 1);
+  const first = ins('l1', 'trip', 'r-1');
+  const dupSameKind = ins('l2', 'trip', 'r-1');            // 不同 id、同 (kind, ref) → 必須被擋
+  const sameRefOtherKind = ins('l3', 'cloud', 'r-1');       // 同 ref、不同 kind → 放行
+  const n = d.prepare('SELECT COUNT(*) c FROM chip_ledger').get().c;
+  ok('A17 UNIQUE(kind,ref)：同 (kind,ref) 第二筆被擋、同 ref 換 kind 放行',
+    first === '' && /UNIQUE/i.test(dupSameKind) && sameRefOtherKind === '' && n === 2,
+    JSON.stringify({ first, dupSameKind, sameRefOtherKind, n }));
+  // INSERT OR IGNORE 是 worker 重跑保護的實際手段：被擋的那筆要「靜默不寫」而不是丟例外
+  const before = d.prepare('SELECT COUNT(*) c FROM chip_ledger').get().c;
+  const r = d.prepare("INSERT OR IGNORE INTO chip_ledger (id,actor,kind,delta,ref,day,created_at) VALUES ('l9','device-u','trip',1,'r-1','2026-10-10',1)").run();
+  ok('A17b INSERT OR IGNORE 重複來源：changes=0、筆數不變（cron 重跑不會重複發）',
+    Number(r.changes) === 0 && d.prepare('SELECT COUNT(*) c FROM chip_ledger').get().c === before, `changes=${r.changes}`);
+}
+
+// A18 CHECK 只放行五種 kind，非法值被擋
+{
+  const { db: d } = openTestDb();
+  const ins = (kind, i) => tryRun(d,
+    'INSERT INTO chip_ledger (id,actor,kind,delta,ref,day,created_at) VALUES (?,?,?,?,?,NULL,1)', 'k' + i, 'device-k', kind, 1, 'ref-' + i);
+  const legal = ['trip', 'cloud', 'redeem', 'merge', 'adjust'].map(ins);
+  const illegal = ['bogus', 'TRIP', '', 'refund'].map((k, i) => ins(k, 50 + i));
+  ok('A18a 五種合法 kind 全部收得下', legal.every(m => m === ''), JSON.stringify(legal));
+  ok('A18b 非法 kind（bogus／大寫 TRIP／空字串／refund）全部被 CHECK 擋下',
+    illegal.every(m => /CHECK/i.test(m)), JSON.stringify(illegal));
+}
+
+// A19 NOT NULL：該擋的擋、該放的放（day 與 request_id 是可空的，client 也是）
+{
+  const { db: d } = openTestDb();
+  const notNull = (t, c) => d.prepare(`PRAGMA table_info(${t})`).all().find(r => r.name === c).notnull === 1;
+  const must = {
+    chip_ledger: ['id', 'actor', 'kind', 'delta', 'ref', 'created_at'],
+    bounty_seg_contrib: ['seg_key', 'actor', 'first_ok_at'],
+    garage_unlocks: ['actor', 'scene', 'nth', 'cost', 'created_at'],
+    cloud_rides: ['actor', 'day', 'train_key', 'sec', 'created_at', 'simulator'],
+  };
+  const bad = [];
+  for (const [t, cs] of Object.entries(must)) for (const c of cs) if (!notNull(t, c)) bad.push(`${t}.${c} 應為 NOT NULL`);
+  for (const [t, c] of [['chip_ledger', 'day'], ['cloud_rides', 'request_id'], ['bounty_samples', 'client']])
+    if (notNull(t, c)) bad.push(`${t}.${c} 應可空`);
+  if (!notNull('bounty_board', 'distinct_ok_users')) bad.push('bounty_board.distinct_ok_users 應為 NOT NULL');
+  ok('A19 新表 NOT NULL 欄位齊全；day／request_id／client 可空', bad.length === 0, bad.join('; '));
+  // 行為面：id 為 NULL 的帳本列真的進不去（rowid 表的 TEXT PRIMARY KEY 不隱含 NOT NULL，0002 同一課）
+  const m = tryRun(d, "INSERT INTO chip_ledger (id,actor,kind,delta,ref,day,created_at) VALUES (NULL,'a','trip',1,'x',NULL,1)");
+  ok('A19b chip_ledger.id 為 NULL 被擋（不會出現無法定址的帳本列）', /NOT NULL/i.test(m), m);
+}
+
+// A20 distinct_ok_users 預設 0：worker 的估值 cron 用的 INSERT 沒有列這一欄，必須仍然收得下
+{
+  const { db: d } = openTestDb();
+  d.exec(`INSERT INTO bounty_board (seg_key,sys,train_kind,dir,kind,slot,l1,l2,points,per_day,first_listed_at)
+          VALUES ('tra_sched|山線|A|B','tra_sched','自強',0,'track','',1,1,1,4,1)`);
+  const row = d.prepare('SELECT distinct_ok_users AS n FROM bounty_board').get();
+  ok('A20 沒列 distinct_ok_users 的既有 INSERT 仍可用，預設值 0', row && row.n === 0, JSON.stringify(row));
+}
+
+// A20b cloud_rides.simulator 預設 0（一般搭乘不必列這一欄）、只有明寫 1 才是模擬器；欄位在 CREATE 裡（不是 ALTER），
+// 所以 A22「恰有兩句 ALTER」的期望不變
+{
+  const { db: d } = openTestDb();
+  d.exec("INSERT INTO cloud_rides (actor,day,train_key,sec,request_id,created_at) VALUES ('device-s','2026-10-10','tra_sched|123',700,NULL,1)");
+  d.exec("INSERT INTO cloud_rides (actor,day,train_key,sec,request_id,created_at,simulator) VALUES ('device-s','2026-10-11','tra_sched|123',700,NULL,1,1)");
+  const rows = d.prepare('SELECT day, simulator AS s FROM cloud_rides ORDER BY day').all().map(r => ({ ...r }));
+  const info = d.prepare('PRAGMA table_info(cloud_rides)').all().find(r => r.name === 'simulator');
+  ok('A20b cloud_rides.simulator：INTEGER NOT NULL、沒列時預設 0、明寫 1 留 1',
+    info && /INT/i.test(info.type) && info.notnull === 1 && JSON.stringify(rows) === '[{"day":"2026-10-10","s":0},{"day":"2026-10-11","s":1}]',
+    JSON.stringify({ info, rows }));
+  const m = tryRun(d, "INSERT INTO cloud_rides (actor,day,train_key,sec,request_id,created_at,simulator) VALUES ('device-s','2026-10-12','tra_sched|123',700,NULL,1,NULL)");
+  ok('A20c simulator 明寫 NULL 被 NOT NULL 擋下（查次數時 simulator=0 不會漏掉 NULL 列）', /NOT NULL/i.test(m), m);
+}
+
+// A21 重複套用：資料不掉；新表被砍掉後再套會長回來（證明 CREATE 都在檔內第一句 ALTER 之前）
+{
+  const { db: d } = openTestDb();
+  d.exec("INSERT INTO chip_ledger (id,actor,kind,delta,ref,day,created_at) VALUES ('keep','device-r','trip',3,'ref-keep','2026-10-10',1)");
+  let threw = '';
+  try { applySchemaFiles(d); } catch (e) { threw = String(e.message || e); }
+  const kept = d.prepare("SELECT delta FROM chip_ledger WHERE id='keep'").get();
+  ok('A21a 帳本有資料時再套一次 schema：不炸、資料原封不動', threw === '' && kept && kept.delta === 3, threw || JSON.stringify(kept));
+  for (const t of NEW_TABLES) d.exec(`DROP TABLE ${t}`);      // DROP TABLE 連帶帶走 idx_chip_ledger_actor_day、idx_seg_contrib_actor、idx_seg_contrib_first
+  try { applySchemaFiles(d); } catch (e) { threw = String(e.message || e); }
+  const names = d.prepare("SELECT name FROM sqlite_master WHERE type IN ('table','index')").all().map(r => r.name);
+  ok('A21b 新表與索引被砍掉後再套一次全部長回來（CREATE 全在 ALTER 之前，重套時沒被 duplicate column 的例外吞掉）',
+    NEW_TABLES.every(t => names.includes(t)) && names.includes('idx_chip_ledger_actor_day') && names.includes('idx_seg_contrib_actor') &&
+    names.includes('idx_seg_contrib_first') && threw === '',
+    threw || names.filter(n => NEW_TABLES.includes(n) || n.startsWith('idx_chip') || n.startsWith('idx_seg_contrib')).join(','));
+}
+
+// A22 結構判準（與 A21b 不同源）：0014 檔內第一句 ALTER 之後不得再有 CREATE。
+// 只看非註解行——註解裡講到 ALTER／CREATE 的字樣不算。
+// 檔案不在回 null（判準照樣印 FAIL、後面的判準照樣跑，不是在這裡丟例外）。
+const schemaStmts = f => {
+  let src;
+  try { src = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'schema', f), 'utf8'); } catch (e) { return null; }
+  return src.split('\n').filter(l => !/^\s*--/.test(l)).join('\n').split(';').map(s => s.trim()).filter(Boolean);
+};
+{
+  const stmts = schemaStmts('0014_bounty_v2.sql') || [];
+  const firstAlter = stmts.findIndex(s => /^ALTER\s+TABLE/i.test(s));
+  const createAfter = stmts.slice(firstAlter + 1).filter(s => /^CREATE\s/i.test(s));
+  const alters = stmts.filter(s => /^ALTER\s+TABLE/i.test(s));
+  ok('A22 0014：ALTER 全部排在檔尾（第一句 ALTER 之後沒有 CREATE），且恰有兩句（distinct_ok_users、client）',
+    firstAlter > 0 && createAfter.length === 0 && alters.length === 2 &&
+    /distinct_ok_users/.test(alters[0]) && /\bclient\b/.test(alters[1]),
+    JSON.stringify({ firstAlter, createAfter: createAfter.length, alters: alters.length }));
+  // retired 原本接在 0014 檔尾第三句。0014 一旦套進任何一個庫，重套會在它的第一句 ALTER 中斷，
+  // 接在後面的欄位在那個庫永遠跑不到——所以另開一個只有這一句的檔。
+  const s15 = schemaStmts('0015_bounty_retired.sql');
+  ok('A22b 0015 恰好一句：ALTER TABLE bounty_board ADD COLUMN retired INTEGER NOT NULL DEFAULT 0',
+    !!s15 && s15.length === 1 && /^ALTER\s+TABLE\s+bounty_board\s+ADD\s+COLUMN\s+retired\s+INTEGER\s+NOT\s+NULL\s+DEFAULT\s+0$/i.test(s15[0]),
+    JSON.stringify(s15));
+  // 0016：判定當下存下收下點里程範圍的兩欄，同樣自成一檔（0014、0015 已套進正式庫）
+  const s16 = schemaStmts('0016_bounty_kept_range.sql');
+  ok('A22c 0016 恰好兩句：ALTER TABLE bounty_samples ADD COLUMN kept_d0 REAL／kept_d1 REAL',
+    !!s16 && s16.length === 2 && /^ALTER\s+TABLE\s+bounty_samples\s+ADD\s+COLUMN\s+kept_d0\s+REAL$/i.test(s16[0]) &&
+      /^ALTER\s+TABLE\s+bounty_samples\s+ADD\s+COLUMN\s+kept_d1\s+REAL$/i.test(s16[1]),
+    JSON.stringify(s16));
+}
+
+// A24 已經套過 0014、還沒有 retired 的庫（先前的 0014 沒有這一欄；拿全套的庫 DROP COLUMN 模擬），
+// 照 cron 與新環境的做法把 schema/*.sql 全部再套一次：retired 要長回來、既有的列不掉、值是 0。
+// 對照：retired 若還接在 0014 檔尾，重套在 0014 的第一句 ALTER（distinct_ok_users 已存在）就中斷，retired 永遠補不上。
+{
+  const { db: d } = openTestDb();
+  d.exec("INSERT INTO bounty_board (seg_key,sys,train_kind,dir,kind,slot,l1,l2,points,per_day,first_listed_at) " +
+    "VALUES ('tra|WL|1001|1002','tra','自強',0,'track','peak',1,1,5,3,1)");
+  try { d.exec('ALTER TABLE bounty_board DROP COLUMN retired'); } catch (e) {}   // schema 根本沒有 retired 時這一句會丟錯；下面的判準照樣會紅
+  const before = d.prepare('PRAGMA table_info(bounty_board)').all().some(r => r.name === 'retired');
+  let threw = '';
+  try { applySchemaFiles(d); } catch (e) { threw = String(e.message || e); }
+  const info = d.prepare('PRAGMA table_info(bounty_board)').all().find(r => r.name === 'retired');
+  // SELECT * 而不是點名 retired：欄位沒長回來的時候要印 FAIL 繼續往下跑，不是在這一句丟例外、後面的判準都沒跑到
+  const rows = d.prepare('SELECT * FROM bounty_board').all().map(r => ({ seg_key: r.seg_key, retired: r.retired }));
+  ok('A24 套過 0014、沒有 retired 的庫再套一次全部 schema：retired 長回來（INTEGER NOT NULL DEFAULT 0）、既有的列還在且是 0',
+    !before && threw === '' && info && /INT/i.test(info.type) && info.notnull === 1 && String(info.dflt_value) === '0' &&
+      JSON.stringify(rows) === '[{"seg_key":"tra|WL|1001|1002","retired":0}]',
+    JSON.stringify({ before, threw, info, rows }));
+}
+
+// A23（2026-09-30）：出貨鏈的正式庫 schema 守門人（verify_remote_schema.mjs，ship-web 每一發都跑）要看得到索引。
+// 認領五句寫 INDEXED BY idx_claims_actor，索引不在時那幾句直接報錯（no such index）；只比表與欄位的舊版照不到這一種漏套。
+// 做法：把這顆本機庫的 sqlite_master（表＋索引）包成 `d1 execute --json` 的形狀，餵它的 --ddl 離線模式——
+// 完整的要過；拿掉 idx_claims_actor、或它建在別張表上，都要 exit 1 而且點名它（拿掉的那一種還要點名該補套的 0002_bounty.sql）。
+{
+  const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
+  const rows = db.prepare("SELECT type, name, tbl_name, sql FROM sqlite_master WHERE type IN ('table','index')").all().map(r => ({ ...r }));
+  const dir = mkdtempSync(join(tmpdir(), 'rschema-'));
+  const runGate = (tag, rs) => {
+    const f = join(dir, tag + '.json');
+    writeFileSync(f, JSON.stringify([{ results: rs, success: true }]));
+    const p = spawnSync(process.execPath, [join(ROOT, 'scripts', 'verify_remote_schema.mjs'), '--ddl', f], { cwd: ROOT, encoding: 'utf8' });
+    return { rc: p.status, out: (p.stdout || '') + (p.stderr || '') };
+  };
+  const full = runGate('full', rows);
+  const noIdx = runGate('no-idx', rows.filter(r => r.name !== 'idx_claims_actor'));
+  const wrongTbl = runGate('wrong-table', rows.map(r => r.name === 'idx_claims_actor' ? { ...r, tbl_name: 'bounty_board' } : r));
+  ok('A23a 正式庫 schema 守門人：本機庫的表＋索引全在 → exit 0，而且有比到 idx_claims_actor',
+    full.rc === 0 && /idx_claims_actor/.test(full.out) && rows.some(r => r.type === 'index' && r.name === 'idx_claims_actor'), full.out.trim().slice(-240));
+  ok('A23b 拿掉 idx_claims_actor（其餘不變）→ exit 1，點名 idx_claims_actor 與 0002_bounty.sql',
+    noIdx.rc === 1 && /idx_claims_actor/.test(noIdx.out) && /0002_bounty\.sql/.test(noIdx.out), noIdx.out.trim().slice(0, 300));
+  ok('A23c idx_claims_actor 建在別張表上 → exit 1，點名 idx_claims_actor',
+    wrongTbl.rc === 1 && /idx_claims_actor/.test(wrongTbl.out), wrongTbl.out.trim().slice(0, 300));
+  // 六張會長大的表都釘 INDEXED BY，其中四張指名主鍵的自動索引（sqlite_autoindex_<表>_<n>，schema 裡沒有 CREATE INDEX 可比）。
+  // 正式庫的 sqlite_master 一樣列得出自動索引；守門人要把它們當成「建表那一支 migration 宣告的」，缺了照樣 exit 1、點名該補套的那一支。
+  const autos = rows.filter(r => r.type === 'index' && /^sqlite_autoindex_/.test(r.name)).map(r => r.name);
+  const needAuto = ['sqlite_autoindex_bounty_samples_1', 'sqlite_autoindex_garage_unlocks_1', 'sqlite_autoindex_cloud_rides_1',
+    'sqlite_autoindex_bounty_seg_contrib_1'];
+  ok('A23d 守門人比到的索引含四個主鍵自動索引與 idx_seg_contrib_first（worker.js 的 INDEXED BY 真的有指名它們，本機庫也真的有）',
+    full.rc === 0 && needAuto.every(n => full.out.includes(n) && autos.includes(n)) && /idx_seg_contrib_first/.test(full.out),
+    JSON.stringify({ rc: full.rc, autos, out: full.out.trim().slice(-400) }));
+  const noAuto = runGate('no-auto', rows.filter(r => r.name !== 'sqlite_autoindex_garage_unlocks_1'));
+  ok('A23e 正式庫沒有 sqlite_autoindex_garage_unlocks_1 → exit 1，點名它與建表的 0014_bounty_v2.sql（不是當成程式錯）',
+    noAuto.rc === 1 && /sqlite_autoindex_garage_unlocks_1（ON garage_unlocks/.test(noAuto.out) && /0014_bounty_v2\.sql/.test(noAuto.out),
+    noAuto.out.trim().slice(0, 400));
+  const noFirst = runGate('no-first', rows.filter(r => r.name !== 'idx_seg_contrib_first'));
+  ok('A23f 正式庫沒有 idx_seg_contrib_first（0014 較早版本套過、這一版新加的索引還沒套）→ exit 1，點名它與 0014_bounty_v2.sql',
+    noFirst.rc === 1 && /idx_seg_contrib_first/.test(noFirst.out) && /0014_bounty_v2\.sql/.test(noFirst.out), noFirst.out.trim().slice(0, 400));
+  // A23g–i：補法要對。表在、只缺一般索引 → 印那一句 CREATE INDEX（不叫人重套整支 0014：檔尾的 ALTER 會報錯，前面的 CREATE 會不會回滾沒驗過）；
+  // 缺主鍵的自動索引 → 叫人重建整張表、先停手（CREATE INDEX 與重套都補不回來）；整張表都不在 → 照舊重套 0014（單獨的 CREATE INDEX 沒有表會報錯）。
+  // 期望的那一句手寫在這裡、不從 schema 讀：從 schema 讀的話，schema 寫錯欄位順序時期望值跟著錯（欄位順序另由 A11c 釘）。
+  const FIRST_SQL = 'CREATE INDEX IF NOT EXISTS idx_seg_contrib_first ON bounty_seg_contrib (seg_key, first_ok_at, actor);';
+  const fileCmd = /--file=schema\/0014_bounty_v2\.sql/;
+  ok('A23g 缺 idx_seg_contrib_first 的補法：d1 execute --command 帶那一句 CREATE INDEX（原文）；不叫人重套整支 0014',
+    noFirst.rc === 1 && noFirst.out.includes(`d1 execute DELAY_DB --remote --command "${FIRST_SQL}"`) && !fileCmd.test(noFirst.out),
+    noFirst.out.trim().slice(0, 600));
+  ok('A23h 缺主鍵自動索引的補法：叫人照 0014 重建整張表、先停手；不印 CREATE INDEX 指令、也不叫人重套整支 0014',
+    noAuto.rc === 1 && /sqlite_autoindex_garage_unlocks_1 是 garage_unlocks 的主鍵／UNIQUE 自動索引/.test(noAuto.out) && /重建整張表/.test(noAuto.out) &&
+      !/--command/.test(noAuto.out) && !fileCmd.test(noAuto.out), noAuto.out.trim().slice(0, 600));
+  const noTable = runGate('no-table', rows.filter(r => r.tbl_name !== 'bounty_seg_contrib'));
+  ok('A23i 整張 bounty_seg_contrib 都不在（表與它的索引一起缺）→ 補法是重套 0014；不印單獨的 CREATE INDEX（沒有表那一句會報錯）',
+    noTable.rc === 1 && /整張表 bounty_seg_contrib/.test(noTable.out) && fileCmd.test(noTable.out) && !/--command/.test(noTable.out) &&
+      /idx_seg_contrib_first/.test(noTable.out), noTable.out.trim().slice(0, 600));
+  // A23j：正式庫套過 0014、還沒有 retired → 補法是套 0015（只有那一句 ALTER），不是重套 0014
+  // （0014 會在自己的第一句 ALTER 就中斷，走不到後面）。DDL 取自一顆真的 DROP 掉 retired 的庫，不手改字串。
+  const { db: d15 } = openTestDb();
+  try { d15.exec('ALTER TABLE bounty_board DROP COLUMN retired'); } catch (e) {}   // 同 A24：schema 沒有 retired 時守門人本來就不會要它，A23j 照樣紅
+  const noRetired = runGate('no-retired', d15.prepare("SELECT type, name, tbl_name, sql FROM sqlite_master WHERE type IN ('table','index')").all().map(r => ({ ...r })));
+  ok('A23j 正式庫的 bounty_board 缺 retired → exit 1，點名 bounty_board.retired（0015_bounty_retired.sql），補法是套 0015、不叫人重套 0014',
+    noRetired.rc === 1 && /bounty_board\.retired（0015_bounty_retired\.sql）/.test(noRetired.out) &&
+      /--file=schema\/0015_bounty_retired\.sql/.test(noRetired.out) && !fileCmd.test(noRetired.out),
+    noRetired.out.trim().slice(0, 600));
+  // A23k：正式庫套過 0014、0015、還沒有 kept_d0／kept_d1 → exit 1、點名這兩欄，補法是套 0016（只有那兩句 ALTER），
+  // 不叫人重套 0014。DDL 取自一顆真的 DROP 掉兩欄的庫，不手改字串。
+  const { db: dk } = openTestDb();
+  for (const c of ['kept_d0', 'kept_d1']) { try { dk.exec(`ALTER TABLE bounty_samples DROP COLUMN ${c}`); } catch (e) {} }   // 同 A23j：schema 沒有這兩欄時守門人本來就不會要它，A23k 照樣紅
+  const noKept = runGate('no-kept', dk.prepare("SELECT type, name, tbl_name, sql FROM sqlite_master WHERE type IN ('table','index')").all().map(r => ({ ...r })));
+  ok('A23k 正式庫的 bounty_samples 缺 kept_d0／kept_d1 → exit 1，點名這兩欄（0016_bounty_kept_range.sql），補法是套 0016、不叫人重套 0014',
+    noKept.rc === 1 && /bounty_samples\.kept_d0（0016_bounty_kept_range\.sql）/.test(noKept.out) && /bounty_samples\.kept_d1（0016_bounty_kept_range\.sql）/.test(noKept.out) &&
+      /--file=schema\/0016_bounty_kept_range\.sql/.test(noKept.out) && !fileCmd.test(noKept.out),
+    noKept.out.trim().slice(0, 600));
 }
 
 const pass = R.filter(r => r.p).length;

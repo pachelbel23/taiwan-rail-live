@@ -2119,8 +2119,6 @@ Object.assign(window.RAIL_I18N_MESSAGES.en, {
   '假日': 'Holiday',
   '懸賞板暫時讀不到，等一下再試一次': "Can't load the bounty board right now — try again in a moment",
   '目前沒有待校正的項目——全部收滿了。': "No items need calibration right now — they're all claimed.",
-  '示範資料，僅供確認設計：這裡的路段與點數都是假的，接下來也不會真的錄。': 'Demo data, for design review only: the segments and points here are fake, and nothing will actually be recorded.',
-  '接一張、搭那班車時開錄，把沿途的速度剖面測出來。全部免費，獎勵是榮譽。': "Claim one, and record while riding that train to capture the speed profile along the way. It's completely free — the reward is recognition.",
   '這些項目還沒有實測資料。用 App 才能接下來錄——網頁可以先看看有哪些。': "These items don't have real measurement data yet. Use the app to claim and record — the website lets you browse what's available.",
   '{first}等 {n} 站　停站': '{first} and {n} stations　Dwell',
   '{first}　停站': '{first}　Dwell',
@@ -2133,16 +2131,12 @@ Object.assign(window.RAIL_I18N_MESSAGES.en, {
   '接下停站': 'Claim dwell',
   '接下這段': 'Claim segment',
   'GPS 校正旅程需要用 App。網頁可以看懸賞板與自己的成果': 'GPS calibration journeys require the app. The website lets you view the bounty board and your own results.',
-  '這段你已經接下了，鎖價還在': "You've already claimed this segment, and the locked-in points are still valid",
   '（示範）找不到這張卡': "(Demo) Couldn't find this card",
   '（示範）這台裝置存不下來，示範資料無法保留': "(Demo) This device can't save data — demo data can't be kept",
-  '（示範）接下了・{pts} 點・24 小時內有效': '(Demo) Claimed · {pts} pts · valid for 24 hours',
   '接不下來——{reason}': "Couldn't claim it — {reason}",
   '這段剛剛被收滿了': 'this segment was just fully claimed',
   '等一下再試一次': 'try again in a moment',
   '接不下來——網路不通，等一下再試一次': "Couldn't claim it — no network connection, try again in a moment",
-  '已在伺服器接下・{pts} 點，但這台裝置存不下來（可能是儲存空間滿了或無痕模式）——重新整理後認領不會留著': "Claimed on the server · {pts} pts, but this device couldn't save it (storage may be full, or you're in private browsing) — the claim won't persist after you refresh",
-  '接下了・{pts} 點・24 小時內有效': 'Claimed · {pts} pts · valid for 24 hours',
   'GPS 校正旅程需要用 App': 'GPS calibration journeys require the app',
   '已經在錄了': 'Already recording',
   '正在保存…': 'Saving…',
@@ -2153,7 +2147,6 @@ Object.assign(window.RAIL_I18N_MESSAGES.en, {
   '停止錄製': 'Stop recording',
   '停止': 'Stop',
   '公里': 'km',
-  '{n} 點': '{n} pts'
 });
 
 Object.assign(window.RAIL_I18N_MESSAGES.ja, {
@@ -2162,8 +2155,6 @@ Object.assign(window.RAIL_I18N_MESSAGES.ja, {
   '假日': '休日',
   '懸賞板暫時讀不到，等一下再試一次': '懸賞板を読み込めませんでした。しばらくして再試行してください',
   '目前沒有待校正的項目——全部收滿了。': '現在校正が必要な項目はありません。すべて埋まっています。',
-  '示範資料，僅供確認設計：這裡的路段與點數都是假的，接下來也不會真的錄。': 'デモデータです（デザイン確認専用）：ここに表示される区間とポイントはすべて仮のもので、実際には録画されません。',
-  '接一張、搭那班車時開錄，把沿途的速度剖面測出來。全部免費，獎勵是榮譽。': '1件受け取り、その列車に乗車中に録画して沿線の速度プロファイルを計測します。すべて無料で、報酬は名誉です。',
   '這些項目還沒有實測資料。用 App 才能接下來錄——網頁可以先看看有哪些。': 'これらの項目にはまだ実測データがありません。録画して受け取るにはアプリが必要です。ウェブサイトでは内容を確認できます。',
   '{first}等 {n} 站　停站': '{first}など{n}駅　停車',
   '{first}　停站': '{first}　停車',
@@ -2176,16 +2167,12 @@ Object.assign(window.RAIL_I18N_MESSAGES.ja, {
   '接下停站': '停車を受け取る',
   '接下這段': '区間を受け取る',
   'GPS 校正旅程需要用 App。網頁可以看懸賞板與自己的成果': 'GPS校正旅程にはアプリが必要です。ウェブサイトでは懸賞板とご自身の成果を確認できます。',
-  '這段你已經接下了，鎖價還在': 'この区間はすでに受け取り済みで、ロックされたポイントは有効です',
   '（示範）找不到這張卡': '（デモ）このカードが見つかりません',
   '（示範）這台裝置存不下來，示範資料無法保留': '（デモ）この端末には保存できません。デモデータは保持されません',
-  '（示範）接下了・{pts} 點・24 小時內有效': '（デモ）受け取りました・{pts}ポイント・24時間有効',
   '接不下來——{reason}': '受け取れませんでした——{reason}',
   '這段剛剛被收滿了': 'この区間はちょうど埋まりました',
   '等一下再試一次': 'しばらくして再試行してください',
   '接不下來——網路不通，等一下再試一次': '受け取れませんでした——ネットワークに接続できません。しばらくして再試行してください',
-  '已在伺服器接下・{pts} 點，但這台裝置存不下來（可能是儲存空間滿了或無痕模式）——重新整理後認領不會留著': 'サーバー側では受領済み・{pts}ポイントですが、この端末には保存できませんでした（ストレージ不足またはプライベートブラウジングの可能性）。更新すると受領記録は残りません',
-  '接下了・{pts} 點・24 小時內有效': '受け取りました・{pts}ポイント・24時間有効',
   'GPS 校正旅程需要用 App': 'GPS校正旅程にはアプリが必要です',
   '已經在錄了': 'すでに録画中です',
   '正在保存…': '保存中…',
@@ -2196,7 +2183,6 @@ Object.assign(window.RAIL_I18N_MESSAGES.ja, {
   '停止錄製': '録画を停止',
   '停止': '停止',
   '公里': 'km',
-  '{n} 點': '{n}ポイント'
 });
 
 // 2026-09-19 硬編中文審計修復 B 級(續):錄製模式常駐提示、訊號品質標籤、出發前說明卡(showBountyBrief)
@@ -2217,10 +2203,8 @@ Object.assign(window.RAIL_I18N_MESSAGES.en, {
   '，大概多久算不出來': ", the approximate duration can't be calculated",
   '錄 {title}（{line}・{slot}・{unit}）': 'Record {title} ({line} · {slot} · {unit})',
   '錄 {title}（{line}，{unit}{dur}）': 'Record {title} ({line}, {unit}{dur})',
-  '進站前就開始錄，列車停穩後繼續錄到出站；只通過、不停靠不算停站樣本。': "Start recording before arriving at the station and keep recording until the train stops and then departs; passing through without stopping doesn't count as a dwell sample.",
   '搭上那班車之後開始錄，到站就結束。': 'Start recording once you board that train, and stop when it arrives.',
   '這趟要做什麼': 'What this trip involves',
-  '這個鎖價 <b>24 小時內有效</b>。': 'This locked-in price is <b>valid for 24 hours</b>.',
   '三件事先做好': 'Three things to set up first',
   '打開<b>精確位置</b>': 'Turn on <b>Precise Location</b>',
   '設定 → 隱私權與安全性 → 定位服務 → 軌島 → 打開「精確位置」': 'Settings → Privacy & Security → Location Services → Rail Island → turn on "Precise Location"',
@@ -2228,7 +2212,6 @@ Object.assign(window.RAIL_I18N_MESSAGES.en, {
   '手機<b>靠窗</b>，別放在包包裡或車廂中央': 'Keep your phone <b>near a window</b> — not in a bag or in the middle of the carriage',
   '先講清楚': 'Before you start',
   '錄到一半中斷沒關係，<b>錄到的部分照樣算</b>。': "It's fine if recording gets interrupted partway — <b>whatever you recorded still counts</b>.",
-  '<b>即使這次的資料不能用，校正者章與點數還是你的。</b>我們會告訴你是什麼原因、下次怎麼改善。': "<b>Even if this data can't be used, the calibrator stamp and points are still yours.</b> We'll tell you why and how to do better next time."
 });
 
 Object.assign(window.RAIL_I18N_MESSAGES.ja, {
@@ -2248,10 +2231,8 @@ Object.assign(window.RAIL_I18N_MESSAGES.ja, {
   '，大概多久算不出來': '、おおよその所要時間は算出できません',
   '錄 {title}（{line}・{slot}・{unit}）': '{title}を録画（{line}・{slot}・{unit}）',
   '錄 {title}（{line}，{unit}{dur}）': '{title}を録画（{line}、{unit}{dur}）',
-  '進站前就開始錄，列車停穩後繼續錄到出站；只通過、不停靠不算停站樣本。': '駅に入る前から録画を始め、列車が停止してから発車するまで録画を続けてください。停車せず通過するだけでは停車サンプルになりません。',
   '搭上那班車之後開始錄，到站就結束。': 'その列車に乗車したら録画を開始し、到着したら終了してください。',
   '這趟要做什麼': '今回の乗車ですること',
-  '這個鎖價 <b>24 小時內有效</b>。': 'このロック価格は<b>24時間有効</b>です。',
   '三件事先做好': '事前に済ませておく3つのこと',
   '打開<b>精確位置</b>': '<b>正確な位置情報</b>をオンにする',
   '設定 → 隱私權與安全性 → 定位服務 → 軌島 → 打開「精確位置」': '設定 → プライバシーとセキュリティ → 位置情報サービス → 軌島 → 「正確な位置情報」をオンにする',
@@ -2259,7 +2240,6 @@ Object.assign(window.RAIL_I18N_MESSAGES.ja, {
   '手機<b>靠窗</b>，別放在包包裡或車廂中央': 'スマートフォンは<b>窓際</b>に置き、カバンの中や車両中央には置かないでください',
   '先講清楚': '先にお伝えしておきます',
   '錄到一半中斷沒關係，<b>錄到的部分照樣算</b>。': '録画が途中で中断しても問題ありません。<b>録画できた部分はそのまま有効です</b>。',
-  '<b>即使這次的資料不能用，校正者章與點數還是你的。</b>我們會告訴你是什麼原因、下次怎麼改善。': '<b>今回のデータが使えなくても、校正者スタンプとポイントはあなたのものです。</b>理由と次回の改善点をお伝えします。'
 });
 
 // 2026-09-19 硬編中文審計修復:收集地圖示範/錄製中擋門、跟車鎖定畫面通行證入口(renderLaCta 原本重複定義兩次,已刪除多餘那份)
@@ -2746,20 +2726,9 @@ Object.assign(window.RAIL_I18N_MESSAGES.en, {
   '下一班 {time}': 'Next train {time}',
   '下一班 {time}（停駛）': 'Next train {time} (cancelled)',
   // 懸賞與 GPS 校正旅程(第 13／14／15 項):出發前說明卡整句樣板、錄製列、段／站單複數
-  '錄 {title}（{line}・{slot}・{unit}），值 {points}。': 'Record {title} ({line} · {slot} · {unit}), worth {points}.',
-  '錄 {title}（{line}，{unit}{dur}），值 {points}。': 'Record {title} ({line}, {unit}{dur}), worth {points}.',
   '{n} 段': {
     one: '{n} segment',
     other: '{n} segments',
-  },
-  // 單複數依點數(呼叫端第三參數是 r.points);段數寫成「covered: N」就不必再分單複數。
-  '{segs} <span id="recUnitWord">段</span>已覆蓋・{pts} 點已鎖定': {
-    one: '<span id="recUnitWord">Segments</span> covered: {segs} · {pts} pt locked in',
-    other: '<span id="recUnitWord">Segments</span> covered: {segs} · {pts} pts locked in',
-  },
-  '{segs} <span id="recUnitWord">站</span>已覆蓋・{pts} 點已鎖定': {
-    one: '<span id="recUnitWord">Stations</span> covered: {segs} · {pts} pt locked in',
-    other: '<span id="recUnitWord">Stations</span> covered: {segs} · {pts} pts locked in',
   },
   // 靜態畫面文字(index.html 裡的原文;i18nTranslateTree 只認整句鍵)
   '校正過的': 'Calibrated',
@@ -2798,10 +2767,6 @@ Object.assign(window.RAIL_I18N_MESSAGES.en, {
   '接下來的班次': 'Upcoming trains',
   '給這個位置取個名字，方便日後在「我的最愛」裡找到。不填也可以，之後仍可從最愛移除。': 'Give this place a name so it’s easy to find later in My favourites. You can leave it blank, and you can still remove it from favourites later.',
   // 覆寫(第 15 項):英文單複數;停站卡標題的 n 是總站數,英文改用「另外幾站」(第三參數＝其餘站數)
-  '{n} 點': {
-    one: '{n} pt',
-    other: '{n} pts',
-  },
   '{n} 站': {
     one: '{n} stop',
     other: '{n} stops',
@@ -2830,7 +2795,6 @@ Object.assign(window.RAIL_I18N_MESSAGES.en, {
   '校正貢獻': 'Calibration contributions',
   '懸賞板': 'Bounty board',
   '還沒有校正記錄——去懸賞板看看有哪些路段缺資料。': 'No calibration records yet — check the bounty board to see which segments need data.',
-  '錄一趟就有校正者章，<b>即使資料不能用，章與點數還是你的</b>。': 'Record one trip to earn the calibrator stamp — <b>even if the data can’t be used, the stamp and points are still yours</b>.',
   '{date} {train} 次・{title}': '{date} Train {train} · {title}',
   '首位校正者：<b>你</b>（{n} 段）': {
     one: 'First calibrator: <b>you</b> ({n} segment)',
@@ -2840,6 +2804,10 @@ Object.assign(window.RAIL_I18N_MESSAGES.en, {
     one: 'Calibrated <b>{n}</b> segment<span class="corr-sub"> (<b>{adopted}</b> adopted)</span>',
     other: 'Calibrated <b>{n}</b> segments<span class="corr-sub"> (<b>{adopted}</b> adopted)</span>',
   },
+  '校正停站 <b>{n}</b> 站': {
+    one: 'Calibrated <b>{n}</b> dwell stop',
+    other: 'Calibrated <b>{n}</b> dwell stops',
+  },
   '定位權限沒有開啟；請到系統設定允許軌島使用精確位置。': 'Location permission is off. Allow Rail Island to use precise location in system settings.',
   '暫時收不到定位；請讓 App 留在前景並把手機靠窗。': 'Can’t get a location fix right now. Keep the app in the foreground and hold the phone near a window.',
   // GPS 校正品質判定文案:data/bounty_rules.json 的 qualityText(錄製中提示 bountyTickQualityHint 與護照「校正貢獻」共用同一份繁中原文)
@@ -2847,7 +2815,7 @@ Object.assign(window.RAIL_I18N_MESSAGES.en, {
   '訊號被遮蔽了': 'The signal is blocked',
   '手機放在包包裡或車廂中央會擋住訊號，靠窗會好很多': 'A phone in a bag or in the middle of the car loses signal; near a window works much better',
   '這段在地下，GPS 收不到': 'This segment is underground, so GPS can’t reach it',
-  '這不是你的問題，我們也還沒有辦法解': 'That’s not your fault, and we don’t have a fix for it yet',
+  '這不是你的問題，我也還沒有辦法解': 'That’s not your fault, and I don’t have a fix for it yet',
   '這段只錄到一部分': 'Only part of this segment was recorded',
   '下次從該段起點再錄一次就能補齊': 'Next time, record again from the start of the segment to fill the gap',
   '取樣太稀疏': 'Too few location samples',
@@ -2868,13 +2836,13 @@ Object.assign(window.RAIL_I18N_MESSAGES.en, {
   '在月台等某一班車時，把那一班的倒數放上鎖定畫面的即時資訊；Samsung Android 16 可顯示在 Now Bar。': 'While waiting for a specific train, put its countdown in Live Updates on your lock screen; Samsung devices with Android 16 can also show it in the Now Bar.',
   '通行證內容：台鐵列車的誤點履歷（回溯 90 天的逐日紀錄）、收藏與完乘紀錄跨裝置雲端同步、行程分享、跟車配樂（音樂跟著你在看的那班車與當下時間換情境；免費的背景音樂不受影響）、匯入 Google Maps 已儲存清單、非跟車時的衛星高解析圖磚，以及 Android 16 即時資訊與 Samsung Now Bar 的跟車鎖定畫面進度。': 'Pass features include 90 days of daily TRA delay history; cloud sync for favorites and completion records; journey sharing; the train soundtrack (the music follows the train you are watching and the time of day — the free background music is unaffected); importing Google Maps saved lists; high-resolution satellite tiles when not following a train; and follow progress on the lock screen through Android 16 Live Updates and the Samsung Now Bar.',
   '懸賞板：哪些路段還缺資料': 'Bounty board: which segments still need data',
-  '有些路段我們手上的行駛資料不夠準，缺哪一段就掛在懸賞板上，等人去搭一趟錄回來。': 'For some segments our running data isn’t accurate enough yet. Each segment that needs data goes up on the bounty board until someone rides it and records it.',
+  '有些路段我手上的行駛資料不夠準，缺哪一段就掛在懸賞板上，等人去搭一趟錄回來。': 'For some segments the running data I have isn’t accurate enough yet. Each segment that needs data goes up on the bounty board until someone rides it and records it.',
   '打開「護照」，在「校正貢獻」那一列按「懸賞板」': 'Open Passport and tap “Bounty board” in the “Calibration contributions” row',
   '挑一段你本來就要搭的': 'Pick a segment you were going to ride anyway',
   '按下去接下來，出發前會有一張說明卡告訴你要準備什麼': 'Tap it to claim it; before you set off, a briefing card tells you what to prepare',
   '接下來的段 24 小時內有效，過期會放回板上給別人。看板不用 App，實際錄製要用 App。': 'A claimed segment is held for 24 hours; after that it goes back on the board for others. You can browse the board without the app, but recording needs the app.',
   '錄一趟校正旅程': 'Record a calibration trip',
-  '你搭車的時候順手錄一趟，我們用它把那段路的位置推算修準。': 'Record a trip while you ride, and we use it to make train position estimates on that stretch more accurate.',
+  '你搭車的時候順手錄一趟，我用它把那段路的位置推算修準。': 'Record a trip while you ride, and I use it to make train position estimates on that stretch more accurate.',
   '先在懸賞板接一段': 'First claim a segment on the bounty board',
   '真的搭上那班車之後，按說明卡的「開始錄製」': 'Once you’re actually on that train, tap “Start recording” on the briefing card',
   '錄製畫面上的燈號保持綠色就好——手機靠窗，別放在包包裡或車廂中央': 'Just keep the light on the recording screen green: hold the phone near a window, not in a bag or the middle of the car',
@@ -2883,8 +2851,7 @@ Object.assign(window.RAIL_I18N_MESSAGES.en, {
   '護照裡的校正貢獻': 'Calibration contributions in your Passport',
   '你錄過幾段、其中有幾段真的被採用，都記在護照的「校正貢獻」。': 'How many segments you’ve recorded, and how many of them were actually adopted, is shown under “Calibration contributions” in your Passport.',
   '找到「校正貢獻」那一列': 'Find the “Calibration contributions” row',
-  '上面寫「校正 N 段（其中 M 段已採用）」': 'It reads “Calibrated N segments (M adopted)”',
-  '兩個數字不一樣是正常的——訊號不好的那幾趟資料用不上，但校正者章與點數還是你的，而且我們會寫出是什麼原因、下次怎麼改善。某段如果是你第一個錄回來的，會標「首位校正者」。': 'It’s normal for the two numbers to differ: data from trips with a poor signal can’t be used, but you keep the calibrator stamp and points, and we tell you why and how to do better next time. If you were the first to record a segment, it’s marked “First calibrator”.',
+  '上面寫「校正 N 段（其中 M 段已採用）」；只錄過停站的人，寫的是「校正停站 N 站」': 'It reads “Calibrated N segments (M adopted)”; if you only recorded dwell stops, it reads “Calibrated N dwell stops”',
   // 覆寫:英文單複數。這些呼叫端都已把數量傳給 t()(第三參數或 {n}),英文譯文卻是單一字串,數量為 1 時會出現「1 trains」「1 items」
   '{time} · 約 {n} 列同時運行——點擊跳到該時刻': {
     one: '{time} · about {n} train running — tap to jump to this time',
@@ -2990,18 +2957,6 @@ Object.assign(window.RAIL_I18N_MESSAGES.en, {
     one: '{n} place',
     other: '{n} places',
   },
-  '（示範）接下了・{pts} 點・24 小時內有效': {
-    one: '(Demo) Claimed · {pts} pt · valid for 24 hours',
-    other: '(Demo) Claimed · {pts} pts · valid for 24 hours',
-  },
-  '已在伺服器接下・{pts} 點，但這台裝置存不下來（可能是儲存空間滿了或無痕模式）——重新整理後認領不會留著': {
-    one: 'Claimed on the server · {pts} pt, but this device couldn’t save it (storage may be full, or you’re in private browsing) — the claim won’t persist after you refresh',
-    other: 'Claimed on the server · {pts} pts, but this device couldn’t save it (storage may be full, or you’re in private browsing) — the claim won’t persist after you refresh',
-  },
-  '接下了・{pts} 點・24 小時內有效': {
-    one: 'Claimed · {pts} pt · valid for 24 hours',
-    other: 'Claimed · {pts} pts · valid for 24 hours',
-  },
 });
 
 Object.assign(window.RAIL_I18N_MESSAGES.ja, {
@@ -3054,11 +3009,7 @@ Object.assign(window.RAIL_I18N_MESSAGES.ja, {
   '下一班 {time}': '次の列車 {time}',
   '下一班 {time}（停駛）': '次の列車 {time}（運休）',
   // 懸賞與 GPS 校正旅程(第 13／14／15 項):出發前說明卡整句樣板、錄製列、段／站單複數
-  '錄 {title}（{line}・{slot}・{unit}），值 {points}。': '{title}を記録します（{line}・{slot}・{unit}）。報酬は{points}です。',
-  '錄 {title}（{line}，{unit}{dur}），值 {points}。': '{title}を記録します（{line}、{unit}{dur}）。報酬は{points}です。',
   '{n} 段': '{n}区間',
-  '{segs} <span id="recUnitWord">段</span>已覆蓋・{pts} 點已鎖定': '{segs}<span id="recUnitWord">区間</span>を記録済み・{pts}ポイント確保',
-  '{segs} <span id="recUnitWord">站</span>已覆蓋・{pts} 點已鎖定': '{segs}<span id="recUnitWord">駅</span>を記録済み・{pts}ポイント確保',
   // 靜態畫面文字(index.html 裡的原文;i18nTranslateTree 只認整句鍵)
   '校正過的': '校正済み',
   '標出我校正過的路段': '自分が校正した区間を表示',
@@ -3102,12 +3053,9 @@ Object.assign(window.RAIL_I18N_MESSAGES.ja, {
   '按「我上車了」實際搭一趟,沿途每過一站就自動蓋一枚,比靠完乘起訖站快得多。': '「乗車する」を押して実際に乗車すると、通過する駅ごとに自動でスタンプが押されます。完乗の起点・終点駅だけに頼るより、ずっと速く集まります。',
   '只有按「我上車了」才會累積,純跟車看動畫一次都不算。來回算同一段。': '「乗車する」を押した場合のみカウントされ、アニメーションを見ているだけでは一切カウントされません。往復は同一区間として扱います。',
   // 覆寫(第 15 項):GPS 校正旅程錄的是位置軌跡不是影片,日文「録画」一律改「記録」
-  '示範資料，僅供確認設計：這裡的路段與點數都是假的，接下來也不會真的錄。': 'デモデータです（デザイン確認専用）：ここに表示される区間とポイントはすべて仮のもので、受け取っても実際には記録されません。',
-  '接一張、搭那班車時開錄，把沿途的速度剖面測出來。全部免費，獎勵是榮譽。': '1件受け取り、その列車に乗ったら記録を開始して、沿線の速度プロファイルを計測します。すべて無料で、報酬は名誉です。',
   '這些項目還沒有實測資料。用 App 才能接下來錄——網頁可以先看看有哪些。': 'これらの項目にはまだ実測データがありません。受け取って記録するにはアプリが必要です。ウェブ版では内容を確認できます。',
   '已經在錄了': 'すでに記録中です',
   '停止錄製': '記録を停止',
-  '進站前就開始錄，列車停穩後繼續錄到出站；只通過、不停靠不算停站樣本。': '駅に入る前から記録を始め、列車が停車したあとも駅を出るまで記録を続けてください。停車せず通過するだけでは停車サンプルになりません。',
   '搭上那班車之後開始錄，到站就結束。': 'その列車に乗ったら記録を開始し、到着したら終了してください。',
   '錄到一半中斷沒關係，<b>錄到的部分照樣算</b>。': '記録が途中で中断しても問題ありません。<b>記録できた部分はそのまま有効です</b>。',
   '錄製中無法開啟收集地圖': '記録中は収集マップを開けません',
@@ -3115,10 +3063,10 @@ Object.assign(window.RAIL_I18N_MESSAGES.ja, {
   '校正貢獻': '校正への貢献',
   '懸賞板': '懸賞板',
   '還沒有校正記錄——去懸賞板看看有哪些路段缺資料。': 'まだ校正の記録はありません。懸賞板で、データが足りない区間を確認してみましょう。',
-  '錄一趟就有校正者章，<b>即使資料不能用，章與點數還是你的</b>。': '1回記録すると校正者スタンプがもらえます。<b>データが使えなかった場合でも、スタンプとポイントはあなたのものです</b>。',
   '{date} {train} 次・{title}': '{date} {train}列車・{title}',
   '首位校正者：<b>你</b>（{n} 段）': '最初の校正者：<b>あなた</b>（{n}区間）',
   '校正 <b>{n}</b> 段<span class="corr-sub">（其中 <b>{adopted}</b> 段已採用）</span>': '<b>{n}</b>区間を校正<span class="corr-sub">（うち<b>{adopted}</b>区間が採用済み）</span>',
+  '校正停站 <b>{n}</b> 站': '<b>{n}</b>駅の停車を校正',
   '定位權限沒有開啟；請到系統設定允許軌島使用精確位置。': '位置情報の許可がオフです。システム設定で、軌島に正確な位置情報の使用を許可してください。',
   '暫時收不到定位；請讓 App 留在前景並把手機靠窗。': '現在位置を取得できません。アプリを前面に表示したまま、スマートフォンを窓際に置いてください。',
   // GPS 校正品質判定文案:data/bounty_rules.json 的 qualityText(錄製中提示 bountyTickQualityHint 與護照「校正貢獻」共用同一份繁中原文)
@@ -3126,7 +3074,7 @@ Object.assign(window.RAIL_I18N_MESSAGES.ja, {
   '訊號被遮蔽了': '電波が遮られています',
   '手機放在包包裡或車廂中央會擋住訊號，靠窗會好很多': 'かばんの中や車両の中央では電波が遮られます。窓際に置くとずっと良くなります',
   '這段在地下，GPS 收不到': 'この区間は地下のため、GPSを受信できません',
-  '這不是你的問題，我們也還沒有辦法解': 'あなたの問題ではなく、今のところ解決方法もありません',
+  '這不是你的問題，我也還沒有辦法解': 'あなたの問題ではなく、今のところ解決方法もありません',
   '這段只錄到一部分': 'この区間は一部しか記録できませんでした',
   '下次從該段起點再錄一次就能補齊': '次回、区間の始点から記録し直せば補えます',
   '取樣太稀疏': '測位の間隔が粗すぎます',
@@ -3147,13 +3095,13 @@ Object.assign(window.RAIL_I18N_MESSAGES.ja, {
   '在月台等某一班車時，把那一班的倒數放上鎖定畫面的即時資訊；Samsung Android 16 可顯示在 Now Bar。': '特定の列車を待つ間、その列車のカウントダウンをロック画面のライブアップデートに表示します。Android 16のSamsung端末ではNow Barにも表示できます。',
   '通行證內容：台鐵列車的誤點履歷（回溯 90 天的逐日紀錄）、收藏與完乘紀錄跨裝置雲端同步、行程分享、跟車配樂（音樂跟著你在看的那班車與當下時間換情境；免費的背景音樂不受影響）、匯入 Google Maps 已儲存清單、非跟車時的衛星高解析圖磚，以及 Android 16 即時資訊與 Samsung Now Bar 的跟車鎖定畫面進度。': 'パスには、台湾鉄路の過去90日の日別遅延履歴、お気に入りと完乗記録の端末間同期、旅程共有、追跡サウンドトラック（見ている列車と時刻に合わせて場面が切り替わります。無料のBGMには影響しません）、Googleマップ保存済みリストの読み込み、列車追跡中以外の高解像度衛星地図、Android 16のライブアップデートとSamsung Now Barでのロック画面追跡表示が含まれます。',
   '懸賞板：哪些路段還缺資料': '懸賞板：データが足りない区間',
-  '有些路段我們手上的行駛資料不夠準，缺哪一段就掛在懸賞板上，等人去搭一趟錄回來。': '走行データの精度が足りない区間があります。足りない区間は懸賞板に掲載され、誰かが乗車して記録してくれるのを待っています。',
+  '有些路段我手上的行駛資料不夠準，缺哪一段就掛在懸賞板上，等人去搭一趟錄回來。': '走行データの精度が足りない区間があります。足りない区間は懸賞板に掲載され、誰かが乗車して記録してくれるのを待っています。',
   '打開「護照」，在「校正貢獻」那一列按「懸賞板」': '「パスポート」を開き、「校正への貢献」の行にある「懸賞板」を押します',
   '挑一段你本來就要搭的': 'もともと乗る予定の区間を選びます',
   '按下去接下來，出發前會有一張說明卡告訴你要準備什麼': '押して受け取ると、出発前に準備することを説明するカードが表示されます',
   '接下來的段 24 小時內有效，過期會放回板上給別人。看板不用 App，實際錄製要用 App。': '受け取った区間は24時間有効で、期限が過ぎると懸賞板に戻り、ほかの人が受け取れるようになります。懸賞板はアプリなしでも見られますが、実際の記録にはアプリが必要です。',
   '錄一趟校正旅程': '校正の旅程を記録する',
-  '你搭車的時候順手錄一趟，我們用它把那段路的位置推算修準。': '乗車のついでに記録してもらうと、その区間の列車位置の推定をより正確にできます。',
+  '你搭車的時候順手錄一趟，我用它把那段路的位置推算修準。': '乗車のついでに記録してもらうと、その区間の列車位置の推定をより正確にできます。',
   '先在懸賞板接一段': 'まず懸賞板で区間を1つ受け取ります',
   '真的搭上那班車之後，按說明卡的「開始錄製」': 'その列車に実際に乗ったら、説明カードの「記録を開始」を押します',
   '錄製畫面上的燈號保持綠色就好——手機靠窗，別放在包包裡或車廂中央': '記録画面のランプが緑のままなら大丈夫です。スマートフォンは窓際に置き、かばんの中や車両の中央は避けてください',
@@ -3162,8 +3110,7 @@ Object.assign(window.RAIL_I18N_MESSAGES.ja, {
   '護照裡的校正貢獻': 'パスポートの「校正への貢献」',
   '你錄過幾段、其中有幾段真的被採用，都記在護照的「校正貢獻」。': '記録した区間の数と、そのうち実際に採用された数は、パスポートの「校正への貢献」に表示されます。',
   '找到「校正貢獻」那一列': '「校正への貢献」の行を探します',
-  '上面寫「校正 N 段（其中 M 段已採用）」': '「N区間を校正（うちM区間が採用済み）」と表示されます',
-  '兩個數字不一樣是正常的——訊號不好的那幾趟資料用不上，但校正者章與點數還是你的，而且我們會寫出是什麼原因、下次怎麼改善。某段如果是你第一個錄回來的，會標「首位校正者」。': '2つの数字が違うのは正常です。電波の悪かった記録は使えませんが、校正者スタンプとポイントはあなたのものです。原因と次回の改善方法もお知らせします。ある区間を最初に記録した場合は「最初の校正者」と表示されます。',
+  '上面寫「校正 N 段（其中 M 段已採用）」；只錄過停站的人，寫的是「校正停站 N 站」': '「N区間を校正（うちM区間が採用済み）」と表示されます。停車だけを記録した場合は「N駅の停車を校正」と表示されます',
 });
 
 // 2026-09-19 i18n 複審修正・第三段(fix/i18n-review-fix):英文譯文裡的全形括號(英文字串不該出現「（）」)。
@@ -4155,4 +4102,98 @@ Object.assign(window.RAIL_I18N_MESSAGES.en, {
 });
 Object.assign(window.RAIL_I18N_MESSAGES.ja, {
   '修正 App 颱風資訊整份重複顯示，改為各系統公告；補上新北環狀線、三鶯線 10/23 約 15 分鐘班距，淡海與安坑仍待確認': 'アプリで台風情報の全文が重複する問題を修正し、各運行会社の案内に分けました。環状線・三鶯線の10月23日の約15分間隔運転を追記。淡海・安坑の計画は未確認です。',
+});
+// 路段懸賞 v2 網頁端：護照籌碼列、收滿的懸賞卡、錄程只在 App。
+Object.assign(window.RAIL_I18N_MESSAGES.en, {
+  '籌碼': 'Chips',
+  '登入後看得到籌碼': 'Sign in to see your chips',
+  '下一座場景要 <b>{n}</b> 顆': {
+    one: 'Next scene costs <b>{n}</b> chip',
+    other: 'Next scene costs <b>{n}</b> chips',
+  },
+  '雲端搭乘 <b>{rides}</b> 次・再 <b>{left}</b> 次拿 1 顆': 'Cloud rides <b>{rides}</b> · <b>{left}</b> more for 1 chip',
+  '錄程每天最多 <b>{n}</b> 顆': {
+    one: 'Recording earns up to <b>{n}</b> chip a day',
+    other: 'Recording earns up to <b>{n}</b> chips a day',
+  },
+  '已收滿，照樣可以錄程拿籌碼': 'Fully covered — you can still record a trip and earn chips',
+  '錄程要用軌島 App。網頁可以看懸賞板與自己的籌碼': 'Recording a trip needs the Rail Island app. The website lets you view the bounty board and your own chips.',
+});
+Object.assign(window.RAIL_I18N_MESSAGES.ja, {
+  '籌碼': 'チップ',
+  '登入後看得到籌碼': 'ログインするとチップが表示されます',
+  '下一座場景要 <b>{n}</b> 顆': '次の情景の解放に <b>{n}</b> 枚',
+  '雲端搭乘 <b>{rides}</b> 次・再 <b>{left}</b> 次拿 1 顆': 'クラウド乗車 <b>{rides}</b> 回・あと <b>{left}</b> 回で 1 枚',
+  '錄程每天最多 <b>{n}</b> 顆': '記録で獲得できるのは 1 日最大 <b>{n}</b> 枚',
+  '已收滿，照樣可以錄程拿籌碼': '収集済みですが、旅程を記録すればチップがもらえます',
+  '錄程要用軌島 App。網頁可以看懸賞板與自己的籌碼': '旅程の記録には軌島アプリが必要です。ウェブサイトでは懸賞板とご自身のチップを確認できます。',
+});
+// 路段懸賞 v2 網頁端：獎勵改說籌碼。看板卡片標記、出發前說明、錄程列、接下時的提示與三處承諾句。
+Object.assign(window.RAIL_I18N_MESSAGES.en, {
+  '籌碼 ×{n}': 'Chips ×{n}',
+  '示範資料，僅供確認設計：這裡的路段都是假的，接下來也不會真的錄。': 'Demo data, for design review only: the segments here are fake, and nothing will actually be recorded.',
+  '接一張、搭那班車時開錄，把沿途的速度剖面測出來。全部免費，合格的一趟可以得到籌碼，每天有上限。': 'Claim one, and record while riding that train to capture the speed profile along the way. It’s completely free, and a qualifying trip earns chips, up to a daily limit.',
+  '這段你已經接下了，還沒過期': 'You’ve already claimed this segment, and it hasn’t expired yet',
+  '（示範）接下了・24 小時內有效': '(Demo) Claimed · valid for 24 hours',
+  '已在伺服器接下，但這台裝置存不下來（可能是儲存空間滿了或無痕模式）——重新整理後認領不會留著': 'Claimed on the server, but this device couldn’t save it (storage may be full, or you’re in private browsing) — the claim won’t persist after you refresh',
+  '接下了・24 小時內有效': 'Claimed · valid for 24 hours',
+  '錄 {title}（{line}・{slot}・{unit}）。': 'Record {title} ({line} · {slot} · {unit}).',
+  '錄 {title}（{line}，{unit}{dur}）。': 'Record {title} ({line}, {unit}{dur}).',
+  '合格的一趟得 <b>{n}</b> 顆籌碼。': {
+    one: 'A qualifying trip earns <b>{n}</b> chip.',
+    other: 'A qualifying trip earns <b>{n}</b> chips.',
+  },
+  '這條線的籌碼 ×<b>{n}</b>。': 'Chips are ×<b>{n}</b> on this line.',
+  '每天最多 <b>{n}</b> 顆。': {
+    one: 'Up to <b>{n}</b> chip a day.',
+    other: 'Up to <b>{n}</b> chips a day.',
+  },
+  '接下的卡 <b>24 小時內有效</b>。': 'A claimed card is <b>valid for 24 hours</b>.',
+  '<b>即使這次的資料不能用，只要錄得夠完整，校正者章還是你的。</b>我會告訴你是什麼原因、下次怎麼改善。': '<b>Even if this data can’t be used, the calibrator stamp is still yours as long as you recorded enough of it.</b> I’ll tell you why and how to do better next time.',
+  '錄得夠完整就有校正者章，<b>即使資料不能用，章還是你的</b>。': 'Record enough of a trip to earn the calibrator stamp — <b>even if the data can’t be used, the stamp is still yours</b>.',
+  '兩個數字不一樣是正常的——訊號不好的那幾趟資料用不上，但只要錄得夠完整，校正者章還是你的，而且我會寫出是什麼原因、下次怎麼改善。某段如果是你第一個錄回來的，會標「首位校正者」。': 'It’s normal for the two numbers to differ: data from trips with a poor signal can’t be used, but as long as you recorded enough of the trip you keep the calibrator stamp, and I tell you why and how to do better next time. If you were the first to record a segment, it’s marked “First calibrator”.',
+  '{segs} <span id="recUnitWord">段</span>已覆蓋': '<span id="recUnitWord">Segments</span> covered: {segs}',
+  '{segs} <span id="recUnitWord">站</span>已覆蓋': '<span id="recUnitWord">Stations</span> covered: {segs}',
+  '要錄程，請先把軌島 App 更新到最新版': 'To record a trip, please update the Rail Island app to the latest version.',
+  '合格的一趟要同時做到：同一班車從頭錄到尾至少 <b>{time}</b>、在同一條線上至少移動 <b>{dist}</b>、資料能用。一班車最多算一趟。': 'A qualifying trip needs all of these: you record the same train for at least <b>{time}</b> from start to finish, you travel at least <b>{dist}</b> along the same line, and the data is usable. One train counts as one trip at most.',
+  '沒達到門檻，能用的資料照樣拿來校正，只是沒有籌碼。': 'If a trip falls short, its usable data still goes into calibration; it just earns no chips.',
+  '這些項目還沒有實測資料。這一版還不能接，要更新到最新版的軌島 App 才能接下來錄——現在可以先看看有哪些。': 'These items don’t have real measurement data yet. This version can’t claim them — update the Rail Island app to the latest version to claim and record. For now, you can browse what’s available.',
+  '要更新 App 才能接': 'Update the app to claim',
+  '這一版的軌島 App 還不能錄程，要更新到最新版才行。': 'This version of the Rail Island app can’t record trips yet — update to the latest version to record.',
+  '已收滿。這一版的軌島 App 還不能錄程，要更新到最新版才行。': 'Fully covered. This version of the Rail Island app can’t record trips yet — update to the latest version to record.',
+  '兩個數字不一樣是正常的：前面是你校正的段數，括號裡是資料夠好、真的被採用的段數。訊號不好的那幾趟資料用不上，所以採用的會少一些。': "It’s normal for the two numbers to differ: the first is the number of segments you calibrated, and the one in parentheses is how many had good enough data to be adopted. Data from trips with a poor signal can’t be used, so fewer get adopted.",
+  '這一版的軌島 App 還不能接下來錄，要更新到最新版才行；懸賞板現在可以先看。': 'This version of the Rail Island app can’t claim and record yet — update to the latest version to do that. You can still browse the bounty board.',
+  '從前一站或更早上車就開始錄，一直錄到離開要錄的站。整趟要錄滿 <b>{time}</b>、在同一條線上移動 <b>{dist}</b> 才有籌碼，前一站離得近就要再早一點上車；只通過、不停靠不算停站樣本。': 'Start recording when you board at the previous station or earlier, and keep recording until you leave the station you’re recording. The whole trip needs at least <b>{time}</b> of recording and at least <b>{dist}</b> of travel along the same line to earn chips, so if the previous station is close by, board even earlier; passing through without stopping doesn’t count as a dwell sample.',
+  '從前一站或更早上車就開始錄，一直錄到離開要錄的站；只通過、不停靠不算停站樣本。': 'Start recording when you board at the previous station or earlier, and keep recording until you leave the station you’re recording; passing through without stopping doesn’t count as a dwell sample.',
+});
+Object.assign(window.RAIL_I18N_MESSAGES.ja, {
+  '籌碼 ×{n}': 'チップ ×{n}',
+  '示範資料，僅供確認設計：這裡的路段都是假的，接下來也不會真的錄。': 'デモデータです（デザイン確認専用）：ここに表示される区間はすべて仮のもので、受け取っても実際には記録されません。',
+  '接一張、搭那班車時開錄，把沿途的速度剖面測出來。全部免費，合格的一趟可以得到籌碼，每天有上限。': '1件受け取り、その列車に乗ったら記録を開始して、沿線の速度プロファイルを計測します。すべて無料で、条件を満たした1回の乗車でチップがもらえます（1日の上限あり）。',
+  '這段你已經接下了，還沒過期': 'この区間はすでに受け取り済みで、まだ有効期限内です',
+  '（示範）接下了・24 小時內有效': '（デモ）受け取りました・24時間有効',
+  '已在伺服器接下，但這台裝置存不下來（可能是儲存空間滿了或無痕模式）——重新整理後認領不會留著': 'サーバー側では受領済みですが、この端末には保存できませんでした（ストレージ不足またはプライベートブラウジングの可能性）。更新すると受領記録は残りません',
+  '接下了・24 小時內有效': '受け取りました・24時間有効',
+  '錄 {title}（{line}・{slot}・{unit}）。': '{title}を記録します（{line}・{slot}・{unit}）。',
+  '錄 {title}（{line}，{unit}{dur}）。': '{title}を記録します（{line}、{unit}{dur}）。',
+  '合格的一趟得 <b>{n}</b> 顆籌碼。': '条件を満たした1回の乗車でチップを <b>{n}</b> 枚もらえます。',
+  '這條線的籌碼 ×<b>{n}</b>。': 'この路線ではチップが <b>{n}</b> 倍になります。',
+  '每天最多 <b>{n}</b> 顆。': '1日に獲得できるのは最大 <b>{n}</b> 枚です。',
+  '接下的卡 <b>24 小時內有效</b>。': '受け取ったカードは<b>24時間有効</b>です。',
+  '<b>即使這次的資料不能用，只要錄得夠完整，校正者章還是你的。</b>我會告訴你是什麼原因、下次怎麼改善。': '<b>今回のデータが使えなくても、十分に記録できていれば、校正者スタンプはあなたのものです。</b>理由と次回の改善点をお伝えします。',
+  '錄得夠完整就有校正者章，<b>即使資料不能用，章還是你的</b>。': '十分に記録できると校正者スタンプがもらえます。<b>データが使えなかった場合でも、スタンプはあなたのものです</b>。',
+  '兩個數字不一樣是正常的——訊號不好的那幾趟資料用不上，但只要錄得夠完整，校正者章還是你的，而且我會寫出是什麼原因、下次怎麼改善。某段如果是你第一個錄回來的，會標「首位校正者」。': '2つの数字が違うのは正常です。電波の悪かった記録は使えませんが、十分に記録できていれば、校正者スタンプはあなたのものです。原因と次回の改善方法もお知らせします。ある区間を最初に記録した場合は「最初の校正者」と表示されます。',
+  '{segs} <span id="recUnitWord">段</span>已覆蓋': '{segs}<span id="recUnitWord">区間</span>を記録済み',
+  '{segs} <span id="recUnitWord">站</span>已覆蓋': '{segs}<span id="recUnitWord">駅</span>を記録済み',
+  '要錄程，請先把軌島 App 更新到最新版': '旅程を記録するには、軌島アプリを最新版に更新してください。',
+  '合格的一趟要同時做到：同一班車從頭錄到尾至少 <b>{time}</b>、在同一條線上至少移動 <b>{dist}</b>、資料能用。一班車最多算一趟。': '条件を満たした1回の乗車とは、次のすべてを満たすものです。同じ列車を最初から最後まで <b>{time}</b> 以上記録すること、同じ路線上を <b>{dist}</b> 以上移動すること、使えるデータであること。1本の列車につき、数えるのは1回までです。',
+  '沒達到門檻，能用的資料照樣拿來校正，只是沒有籌碼。': '条件に届かなくても、使えるデータは校正に使われます。ただしチップはもらえません。',
+  '這些項目還沒有實測資料。這一版還不能接，要更新到最新版的軌島 App 才能接下來錄——現在可以先看看有哪些。': 'これらの項目にはまだ実測データがありません。このバージョンでは受け取れません。軌島アプリを最新版に更新すると、受け取って記録できます。今は内容を確認できます。',
+  '要更新 App 才能接': '受け取るにはアプリの更新が必要です',
+  '這一版的軌島 App 還不能錄程，要更新到最新版才行。': 'この版の軌島アプリではまだ記録できません。最新版に更新してください。',
+  '已收滿。這一版的軌島 App 還不能錄程，要更新到最新版才行。': '収集済みです。この版の軌島アプリではまだ記録できません。最新版に更新してください。',
+  '兩個數字不一樣是正常的：前面是你校正的段數，括號裡是資料夠好、真的被採用的段數。訊號不好的那幾趟資料用不上，所以採用的會少一些。': '2つの数字が違うのは正常です。最初の数字は校正した区間の数、かっこ内はデータが十分に良く採用された区間の数です。電波の悪かった記録は使えないため、採用される区間は少なくなります。',
+  '這一版的軌島 App 還不能接下來錄，要更新到最新版才行；懸賞板現在可以先看。': 'この版の軌島アプリではまだ受け取って記録できません。最新版に更新してください。懸賞板は今も見られます。',
+  '從前一站或更早上車就開始錄，一直錄到離開要錄的站。整趟要錄滿 <b>{time}</b>、在同一條線上移動 <b>{dist}</b> 才有籌碼，前一站離得近就要再早一點上車；只通過、不停靠不算停站樣本。': '前の駅か、それより前で乗車したときから記録を始め、記録したい駅を出るまで続けてください。チップをもらうには、1回の乗車全体で <b>{time}</b> 以上記録し、同じ路線上で <b>{dist}</b> 以上移動する必要があります。前の駅が近い場合は、もっと早い駅から乗ってください。通過するだけで停車しない場合は、停車サンプルになりません。',
+  '從前一站或更早上車就開始錄，一直錄到離開要錄的站；只通過、不停靠不算停站樣本。': '前の駅か、それより前で乗車したときから記録を始め、記録したい駅を出るまで続けてください。通過するだけで停車しない場合は、停車サンプルになりません。',
 });

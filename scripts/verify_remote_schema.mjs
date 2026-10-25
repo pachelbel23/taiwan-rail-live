@@ -9,6 +9,15 @@
 // 做法：唯讀查正式庫 sqlite_master 的建表語句（ALTER ADD COLUMN 之後的欄位也會出現在裡面），
 // 逐支比對 schema/*.sql 的 CREATE TABLE（表名＋每一欄）與 ALTER TABLE … ADD COLUMN。
 // D1 不准 pragma_table_info（SQLITE_AUTH），所以比對的是 DDL 文字裡的欄位名。
+// 另比索引（2026-09-30 起）：worker.js 裡每一個 `INDEXED BY <名字>` 都要在 schema/*.sql 有 CREATE INDEX 宣告、
+// 正式庫也要有、而且建在同一張表上。INDEXED BY 指名的索引不在時那一句直接報錯（no such index），
+// 路段懸賞的認領、判定、合併整條壞掉——只比表與欄位照不到這一種漏套。
+// 主鍵／UNIQUE 的自動索引（sqlite_autoindex_<表>_<n>）沒有 CREATE INDEX：建表那一支 migration 就是它的宣告，
+// 正式庫的 sqlite_master 一樣列得出它（type='index'、sql 是 NULL）。編號寫錯的那一種本機驗收就會報錯（同一套 schema 建出同樣的名字），這裡不重算。
+// 缺索引的補法：表在、只缺一般索引時，印出 schema 裡那一句 CREATE INDEX 單獨補——它可重複執行、只動這一個索引；
+// 叫人重套整支 migration 的話，0014 這種檔尾有 ALTER 的會在 ALTER 報 duplicate column，前面的 CREATE INDEX 會不會跟著回滾沒有驗過。
+// 主鍵／UNIQUE 的自動索引沒有 CREATE INDEX 可補（重套也不會：CREATE TABLE IF NOT EXISTS 不動既有的表），只能重建整張表——印出來叫人先停手。
+// 整張表都不在的，照舊重套建表那一支（表與索引一起建；這時單獨的 CREATE INDEX 反而會因為沒有表而報錯）。
 //
 // 用法：node scripts/verify_remote_schema.mjs            # 查正式庫（要 wrangler 已登入）
 //       node scripts/verify_remote_schema.mjs --ddl <檔>  # 讀存下來的 `d1 execute --json` 輸出（離線、給突變測試用）
@@ -61,10 +70,32 @@ function expected() {
   return { files, need };
 }
 
+// worker.js 用 INDEXED BY 指名的索引（整行註解裡提到的不算），各自在哪一支 migration、建在哪張表上。
+function indexedByNeeds() {
+  const code = fs.readFileSync(path.join(root, 'worker.js'), 'utf8').split('\n').filter(l => !/^\s*\/\//.test(l)).join('\n');
+  const names = [...new Set([...code.matchAll(/INDEXED BY\s+(\w+)/g)].map(m => m[1]))];
+  const declared = {}, tableFile = {};
+  const dir = path.join(root, 'schema');
+  for (const f of fs.readdirSync(dir).filter(f => /^\d{4}_.*\.sql$/.test(f)).sort()) {
+    const sql = stripComments(fs.readFileSync(path.join(dir, f), 'utf8'));
+    for (const [stmt, name, table] of sql.matchAll(/CREATE\s+(?:UNIQUE\s+)?INDEX(?:\s+IF NOT EXISTS)?\s+(\w+)\s+ON\s+(\w+)[^;]*;/gi))
+      declared[name] = { table, file: f, stmt: stmt.replace(/\s+/g, ' ') };
+    for (const t of createdTables(sql)) if (!(t.table in tableFile)) tableFile[t.table] = f;
+  }
+  for (const index of names) {
+    const auto = /^sqlite_autoindex_(\w+)_\d+$/.exec(index);
+    if (auto && !declared[index] && tableFile[auto[1]]) declared[index] = { table: auto[1], file: tableFile[auto[1]] };
+  }
+  return names.map(index => ({ index, table: declared[index] ? declared[index].table : null, file: declared[index] ? declared[index].file : null,
+    stmt: declared[index] ? declared[index].stmt || null : null }));
+}
+
 const hasCol = (ddlSql, col) => new RegExp(`(^|[\\s(,"\`\\[])${col}([\\s,)"\`\\]]|$)`).test(ddlSql);
 function missing(need, ddl) {
   return need.filter(n => !(n.table in ddl) || (n.col && !hasCol(ddl[n.table], n.col)));
 }
+// idx：正式庫的 索引名→所在的表。schema 沒宣告（table＝null）也算缺：程式指名了一個誰都不會建的索引。
+const missingIdx = (needs, idx) => needs.filter(n => !n.table || idx[n.index] !== n.table);
 
 function parseD1Json(text) {
   const start = text.search(/^\s*[[{]/m);
@@ -72,12 +103,17 @@ function parseD1Json(text) {
   let data;
   try { data = JSON.parse(text.slice(start)); } catch (e) { return { error: `JSON 解析失敗：${e.message}` }; }
   if (!Array.isArray(data) || !data[0]?.results) return { error: `查詢失敗：${JSON.stringify(data).slice(0, 300)}` };
-  const ddl = {};
-  for (const r of data[0].results) if (r.name) ddl[r.name] = stripComments(r.sql || '');
-  return { ddl };
+  const ddl = {}, idx = {};
+  for (const r of data[0].results) {
+    if (!r.name) continue;
+    if (r.type === 'index') idx[r.name] = r.tbl_name;           // 舊的存檔沒有 type 欄：一律當表，行為同舊版
+    else ddl[r.name] = stripComments(r.sql || '');
+  }
+  return { ddl, idx };
 }
 
 const { files, need } = expected();
+const ixNeeds = indexedByNeeds();
 
 // 正向對照：同一套比對邏輯，餵「每張表都空白」的假 DDL，必須判出全部都缺。
 // 這道沒過代表比對函式本身失明（恆綠），那時任何「正式庫全對」都是零資訊。
@@ -85,6 +121,12 @@ const blank = Object.fromEntries([...new Set(need.map(n => n.table))].map(t => [
 const control = missing(need.filter(n => n.col), blank).length;
 if (control !== need.filter(n => n.col).length || need.filter(n => n.col).length === 0) {
   console.error(`❌ 正向對照失敗：空白 DDL 只判出 ${control}/${need.filter(n => n.col).length} 欄缺漏，比對邏輯失明`);
+  process.exit(2);
+}
+// 索引的正向對照：同一套比對邏輯，餵「一個索引都沒有」，必須判出每一個 INDEXED BY 都缺。
+const ixControl = missingIdx(ixNeeds, {}).length;
+if (ixControl !== ixNeeds.length) {
+  console.error(`❌ 索引正向對照失敗：空的索引表只判出 ${ixControl}/${ixNeeds.length} 個缺漏，比對邏輯失明`);
   process.exit(2);
 }
 
@@ -98,7 +140,7 @@ else {
     process.exit(2);
   }
   const r = spawnSync('arch', ['-arm64', 'node', wrangler, 'd1', 'execute', 'DELAY_DB', '--remote', '--json',
-    '--command', "SELECT name, sql FROM sqlite_master WHERE type='table'"], { cwd: root, encoding: 'utf8' });
+    '--command', "SELECT type, name, tbl_name, sql FROM sqlite_master WHERE type IN ('table','index')"], { cwd: root, encoding: 'utf8' });
   raw = r.stdout || '';
   if (r.status !== 0 && !raw.trim()) {
     console.error(`❌ 查不到正式庫（wrangler exit ${r.status}）：${(r.stderr || '').trim().split('\n').slice(-3).join(' / ')}`);
@@ -109,13 +151,27 @@ const parsed = parseD1Json(raw);
 if (parsed.error) { console.error(`❌ 查不到正式庫：${parsed.error}`); process.exit(2); }
 
 const gaps = missing(need, parsed.ddl);
-if (gaps.length) {
-  console.error(`❌ 正式庫缺 ${gaps.length} 項 schema（程式碼會讀寫它們，缺了就是靜默失敗）：`);
+const ixGaps = missingIdx(ixNeeds, parsed.idx);
+if (gaps.length || ixGaps.length) {
+  console.error(`❌ 正式庫缺 ${gaps.length + ixGaps.length} 項 schema（程式碼會讀寫它們，缺了就是靜默失敗；INDEXED BY 指名的索引缺了那一句直接報錯）：`);
   for (const g of gaps) console.error(`   - ${g.col ? `${g.table}.${g.col}` : `整張表 ${g.table}`}（${g.file}）`);
-  const toApply = [...new Set(gaps.map(g => g.file))];
-  console.error('   補套（正式庫寫入，須先確認）：');
+  for (const g of ixGaps) console.error(g.table
+    ? `   - 索引 ${g.index}（ON ${g.table}；正式庫${parsed.idx[g.index] ? `建在 ${parsed.idx[g.index]} 上` : '沒有'}；${g.file}）`
+    : `   - 索引 ${g.index}：worker.js 用 INDEXED BY 指名了它，但 schema/*.sql 沒有 CREATE INDEX 宣告（程式錯，不是正式庫的問題）`);
+  const tableGone = new Set(gaps.filter(g => !g.col).map(g => g.table));
+  const ixFix = ixGaps.filter(g => g.table && !tableGone.has(g.table));
+  const ixCmds = ixFix.filter(g => g.stmt && !parsed.idx[g.index]);          // 表在、索引不在：單獨那一句
+  const ixWrong = ixFix.filter(g => parsed.idx[g.index]);                    // 同名索引建在別張表上
+  const ixRebuild = ixFix.filter(g => !g.stmt && !parsed.idx[g.index]);     // 主鍵／UNIQUE 的自動索引不在
+  const toApply = [...new Set([...gaps, ...ixGaps.filter(g => g.table && tableGone.has(g.table))].map(g => g.file).filter(Boolean))];
+  if (toApply.length || ixCmds.length) console.error('   補套（正式庫寫入，須先確認）：');
   for (const f of toApply) console.error(`   arch -arm64 node ./node_modules/wrangler/bin/wrangler.js d1 execute DELAY_DB --remote --file=schema/${f}`);
+  for (const g of ixCmds) console.error(`   arch -arm64 node ./node_modules/wrangler/bin/wrangler.js d1 execute DELAY_DB --remote --command "${g.stmt}"`);
+  for (const g of ixWrong) console.error(`   ⚠️ 正式庫的 ${g.index} 建在 ${parsed.idx[g.index]} 上（應在 ${g.table}）：先查是哪一支 migration 建的，不要直接 DROP，先停手找使用者`);
+  for (const g of ixRebuild) console.error(`   ⚠️ ${g.index} 是 ${g.table} 的主鍵／UNIQUE 自動索引：CREATE INDEX 補不回來，重套 ${g.file} 也不會（CREATE TABLE IF NOT EXISTS 不動既有的表）——` +
+    `要照 ${g.file} 重建整張表並搬資料，先停手找使用者`);
   process.exit(1);
 }
 const tables = new Set(need.map(n => n.table)).size;
-console.log(`正式庫 schema ✓ ${files.length} 支 migration、${tables} 張表、${need.filter(n => n.col).length} 欄全在（正向對照 ${control} 欄判缺 ✓）`);
+console.log(`正式庫 schema ✓ ${files.length} 支 migration、${tables} 張表、${need.filter(n => n.col).length} 欄全在（正向對照 ${control} 欄判缺 ✓）；` +
+  `INDEXED BY 指名的索引 ${ixNeeds.length} 個都在（${ixNeeds.map(n => n.index).join('、') || '無'}；正向對照 ${ixControl} 個判缺 ✓）`);

@@ -24,6 +24,10 @@ const limiter = blocked => ({ limit: async () => ({ success: !blocked }) });
 const ASSETS = { fetch: async r => new Response(
   readFileSync(String(r.url).includes('bounty_units') ? 'data/bounty_units.json' : 'data/bounty_rules.json', 'utf8'),
   { status: 200 }) };
+// 🔴 2026-09-29（路段懸賞 v2）：GPS 錄程限 App——bountySubmit 沒帶 client、或 platform 不是 ios／android，
+// 一律 400 app_only。這支檔案的送交 body（C 組 OKBODY、L 組 OK）原本沒有這個欄位，改契約後全部吃 400；
+// 補上合法的 client 是 fixture 跟上契約，不是放寬任何斷言（沒帶 client 的負對照在 verify_bounty_ledger.mjs S 組）。
+const APP_CLIENT = { platform: 'ios', app: '1.6.13', simulator: false };
 // BOUNTY_NOW 釘死：bountySubmit 的乘車日窗（最近 7 天到明天）若跟著真實時鐘跑，這支測試會在
 // 今天全綠、下週自己變紅。台北時間 2026-07-29 10:00，窗＝[2026-07-22, 2026-07-30]。
 const NOW_MS = Date.parse('2026-07-29T02:00:00Z');
@@ -74,6 +78,109 @@ INSERT INTO bounty_claims (id,actor,seg_key,train_kind,dir,kind,slot,points_lock
   const nh0 = b.cards.find(c => c.id === 'tra_sched|南迴線|0|自強|track|');
   ok('A10 過期的認領不計入 claimers（應為 1 不是 2）', nh0 && nh0.claimers === 1, JSON.stringify(nh0));
   ok('A11 回應帶 coverN 供前端顯示「已有 1/3 趟」', b.coverN && b.coverN.metro === 3, JSON.stringify(b.coverN));
+}
+
+// A12–A18 retireBlock、valuationOk：估值的兩個狀態（kv_blobs 的 bounty_retire_block、bounty_valuation_ok 兩列，由估值 cron 寫，寫的那端見 verify_bounty_valuation.mjs E29–E46）。
+// 沒有那一列＝null；有就是 retireBlock {at, generatedAt, msg}、valuationOk {at, generatedAt}；讀不到（D1 錯誤、任何一列的值壞掉）＝兩個欄位一起省略，
+// 讀的人才分得出「沒有」與「不知道」。鍵名、欄位名手寫，不從 worker.js 拿。
+{
+  const KEY = 'bounty_retire_block', OKKEY = 'bounty_valuation_ok';
+  const get = async DB => { const res = await _bounty.bountyBoard(req('/api/bounty-board'), ENV(DB)); return { status: res.status, b: await body(res) }; };
+  const put = (db, v, k = KEY) => db.prepare("INSERT INTO kv_blobs (k, v, updated) VALUES (?, ?, 'x') ON CONFLICT(k) DO UPDATE SET v = excluded.v").run(k, v);
+  const del = (db, k) => db.prepare('DELETE FROM kv_blobs WHERE k = ?').run(k);
+  const BLOCK_MSG = 'bounty_units shrink: tra_sched 21/200（確認是真的換班表，就把 BOUNTY_RETIRE_ACK 設成 1790758000000）';
+
+  const { db, DELAY_DB } = openTestDb(SEED);
+  const none = await get(DELAY_DB);
+  ok('A12 kv_blobs 沒有這兩列 → 200，retireBlock 與 valuationOk 都是 null（兩個欄位都在、值都是 null），cards 照常',
+    none.status === 200 && 'retireBlock' in none.b && none.b.retireBlock === null && 'valuationOk' in none.b && none.b.valuationOk === null &&
+      Array.isArray(none.b.cards) && none.b.cards.length > 0,
+    JSON.stringify({ status: none.status, rb: none.b.retireBlock, vo: none.b.valuationOk, keys: Object.keys(none.b) }));
+
+  // 值裡多出來的欄位不外露：retireBlock 只回 at、generatedAt、msg 三個，valuationOk 只回 at、generatedAt 兩個
+  put(db, JSON.stringify({ at: 1790758089689, generatedAt: 1790758000000, msg: BLOCK_MSG, extra: 'x' }));
+  put(db, JSON.stringify({ at: 1790758089000, generatedAt: 1790757000000, extra: 'y' }), OKKEY);
+  const withGen = await get(DELAY_DB);
+  put(db, JSON.stringify({ at: 1790758089690, generatedAt: null, msg: 'bounty_units empty' }));
+  put(db, JSON.stringify({ at: 1790758089001, generatedAt: null }), OKKEY);
+  const noGen = await get(DELAY_DB);
+  ok('A13 有這兩列 → 200，retireBlock 正好是 {at, generatedAt, msg}、valuationOk 正好是 {at, generatedAt}（值照寫進去的；generatedAt 為 null 時仍是 null；多出來的欄位不外露）',
+    withGen.status === 200 && JSON.stringify(withGen.b.retireBlock) === JSON.stringify({ at: 1790758089689, generatedAt: 1790758000000, msg: BLOCK_MSG }) &&
+      JSON.stringify(withGen.b.valuationOk) === JSON.stringify({ at: 1790758089000, generatedAt: 1790757000000 }) &&
+      noGen.status === 200 && JSON.stringify(noGen.b.retireBlock) === JSON.stringify({ at: 1790758089690, generatedAt: null, msg: 'bounty_units empty' }) &&
+      JSON.stringify(noGen.b.valuationOk) === JSON.stringify({ at: 1790758089001, generatedAt: null }) &&
+      Array.isArray(withGen.b.cards) && withGen.b.cards.length > 0,
+    JSON.stringify({ withGen: [withGen.b.retireBlock, withGen.b.valuationOk], noGen: [noGen.b.retireBlock, noGen.b.valuationOk] }));
+
+  // 讀 kv_blobs 丟錯：看板照樣 200、cards 照常，只是兩個欄位都沒有（不是 503，也不是 null，也不是只省略其中一個）
+  const dead = { _sql: '', bind() { return this; }, run: async () => { throw new Error('D1 注入的錯'); }, all: async () => { throw new Error('D1 注入的錯'); }, first: async () => { throw new Error('D1 注入的錯'); } };
+  const failing = { prepare: sql => /kv_blobs/.test(sql) ? dead : DELAY_DB.prepare(sql), batch: s => DELAY_DB.batch(s), exec: s => DELAY_DB.exec(s) };
+  const broken = await get(failing);
+  ok('A14 讀 kv_blobs 丟錯 → 看板照樣 200、cards 照常帶，但 retireBlock 與 valuationOk 兩個欄位都沒有（不是 503、不是 null、也不是只省略其中一個）',
+    broken.status === 200 && !('retireBlock' in broken.b) && !('valuationOk' in broken.b) && Array.isArray(broken.b.cards) && broken.b.cards.length > 0 &&
+      broken.b.coverN && broken.b.coverN.metro === 3,
+    JSON.stringify({ status: broken.status, keys: Object.keys(broken.b) }));
+
+  // 那一列在、但值讀不出物件（不是 JSON、JSON 但不是物件）：同樣當「不知道」，兩個欄位一起省略——只壞 retireBlock、只壞 valuationOk、兩列都壞各一遍
+  const GOOD_BLOCK = JSON.stringify({ at: 1790758089689, generatedAt: 1790758000000, msg: 'bounty_units empty' });
+  const GOOD_OK = JSON.stringify({ at: 1790758089000, generatedAt: 1790757000000 });
+  const odd = [];
+  for (const v of ['not json', '"str"', '123', '[1]', 'null', '']) {
+    for (const [which, bv, ov] of [['retireBlock 壞', v, GOOD_OK], ['valuationOk 壞', GOOD_BLOCK, v], ['兩列都壞', v, v]]) {
+      put(db, bv); put(db, ov, OKKEY);
+      const r = await get(DELAY_DB);
+      odd.push({ v, which, status: r.status, retireBlock: 'retireBlock' in r.b, valuationOk: 'valuationOk' in r.b });
+    }
+  }
+  ok('A15 任何一列的值不是 JSON 物件（壞掉的字串、字串、數字、陣列、null、空字串；只壞 retireBlock、只壞 valuationOk、兩列都壞）→ 看板照樣 200，兩個欄位一起省略（不會只剩其中一個）',
+    odd.length === 18 && odd.every(o => o.status === 200 && o.retireBlock === false && o.valuationOk === false), JSON.stringify(odd.filter(o => o.status !== 200 || o.retireBlock || o.valuationOk)));
+
+  // 快取：兩個欄位跟著看板同一份邊緣快取（寫進快取的內容就是回給呼叫端的內容），標頭沿用原本的 5 分鐘＋15 分鐘
+  const CC = 'public, s-maxage=300, stale-while-revalidate=900';
+  const capture = async DB => {
+    const puts = [], edge = globalThis.caches.default, orig = edge.put;
+    edge.put = async (k, r) => { puts.push({ cc: r.headers.get('cache-control'), text: await r.text() }); };
+    try {
+      const res = await _bounty.bountyBoard(req('/api/bounty-board'), ENV(DB));
+      return { status: res.status, cc: res.headers.get('cache-control'), text: await res.text(), puts };
+    } finally { edge.put = orig; }
+  };
+  del(db, KEY); del(db, OKKEY);
+  const cNone = await capture(DELAY_DB);
+  put(db, JSON.stringify({ at: 1790758089689, generatedAt: 1790758000000, msg: 'bounty_units empty' }));
+  put(db, GOOD_OK, OKKEY);
+  const cBlock = await capture(DELAY_DB);
+  const cOmit = await capture(failing);
+  const cached = c => c.puts.length === 1 && c.puts[0].cc === CC && c.puts[0].text === c.text && c.status === 200 && c.cc === CC;
+  const inCache = c => JSON.parse(c.puts[0].text);
+  ok('A16 retireBlock、valuationOk 跟看板同一份邊緣快取：三種狀態（兩列都沒有＝兩個 null、兩列都在、讀不到＝兩個欄位都省略）都是 200，回給呼叫端的與寫進快取的是同一份內容，Cache-Control 都是 public, s-maxage=300, stale-while-revalidate=900',
+    cached(cNone) && inCache(cNone).retireBlock === null && inCache(cNone).valuationOk === null &&
+      cached(cBlock) && JSON.stringify(inCache(cBlock).retireBlock) === JSON.stringify({ at: 1790758089689, generatedAt: 1790758000000, msg: 'bounty_units empty' }) &&
+        JSON.stringify(inCache(cBlock).valuationOk) === GOOD_OK &&
+      cached(cOmit) && !('retireBlock' in inCache(cOmit)) && !('valuationOk' in inCache(cOmit)),
+    JSON.stringify([cNone, cBlock, cOmit].map(c => ({ status: c.status, cc: c.cc, puts: c.puts.length, same: c.puts[0] && c.puts[0].text === c.text }))));
+
+  // A17：兩列用一句主鍵查詢讀——看板這一發碰 kv_blobs 的 SQL 恰好一句（不是兩句），拿同一句在庫上跑 EXPLAIN QUERY PLAN，只走 PRIMARY KEY、沒有 SCAN
+  const seen = [];
+  const spy = { prepare: sql => { if (/kv_blobs/.test(sql)) seen.push(sql); return DELAY_DB.prepare(sql); }, batch: s => DELAY_DB.batch(s), exec: s => DELAY_DB.exec(s) };
+  await get(spy);
+  const nParam = seen[0] ? (seen[0].match(/\?/g) || []).length : 0;
+  const plan = seen[0] ? db.prepare('EXPLAIN QUERY PLAN ' + seen[0]).all(...Array(nParam).fill('probe')).map(r => String(r.detail)) : [];
+  ok('A17 看板讀這兩列只用一句查詢（碰 kv_blobs 的 SQL 恰好一句），而且是主鍵查詢（EXPLAIN QUERY PLAN 全是 USING PRIMARY KEY、沒有 SCAN）',
+    seen.length === 1 && plan.length > 0 && plan.every(d => /USING PRIMARY KEY/.test(d)) && !plan.some(d => /SCAN/.test(d)), JSON.stringify({ seen, plan }));
+
+  // A18：兩個欄位各讀各的——四種組合（兩列都沒有、只有擋下、只有成功、兩列都有）各自對得上，互不影響
+  const BLOCK = { at: 5, generatedAt: 6, msg: 'm' }, OKV = { at: 7, generatedAt: 8 };
+  const combos = [];
+  for (const [hasBlock, hasOk] of [[false, false], [true, false], [false, true], [true, true]]) {
+    del(db, KEY); del(db, OKKEY);
+    if (hasBlock) put(db, JSON.stringify(BLOCK));
+    if (hasOk) put(db, JSON.stringify(OKV), OKKEY);
+    const r = await get(DELAY_DB);
+    combos.push({ hasBlock, hasOk, rb: JSON.stringify(r.b.retireBlock), vo: JSON.stringify(r.b.valuationOk) });
+  }
+  ok('A18 兩個欄位各讀各的：兩列都沒有＝null／null、只有擋下＝物件／null、只有成功＝null／物件、兩列都有＝物件／物件，互不影響',
+    combos.every(c => c.rb === JSON.stringify(c.hasBlock ? BLOCK : null) && c.vo === JSON.stringify(c.hasOk ? OKV : null)), JSON.stringify(combos));
 }
 
 // ── B 組：POST /api/bounty-claim ──────────────────────────────────────────
@@ -160,6 +267,7 @@ INSERT INTO bounty_claims (id,actor,seg_key,train_kind,dir,kind,slot,points_lock
   // 吃 400 unknown_line——同一個 fixture 缺口，這次是被新的檢查照出來的（上一次是 C5b 的中文線名）。
   const OKBODY = {
     actor: 'device-x', sys: 'tra_sched', lnId: '南迴線', trainNo: '312', dir: 0, tripDate: '2026-07-28', batch: 1,
+    client: APP_CLIENT,
     samples: [{ d: 1000, t: 30000, v: 25, acc: 8 }, { d: 1025, t: 30001, v: 25.1, acc: 9 }],
   };
 
@@ -406,6 +514,73 @@ INSERT INTO bounty_claims (id,actor,seg_key,train_kind,dir,kind,slot,points_lock
   }
 }
 
+// ── I 組（續）：只錄停站卡的人也有記錄可以顯示（dwellStops）──────────────────────────────────────────
+// 停站（dwell）不是路段：corrected.segs 與 lines 的段數照舊只數路段（I2、I5 守著）。dwellStops 是另外一個數字，
+// 只給「段數是 0、但錄過停站」的人用。規則比照路段：suspect 整筆不算；ok 與 unusable 都算；還沒判定（pending）的沒有覆蓋段，不算。
+// 判準的期望值都是這裡手算寫死的（不呼叫實作）；樣本的 segs 欄位是判定 cron 寫進去的覆蓋段形狀。
+{
+  const { bountyMe } = _bounty;
+  const DW = (stn, slot = 'peak') => ({ key: `tra_sched|南迴線|${stn}|${stn}`, kind: 'dwell', slot, dir: 0, cov: 1 });
+  const TK = (a, b) => ({ key: `tra_sched|南迴線|${a}|${b}`, kind: 'track', slot: '', dir: 0, cov: 1 });
+  const rowSql = (id, verdict, segs, quality = null, day = '2026-07-28') =>
+    `('${id}','device-dw','tra_sched','南迴線','31${id.length}',0,'${day}','[]',${segs === null ? 'NULL' : `'${JSON.stringify(segs)}'`},1,'${verdict}',${verdict === 'pending' ? 'NULL' : '2'},${quality ? `'${quality}'` : 'NULL'},NULL)`;
+  const mk = rows => openTestDb(`
+    INSERT INTO bounty_points (actor,uid,points,merged_into,updated_at) VALUES ('device-dw',NULL,7,NULL,1700000000000);
+    INSERT INTO bounty_samples (id,actor,sys,ln_id,train_no,dir,trip_date,payload,segs,submitted_at,verdict,verdict_at,quality_code,reject_code) VALUES
+    ${rows.map(r => rowSql(...r)).join(',\n')};`);
+  const ask = async rows => { const r = await bountyMe(req('/api/bounty-me?actor=device-dw'), ENV(mk(rows).DELAY_DB)); return { status: r.status, b: await body(r) }; };
+  const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+
+  // 停站各一筆：資料能用（ok）、資料不能用（unusable）各自單獨成立
+  const dOk = await ask([['d1', 'ok', [DW('大武')]]]);
+  ok('I10a 只有一筆 ok 的停站：dwellStops＝1、corrected.segs＝0、adopted＝0；那一線在 lines 裡（段數 0）',
+    dOk.status === 200 && dOk.b.dwellStops === 1 && same(dOk.b.corrected, { segs: 0, adopted: 0 }) && same(dOk.b.lines, [{ sys: 'tra_sched', lnId: '南迴線', segs: 0, adopted: 0 }]), JSON.stringify(dOk.b));
+  const dBad = await ask([['d2', 'unusable', [DW('臺東', 'off')], 'acc_blocked']]);
+  ok('I10b 只有一筆 unusable 的停站（資料不能用）：dwellStops 照樣是 1、corrected.segs＝0；那一筆的原因與怎麼改善帶得出來（護照要靠它說明）',
+    dBad.status === 200 && dBad.b.dwellStops === 1 && same(dBad.b.corrected, { segs: 0, adopted: 0 }) &&
+      dBad.b.trips.length === 1 && !!dBad.b.trips[0].quality && !!dBad.b.trips[0].quality.title && !!dBad.b.trips[0].quality.how, JSON.stringify(dBad.b));
+
+  // 五筆混在一起：suspect 不算、還沒判定的不算、同一站不同時段只算一次
+  const five = await ask([
+    ['d1', 'ok', [DW('大武')]],
+    ['d22', 'unusable', [DW('臺東', 'off')], 'acc_blocked'],
+    ['d333', 'suspect', [DW('七堵')]],
+    ['d4444', 'pending', null],
+    ['d55555', 'ok', [DW('大武', 'off')]],
+  ]);
+  ok('I10c 五筆（ok、unusable、suspect、pending、同一站另一時段的 ok）：dwellStops＝2（大武、臺東）——suspect 的七堵不算、pending 沒有覆蓋段不算、大武只算一次',
+    five.status === 200 && five.b.dwellStops === 2, JSON.stringify(five.b));
+  ok('I10d 同一組五筆：corrected＝{segs 0、adopted 0}（停站不進路段數）、lines 只有南迴線一條（suspect 那筆的線不出現）',
+    same(five.b.corrected, { segs: 0, adopted: 0 }) && same(five.b.lines, [{ sys: 'tra_sched', lnId: '南迴線', segs: 0, adopted: 0 }]) && five.b.trips.length === 5, JSON.stringify(five.b));
+  const susOnly = await ask([['s1', 'suspect', [DW('七堵')]]]);
+  ok('I10e 只有被判 suspect 的停站：dwellStops＝0（對照 I10a：同樣的覆蓋段，差別只在判定）', susOnly.status === 200 && susOnly.b.dwellStops === 0 && susOnly.b.lines.length === 0, JSON.stringify(susOnly.b));
+
+  // 路段與停站都有：路段的數字（corrected、lines、firsts）與「同一組樣本拿掉停站」完全相同；多出來的只有 dwellStops
+  const track = [
+    ['m1', 'ok', [TK('A', 'B'), TK('B', 'C'), DW('大武')]],
+    ['m22', 'unusable', [TK('C', 'D'), DW('臺東')], 'acc_blocked'],
+    ['m333', 'suspect', [TK('E', 'F'), DW('七堵')]],
+  ];
+  const mixed = await ask(track);
+  const trackOnly = await ask(track.map(([id, v, segs, q]) => [id, v, segs.filter(c => c.kind === 'track'), q]));
+  const num = r => ({ corrected: r.b.corrected, lines: r.b.lines, firsts: r.b.firsts });
+  ok('I11a 路段與停站都有：corrected＝{segs 3、adopted 2}、lines＝南迴線 3 段／採用 2 段；跟「同一組樣本拿掉停站」逐欄相同（停站不改路段的任何數字）',
+    same(num(mixed), num(trackOnly)) && same(mixed.b.corrected, { segs: 3, adopted: 2 }) && same(mixed.b.lines, [{ sys: 'tra_sched', lnId: '南迴線', segs: 3, adopted: 2 }]), JSON.stringify({ mixed: num(mixed), trackOnly: num(trackOnly) }));
+  ok('I11b 同一組：dwellStops＝2（大武、臺東；suspect 的七堵不算）；拿掉停站那一組是 0',
+    mixed.b.dwellStops === 2 && trackOnly.b.dwellStops === 0, JSON.stringify({ mixed: mixed.b.dwellStops, trackOnly: trackOnly.b.dwellStops }));
+  const keysOf = r => Object.keys(r.b).sort().join();
+  ok('I11c 回應的欄位：只多了 dwellStops，其餘欄位的名字不變（原生 App 也讀這支）',
+    keysOf(mixed) === ['actor', 'corrected', 'dwellStops', 'firsts', 'lines', 'points', 'trips'].join() && same(Object.keys(mixed.b.corrected), ['segs', 'adopted']), keysOf(mixed));
+  // 沒有任何覆蓋段的人（空陣列、還沒判定）：dwellStops 是 0，而且是數字
+  const none = await ask([['n1', 'ok', []], ['n22', 'pending', null]]);
+  ok('I11d 沒有任何覆蓋段（空陣列的 ok、還沒判定的）：dwellStops 是數字 0、corrected＝{0,0}', none.status === 200 && none.b.dwellStops === 0 && same(none.b.corrected, { segs: 0, adopted: 0 }), JSON.stringify(none.b));
+  // 整包回應仍然沒有拒絕原因（I6、I7 的掃法，套在新欄位出現的回應上）
+  {
+    const raw = JSON.stringify(mixed.b) + JSON.stringify(five.b);
+    ok('I11e 有 dwellStops 的回應：同樣不含任何 reject_code 的值或 reject 字樣', !['doppler_too_clean', 'impossible_physics', 'delay_mismatch', 'future_date', 'stale_date'].some(c => raw.includes(c)) && !raw.includes('reject'), raw.slice(0, 120));
+  }
+}
+
 // ── J 組：POST /api/bounty-merge ──────────────────────────────────────────
 {
   const { bountyMerge } = _bounty;
@@ -542,6 +717,7 @@ INSERT INTO bounty_claims (id,actor,seg_key,train_kind,dir,kind,slot,points_lock
   });
   const OK = {
     actor: 'device-L', sys: 'tra_sched', lnId: '南迴線', trainNo: '312', dir: 0, tripDate: '2026-07-28',
+    client: APP_CLIENT,
     samples: [{ d: 1000, t: 30000, v: 25, acc: 8 }],
   };
 

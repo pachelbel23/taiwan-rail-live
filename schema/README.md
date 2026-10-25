@@ -17,9 +17,15 @@
 | `0011_journey_share.sql` | ✅ **權威** | 短效整段旅程分享 `journey_shares`。只保存最新狀態與（使用者另行同意時）最新一筆手機座標，不保存位置歷史；公開讀取 id 與編輯憑證分離，最長 12 小時失效。**所有環境都要跑。** |
 | `0012_la_journey_handoff.sql` | ✅ **權威** | 跟車即時動態的跨車轉乘計畫。替既有 `la_bindings` 增加 `journey_state`，讓同一張鎖屏卡可在轉乘站由來源列車交棒給已選班次。**所有環境都要跑。** 🔴 正式庫漏套到 **2026-09-24 00:17** 才補。 |
 | `0013_tra_wait_prev_dep.sql` | ✅ **權威** | 台鐵等站卡的進站軌道版面：替 `tra_wait_bindings` 補 `prev_dep_sec`（上一個停靠站的表定發車時刻），伺服器據此在「上一站→本站」那段每分鐘推一發讓卡片上的車往前挪。**所有環境都要跑，新環境＝`0010` + `0013`。** |
+| `0014_bounty_v2.sql` | ✅ **權威** | 路段懸賞 v2：每段去重人數（新表 `bounty_seg_contrib`、`bounty_board.distinct_ok_users`）、籌碼帳本 `chip_ledger`、車庫解鎖 `garage_unlocks`、雲端搭乘 `cloud_rides`，以及 `bounty_samples.client`（上傳來源）。**所有環境都要跑，新環境＝`0002` + `0014` + `0015` + `0016`。** 🔴 先套 schema、再出會用到它的 Worker。Worker 回滾到這一版之前的副作用（刪帳號不清新表、合併不搬新表）見該檔檔頭。 |
 | `0014_trackside.sql` | 權威 | 軌道邊卡片的 `trackside_bindings`；清單只保存車次、系統、時刻與隔日標記，時間欄位一律毫秒。獨立於既有卡片表，部署新版 Worker 前先套用。 |
+| `0015_bounty_retired.sql` | ✅ **權威** | 路段懸賞：替 `bounty_board` 補 `retired`（最新一份單位清單已經沒有這個單位＝退場；每日估值 cron 寫，看板、認領、入帳價、重算都只看 `retired=0`）。只有這一句 `ALTER`，刻意不接在 0014 檔尾（見 0014 檔頭）。**所有環境都要跑，新環境＝`0002` + `0014` + `0015` + `0016`。** 🔴 先套 schema、再出會用到它的 Worker。 |
 | `0015_rail_ai_status.sql` | 權威 | AI 營運整理（`/api/rail-status`、`rail-status.html`）的五張 `rail_ai_*` 表：偵測狀態、變化事件、官方原文存證、每一版整理、手動鎖定。跟人工彙整完全分開。**部署新版 Worker 前先套用**；沒套時 cron 的整理任務自己吞錯，`/api/rail-status` 回 503，其他功能不受影響。 |
+| `0016_bounty_kept_range.sql` | ✅ **權威** | 路段懸賞：替 `bounty_samples` 補 `kept_d0`／`kept_d1`（判定當下防偽閘收下點的最小與最大里程，籌碼的移動距離由此算，同一份資料不論分幾次上傳結果相同）。只有這兩句 `ALTER`，自成一檔（0014、0015 已套進正式庫）。**所有環境都要跑，新環境＝`0002` + `0014` + `0015` + `0016`。** 🔴 先套 schema、再出會用到它的 Worker；正式庫套用順序 0014 → 0015 → 0016。 |
 | `0016_rail_push.sql` | 權威 | AI 營運整理的推播（`scripts/rail_push.mjs`）：`rail_push_devices`（App 的 APNs token、關掉的系統、開著卡片的系統、管理者／測試機旗標）、`rail_push_requests`（每則草稿、核可與送出進度、AI 檢查結論）、`rail_push_recipients`（一般等級推給了誰）。**部署新版 Worker 前先套用**；沒套時 `/api/push/register` 回 503，cron 的推播任務自己吞錯，其他功能不受影響。 |
+
+0014–0016 各有兩支同號的檔（路段懸賞 v2 與軌道邊卡片／AI 營運整理在兩條分支上同時開號）。兩組碰的表互不重疊，
+這裡沒有 migration 追蹤表，套用一律照檔名逐支執行，所以同號不影響套用；路段懸賞那三支彼此要照 0014 → 0015 → 0016 的順序。
 
 ## 套用到正式庫
 
@@ -31,8 +37,11 @@ arch -arm64 node ./node_modules/wrangler/bin/wrangler.js d1 execute DELAY_DB --r
 arch -arm64 node ./node_modules/wrangler/bin/wrangler.js d1 execute DELAY_DB --remote --file=schema/0011_journey_share.sql
 arch -arm64 node ./node_modules/wrangler/bin/wrangler.js d1 execute DELAY_DB --remote --file=schema/0012_la_journey_handoff.sql
 arch -arm64 node ./node_modules/wrangler/bin/wrangler.js d1 execute DELAY_DB --remote --file=schema/0013_tra_wait_prev_dep.sql
+arch -arm64 node ./node_modules/wrangler/bin/wrangler.js d1 execute DELAY_DB --remote --file=schema/0014_bounty_v2.sql
 arch -arm64 node ./node_modules/wrangler/bin/wrangler.js d1 execute DELAY_DB --remote --file=schema/0014_trackside.sql
+arch -arm64 node ./node_modules/wrangler/bin/wrangler.js d1 execute DELAY_DB --remote --file=schema/0015_bounty_retired.sql
 arch -arm64 node ./node_modules/wrangler/bin/wrangler.js d1 execute DELAY_DB --remote --file=schema/0015_rail_ai_status.sql
+arch -arm64 node ./node_modules/wrangler/bin/wrangler.js d1 execute DELAY_DB --remote --file=schema/0016_bounty_kept_range.sql
 arch -arm64 node ./node_modules/wrangler/bin/wrangler.js d1 execute DELAY_DB --remote --file=schema/0016_rail_push.sql
 ```
 
@@ -66,6 +75,31 @@ iPhone 跟車卡的伺服器推播全停，期間 `la_bindings` 一直是 0 列�
 `bind_failed`（前端靜默忽略、卡片照開），從此**連誤點更新都沒有**——比 0010 忘了套更隱蔽，
 因為舊版 Worker 在同一個庫上是好的。**先套 0013 再部署新 Worker**；0013 是 `ALTER TABLE`，
 重跑會報 `duplicate column name`（無害，代表已經套過）。
+
+🔴 **0014 忘了套的症狀**（一次壞一整片，不是只有新功能）：
+`/api/account-delete` 對**所有人**回 502（`bountyPurgeUid` 在同一個 batch 刪那四張新表，缺一張整批失敗，App 審查要求能刪帳號）；
+`/api/bounty-board` **整個**回 503（SELECT 讀 `distinct_ok_users`，回應是 `public, s-maxage=60`、全站的看板都空掉）；
+`/api/bounty-submit` 一律 503 `submit_failed`（INSERT 找不到 `bounty_samples.client`），`chips-me`／`garage-redeem`／`cloud-ride`／`bounty-merge` 一律 503；
+每日估值 cron 丟錯（上架新單位讀 `bounty_seg_contrib`），判定 cron 寫貢獻與帳本那幾句也丟錯。
+**先套 0014 再部署新 Worker**（ship-web 2.4 的正式庫 schema 守門人會擋下漏套）。0014 檔尾有兩句 `ALTER TABLE`，
+重跑時第一句 `ALTER` 會報 `duplicate column name`（代表已經套過；`CREATE` 都排在 `ALTER` 之前）。
+若正式庫在 `idx_seg_contrib_actor`／`idx_seg_contrib_first` 加進 0014 **之前**就套過它，另外單獨補這兩句（可重複執行；
+重套整支 0014 要靠檔尾的 `ALTER` 報錯才停，前面的 `CREATE INDEX` 會不會跟著回滾沒有驗過，不要拿重套代替）：
+`CREATE INDEX IF NOT EXISTS idx_seg_contrib_actor ON bounty_seg_contrib (actor);`
+`CREATE INDEX IF NOT EXISTS idx_seg_contrib_first ON bounty_seg_contrib (seg_key, first_ok_at, actor);`
+正式庫 schema 守門人（`scripts/verify_remote_schema.mjs`）缺哪一個索引就印哪一句的補法；主鍵／UNIQUE 的自動索引
+（`sqlite_autoindex_<表>_<n>`）沒有 `CREATE INDEX` 可補，缺了要重建整張表，先停手。
+
+🔴 **0015 忘了套的症狀**：與 0014 缺 `distinct_ok_users` 同形——`/api/bounty-board` **整個**回 503（SELECT 讀 `retired`，全站的看板都空掉）、
+`/api/bounty-claim` 一律 503 `claim_failed`、每日估值 cron 讀板的第一句就丟錯（整支中止）、判定 cron 查板價那一句丟錯。
+**先套 0015 再部署新 Worker**；0015 只有一句 `ALTER TABLE`，重跑會報 `duplicate column name`（無害，代表已經套過）。
+已經套過 0014 的庫**不要拿重套 0014 代替**：0014 會在它自己的第一句 `ALTER` 就中斷，走不到任何接在後面的東西。
+
+🔴 **0016 忘了套的症狀**：判定 cron 每一班車讀前次線組那一句、超量車標 suspect 那一句、標記已判定那一句都讀寫 `kept_d0`／`kept_d1`，缺欄整句失敗——
+都排在點數、趟數、籌碼入帳之前，所以那班車什麼都不寫、樣本留在 pending、記一次出錯，補套之後下一發 cron 重判（不會永久漏發），
+但套之前整支判定 cron 判不出任何一班車（路段懸賞的點數與籌碼全停）。
+**先套 0016 再部署新 Worker**（ship-web 2.4 的正式庫 schema 守門人缺這兩欄會擋、印出套 0016）；0016 只有兩句 `ALTER TABLE`，重跑會報 `duplicate column name`（無害）。
+套用順序：0014 → 0015 → 0016。
 
 🔴 **只有「已經用舊版 0003 建過表」的環境才要再依序套 0004／0005／0006**（本機 `.wrangler`、
 開發庫）。`CREATE TABLE IF NOT EXISTS` 不會替既有的表補欄位，少了 `fail_streak` 會讓 cron
