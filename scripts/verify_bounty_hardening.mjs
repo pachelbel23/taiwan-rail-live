@@ -2200,6 +2200,13 @@ const PL_CTRL = [
   ['刪帳號：每段貢獻', /^DELETE FROM bounty_seg_contrib INDEXED BY idx_seg_contrib_actor WHERE actor IN/],
   ['看板：開著的認領人數', /COUNT\(DISTINCT actor\) AS n FROM bounty_claims INDEXED BY idx_claims_expiry/],
 ];
+// PLb 只比「計畫有哪幾行」、不比先後的句子。合併的解鎖退款那一句帶 EXISTS bounty_points 的相關子查詢（bountyMerge 的守衛 G）：
+// SQLite 3.53.4（node 24.22.1）在 one／tiny3／cheap 三種統計下把 EXISTS 那一行印在兩個 garage_unlocks 之後，3.51.2（node 24.14.1）
+// 印在最前面，八種形狀都與沒有統計時逐行相同（10-25 兩個版本各跑一次對照）。兩邊用的索引與條件一字不差、都沒有全表掃描。
+// 這幾句照樣要：排序後逐行相同、每一種形狀下都不掃六張表的全表；每條比對式要恰好攔到一句，攔不到或攔到多句 PLb 就紅。
+const PL_ORDER_FREE = [
+  ['合併：解鎖退款', /FROM garage_unlocks d INDEXED BY sqlite_autoindex_garage_unlocks_1 JOIN garage_unlocks u/],
+];
 await attempt('PL', async () => {
   const { sqls, st } = await plCapture();
   ok('PL0 [前提] 每一步都真的走到了：上傳、認領、看板 200；A 那班 ok、B 那班超量 suspect；估值上架 1 個新單位；bounty-me 有首位校正者；' +
@@ -2225,16 +2232,24 @@ await attempt('PL', async () => {
   const grow = sqls.filter(touchesGrow);
   const DB0 = plDb(null), DBS = Object.fromEntries(Object.entries(PL_SHAPES).map(([k, f]) => [k, plDb(f)]));
   const unstable = [], scans = [], errs = [];
+  const orderFree = sql => PL_ORDER_FREE.some(([, re]) => re.test(sql));
+  const orderFreeHits = PL_ORDER_FREE.map(([name, re]) => [name, grow.filter(s => re.test(s)).length]).filter(([, n]) => n !== 1);
   for (const sql of grow) {
     const p0 = plPlan(DB0, sql);
     if (p0.some(l => l.startsWith('ERR'))) errs.push({ sql: sql.slice(0, 120), p0 });
     const sc = growScans(sql, p0);
     if (sc.length) scans.push({ sql: sql.slice(0, 120), sc });
-    for (const [k, db] of Object.entries(DBS)) { const p = plPlan(db, sql); if (J(p) !== J(p0)) unstable.push({ shape: k, sql: sql.slice(0, 120), p0, p }); }
+    for (const [k, db] of Object.entries(DBS)) {
+      const p = plPlan(db, sql);
+      const same = orderFree(sql) ? J([...p].sort()) === J([...p0].sort()) && growScans(sql, p).length === 0 : J(p) === J(p0);
+      if (!same) unstable.push({ shape: k, sql: sql.slice(0, 120), p0, p });
+    }
   }
-  ok(`PLb 穩定：碰到六張表的 ${grow.length} 句，在 ${Object.keys(PL_SHAPES).length} 種統計形狀（${Object.keys(PL_SHAPES).join('、')}）下的計畫都與沒有統計時逐行相同；` +
+  ok(`PLb 穩定：碰到六張表的 ${grow.length} 句，在 ${Object.keys(PL_SHAPES).length} 種統計形狀（${Object.keys(PL_SHAPES).join('、')}）下的計畫都與沒有統計時逐行相同` +
+    `（PL_ORDER_FREE 的 ${PL_ORDER_FREE.length} 句比排序後的行、且每種形狀都不掃全表）；` +
     '沒有統計時也沒有一句掃六張表的全表（含 USING COVERING INDEX 的整個索引掃描）',
-    grow.length > 0 && errs.length === 0 && scans.length === 0 && unstable.length === 0, J({ n: grow.length, errs, scans, unstable: unstable.slice(0, 4) }));
+    grow.length > 0 && errs.length === 0 && scans.length === 0 && unstable.length === 0 && orderFreeHits.length === 0,
+    J({ n: grow.length, errs, scans, orderFreeHits, unstable: unstable.slice(0, 4) }));
   // PLc：指名
   const lack = PL_PINS.filter(([, re, n = 1]) => sqls.filter(s => re.test(s)).length < n).map(([name]) => name);
   ok(`PLc 指名：${PL_PINS.length} 族句子寫的是指定的索引（INDEXED BY 被拿掉、或改指別的索引，那一族就找不到）`, lack.length === 0, J(lack));
