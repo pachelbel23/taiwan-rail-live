@@ -33,6 +33,9 @@ const REQUIRED_CRONS = {
   '15 1 * * *':
     '台鐵誤點履歷 ingest、逐站事件保留期清理、高鐵未來班表 ingest'
     + '（走 scheduled 的 fallthrough 分支，不是靠字面比對，所以程式裡搜不到這個字串是正常的）',
+  '30 19 * * *':
+    '路段懸賞的估值（看板上架、退場、重算）與判定（樣本判讀、發籌碼、每段貢獻）'
+    + '（worker.js 的 BOUNTY_CRON 分支，跑完就 return，不落進每日 ingest）',
 };
 
 // ── `.assetsignore` 裡不可以消失的條目 ────────────────────────────────────
