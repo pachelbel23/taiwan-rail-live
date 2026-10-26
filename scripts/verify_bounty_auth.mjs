@@ -3,7 +3,8 @@
 // 跑法：node scripts/verify_bounty_auth.mjs
 //
 // 期望值全部寫死在這裡，不呼叫實作去產生期望：
-//   ・產品規則：車庫第 1 座 4 籌碼、之後每座 8；捷運不列入懸賞。（這支腳本只用到價目 4／8 與捷運搭乘。）
+//   ・產品規則（v3 點數）：車庫第 1 座 200 點、之後每座 300；雲端搭乘一次 20 點；捷運不列入懸賞。（這支腳本只用到價目、雲端點數與捷運搭乘。）
+//   ・種子的帳本與解鎖列預設寫 unit='point'（v3 的列）；A3b 種的是 v2 的籌碼列（unit='chip'，1 顆＝50 點），驗被擋的請求連換算列都不補。
 //   ・身分規則本身（uid 不是憑證、匿名裝置的 installId 是它自己的憑證、併進帳號之後錢包只認帳號的 Bearer、
 //     上傳與認領是「賺」不是「花」）來自設計原則。
 // 每一條判準寫的時候都先答「哪一筆輸入能讓它變紅」——答不出來的判準等於沒有判準（每一層防線都做過突變測試，指名由哪個檢查抓到）。
@@ -24,7 +25,7 @@
 //
 // ⚠️ 假 D1 的保真度：scripts/d1_local.mjs 的 batch() 是排隊序列化的，但 batch 之外的單句寫入
 //    可以插進另一個 batch 的交易中間；真的 D1 不會這樣。這支腳本沒有併發判準；上線後對正式庫做一次唯讀抽查
-//    （bounty_points 有沒有「uid 非空、又有 merged_into」的髒列、有沒有籌碼落在沒有帳號列的 uid 底下）。
+//    （bounty_points 有沒有「uid 非空、又有 merged_into」的髒列、有沒有帳本列落在沒有帳號列的 uid 底下）。
 import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import worker, { _bounty } from '../worker.js';
@@ -110,9 +111,9 @@ const delAccount = (w, body, hdr) => worker.fetch(postTo('/api/account-delete', 
 const S = {
   acct: (w, uid, points = 0, mergedInto = null) => w.db.prepare('INSERT INTO bounty_points (actor,uid,points,merged_into,updated_at) VALUES (?,?,?,?,1)').run(uid, uid, points, mergedInto),
   dev: (w, actor, points = 0, mergedInto = null) => w.db.prepare('INSERT INTO bounty_points (actor,uid,points,merged_into,updated_at) VALUES (?,NULL,?,?,1)').run(actor, points, mergedInto),
-  ledger: (w, actor, kind, delta, ref, day = null, atMs = 1000) => w.db.prepare('INSERT INTO chip_ledger (id,actor,kind,delta,ref,day,created_at) VALUES (?,?,?,?,?,?,?)')
-    .run(`${kind}|${ref}`, actor, kind, delta, ref, day, atMs),
-  unlock: (w, actor, scene, nth, cost, atMs) => w.db.prepare('INSERT INTO garage_unlocks (actor,scene,nth,cost,created_at) VALUES (?,?,?,?,?)').run(actor, scene, nth, cost, atMs),
+  ledger: (w, actor, kind, delta, ref, day = null, atMs = 1000, unit = 'point') => w.db.prepare('INSERT INTO chip_ledger (id,actor,kind,delta,ref,day,created_at,unit) VALUES (?,?,?,?,?,?,?,?)')
+    .run(`${kind}|${ref}`, actor, kind, delta, ref, day, atMs, unit),
+  unlock: (w, actor, scene, nth, cost, atMs, unit = 'point') => w.db.prepare('INSERT INTO garage_unlocks (actor,scene,nth,cost,created_at,unit) VALUES (?,?,?,?,?,?)').run(actor, scene, nth, cost, atMs, unit),
   ride: (w, actor, day, o = {}) => w.db.prepare('INSERT INTO cloud_rides (actor,day,train_key,sec,request_id,created_at,simulator) VALUES (?,?,?,?,?,?,?)')
     .run(actor, day, 'mrt|BR|seed', 700, o.requestId === undefined ? null : o.requestId, o.at ?? 1000, o.simulator ? 1 : 0),
   contrib: (w, seg, actor) => w.db.prepare('INSERT INTO bounty_seg_contrib (seg_key,actor,first_ok_at) VALUES (?,?,1)').run(seg, actor),
@@ -127,6 +128,7 @@ const rows = (w, sql, ...p) => w.db.prepare(sql).all(...p).map(r => ({ ...r }));
 const q = {
   bal: (w, a) => w.db.prepare('SELECT COALESCE(SUM(delta),0) n FROM chip_ledger WHERE actor=?').get(a).n,
   nLedger: (w, a) => w.db.prepare('SELECT COUNT(*) c FROM chip_ledger WHERE actor=?').get(a).c,
+  conv: (w, a) => rows(w, "SELECT delta,unit FROM chip_ledger WHERE actor=? AND ref LIKE 'v3points|%'", a),        // v2 籌碼的換算列
   nUnlocks: (w, a) => w.db.prepare('SELECT COUNT(*) c FROM garage_unlocks WHERE actor=?').get(a).c,
   unlocks: (w, a) => rows(w, 'SELECT scene,nth,cost,created_at FROM garage_unlocks WHERE actor=? ORDER BY nth', a),
   nRides: (w, a) => w.db.prepare('SELECT COUNT(*) c FROM cloud_rides WHERE actor=?').get(a).c,
@@ -141,7 +143,7 @@ const q = {
 const dump = (w, omit = []) => canon({
   samples: rows(w, 'SELECT id,actor,sys,ln_id,train_no,dir,trip_date,payload,verdict FROM bounty_samples ORDER BY id'),
   claims: rows(w, 'SELECT id,actor,seg_key,train_kind,dir,kind,slot,points_locked,claimed_at,expires_at,status FROM bounty_claims ORDER BY id'),
-  ledger: rows(w, 'SELECT id,actor,kind,delta,ref,day,created_at FROM chip_ledger ORDER BY id'),
+  ledger: rows(w, 'SELECT id,actor,kind,delta,ref,day,created_at,unit FROM chip_ledger ORDER BY id'),
   unlocks: rows(w, 'SELECT * FROM garage_unlocks ORDER BY actor,scene'),
   rides: rows(w, 'SELECT * FROM cloud_rides ORDER BY actor,day'),
   contrib: rows(w, 'SELECT * FROM bounty_seg_contrib ORDER BY seg_key,actor'),
@@ -149,7 +151,7 @@ const dump = (w, omit = []) => canon({
   points: rows(w, 'SELECT actor,uid,points,merged_into FROM bounty_points ORDER BY actor').filter(r => !omit.includes(r.actor)),
 });
 // 只看錢包相關的兩張表（兌換與雲端搭乘被擋時「一個字都沒動」的比對）
-const wallet = w => canon({ ledger: rows(w, 'SELECT id,actor,kind,delta,ref,day,created_at FROM chip_ledger ORDER BY id'),
+const wallet = w => canon({ ledger: rows(w, 'SELECT id,actor,kind,delta,ref,day,created_at,unit FROM chip_ledger ORDER BY id'),
   unlocks: rows(w, 'SELECT * FROM garage_unlocks ORDER BY actor,scene'), rides: rows(w, 'SELECT * FROM cloud_rides ORDER BY actor,day') });
 const isAcct = (w, a, extra = {}) => same(q.point(w, a), { uid: a, points: 0, merged_into: null, ...extra });
 
@@ -158,29 +160,29 @@ await attempt('A1', async () => {
   const w = world();
   // 受害者 V：帳號列（40 點）、v2 四張表、v1 樣本與認領各有東西，還有一台併進 V 的裝置 DV
   S.acct(w, V, 40); S.dev(w, DV, 0, V);
-  S.ledger(w, V, 'adjust', 10, 'a1-adj'); S.ledger(w, V, 'redeem', -4, 'a1-red'); S.unlock(w, V, 'south-coast', 1, 4, 1000);
+  S.ledger(w, V, 'adjust', 500, 'a1-adj'); S.ledger(w, V, 'redeem', -200, 'a1-red'); S.unlock(w, V, 'south-coast', 1, 200, 1000);
   S.ride(w, V, '2026-07-11', { requestId: 'a1-r11' }); S.board(w, SEG, { distinct: 5 }); S.contrib(w, SEG, V);
   S.sample(w, V, 'a1-s1'); S.claim(w, V, 'a1-c1');
-  S.ledger(w, A, 'adjust', 2, 'a1-attacker');                    // 攻擊者自己有 2 顆籌碼（沒有 bounty_points 列）
+  S.ledger(w, A, 'adjust', 100, 'a1-attacker');                  // 攻擊者自己有 100 點（沒有 bounty_points 列）
   const before = dump(w, [A]);
   const r = await merge(w, V, A);
   ok('A1a 攻擊者（帶自己的有效 Bearer）拿受害者的 uid 當來源合併 → 400 not_a_device', r.status === 400 && r.json && r.json.error === 'not_a_device', r.text);
   ok('A1b 受害者的點數列與 v2 四張表、樣本、認領、看板、去重貢獻逐列都沒動（攻擊者的帳號列除外）', dump(w, [A]) === before, '');
   const rv = await chipsMe(w, '', as(V));
-  ok('A1c 受害者帶自己的 Bearer 讀 chips-me：餘額 6、已解鎖 south-coast——自己的帳還在自己名下',
-    rv.status === 200 && rv.json.balance === 6 && rv.json.unlocked.length === 1 && rv.json.unlocked[0].scene === 'south-coast', rv.text);
+  ok('A1c 受害者帶自己的 Bearer 讀 chips-me：餘額 300、已解鎖 south-coast——自己的帳還在自己名下',
+    rv.status === 200 && rv.json.balance === 300 && rv.json.unlocked.length === 1 && rv.json.unlocked[0].scene === 'south-coast', rv.text);
   const mv = await boMe(w, '', as(V));
   ok('A1d 受害者帶自己的 Bearer 讀 bounty-me：點數 40、身分是自己（不是被導向攻擊者）', mv.status === 200 && mv.json.points === 40 && mv.json.actor === V, mv.text);
   const ra = await chipsMe(w, '', as(A));
-  ok('A1e 攻擊者什麼都沒拿到：Bearer 讀 chips-me 餘額仍是自己的 2、沒有解鎖；他的點數列是 0 點的帳號列',
-    ra.status === 200 && ra.json.balance === 2 && ra.json.unlocked.length === 0 && same(q.point(w, A), { uid: A, points: 0, merged_into: null }), ra.text + ' ' + JSON.stringify(q.point(w, A)));
+  ok('A1e 攻擊者什麼都沒拿到：Bearer 讀 chips-me 餘額仍是自己的 100、沒有解鎖；他的點數列是 0 點的帳號列',
+    ra.status === 200 && ra.json.balance === 100 && ra.json.unlocked.length === 0 && same(q.point(w, A), { uid: A, points: 0, merged_into: null }), ra.text + ' ' + JSON.stringify(q.point(w, A)));
   const r2 = await merge(w, V, A);
   ok('A1f 攻擊者再試一次：仍是 400、庫仍逐列相同（不因重試而鬆動）', r2.status === 400 && r2.json.error === 'not_a_device' && dump(w, [A]) === before, r2.text);
   // 對照組：同一支合併端點，來源是一台一般的匿名裝置 → 照常搬（不能是「一律 400」才綠）
   const w2 = world();
-  S.ledger(w2, DANON, 'adjust', 5, 'a1-ctl');
+  S.ledger(w2, DANON, 'adjust', 250, 'a1-ctl');
   const rc = await merge(w2, DANON, A);
-  ok('A1g [對照] 來源是匿名裝置 → 200 merged:true，5 顆籌碼搬進帳號', rc.status === 200 && rc.json.merged === true && q.bal(w2, A) === 5 && q.nLedger(w2, DANON) === 0, rc.text);
+  ok('A1g [對照] 來源是匿名裝置 → 200 merged:true，250 點搬進帳號', rc.status === 200 && rc.json.merged === true && q.bal(w2, A) === 250 && q.nLedger(w2, DANON) === 0, rc.text);
 });
 
 // ═══ A1b：舊版攻擊留下的髒列（帳號列＋merged_into 指向攻擊者）不能再被同一個攻擊者搬 ═══════════════════════════════
@@ -188,34 +190,34 @@ await attempt('A1b', async () => {
   const w = world();
   // 舊版的合併劫持（拿別人的 uid 當合併來源）做完之後 V 的列長這樣：uid 是自己、卻掛著 merged_into＝攻擊者；V 名下的東西還在
   S.acct(w, V, 7, A);
-  S.ledger(w, V, 'adjust', 10, 'a1b-adj'); S.unlock(w, V, 'shifen', 1, 4, 1000); S.ride(w, V, '2026-07-11', { requestId: 'a1b-r' });
+  S.ledger(w, V, 'adjust', 500, 'a1b-adj'); S.unlock(w, V, 'shifen', 1, 200, 1000); S.ride(w, V, '2026-07-11', { requestId: 'a1b-r' });
   S.board(w, SEG, { distinct: 5 }); S.contrib(w, SEG, V); S.sample(w, V, 'a1b-s'); S.claim(w, V, 'a1b-c');
   const before = dump(w, [A]);
   const r = await merge(w, V, A);
   ok('A1b1 髒列（帳號列 merged_into＝攻擊者）再被攻擊者拿來合併 → 400 not_a_device，而且逐列沒動（守衛不能只看 merged_into＝我）',
     r.status === 400 && r.json.error === 'not_a_device' && dump(w, [A]) === before, r.text);
   const rv = await chipsMe(w, '', as(V)), mv = await boMe(w, '', as(V));
-  ok('A1b2 受害者帶自己的 Bearer 讀 chips-me／bounty-me：看到的是自己的帳（餘額 10、點數 7），不是被 merged_into 導向的攻擊者',
-    rv.json.balance === 10 && rv.json.unlocked.length === 1 && mv.json.points === 7 && mv.json.actor === V, rv.text + ' | ' + mv.text);
+  ok('A1b2 受害者帶自己的 Bearer 讀 chips-me／bounty-me：看到的是自己的帳（餘額 500、點數 7），不是被 merged_into 導向的攻擊者',
+    rv.json.balance === 500 && rv.json.unlocked.length === 1 && mv.json.points === 7 && mv.json.actor === V, rv.text + ' | ' + mv.text);
 });
 
 // ═══ A2：還沒出現過的 uid 被攻擊者預先佔位（標成墓碑），本人第一次帶 Bearer 合併時要能收回 ══════════════════════════
 await attempt('A2', async () => {
   const w = world();
-  S.ledger(w, A, 'adjust', 7, 'a2-attacker');
+  S.ledger(w, A, 'adjust', 350, 'a2-attacker');
   const pre = await merge(w, W, A);
   ok('A2a [fixture] 攻擊者把「還沒出現過的 uid（W）」當來源合併：查不到任何東西可搬，200 merged:true，W 被標成併進攻擊者的墓碑',
     pre.status === 200 && same(q.point(w, W), { uid: null, points: 0, merged_into: A }), pre.text + ' ' + JSON.stringify(q.point(w, W)));
-  S.ledger(w, DW, 'adjust', 5, 'a2-dw');
+  S.ledger(w, DW, 'adjust', 250, 'a2-dw');
   const m = await merge(w, DW, W);
   ok('A2b 本人（W）第一次帶自己的 Bearer 合併自己的裝置 → 200 merged:true，W 的列收回成帳號列（uid＝W、merged_into＝NULL）',
     m.status === 200 && m.json.merged === true && isAcct(w, W), m.text + ' ' + JSON.stringify(q.point(w, W)));
   const rw = await chipsMe(w, '', as(W)), ra = await chipsMe(w, '', as(A));
-  ok('A2c W 帶自己的 Bearer 讀到的是自己裝置的 5 顆，不是攻擊者的 7；攻擊者仍是自己的 7（W 的合併沒有動到他）',
-    rw.json.balance === 5 && ra.json.balance === 7, rw.text + ' | ' + ra.text);
+  ok('A2c W 帶自己的 Bearer 讀到的是自己裝置的 250 點，不是攻擊者的 350；攻擊者仍是自己的 350（W 的合併沒有動到他）',
+    rw.json.balance === 250 && ra.json.balance === 350, rw.text + ' | ' + ra.text);
   const rd = await redeem(w, W, 'south-coast', nextReq(), as(W));
-  ok('A2d W 之後用自己的 Bearer 兌換（actor＝W）成功：不是 403 wrong_account（它不再是「併進攻擊者的墓碑」）；扣的是 W 的帳（5→1）',
-    rd.status === 200 && rd.json.balance === 1 && q.nUnlocks(w, W) === 1 && q.nUnlocks(w, A) === 0, rd.text);
+  ok('A2d W 之後用自己的 Bearer 兌換（actor＝W）成功：不是 403 wrong_account（它不再是「併進攻擊者的墓碑」）；扣的是 W 的帳（250→50）',
+    rd.status === 200 && rd.json.balance === 50 && q.nUnlocks(w, W) === 1 && q.nUnlocks(w, A) === 0, rd.text);
   const noTok = await redeem(w, W, 'shifen', nextReq());
   ok('A2e W 已經是帳號：不帶 token 的兌換 → 401 auth_required（不會被當匿名裝置）', noTok.status === 401 && noTok.json.error === 'auth_required', noTok.text);
 });
@@ -233,11 +235,11 @@ await attempt('A2b', async () => {
 await attempt('A3', async () => {
   const w = world();
   S.acct(w, X, 5); S.dev(w, D, 0, X);
-  S.ledger(w, X, 'adjust', 9, 'a3-x'); S.ledger(w, X, 'redeem', -4, 'a3-x-r'); S.unlock(w, X, 'shifen', 1, 4, 1000);
+  S.ledger(w, X, 'adjust', 450, 'a3-x'); S.ledger(w, X, 'redeem', -200, 'a3-x-r'); S.unlock(w, X, 'shifen', 1, 200, 1000);
   S.ride(w, X, '2026-07-11', { requestId: 'a3-r' }); S.board(w, SEG, { distinct: 5 }); S.contrib(w, SEG, X);
   S.sample(w, X, 'a3-xs'); S.claim(w, X, 'a3-xc');
-  // D 併進 X 之後才寫進來的東西（遲到的樣本與認領、直接寫的籌碼等）仍掛在 D 名下：Y 不能把它們搬走
-  S.sample(w, D, 'a3-late-s'); S.claim(w, D, 'a3-late-c'); S.ledger(w, D, 'adjust', 3, 'a3-late-l'); S.unlock(w, D, 'viaduct', 1, 4, 2000);
+  // D 併進 X 之後才寫進來的東西（遲到的樣本與認領、直接寫的點數等）仍掛在 D 名下：Y 不能把它們搬走
+  S.sample(w, D, 'a3-late-s'); S.claim(w, D, 'a3-late-c'); S.ledger(w, D, 'adjust', 150, 'a3-late-l'); S.unlock(w, D, 'viaduct', 1, 200, 2000);
   S.ride(w, D, '2026-07-12', { requestId: 'a3-late-r' }); S.contrib(w, 'tra_sched|南迴線|太麻里|金崙', D);
   const before = dump(w, [Y]);
   const r = await merge(w, D, Y);
@@ -247,7 +249,7 @@ await attempt('A3', async () => {
   ok('A3c 例外的那一列是 S0 補出的 Y 帳號列（uid＝Y、0 點、沒有 merged_into）；D 仍是併進 X 的墓碑', isAcct(w, Y) && same(q.point(w, D), { uid: null, points: 0, merged_into: X }),
     JSON.stringify([q.point(w, Y), q.point(w, D)]));
   const ry = await chipsMe(w, '', as(Y)), rx = await chipsMe(w, '', as(X));
-  ok('A3d Y 什麼都沒拿到（餘額 0、沒有解鎖）；X 的帳不變（餘額 5＝9−4、解鎖 shifen）', ry.json.balance === 0 && ry.json.unlocked.length === 0 && rx.json.balance === 5 && rx.json.unlocked.length === 1, ry.text + ' | ' + rx.text);
+  ok('A3d Y 什麼都沒拿到（餘額 0、沒有解鎖）；X 的帳不變（餘額 250＝450−200、解鎖 shifen）', ry.json.balance === 0 && ry.json.unlocked.length === 0 && rx.json.balance === 250 && rx.json.unlocked.length === 1, ry.text + ' | ' + rx.text);
   // 對照組：X 自己重跑同一個合併 → 200 merged:false（冪等，不是「一律 409」）
   const again = await merge(w, D, X);
   ok('A3e [對照] 併進 X 的裝置由 X 本人重跑合併 → 200 merged:false（冪等）', again.status === 200 && again.json.merged === false, again.text);
@@ -255,7 +257,7 @@ await attempt('A3', async () => {
 await attempt('A3b', async () => {
   // 從沒合併過的帳號 U：用自己的 Bearer 送過搭乘之後，它就是帳號——之後不帶 token 的三種錢包請求都要被擋
   const w = world();
-  S.ledger(w, U, 'adjust', 10, 'a3b-u');                       // U 名下已經有籌碼（沒有 bounty_points 列、從沒合併過）
+  S.ledger(w, U, 'adjust', 10, 'a3b-u', null, 1000, 'chip');   // U 名下有 v2 的 10 顆籌碼、還沒換算（沒有 bounty_points 列、從沒合併過）
   const r = await ride(w, U, {}, as(U));
   ok('A3b1 [fixture] U 用自己的 Bearer 送雲端搭乘（actor＝U）→ 200，搭乘列在 U 名下、U 有了帳號列', r.status === 200 && q.nRides(w, U) === 1 && isAcct(w, U), r.text + ' ' + JSON.stringify(q.point(w, U)));
   const w0 = wallet(w);
@@ -264,9 +266,11 @@ await attempt('A3b', async () => {
   const cm = await chipsMe(w, '?actor=' + U);
   ok('A3b2 之後不帶 token、actor＝U 的兌換／雲端搭乘／chips-me 讀取 → 三個都是 401 auth_required（uid 不是憑證）',
     [rd, rr, cm].every(x => x.status === 401 && x.json && x.json.error === 'auth_required'), JSON.stringify([rd.json, rr.json, cm.json]));
-  ok('A3b3 被擋的請求什麼都沒寫（帳本、解鎖、雲端搭乘逐列相同）、餘額仍 10', wallet(w) === w0 && q.bal(w, U) === 10, '');
+  ok('A3b3 被擋的請求什麼都沒寫（帳本、解鎖、雲端搭乘逐列相同）：連 v2 籌碼的換算列都沒有補（換算只在驗過身分之後做）',
+    wallet(w) === w0 && q.conv(w, U).length === 0, JSON.stringify(q.conv(w, U)));
   const rd2 = await redeem(w, U, 'south-coast', nextReq(), as(U));
-  ok('A3b4 [對照] 同一個 U 帶自己的 Bearer 兌換 → 200（不是「一律擋」才綠）', rd2.status === 200 && rd2.json.balance === 6, rd2.text);
+  ok('A3b4 [對照] 同一個 U 帶自己的 Bearer 兌換 → 200（不是「一律擋」才綠）：10 顆換成 500 點＋A3b1 那次搭乘 20 點−第 1 座 200＝餘額 320；換算列這時才補（490 點）',
+    rd2.status === 200 && rd2.json.balance === 320 && same(q.conv(w, U), [{ delta: 490, unit: 'point' }]), rd2.text + ' ' + JSON.stringify(q.conv(w, U)));
 });
 await attempt('A3f', async () => {
   // 髒墓碑：D 早就併進 X，但併走「之後」又被寫進 7 點（例：驗證 cron 在合併的瞬間讀到舊的 merged_into、把點數入在墓碑上）。
@@ -316,7 +320,7 @@ await attempt('A5', async () => {
 // ═══ A6：兌換——actor 是帳號 uid：不帶自己的 Bearer 一律不准花═══════════════════════════════════════
 await attempt('A6', async () => {
   const w = world();
-  S.acct(w, U); S.ledger(w, U, 'adjust', 10, 'a6-u');
+  S.acct(w, U); S.ledger(w, U, 'adjust', 500, 'a6-u');
   const w0 = wallet(w);
   const c0 = fetchCalls.length;
   const noTok = await redeem(w, U, 'south-coast', nextReq());
@@ -326,11 +330,11 @@ await attempt('A6', async () => {
   ok('A6a actor＝帳號 uid：不帶 token → 401 auth_required；帶別人（Z）的 token → 403 wrong_account；壞 token → 401 unauthorized',
     noTok.status === 401 && noTok.json.error === 'auth_required' && other.status === 403 && other.json.error === 'wrong_account' && bad.status === 401 && bad.json.error === 'unauthorized',
     JSON.stringify([noTok.json, other.json, bad.json]));
-  ok('A6b 三個被擋的請求一個字都沒動（帳本、解鎖逐列相同、餘額仍 10）；不帶 token 的那個沒有打 Firebase', wallet(w) === w0 && q.bal(w, U) === 10 && c1 === c0, `calls=${c1 - c0}`);
+  ok('A6b 三個被擋的請求一個字都沒動（帳本、解鎖逐列相同、餘額仍 500）；不帶 token 的那個沒有打 Firebase', wallet(w) === w0 && q.bal(w, U) === 500 && c1 === c0, `calls=${c1 - c0}`);
   const c2 = fetchCalls.length;
   const own = await redeem(w, U, 'south-coast', nextReq(), as(U));
-  ok('A6c 帶自己的 Bearer → 200：第 1 座 nth 1、cost 4、餘額 6；解鎖與 redeem 列都在 U 名下；Firebase 恰好查 1 次',
-    own.status === 200 && own.json.nth === 1 && own.json.cost === 4 && own.json.balance === 6 && q.nUnlocks(w, U) === 1 && fetchCalls.length - c2 === 1, own.text);
+  ok('A6c 帶自己的 Bearer → 200：第 1 座 nth 1、cost 200、餘額 300；解鎖與 redeem 列都在 U 名下；Firebase 恰好查 1 次',
+    own.status === 200 && own.json.nth === 1 && own.json.cost === 200 && own.json.balance === 300 && q.nUnlocks(w, U) === 1 && fetchCalls.length - c2 === 1, own.text);
   // Z 被擋的那兩次也各自補出了 Z 的帳號列（S0），但 Z 沒有拿到任何東西
   ok('A6d 被擋的 Z 沒有拿到任何東西（Z 名下帳本 0、解鎖 0）', q.nLedger(w, Z) === 0 && q.nUnlocks(w, Z) === 0, '');
 });
@@ -338,18 +342,18 @@ await attempt('A6', async () => {
 // ═══ A7：兌換——actor 是併進帳號 U 的裝置 D：同樣要 U 的 Bearer ═════════════════════════════════════════════════
 await attempt('A7', async () => {
   const w = world();
-  S.acct(w, U); S.dev(w, D, 0, U); S.ledger(w, U, 'adjust', 10, 'a7-u');
-  S.ledger(w, DANON, 'adjust', 10, 'a7-anon');
+  S.acct(w, U); S.dev(w, D, 0, U); S.ledger(w, U, 'adjust', 500, 'a7-u');
+  S.ledger(w, DANON, 'adjust', 500, 'a7-anon');
   const w0 = wallet(w);
   const noTok = await redeem(w, D, 'south-coast', nextReq());
   const other = await redeem(w, D, 'south-coast', nextReq(), as(Z));
   ok('A7a 併進 U 的舊裝置 id：不帶 token → 401 auth_required；帶別人（Z）的 token → 403 wrong_account；帳本與解鎖一個字都沒動',
     noTok.status === 401 && noTok.json.error === 'auth_required' && other.status === 403 && other.json.error === 'wrong_account' && wallet(w) === w0, JSON.stringify([noTok.json, other.json]));
   const own = await redeem(w, D, 'south-coast', nextReq(), as(U));
-  ok('A7b 帶 U 的 Bearer → 200，扣的是 U 的帳：U 名下 1 座解鎖、1 筆 redeem（−4）、餘額 6；裝置名下什麼都沒有',
-    own.status === 200 && own.json.balance === 6 && q.nUnlocks(w, U) === 1 && q.nUnlocks(w, D) === 0 && q.nLedger(w, D) === 0, own.text);
+  ok('A7b 帶 U 的 Bearer → 200，扣的是 U 的帳：U 名下 1 座解鎖、1 筆 redeem（−200）、餘額 300；裝置名下什麼都沒有',
+    own.status === 200 && own.json.balance === 300 && q.nUnlocks(w, U) === 1 && q.nUnlocks(w, D) === 0 && q.nLedger(w, D) === 0, own.text);
   const anon = await redeem(w, DANON, 'south-coast', nextReq());
-  ok('A7c [對照] 從沒併過的匿名裝置憑自己的 id 兌換 → 200（不帶 token 也行；不是「一律擋」才綠）', anon.status === 200 && anon.json.balance === 6 && q.nUnlocks(w, DANON) === 1, anon.text);
+  ok('A7c [對照] 從沒併過的匿名裝置憑自己的 id 兌換 → 200（不帶 token 也行；不是「一律擋」才綠）', anon.status === 200 && anon.json.balance === 300 && q.nUnlocks(w, DANON) === 1, anon.text);
 });
 
 // ═══ A8：雲端搭乘——同一套規則，加上「替受害者佔掉當天那一格」的攻擊══════════════════════════════════════
@@ -378,23 +382,23 @@ await attempt('A8', async () => {
 // ═══ A9：chips-me——?actor= 的錢包規則、限流、Bearer 不跟 merged_into═════════════════════════════
 await attempt('A9', async () => {
   const w = world();
-  S.acct(w, U); S.dev(w, D, 0, U); S.ledger(w, U, 'adjust', 6, 'a9-u'); S.unlock(w, U, 'shifen', 1, 4, 1000);
-  S.ledger(w, DANON, 'adjust', 3, 'a9-anon');
+  S.acct(w, U); S.dev(w, D, 0, U); S.ledger(w, U, 'adjust', 300, 'a9-u'); S.unlock(w, U, 'shifen', 1, 200, 1000);
+  S.ledger(w, DANON, 'adjust', 150, 'a9-anon');
   const [byDev, byUid, byAnon, byBearer] = [await chipsMe(w, '?actor=' + D), await chipsMe(w, '?actor=' + U), await chipsMe(w, '?actor=' + DANON), await chipsMe(w, '', as(U))];
   ok('A9a ?actor＝併進帳號的裝置 → 401 auth_required、?actor＝帳號 uid → 401 auth_required；回應裡沒有任何餘額或解鎖',
     [byDev, byUid].every(r => r.status === 401 && same(r.json, { error: 'auth_required' })), JSON.stringify([byDev.json, byUid.json]));
-  ok('A9b ?actor＝匿名裝置 → 200 餘額 3（憑 installId 讀自己的帳）；帶帳號 Bearer → 200 餘額 6、解鎖 shifen',
-    byAnon.status === 200 && byAnon.json.balance === 3 && byBearer.status === 200 && byBearer.json.balance === 6 && byBearer.json.unlocked[0].scene === 'shifen', JSON.stringify([byAnon.json, byBearer.json]));
+  ok('A9b ?actor＝匿名裝置 → 200 餘額 150（憑 installId 讀自己的帳）；帶帳號 Bearer → 200 餘額 300、解鎖 shifen',
+    byAnon.status === 200 && byAnon.json.balance === 150 && byBearer.status === 200 && byBearer.json.balance === 300 && byBearer.json.unlocked[0].scene === 'shifen', JSON.stringify([byAnon.json, byBearer.json]));
   const both = await chipsMe(w, '?actor=' + DANON, as(U));
-  ok('A9c Bearer 與 ?actor= 都帶：Bearer 贏、?actor= 被無視（看到的是 U 的 6，不是匿名裝置的 3）', both.status === 200 && both.json.balance === 6, both.text);
+  ok('A9c Bearer 與 ?actor= 都帶：Bearer 贏、?actor= 被無視（看到的是 U 的 300，不是匿名裝置的 150）', both.status === 200 && both.json.balance === 300, both.text);
   const bad = await chipsMe(w, '?actor=' + DANON, as(null));
   ok('A9d 壞 Bearer ＋ 匿名裝置的 ?actor= → 401 unauthorized（不降級成匿名讀取）', bad.status === 401 && bad.json.error === 'unauthorized', bad.text);
   // 舊版合併劫持留下的髒列：V 的列是帳號列、卻掛著 merged_into＝攻擊者 A；Bearer 讀取不能被導向 A 的帳
   const w2 = world();
-  S.acct(w2, V, 40, A); S.acct(w2, A, 77); S.ledger(w2, V, 'adjust', 6, 'a9-v'); S.ledger(w2, A, 'adjust', 99, 'a9-a');
+  S.acct(w2, V, 40, A); S.acct(w2, A, 77); S.ledger(w2, V, 'adjust', 300, 'a9-v'); S.ledger(w2, A, 'adjust', 4950, 'a9-a');
   const rv = await chipsMe(w2, '', as(V)), mv = await boMe(w2, '', as(V));
-  ok('A9e 髒列（V 是帳號列、merged_into＝攻擊者）：V 帶自己的 Bearer 讀 chips-me 是自己的 6（不是攻擊者的 99）、讀 bounty-me 是自己的 40 點（不是 77）',
-    rv.json.balance === 6 && mv.json.points === 40 && mv.json.actor === V, rv.text + ' | ' + mv.text);
+  ok('A9e 髒列（V 是帳號列、merged_into＝攻擊者）：V 帶自己的 Bearer 讀 chips-me 是自己的 300（不是攻擊者的 4950）、讀 bounty-me 是自己的 40 點（不是 77）',
+    rv.json.balance === 300 && mv.json.points === 40 && mv.json.actor === V, rv.text + ' | ' + mv.text);
   // bounty-me 的 ?actor= 走同一條錢包規則：舊版併進帳號的裝置不帶 Bearer 就讀得到帳號的點數與認領——
   // 裝置 token 是別人拿得到的字串（分享出去的舊網址、被看到的畫面），拿著它就能看帳號的東西。現在要帳號的 Bearer，與 chips-me 同一條。
   const w3 = world();
@@ -485,43 +489,43 @@ for (const [tag, body] of [['A11f', {}], ['A11g', { actor: DANON }]]) {
 // ═══ A12：兌換重送——同一個 requestId 不能拿去兌換另一座═══════════════════════════════════════════════
 await attempt('A12', async () => {
   const w = world();
-  S.ledger(w, DANON, 'adjust', 30, 'a12-seed');
-  const r1 = await redeem(w, DANON, 'south-coast', 'req-a12-0001');       // 第 1 座 4
-  const r2 = await redeem(w, DANON, 'shifen', 'req-a12-0002');            // 第 2 座 8
-  ok('A12a [fixture] 兩座都兌換成功：4＋8，餘額 18', r1.status === 200 && r2.status === 200 && r1.json.cost === 4 && r2.json.cost === 8 && q.bal(w, DANON) === 18, JSON.stringify([r1.json, r2.json]));
+  S.ledger(w, DANON, 'adjust', 1500, 'a12-seed');
+  const r1 = await redeem(w, DANON, 'south-coast', 'req-a12-0001');       // 第 1 座 200
+  const r2 = await redeem(w, DANON, 'shifen', 'req-a12-0002');            // 第 2 座 300
+  ok('A12a [fixture] 兩座都兌換成功：200＋300，餘額 1000', r1.status === 200 && r2.status === 200 && r1.json.cost === 200 && r2.json.cost === 300 && q.bal(w, DANON) === 1000, JSON.stringify([r1.json, r2.json]));
   const w0 = wallet(w);
   const bad = await redeem(w, DANON, 'shifen', 'req-a12-0001');           // 同一個 requestId（當初兌換 south-coast）拿去兌換「剛好已經解鎖過」的 shifen
   ok('A12b 同一個 requestId 拿去兌換另一座（那一座剛好已經解鎖過）→ 409 conflict（舊版回 200，把別座的解鎖當成這一筆的結果）；一個字都沒動',
     bad.status === 409 && bad.json.error === 'conflict' && wallet(w) === w0, bad.text);
   const same1 = await redeem(w, DANON, 'south-coast', 'req-a12-0001');
-  ok('A12c 同 requestId、同場景重送 → 200：scene south-coast、cost 4（當初扣的）、nth 1；balance 18／unlocked 2 座是現況；沒有再扣',
-    same1.status === 200 && same1.json.scene === 'south-coast' && same1.json.cost === 4 && same1.json.nth === 1 && same1.json.balance === 18 && same1.json.unlocked.length === 2 && wallet(w) === w0, same1.text);
-  // 合併之後 nth 重排：U 有 shifen@100（第 1 座 4）與 south-coast@1000（第 2 座 8）；裝置 D 較晚才兌換 south-coast（第 1 座 4）→ 併進 U 之後
-  // 較晚那份被退款丟掉、D 的那筆 redeem 帳本列改名成 U。重送 D 當初的 requestId：cost 仍是當初扣的 4（不是留下那份的 8）、nth 是現況 2（不是當初的 1）
+  ok('A12c 同 requestId、同場景重送 → 200：scene south-coast、cost 200（當初扣的）、nth 1；balance 1000／unlocked 2 座是現況；沒有再扣',
+    same1.status === 200 && same1.json.scene === 'south-coast' && same1.json.cost === 200 && same1.json.nth === 1 && same1.json.balance === 1000 && same1.json.unlocked.length === 2 && wallet(w) === w0, same1.text);
+  // 合併之後 nth 重排：U 有 shifen@100（第 1 座 200）與 south-coast@1000（第 2 座 300）；裝置 D 較晚才兌換 south-coast（第 1 座 200）→ 併進 U 之後
+  // 較晚那份被退款丟掉、D 的那筆 redeem 帳本列改名成 U。重送 D 當初的 requestId：cost 仍是當初扣的 200（不是留下那份的 300）、nth 是現況 2（不是當初的 1）
   const w2 = world();
-  S.acct(w2, U); S.ledger(w2, U, 'adjust', 30, 'a12-u'); S.ledger(w2, U, 'redeem', -4, 'a12-u-r1'); S.ledger(w2, U, 'redeem', -8, 'a12-u-r2');
-  S.unlock(w2, U, 'shifen', 1, 4, 100); S.unlock(w2, U, 'south-coast', 2, 8, 1000);
-  S.ledger(w2, D, 'adjust', 10, 'a12-d');
+  S.acct(w2, U); S.ledger(w2, U, 'adjust', 1500, 'a12-u'); S.ledger(w2, U, 'redeem', -200, 'a12-u-r1'); S.ledger(w2, U, 'redeem', -300, 'a12-u-r2');
+  S.unlock(w2, U, 'shifen', 1, 200, 100); S.unlock(w2, U, 'south-coast', 2, 300, 1000);
+  S.ledger(w2, D, 'adjust', 500, 'a12-d');
   const first = await redeem(w2, D, 'south-coast', 'req-a12-0003');
   const mg = await merge(w2, D, U);
   const replay = await redeem(w2, D, 'south-coast', 'req-a12-0003', as(U));
-  ok('A12d [fixture] D 匿名兌換 south-coast 成功（第 1 座 4）；合併進 U：較晚那份退款丟掉、U 的 south-coast 是第 2 座 cost 8',
-    first.status === 200 && first.json.nth === 1 && first.json.cost === 4 && mg.json.merged === true && same(q.unlocks(w2, U).map(u => [u.scene, u.nth, u.cost]), [['shifen', 1, 4], ['south-coast', 2, 8]]), JSON.stringify(q.unlocks(w2, U)));
-  ok('A12e 合併之後帶 U 的 Bearer 重送 D 當初的 requestId → 200：cost 4（當初扣的價，不是留下那份的 8）、nth 2（現況，不是當初的 1）、balance／unlocked 讀現況；沒有再扣',
-    replay.status === 200 && replay.json.scene === 'south-coast' && replay.json.cost === 4 && replay.json.nth === 2 && replay.json.unlocked.length === 2 &&
-    replay.json.balance === q.bal(w2, U) && q.bal(w2, U) === 30 - 4 - 8 + 10 - 4 + 4, JSON.stringify(replay.json) + ' bal=' + q.bal(w2, U));
+  ok('A12d [fixture] D 匿名兌換 south-coast 成功（第 1 座 200）；合併進 U：較晚那份退款丟掉、U 的 south-coast 是第 2 座 cost 300',
+    first.status === 200 && first.json.nth === 1 && first.json.cost === 200 && mg.json.merged === true && same(q.unlocks(w2, U).map(u => [u.scene, u.nth, u.cost]), [['shifen', 1, 200], ['south-coast', 2, 300]]), JSON.stringify(q.unlocks(w2, U)));
+  ok('A12e 合併之後帶 U 的 Bearer 重送 D 當初的 requestId → 200：cost 200（當初扣的價，不是留下那份的 300）、nth 2（現況，不是當初的 1）、balance／unlocked 讀現況；沒有再扣',
+    replay.status === 200 && replay.json.scene === 'south-coast' && replay.json.cost === 200 && replay.json.nth === 2 && replay.json.unlocked.length === 2 &&
+    replay.json.balance === q.bal(w2, U) && q.bal(w2, U) === 1500 - 200 - 300 + 500 - 200 + 200, JSON.stringify(replay.json) + ' bal=' + q.bal(w2, U));
 });
 
 // ═══ A13：雲端搭乘重送——兩天之後、合併之後都要對得上══════════════════════════════════════════════════
 await attempt('A13', async () => {
   const w = world();
-  S.ride(w, DANON, '2026-07-20', { requestId: 'a13-old1' }); S.ride(w, DANON, '2026-07-21', { requestId: 'a13-old2' });     // 已有 2 次：這次是第 3 次、剛好發第 1 顆
+  S.ride(w, DANON, '2026-07-20', { requestId: 'a13-old1' }); S.ride(w, DANON, '2026-07-21', { requestId: 'a13-old2' });     // 已有 2 次（種子只寫搭乘列）：這次是第 3 次、入帳 20 點
   const first = await ride(w, DANON, { requestId: 'req-a13-0001' });
-  ok('A13a [fixture] 第 3 次搭乘 → 200 rides 3、chipAwarded true、拿到 1 顆雲端籌碼', first.status === 200 && first.json.rides === 3 && first.json.chipAwarded === true && q.bal(w, DANON) === 1, first.text);
+  ok('A13a [fixture] 第 3 次搭乘 → 200 rides 3、chipAwarded true、入帳 20 點', first.status === 200 && first.json.rides === 3 && first.json.chipAwarded === true && first.json.points === 20 && q.bal(w, DANON) === 20, first.text);
   w.at(NOW_MS + 2 * 86400e3);                                                             // 兩天之後：第一次的營運日早就出了「台北今天或昨天」的窗
   const replay = await ride(w, DANON, { requestId: 'req-a13-0001' });
-  ok('A13b 兩天後用同一個 requestId 重送（body 仍是原本那一天）→ 200 且與第一次逐位元相同（不是 400 bad_day）；沒有再發籌碼（餘額仍 1）',
-    replay.status === 200 && replay.text === first.text && q.bal(w, DANON) === 1 && q.nRides(w, DANON) === 3, replay.text + ' vs ' + first.text);
+  ok('A13b 兩天後用同一個 requestId 重送（body 仍是原本那一天）→ 200 且與第一次逐位元相同（不是 400 bad_day）；沒有再入帳（餘額仍 20）',
+    replay.status === 200 && replay.text === first.text && q.bal(w, DANON) === 20 && q.nRides(w, DANON) === 3, replay.text + ' vs ' + first.text);
   const fresh = await ride(w, DANON, { requestId: 'req-a13-0002', day: TODAY });
   ok('A13c [對照] 兩天後「新的」搭乘（新 requestId）送原本那一天 → 仍是 400 bad_day（窗口只移到重送判斷之後，沒有被拿掉）', fresh.status === 400 && fresh.json.error === 'bad_day', fresh.text);
   const wrongDay = await ride(w, DANON, { requestId: 'req-a13-0001', day: YESTERDAY });
@@ -548,15 +552,15 @@ await attempt('A13', async () => {
 // ═══ A14：chips-me 與 bounty-me 的 ?actor= 限流════════════════════════════════════════════════════════════════════
 await attempt('A14', async () => {
   const wBlk = world({ env: { BOUNTY_LIMITER: limiter(true) } });
-  S.ledger(wBlk, DANON, 'adjust', 3, 'a14-anon'); S.acct(wBlk, U); S.ledger(wBlk, U, 'adjust', 6, 'a14-u');
+  S.ledger(wBlk, DANON, 'adjust', 150, 'a14-anon'); S.acct(wBlk, U); S.ledger(wBlk, U, 'adjust', 300, 'a14-u');
   const noBearer = await chipsMe(wBlk, '?actor=' + DANON);
   ok('A14a ?actor= 路徑被 BOUNTY_LIMITER 擋下 → 429 rate_limited，本文沒有餘額', noBearer.status === 429 && same(noBearer.json, { error: 'rate_limited' }), noBearer.text);
   const withBearer = await chipsMe(wBlk, '', as(U));
-  ok('A14b [對照] 同一個被擋的 BOUNTY_LIMITER 不影響 Bearer 那條（Bearer 走 AUTH_LIMITER）→ 200 餘額 6', withBearer.status === 200 && withBearer.json.balance === 6, withBearer.text);
+  ok('A14b [對照] 同一個被擋的 BOUNTY_LIMITER 不影響 Bearer 那條（Bearer 走 AUTH_LIMITER）→ 200 餘額 300', withBearer.status === 200 && withBearer.json.balance === 300, withBearer.text);
   const wAuthBlk = world({ env: { AUTH_LIMITER: limiter(true) } });
-  S.ledger(wAuthBlk, DANON, 'adjust', 3, 'a14-anon2');
+  S.ledger(wAuthBlk, DANON, 'adjust', 150, 'a14-anon2');
   const plain = await chipsMe(wAuthBlk, '?actor=' + DANON), bearerBlk = await chipsMe(wAuthBlk, '', as(U));
-  ok('A14c [對照] AUTH_LIMITER 被擋：?actor= 路徑照樣 200（它不走 AUTH_LIMITER）；Bearer 那條 429', plain.status === 200 && plain.json.balance === 3 && bearerBlk.status === 429, JSON.stringify([plain.json, bearerBlk.json]));
+  ok('A14c [對照] AUTH_LIMITER 被擋：?actor= 路徑照樣 200（它不走 AUTH_LIMITER）；Bearer 那條 429', plain.status === 200 && plain.json.balance === 150 && bearerBlk.status === 429, JSON.stringify([plain.json, bearerBlk.json]));
   // bounty-me 的 ?actor= 路徑：同樣不驗身分、免費，舊版沒有限流，一個匿名 actor 連打就能大量燒 D1 讀取
   S.dev(wBlk, DANON, 4); S.dev(wAuthBlk, DANON, 4);
   const meBlk = await boMe(wBlk, '?actor=' + DANON), meBearer = await boMe(wBlk, '', as(U));
@@ -587,7 +591,7 @@ await attempt('A15', async () => {
 await attempt('A16', async () => {
   const F = ['uid-fresh-00001', 'uid-fresh-00002', 'uid-fresh-00003', 'uid-fresh-00004', 'uid-fresh-00005', 'uid-fresh-00006', 'uid-fresh-00007'];
   const w = world();
-  S.board(w, SEG, { distinct: 0 }); S.ledger(w, DANON, 'adjust', 30, 'a16-anon');
+  S.board(w, SEG, { distinct: 0 }); S.ledger(w, DANON, 'adjust', 1500, 'a16-anon');
   // 每個端點各用一位從沒出現過的 uid，對象是匿名裝置（身分不受 Bearer 影響），只看帳號列有沒有被補出來
   const r1 = await redeem(w, DANON, 'south-coast', nextReq(), as(F[0]));
   const r2 = await ride(w, DANON, {}, as(F[1]));

@@ -1,4 +1,4 @@
-// 從既有的軌道 JSON 與班表 JSON 產生計價單位清單 data/bounty_units.json。
+// 從既有的軌道 JSON 與班表 JSON 產生計價單位清單 data/bounty_units.json，同一發產出區段檔 data/bounty_sections.json（切法見檔尾）。
 //
 // 為什麼是建置期而不是 cron:單位清單只在改點時才變,每天在 worker 裡重算等於
 // (a) 白燒 CPU (b) 把 index.html 的 lineNetwork() 線網拓樸複製一份進 worker——
@@ -22,6 +22,7 @@ const SOURCES = [
   { track: 'data/thsr_track.json', sched: 'data/thsr_schedule_dense.json', sys: 'thsr_sched' },
   { track: 'data/afr.json', sched: 'data/afr_schedule_dense.json', sys: 'afr_sched' },
 ];
+const STN_INFO = 'data/tra_station_info.json';   // 區段檔的台鐵縣市從這裡的地址取
 
 const segKey = (sys, lnId, a, b) => `${sys}|${lnId}|${a < b ? a + '|' + b : b + '|' + a}`;
 
@@ -43,6 +44,7 @@ const byName = {};       // sys → 站名 → [{lk, d}]
 for (const src of SOURCES) for (const f of [src.track, src.sched]) {
   if (!existsSync(f)) throw new Error(`缺 ${f}：少了它，清單會少掉整個 ${src.sys}，下一發估值會把那個系統全部退場——先把檔補回來再跑`);
 }
+if (!existsSync(STN_INFO)) throw new Error(`缺 ${STN_INFO}：區段檔要用它的地址判台鐵每一段在哪個地區——先把檔補回來再跑`);
 for (const src of SOURCES) {
   const t = JSON.parse(readFileSync(src.track, 'utf8'));
   byName[src.sys] = byName[src.sys] || {};
@@ -78,6 +80,8 @@ const peakHoursBySys = {};      // sys → 尖峰小時；驗證 cron 依同一�
 let schedDate = '', nTrain = 0;
 const daysBySys = {};    // sys → 班表天數（只印在建置輸出）
 const bump = (map, k, di, nDays) => { let a = map.get(k); if (!a) map.set(k, a = new Array(nDays).fill(0)); a[di]++; };
+// 區段用的各站各日計數（"sys|站名|種類"）：exp＝自強停靠、all＝全部車種停靠、ends＝在這一站發車或到底的班數
+const stopDaily = new Map();
 // 偶數個取中間兩個的平均（與 worker.js 的 bountyMedian 同一個定義）
 const median = xs => { const a = xs.slice().sort((x, y) => x - y), m = a.length >> 1; return a.length % 2 ? a[m] : (a[m - 1] + a[m]) / 2; };
 
@@ -153,6 +157,12 @@ for (const src of SOURCES) {
         bump(trackDaily, `${seg.key}|track|${dir}|${kind}`, di, nDays);
       }
     }
+    const halts = stops.filter(s => s.stop !== false);
+    for (const [i, s] of halts.entries()) {
+      bump(stopDaily, `${src.sys}|${s.name}|all`, di, nDays);
+      if (kind === '自強') bump(stopDaily, `${src.sys}|${s.name}|exp`, di, nDays);
+      if (i === 0 || i === halts.length - 1) bump(stopDaily, `${src.sys}|${s.name}|ends`, di, nDays);
+    }
     // 停站點:任何軌跡經過車站都自帶樣本,邊際成本近零(規格 §4)
     for (const s of stops) {
       if (s.stop === false) continue;
@@ -199,6 +209,83 @@ for (const [totalKey, daily] of holidayDaily) {
 }
 
 const out = { generatedAt: Date.now(), schedDate, peakHoursBySys, lines, units };
+
+// ── 區段（data/bounty_sections.json）：懸賞板瀏覽與顯示用的分組；給點照里程，不照區段。網頁與 App 都讀這一份，切法只在這裡。──
+// 台鐵：線的兩端＋自強號常停的站（各日停靠數的中位數 ≥ 8）為界；
+//   < 8 km 的段從最短的開始併：拿掉兩端裡停靠較少的那站（線的端點不拿；一樣多拿後面那站）；
+//   > 30 km 的段在「切下去兩邊都還有 8 km」的站裡挑停靠最多的切（一樣多挑離中點近的），切出來的兩半照樣檢查。
+//   停靠多寡先比自強、再比全部車種（都是各日中位數）。
+// 支線整條一段；高鐵每站一段；林鐵以有車發車、到底的站（各日中位數 ≥ 1 班）為界，再照台鐵的 8／30 km 併、切。
+// 做不到兩個條件的段（高鐵站距、整條不到 8 km 的線、找不到站可切的長段）照留，印在建置輸出。
+// 地區：台鐵看兩端站的縣市（車站資訊檔的地址），兩端分屬兩區就兩區都列；高鐵、林鐵各自一個分頁。
+const SEC_MIN_KM = 8, SEC_MAX_KM = 30, SEC_EXP_PER_DAY = 8;
+const WHOLE_LINES = new Set(['NEIWAN', 'LIUJIA', 'PINGXI', 'SHENAO', 'JIJI', 'SHALUN', 'chengzhui'].map(id => `tra_sched|${id}`));
+const REGIONS = [{ id: 'north', name: '北部' }, { id: 'central', name: '中部' }, { id: 'south', name: '南部' },
+  { id: 'east', name: '東部' }, { id: 'thsr', name: '高鐵' }, { id: 'afr', name: '阿里山林鐵' }];
+const REGION_OF_COUNTY = {};
+for (const [id, counties] of [['north', '基隆市 臺北市 新北市 桃園市 新竹縣 新竹市'], ['central', '苗栗縣 臺中市 彰化縣 南投縣 雲林縣'],
+  ['south', '嘉義縣 嘉義市 臺南市 高雄市 屏東縣'], ['east', '宜蘭縣 花蓮縣 臺東縣']]) for (const c of counties.split(' ')) REGION_OF_COUNTY[c] = id;
+const stnInfoMap = JSON.parse(readFileSync(STN_INFO, 'utf8'));
+// 站名對車站資訊檔：照 index.html 的 stnInfo()（臺→台；查不到再去掉括號註記，左營(舊城)→左營）。地址是郵遞區號接縣市。
+function traRegion(name) {
+  const n = name.replace(/臺/g, '台'), info = stnInfoMap[n] || stnInfoMap[n.replace(/[（(].*$/, '').trim()];
+  const county = String((info && info.address) || '').replace(/^\d+/, '').trim().slice(0, 3).replace(/台/g, '臺');
+  if (!REGION_OF_COUNTY[county]) throw new Error(`區段：${name} 在 ${STN_INFO} 查不到縣市（地址：${info ? info.address : '沒有這一站'}）`);
+  return REGION_OF_COUNTY[county];
+}
+const stopMedian = (sys, name, f) => { const a = stopDaily.get(`${sys}|${name}|${f}`); return a ? median(a) : 0; };
+const heavier = (sys, x, y) => (stopMedian(sys, x, 'exp') - stopMedian(sys, y, 'exp')) || (stopMedian(sys, x, 'all') - stopMedian(sys, y, 'all'));   // > 0：x 停得比 y 多
+
+// 回傳這條線的分界（站的索引，遞增）
+function sectionBounds(lk, ln) {
+  const st = ln.stations, last = st.length - 1;
+  if (ln.sys === 'thsr_sched') return st.map((_, i) => i);
+  if (WHOLE_LINES.has(lk)) return [0, last];
+  const edge = ln.sys === 'afr_sched' ? s => stopMedian(ln.sys, s.name, 'ends') >= 1 : s => stopMedian(ln.sys, s.name, 'exp') >= SEC_EXP_PER_DAY;
+  const b = st.map((_, i) => i).filter(i => i === 0 || i === last || edge(st[i]));
+  const km = k => st[b[k]].d - st[b[k - 1]].d;
+  for (;;) {
+    let j = 0;
+    for (let k = 1; k < b.length; k++) if (b.length > 2 && km(k) < SEC_MIN_KM && (!j || km(k) < km(j))) j = k;
+    if (!j) break;
+    b.splice(j === 1 ? 1 : j === b.length - 1 ? j - 1 : heavier(ln.sys, st[b[j - 1]].name, st[b[j]].name) < 0 ? j - 1 : j, 1);
+  }
+  for (let k = 1; k < b.length; k++) {
+    if (!(km(k) > SEC_MAX_KM)) continue;
+    const A = st[b[k - 1]], Z = st[b[k]], mid = (A.d + Z.d) / 2;
+    let best = -1;
+    for (let i = b[k - 1] + 1; i < b[k]; i++) {
+      if (st[i].d - A.d < SEC_MIN_KM || Z.d - st[i].d < SEC_MIN_KM) continue;
+      if (best < 0 || (heavier(ln.sys, st[i].name, st[best].name) || Math.abs(st[best].d - mid) - Math.abs(st[i].d - mid)) > 0) best = i;
+    }
+    if (best >= 0) { b.splice(k, 0, best); k--; }   // 切出來的前半段下一圈再查一次
+  }
+  return b;
+}
+const sectionLines = {}, secExceptions = [];
+for (const [lk, ln] of Object.entries(lines)) {
+  const st = ln.stations;
+  if (st.length < 2) continue;                     // 林鐵的車庫線沒有站
+  const b = sectionBounds(lk, ln);
+  sectionLines[lk] = b.slice(1).map((z, k) => {
+    const A = st[b[k]], Z = st[z], km = Z.d - A.d;
+    let regions = [ln.sys === 'thsr_sched' ? 'thsr' : 'afr'];
+    if (ln.sys === 'tra_sched') { const ra = traRegion(A.name), rz = traRegion(Z.name); regions = REGIONS.map(r => r.id).filter(id => id === ra || id === rz); }
+    if (km < SEC_MIN_KM || km > SEC_MAX_KM) secExceptions.push(`${ln.name} ${A.name}–${Z.name} ${km.toFixed(1)} km（${ln.sys === 'thsr_sched' ? '高鐵每站一段' : b.length === 2 ? '整條線一段' : '找不到兩邊都有 8 km 的站可切'}）`);
+    return { a: A.name, b: Z.name, dA: A.d, dB: Z.d, km: Math.round(km * 10) / 10, regions };
+  });
+}
+const sections = { v: 1, generatedAt: out.generatedAt,
+  rule: '台鐵以線的兩端與自強號常停的站（各日停靠中位數 ≥ 8）為界，< 8 km 的段併掉停靠較少的一端、> 30 km 的段在兩邊都有 8 km 的站裡挑停靠最多的切；支線整條一段；高鐵每站一段；林鐵以有車發、到的站為界再照 8／30 km 併切；給點照里程，不照區段',
+  regions: REGIONS, lines: sectionLines };
+
+// 兩份都算完才寫：區段那一步擋下（例如車站資訊檔查不到縣市）時，舊的單位檔也原封不動
 writeFileSync('data/bounty_units.json', JSON.stringify(out));
+writeFileSync('data/bounty_sections.json', JSON.stringify(sections));
 const nTrack = units.filter(u => u.kind === 'track').length;
 console.log(`班表日 ${schedDate}（天數 ${JSON.stringify(daysBySys)}，perDay 取各日中位數）・${nTrain} 份班次定義 → 計價單位 ${units.length}（軌道 ${nTrack}／停站 ${units.length - nTrack}）・線 ${Object.keys(lines).length}`);
+const allSecs = Object.values(sectionLines).flat().sort((x, y) => (x.dB - x.dA) - (y.dB - y.dA));
+const fmtSec = s => `${s.a}–${s.b} ${s.km} km`;
+console.log(`區段 ${allSecs.length} 段（最短 ${fmtSec(allSecs[0])}、最長 ${fmtSec(allSecs[allSecs.length - 1])}）`);
+for (const [lk, ss] of Object.entries(sectionLines)) console.log(`  ${lines[lk].name} ${ss.length} 段：${ss.map(s => `${s.a}–${s.b}(${s.km})`).join('、')}`);
+console.log(`8–30 km 以外 ${secExceptions.length} 段${secExceptions.map(x => '\n  ' + x).join('')}`);

@@ -191,9 +191,11 @@ const tryRun = (d, sql, ...p) => { try { d.prepare(sql).run(...p); return ''; } 
   ok('A15a bounty_seg_contrib 欄位', sameSet(colsOf(db, 'bounty_seg_contrib'), ['seg_key', 'actor', 'first_ok_at']),
     colsOf(db, 'bounty_seg_contrib').join(','));
   ok('A15b chip_ledger 欄位', sameSet(colsOf(db, 'chip_ledger'),
-    ['id', 'actor', 'kind', 'delta', 'ref', 'day', 'created_at']), colsOf(db, 'chip_ledger').join(','));
+    ['id', 'actor', 'kind', 'delta', 'ref', 'day', 'created_at',
+      'unit']), colsOf(db, 'chip_ledger').join(','));                // 0017（懸賞 v3）：這一列是籌碼 chip 還是點數 point
   ok('A15c garage_unlocks 欄位', sameSet(colsOf(db, 'garage_unlocks'),
-    ['actor', 'scene', 'nth', 'cost', 'created_at']), colsOf(db, 'garage_unlocks').join(','));
+    ['actor', 'scene', 'nth', 'cost', 'created_at',
+      'unit']), colsOf(db, 'garage_unlocks').join(','));             // 0017：cost 是用籌碼還是點數付的
   ok('A15d cloud_rides 欄位', sameSet(colsOf(db, 'cloud_rides'),
     ['actor', 'day', 'train_key', 'sec', 'request_id', 'created_at', 'simulator']), colsOf(db, 'cloud_rides').join(','));
 }
@@ -333,6 +335,32 @@ const schemaStmts = f => {
     !!s16 && s16.length === 2 && /^ALTER\s+TABLE\s+bounty_samples\s+ADD\s+COLUMN\s+kept_d0\s+REAL$/i.test(s16[0]) &&
       /^ALTER\s+TABLE\s+bounty_samples\s+ADD\s+COLUMN\s+kept_d1\s+REAL$/i.test(s16[1]),
     JSON.stringify(s16));
+  // 0017（懸賞 v3）：帳本與解鎖各補 unit，預設 'chip'——先套 schema、v3 Worker 後出，中間 v2 Worker 寫的列不帶這一欄，一定要落在 'chip'
+  const s17 = schemaStmts('0017_bounty_points.sql');
+  ok("A22d 0017 恰好兩句：chip_ledger、garage_unlocks 各 ADD COLUMN unit TEXT NOT NULL DEFAULT 'chip'（只有 ALTER，換算不在 migration 裡做）",
+    !!s17 && s17.length === 2 && /^ALTER\s+TABLE\s+chip_ledger\s+ADD\s+COLUMN\s+unit\s+TEXT\s+NOT\s+NULL\s+DEFAULT\s+'chip'$/i.test(s17[0]) &&
+      /^ALTER\s+TABLE\s+garage_unlocks\s+ADD\s+COLUMN\s+unit\s+TEXT\s+NOT\s+NULL\s+DEFAULT\s+'chip'$/i.test(s17[1]),
+    JSON.stringify(s17));
+}
+
+// A25 v2 的正式庫（套過 0014–0016、帳本與解鎖已經有列）再套 0017：unit 長出來，既有的列一律是 'chip'；
+// 之後不帶 unit 的 INSERT（v2 Worker 在 v3 上線前的那段時間）也落在 'chip'。拿全套的庫 DROP COLUMN 模擬套 0017 之前。
+{
+  const { db: d } = openTestDb();
+  for (const t of ['chip_ledger', 'garage_unlocks']) { try { d.exec(`ALTER TABLE ${t} DROP COLUMN unit`); } catch (e) {} }
+  d.exec("INSERT INTO chip_ledger (id,actor,kind,delta,ref,day,created_at) VALUES ('trip|a|2026-10-01|1','actor-aaaa','trip',1,'a|2026-10-01|1','2026-10-01',1)");
+  d.exec("INSERT INTO garage_unlocks (actor,scene,nth,cost,created_at) VALUES ('actor-aaaa','shifen',1,4,2)");
+  const before = ['chip_ledger', 'garage_unlocks'].map(t => d.prepare(`PRAGMA table_info(${t})`).all().some(r => r.name === 'unit'));
+  let threw = '';
+  try { applySchemaFiles(d); } catch (e) { threw = String(e.message || e); }
+  try {
+    d.exec("INSERT INTO chip_ledger (id,actor,kind,delta,ref,day,created_at) VALUES ('trip|a|2026-10-02|2','actor-aaaa','trip',1,'a|2026-10-02|2','2026-10-02',3)");
+  } catch (e) { threw = threw || String(e.message || e); }
+  const units = t => { try { return d.prepare(`SELECT unit FROM ${t} ORDER BY created_at`).all().map(r => r.unit); } catch (e) { return [String(e.message || e)]; } };
+  const led = units('chip_ledger'), unl = units('garage_unlocks');
+  ok("A25 v2 的庫再套一次 schema（含 0017）：unit 長回來，既有帳本與解鎖列、之後不帶 unit 的 INSERT 都是 'chip'",
+    before.every(b => !b) && threw === '' && JSON.stringify(led) === '["chip","chip"]' && JSON.stringify(unl) === '["chip"]',
+    JSON.stringify({ before, threw, led, unl }));
 }
 
 // A24 已經套過 0014、還沒有 retired 的庫（先前的 0014 沒有這一欄；拿全套的庫 DROP COLUMN 模擬），
@@ -426,6 +454,14 @@ const schemaStmts = f => {
     noKept.rc === 1 && /bounty_samples\.kept_d0（0016_bounty_kept_range\.sql）/.test(noKept.out) && /bounty_samples\.kept_d1（0016_bounty_kept_range\.sql）/.test(noKept.out) &&
       /--file=schema\/0016_bounty_kept_range\.sql/.test(noKept.out) && !fileCmd.test(noKept.out),
     noKept.out.trim().slice(0, 600));
+  // A23l：正式庫還沒套 0017（帳本與解鎖沒有 unit）→ exit 1、點名兩欄，補法是套 0017。v3 Worker 每一句寫帳本都帶 unit，漏套就是錢包整個 503。
+  const { db: du } = openTestDb();
+  for (const t of ['chip_ledger', 'garage_unlocks']) { try { du.exec(`ALTER TABLE ${t} DROP COLUMN unit`); } catch (e) {} }
+  const noUnit = runGate('no-unit', du.prepare("SELECT type, name, tbl_name, sql FROM sqlite_master WHERE type IN ('table','index')").all().map(r => ({ ...r })));
+  ok('A23l 正式庫的 chip_ledger／garage_unlocks 缺 unit → exit 1，點名這兩欄（0017_bounty_points.sql），補法是套 0017、不叫人重套 0014',
+    noUnit.rc === 1 && /chip_ledger\.unit（0017_bounty_points\.sql）/.test(noUnit.out) && /garage_unlocks\.unit（0017_bounty_points\.sql）/.test(noUnit.out) &&
+      /--file=schema\/0017_bounty_points\.sql/.test(noUnit.out) && !fileCmd.test(noUnit.out),
+    noUnit.out.trim().slice(0, 600));
 }
 
 const pass = R.filter(r => r.p).length;

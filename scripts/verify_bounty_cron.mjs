@@ -1,14 +1,18 @@
-// 路段懸賞 v2 後端驗收：判定 cron 這一族——排程分流（F1）、只判昨天以前（F24）、整班車一趟（F4）、
+// 路段懸賞後端驗收：判定 cron 這一族——排程分流（F1）、只判昨天以前（F24）、整班車一趟（F4）、
 // 身分在入帳當下重新解析且同一班車不重複發（F10／F11）、模擬器只留判定（F23）、估值上架帶人數並補收滿（F12／F21）。
 // 離線：假 D1（scripts/d1_local.mjs，真 SQLite）＋ stub ASSETS ＋ BOUNTY_NOW 釘死，不起伺服器、不碰網路。
 // 跑法：node scripts/verify_bounty_cron.mjs
 //
 // 期望值一律寫死在這裡，不呼叫實作去產生期望（日期一律自己用 Date 算，不借 taipeiDay）：
-//   ・產品規則：捷運不列入懸賞；每日上限 4 籌碼、一趟至少 10 分鐘。
-//   ・判定語意：一班車＝同一個 actor＋乘車日＋車次＝一趟＝最多一次錄程籌碼；只要有一條線的合格覆蓋段落在偏遠線就 ×2；
-//     長度算整班車所有批次；模擬器只留判定、不登記貢獻、不動看板。
-//   ・數字（台鐵 50／高鐵 15 位不同的人、一趟至少 600 秒、每日上限 4 籌碼、南迴／臺東 ×2、一趟 1 籌碼）
+//   ・產品規則（v3 點數）：捷運不列入懸賞；沿線 1 公里 1 點；每日上限 500 點；一趟至少 10 分鐘。
+//   ・判定語意：一班車＝同一個 actor＋乘車日＋車次＝一趟＝最多一次錄程入帳；點數＝各條 ok 線收下的里程加總
+//     （南迴／臺東那一段 ×2）、加總後捨去；時間長度算整班車所有批次；模擬器只留判定、不登記貢獻、不動看板。
+//   ・數字（台鐵 50／高鐵 15 位不同的人、一趟至少 600 秒、每日上限 500 點、南迴／臺東 ×2）
 //     來自 data/bounty_rules.json，這裡照抄成字面。
+//   ・點數的期望值由軌跡幾何手算：防偽閘不收開頭 2 點（integrityGate 的 PHYS_GAP_SKIP），收下的範圍從第 3 點起算——
+//       700 秒 @20 m/s：0–14000 m，收下 40–14000＝13.96 km → 13（偏遠線 ×2＝27.92 → 27）
+//       400 秒 @20 m/s：收下 7.96 km（反向從 8000 走到 0 也是 7960 m）
+//       750 秒 @10 m/s：0–7500 m，收下 20–7500＝7.48 km → 7；840 秒 @10 m/s：收下 20–8400＝8.38 km → 8
 // 每一條判準寫的時候都先答「哪一筆輸入能讓它變紅」——答不出來的判準等於沒有判準。
 //
 // 分組：A 排程分流（F1）　B 只判昨天以前（F24）　C 整班車一趟（F4）　D 身分與重複入帳（F10／F11）
@@ -188,7 +192,7 @@ async function fire(w, cron) {
 const BOUNTY_TOUCH = /bounty_board|bounty_samples|bounty_seg_contrib|bounty_claims|bounty_points|chip_ledger/;
 
 // ═══ A 組：排程分流（F1）══════════════════════════════════════════════════════
-// 三個單位、一趟 700 秒的山線 ok 趟：估值跑了→板上有 3 列；驗證跑了→樣本判成 ok、帳本 +1。
+// 三個單位、一趟 700 秒的山線 ok 趟：估值跑了→板上有 3 列；驗證跑了→樣本判成 ok、帳本 +13。
 const U3 = { generatedAt: 1, schedDate: D28, lines: LINES, units: [
   { segKey: KT('山線', 'S0|S1'), sys: 'tra_sched', trainKind: '自強', dir: 0, kind: 'track', slot: '', perDay: 30 },
   { segKey: KT('山線', 'S1|S2'), sys: 'tra_sched', trainKind: '自強', dir: 0, kind: 'track', slot: '', perDay: 30 },
@@ -205,8 +209,8 @@ await attempt('A1', async () => {
   const w = aWorld(); const sqls = spySql(w.DELAY_DB);
   outbound.length = 0;
   const r = await fire(w, '30 19 * * *');
-  ok('A1a [F1] BOUNTY_CRON（30 19 * * *）：估值跑了（板上 3 列）＋驗證跑了（樣本判成 ok、帳本 +1）、scheduled 正常結束',
-    nBoard(w.db) === 3 && q.verdicts(w.db, 'cron-a', '101') === 'ok' && q.chips(w.db, 'cron-a') === 1 && r.threw === null,
+  ok('A1a [F1] BOUNTY_CRON（30 19 * * *）：估值跑了（板上 3 列）＋驗證跑了（樣本判成 ok、帳本 +13）、scheduled 正常結束',
+    nBoard(w.db) === 3 && q.verdicts(w.db, 'cron-a', '101') === 'ok' && q.chips(w.db, 'cron-a') === 13 && r.threw === null,
     J({ board: nBoard(w.db), v: q.verdicts(w.db, 'cron-a', '101'), chips: q.chips(w.db, 'cron-a'), threw: r.threw, errs: r.errs.slice(0, 2) }));
   ok('A1b [F1] BOUNTY_CRON 不跑每日 ingest：沒有任何對外連線，也沒有逐站事件清理那句 DELETE',
     outbound.length === 0 && !sqls.some(s => /DELETE FROM tra_station_events/.test(s)), J({ outbound, deletes: sqls.filter(s => /DELETE FROM/.test(s)).length }));
@@ -227,15 +231,15 @@ await attempt('A2', async () => {
 await attempt('A3', async () => {
   const w = aWorld();
   const r = await fire(w, '15 4 * * *');
-  ok('A3 [F1 對照] 原本的 15 4 * * * 分支沒被動到：每日 ingest 照跑（這裡沒有 TDX 憑證，失敗照 rethrow 也無妨），懸賞估值＋驗證仍跑完（板上 3 列、ok、帳本 +1）',
-    nBoard(w.db) === 3 && q.verdicts(w.db, 'cron-a', '101') === 'ok' && q.chips(w.db, 'cron-a') === 1,
+  ok('A3 [F1 對照] 原本的 15 4 * * * 分支沒被動到：每日 ingest 照跑（這裡沒有 TDX 憑證，失敗照 rethrow 也無妨），懸賞估值＋驗證仍跑完（板上 3 列、ok、帳本 +13）',
+    nBoard(w.db) === 3 && q.verdicts(w.db, 'cron-a', '101') === 'ok' && q.chips(w.db, 'cron-a') === 13,
     J({ threw: r.threw, board: nBoard(w.db), v: q.verdicts(w.db, 'cron-a', '101'), chips: q.chips(w.db, 'cron-a') }));
 });
 await attempt('A4', async () => {
   const w1 = aWorld(); failOnPrepare(w1.DELAY_DB, /^INSERT INTO bounty_board/);
   const r1 = await fire(w1, '30 19 * * *');
-  ok('A4a [F1] 估值壞掉（上架那句 INSERT 丟例外）不擋驗證：估值失敗有記 log、scheduled 不丟例外、樣本照判、帳本 +1',
-    r1.threw === null && r1.errs.some(e => e.includes('[cron bounty 估值] 失敗')) && q.verdicts(w1.db, 'cron-a', '101') === 'ok' && q.chips(w1.db, 'cron-a') === 1,
+  ok('A4a [F1] 估值壞掉（上架那句 INSERT 丟例外）不擋驗證：估值失敗有記 log、scheduled 不丟例外、樣本照判、帳本 +13',
+    r1.threw === null && r1.errs.some(e => e.includes('[cron bounty 估值] 失敗')) && q.verdicts(w1.db, 'cron-a', '101') === 'ok' && q.chips(w1.db, 'cron-a') === 13,
     J({ threw: r1.threw, errs: r1.errs.map(e => e.slice(0, 40)), v: q.verdicts(w1.db, 'cron-a', '101') }));
   // 驗證整支壞掉：判定分兩段，第一段「班車清單」那句壞掉＝整支失敗、往外丟（第二段一班一班判的錯誤會在裡面接住，見 A4c）
   const w2 = aWorld(); failOnPrepare(w2.DELAY_DB, /^WITH t AS \(/);
@@ -309,12 +313,12 @@ await attempt('B1', async () => {
   putBatches(w.db, { actor: 'b1-yday', trainNo: '101', lnId: '山線', date: D28, pts: leg({ sec: 700 }) });
   putBatches(w.db, { actor: 'b1-today', trainNo: '102', lnId: '山線', date: D29, pts: leg({ sec: 700 }) });
   const st = await w.cron();                                               // BOUNTY_NOW＝台北 07-29 10:00
-  ok('B1a [F24] 昨天（07-28）的趟判掉：ok、帳本 +1', q.verdicts(w.db, 'b1-yday', '101') === 'ok' && q.chips(w.db, 'b1-yday', D28) === 1,
+  ok('B1a [F24] 昨天（07-28）的趟判掉：ok、帳本 +13', q.verdicts(w.db, 'b1-yday', '101') === 'ok' && q.chips(w.db, 'b1-yday', D28) === 13,
     J({ v: q.verdicts(w.db, 'b1-yday', '101'), chips: q.chips(w.db, 'b1-yday', D28) }));
   ok('B1b [F24] 今天（07-29）的趟不判：整趟仍是 pending、沒有帳本、沒有貢獻登記（今天的趟可能還在車上）',
     q.verdicts(w.db, 'b1-today', '102') === 'pending' && q.nLedger(w.db, 'b1-today') === 0 && q.nContrib(w.db, 'b1-today') === 0,
     J({ v: q.verdicts(w.db, 'b1-today', '102'), ledger: q.nLedger(w.db, 'b1-today'), contrib: q.nContrib(w.db, 'b1-today') }));
-  ok('B1c [F24] 這一發只處理了 1 趟（昨天那趟）、入帳 1 顆', st.trips === 1 && st.ok === 1 && st.chips === 1, J(st));
+  ok('B1c [F24] 這一發只處理了 1 趟（昨天那趟）、入帳 13 點', st.trips === 1 && st.ok === 1 && st.chips === 13, J(st));
 });
 await attempt('B2', async () => {
   // 換日是台北午夜，不是 UTC 午夜：UTC 07-28 15:59:59＝台北 07-28 23:59:59（07-28 還是「今天」）；
@@ -324,13 +328,13 @@ await attempt('B2', async () => {
   const before = await w.cron(Date.parse('2026-07-28T15:59:59Z'));
   const pendBefore = q.verdicts(w.db, 'b2', '101'), chipsBefore = q.chips(w.db, 'b2');
   const after = await w.cron(Date.parse('2026-07-28T16:00:00Z'));
-  ok('B2a [F24] 台北 07-28 23:59:59：07-28 的趟還是今天，不判（pending、0 趟、0 顆）', pendBefore === 'pending' && chipsBefore === 0 && before.trips === 0,
+  ok('B2a [F24] 台北 07-28 23:59:59：07-28 的趟還是今天，不判（pending、0 趟、0 點）', pendBefore === 'pending' && chipsBefore === 0 && before.trips === 0,
     J({ pendBefore, chipsBefore, trips: before.trips }));
-  ok('B2b [F24] 台北 07-29 00:00:00：07-28 的趟變成昨天，這一發判掉（ok、帳本 +1）', q.verdicts(w.db, 'b2', '101') === 'ok' && q.chips(w.db, 'b2') === 1 && after.trips === 1,
+  ok('B2b [F24] 台北 07-29 00:00:00：07-28 的趟變成昨天，這一發判掉（ok、帳本 +13）', q.verdicts(w.db, 'b2', '101') === 'ok' && q.chips(w.db, 'b2') === 13 && after.trips === 1,
     J({ v: q.verdicts(w.db, 'b2', '101'), chips: q.chips(w.db, 'b2'), trips: after.trips }));
 });
 await attempt('B3', async () => {
-  // 840 秒、兩批（前 420、後 420），乘車日＝今天：今天那一發只看得到前一批，若當場判掉就是兩半各自判——各不到 600 秒、一顆都拿不到。
+  // 840 秒、兩批（前 420、後 420），乘車日＝今天：今天那一發只看得到前一批，若當場判掉就是兩半各自判——各不到 600 秒、一點都拿不到。
   const w = world();
   const pts = leg({ sec: 840, speed: 10 });                                // 841 點；t 30000…30840
   putBatches(w.db, { actor: 'b3', trainNo: 'T840', lnId: '山線', date: D29, pts: pts.slice(0, 421), first: 0, size: 1000 });   // 前半 t 30000…30420
@@ -339,8 +343,8 @@ await attempt('B3', async () => {
   putBatches(w.db, { actor: 'b3', trainNo: 'T840', lnId: '山線', date: D29, pts: pts.slice(421), first: 1, size: 1000 });         // 後半 t 30421…30840 晚到
   const s2 = await w.cron(NOW_MS + DAY);                                  // 隔天那一發（台北 07-30 10:00）
   ok('B3a [F24] 今天那一發：只有前半批在庫、不判（仍 pending、0 趟、帳本 0）', pend1 === 1 && chips1 === 0 && s1.trips === 0, J({ pend1, chips1, trips: s1.trips }));
-  ok('B3b [F24] 隔天那一發：兩批併成一趟一起判＝840 秒 ≥ 600 → 1 顆（ref＝actor|乘車日|車次）；只判 1 趟',
-    q.verdicts(w.db, 'b3', 'T840') === 'ok' && J(q.tripRows(w.db)) === J([{ actor: 'b3', delta: 1, ref: `b3|${D29}|T840`, day: D29 }]) && s2.trips === 1 && s2.chips === 1,
+  ok('B3b [F24] 隔天那一發：兩批併成一趟一起判＝840 秒 ≥ 600、收下 8.38 km → 8 點（ref＝actor|乘車日|車次）；只判 1 趟',
+    q.verdicts(w.db, 'b3', 'T840') === 'ok' && J(q.tripRows(w.db)) === J([{ actor: 'b3', delta: 8, ref: `b3|${D29}|T840`, day: D29 }]) && s2.trips === 1 && s2.chips === 8,
     J({ v: q.verdicts(w.db, 'b3', 'T840'), ledger: q.tripRows(w.db), trips: s2.trips }));
 });
 await attempt('B4', async () => {
@@ -354,8 +358,8 @@ await attempt('B4', async () => {
     putBatches(w.db, { actor: 'b4-today', trainNo: '102', lnId: '山線', date: today, pts: leg({ sec: 700 }), submittedAt: upAt });
     await w.cron();
     if (tp(Date.now()) !== today) continue;
-    ok('B4 [F24] 沒有 BOUNTY_NOW 時用真時鐘：昨天的趟判掉（ok、+1）、今天的趟不判（pending、0）',
-      q.verdicts(w.db, 'b4-yday', '101') === 'ok' && q.chips(w.db, 'b4-yday') === 1 && q.verdicts(w.db, 'b4-today', '102') === 'pending' && q.chips(w.db, 'b4-today') === 0,
+    ok('B4 [F24] 沒有 BOUNTY_NOW 時用真時鐘：昨天的趟判掉（ok、+13）、今天的趟不判（pending、0）',
+      q.verdicts(w.db, 'b4-yday', '101') === 'ok' && q.chips(w.db, 'b4-yday') === 13 && q.verdicts(w.db, 'b4-today', '102') === 'pending' && q.chips(w.db, 'b4-today') === 0,
       J({ yday: q.verdicts(w.db, 'b4-yday', '101'), today: q.verdicts(w.db, 'b4-today', '102'), chips: [q.chips(w.db, 'b4-yday'), q.chips(w.db, 'b4-today')] }));
     return;
   }
@@ -363,10 +367,10 @@ await attempt('B4', async () => {
 });
 
 // ═══ C 組：一班車＝一趟（跨線的直通車）（F4）══════════════════════════════════════
-// 兩條線各自判定、各自登記去重人數；籌碼整班車只發一次：任何一條 ok 就算 ok、任何一段落在偏遠線 ×2、長度算整班車所有批次。
+// 兩條線各自判定、各自登記去重人數；點數整班車只入帳一次：各條 ok 線的里程加總（偏遠線那一段 ×2）、時間長度算整班車所有批次。
 const cWorld = () => world({ seed: boardAll(['屏東線', '南迴線', '臺東線', '山線']) });
 await attempt('C1', async () => {
-  // 高雄→臺東方向：先屏東線（一般線）、再南迴線（偏遠線 ×2）。舊行為（一條線一趟、先判完的先寫死）會因為屏東線排在前面而只拿 1。
+  // 高雄→臺東方向：先屏東線（一般線）、再南迴線（偏遠線 ×2）。一條線一趟、先判完的先寫死的話，只拿得到屏東線那 13 點。
   const w = cWorld();
   putBatches(w.db, { actor: 'c1', trainNo: 'F1', lnId: '屏東線', pts: leg({ sec: 700, t0: 30000 }), first: 0 });
   putBatches(w.db, { actor: 'c1', trainNo: 'F1', lnId: '南迴線', pts: leg({ sec: 700, t0: 30701 }), first: 100 });
@@ -374,8 +378,8 @@ await attempt('C1', async () => {
   ok('C1a [F4] 兩條線各自判定：屏東線、南迴線的樣本都判成 ok（各算一組：trips 2、ok 2）',
     q.verdictsLn(w.db, 'c1', 'F1', '屏東線') === 'ok' && q.verdictsLn(w.db, 'c1', 'F1', '南迴線') === 'ok' && st.trips === 2 && st.ok === 2,
     J({ p: q.verdictsLn(w.db, 'c1', 'F1', '屏東線'), n: q.verdictsLn(w.db, 'c1', 'F1', '南迴線'), st }));
-  ok('C1b [F4] 籌碼整班車只發一次＝1 列、南迴在後也 ×2 → delta 2（ref＝c1|乘車日|F1）；stat.chips 2',
-    J(q.tripRows(w.db)) === J([{ actor: 'c1', delta: 2, ref: `c1|${D28}|F1`, day: D28 }]) && st.chips === 2, J({ ledger: q.tripRows(w.db), chips: st.chips }));
+  ok('C1b [F4] 整班車只入帳一次＝1 列：屏東 13.96 km＋南迴 13.96 km×2＝41.88 → 41 點（ref＝c1|乘車日|F1）；stat.chips 41',
+    J(q.tripRows(w.db)) === J([{ actor: 'c1', delta: 41, ref: `c1|${D28}|F1`, day: D28 }]) && st.chips === 41, J({ ledger: q.tripRows(w.db), chips: st.chips }));
   ok('C1c [F4] 兩條線各自登記去重：貢獻 14 段＝屏東線 S0|S1…S6|S7 ＋ 南迴線 S0|S1…S6|S7（不是全部記到第一條線）',
     J(q.contribKeys(w.db, 'c1')) === J([...keysOf('屏東線', S7), ...keysOf('南迴線', S7)].sort()), J(q.contribKeys(w.db, 'c1')));
   ok('C1d [F4] 每一條線的覆蓋段（segs）用自己那條線的幾何算：屏東線的樣本只有屏東線的 7 段、南迴線的樣本只有南迴線的 7 段',
@@ -389,13 +393,13 @@ await attempt('C1', async () => {
 });
 await attempt('C2', async () => {
   // 臺東→高雄方向（反向）：先南迴線、後屏東線，每條線 400 秒（各不到 600 秒、合起來 801 秒）。
-  // 一條線一趟的舊行為：每一組都 <600 秒 → 一顆都沒有；整班算才對：801 秒、南迴 ×2 → 2。
+  // 一條線一趟的話：每一組都 <600 秒 → 一點都沒有；整班算才對：801 秒、南迴 7.96 km×2＋屏東 7.96 km＝23.88 → 23。
   const w = cWorld();
   putBatches(w.db, { actor: 'c2', trainNo: 'R1', lnId: '南迴線', pts: leg({ sec: 400, t0: 30000, d0: 8000, reverse: true }), dir: 1, first: 0 });
   putBatches(w.db, { actor: 'c2', trainNo: 'R1', lnId: '屏東線', pts: leg({ sec: 400, t0: 30401, d0: 8000, reverse: true }), dir: 1, first: 100 });
   const st = await w.cron();
-  ok('C2a [F4 反向] 臺東→高雄：兩條線各自判成 ok、籌碼 1 列 delta 2（各 400 秒不夠 600，合起來 801 秒才夠；南迴 ×2）',
-    q.verdicts(w.db, 'c2', 'R1') === 'ok' && st.trips === 2 && J(q.tripRows(w.db)) === J([{ actor: 'c2', delta: 2, ref: `c2|${D28}|R1`, day: D28 }]),
+  ok('C2a [F4 反向] 臺東→高雄：兩條線各自判成 ok、帳本 1 列 delta 23（各 400 秒不夠 600，合起來 801 秒才夠；南迴那 7.96 km ×2）',
+    q.verdicts(w.db, 'c2', 'R1') === 'ok' && st.trips === 2 && J(q.tripRows(w.db)) === J([{ actor: 'c2', delta: 23, ref: `c2|${D28}|R1`, day: D28 }]),
     J({ v: q.verdicts(w.db, 'c2', 'R1'), st, ledger: q.tripRows(w.db) }));
   ok('C2b [F4 反向] 兩條線各登記 4 段（往里程減少的方向也是每條線用自己的幾何）',
     J(q.contribKeys(w.db, 'c2')) === J([...keysOf('南迴線', S4), ...keysOf('屏東線', S4)].sort()), J(q.contribKeys(w.db, 'c2')));
@@ -404,39 +408,39 @@ await attempt('C3', async () => {
   const w = cWorld();
   putBatches(w.db, { actor: 'c3', trainNo: 'P1', lnId: '屏東線', pts: leg({ sec: 700 }) });
   const st = await w.cron();
-  ok('C3 [F4 對照] 只有屏東線（一般線）的一趟：1 顆、登記 7 段——×2 只在有偏遠線的合格段時才發生',
-    J(q.tripRows(w.db)) === J([{ actor: 'c3', delta: 1, ref: `c3|${D28}|P1`, day: D28 }]) && q.nContrib(w.db, 'c3') === 7 && st.trips === 1,
+  ok('C3 [F4 對照] 只有屏東線（一般線）的一趟：13 點、登記 7 段——×2 只套在偏遠線那一段',
+    J(q.tripRows(w.db)) === J([{ actor: 'c3', delta: 13, ref: `c3|${D28}|P1`, day: D28 }]) && q.nContrib(w.db, 'c3') === 7 && st.trips === 1,
     J({ ledger: q.tripRows(w.db), contrib: q.nContrib(w.db, 'c3'), trips: st.trips }));
 });
 await attempt('C4', async () => {
-  // 兩條一般線各 400 秒（各不到 600、合起來 801）：1 顆。舊行為每一組都 <600 → 0。
+  // 兩條一般線各 400 秒（各不到 600、合起來 801）：7.96＋7.96＝15.92 → 15 點（各自捨去會是 7＋7＝14）。一條線一趟的話每一組都 <600 → 0。
   const w = cWorld();
   putBatches(w.db, { actor: 'c4', trainNo: 'M1', lnId: '山線', pts: leg({ sec: 400, t0: 30000 }), first: 0 });
   putBatches(w.db, { actor: 'c4', trainNo: 'M1', lnId: '屏東線', pts: leg({ sec: 400, t0: 30401 }), first: 100 });
   await w.cron();
-  ok('C4 [F4] 兩條一般線各 400 秒、合起來 801 秒：整班車長度夠 → 1 顆（不是 0）；各登記 4 段',
-    J(q.tripRows(w.db)) === J([{ actor: 'c4', delta: 1, ref: `c4|${D28}|M1`, day: D28 }]) && q.nContrib(w.db, 'c4') === 8,
+  ok('C4 [F4] 兩條一般線各 400 秒、合起來 801 秒：整班車長度夠 → 15 點（不是 0、也不是各自捨去的 14）；各登記 4 段',
+    J(q.tripRows(w.db)) === J([{ actor: 'c4', delta: 15, ref: `c4|${D28}|M1`, day: D28 }]) && q.nContrib(w.db, 'c4') === 8,
     J({ ledger: q.tripRows(w.db), contrib: q.nContrib(w.db, 'c4') }));
 });
 await attempt('C5', async () => {
-  // 兩條偏遠線（南迴線＋臺東線）：×2 是整班車一次，不是每條偏遠線各 ×2。
+  // 兩條偏遠線（南迴線＋臺東線）：各自那一段 ×2，不是整班車再 ×2 一次。
   const w = cWorld();
   putBatches(w.db, { actor: 'c5', trainNo: 'E1', lnId: '南迴線', pts: leg({ sec: 400, t0: 30000 }), first: 0 });
   putBatches(w.db, { actor: 'c5', trainNo: 'E1', lnId: '臺東線', pts: leg({ sec: 400, t0: 30401 }), first: 100 });
   await w.cron();
-  ok('C5 [F4] 南迴線＋臺東線（都是偏遠線）各 400 秒：整班車 ×2 一次＝2 顆（不是 4）',
-    J(q.tripRows(w.db)) === J([{ actor: 'c5', delta: 2, ref: `c5|${D28}|E1`, day: D28 }]), J(q.tripRows(w.db)));
+  ok('C5 [F4] 南迴線＋臺東線（都是偏遠線）各 400 秒：(7.96＋7.96)×2＝31.84 → 31 點（不是再 ×2 的 63）',
+    J(q.tripRows(w.db)) === J([{ actor: 'c5', delta: 31, ref: `c5|${D28}|E1`, day: D28 }]), J(q.tripRows(w.db)));
 });
 await attempt('C6', async () => {
   // 屏東線 ok、南迴線那一組只有 5 個點（判 unusable、沒有任何覆蓋段）：整班車任一線 ok 就算 ok，
-  // 但 ×2 只看「ok 那些組的覆蓋段」——南迴線那一組沒有貢獻任何段，不能讓這班車沾到 ×2。
+  // 但點數只算 ok 那些組收下的里程——南迴線那一組不 ok，不能讓這班車沾到南迴的里程或 ×2。
   const w = cWorld();
   putBatches(w.db, { actor: 'c6', trainNo: 'K1', lnId: '屏東線', pts: leg({ sec: 700, t0: 30000 }), first: 0 });
   putBatches(w.db, { actor: 'c6', trainNo: 'K1', lnId: '南迴線', pts: leg({ sec: 4, t0: 30701 }), first: 100 });
   const st = await w.cron();
-  ok('C6a [F4] 屏東線 ok、南迴線 5 點判 unusable；籌碼 1 顆（不是 2）、只登記屏東線的 7 段',
+  ok('C6a [F4] 屏東線 ok、南迴線 5 點判 unusable；點數只算屏東線的 13（南迴那 4 秒不算、也不 ×2）、只登記屏東線的 7 段',
     q.verdictsLn(w.db, 'c6', 'K1', '屏東線') === 'ok' && q.verdictsLn(w.db, 'c6', 'K1', '南迴線') === 'unusable' &&
-      J(q.tripRows(w.db)) === J([{ actor: 'c6', delta: 1, ref: `c6|${D28}|K1`, day: D28 }]) &&
+      J(q.tripRows(w.db)) === J([{ actor: 'c6', delta: 13, ref: `c6|${D28}|K1`, day: D28 }]) &&
       J(q.contribKeys(w.db, 'c6')) === J(keysOf('屏東線', S7)) && st.ok === 1 && st.unusable === 1,
     J({ p: q.verdictsLn(w.db, 'c6', 'K1', '屏東線'), n: q.verdictsLn(w.db, 'c6', 'K1', '南迴線'), ledger: q.tripRows(w.db), st }));
 });
@@ -464,9 +468,9 @@ await attempt('C7', async () => {
     total === 4003 && s1.truncated === true && s1.trains === 4000 && filled === 4000 && zzPending === 3 && q.chips(w.db, 'trunc-a') === 0,
     J({ total, truncated: s1.truncated, trains: s1.trains, filled, zzPending, chips: q.chips(w.db, 'trunc-a') }));
   const s2 = await w.cron();
-  ok('C7b [F4 截斷] 下一發只剩 ZZ 車：三批併成一趟一起判＝750 秒 ≥ 600 → 1 顆（ref＝trunc-a|乘車日|zz01）、不再截斷',
+  ok('C7b [F4 截斷] 下一發只剩 ZZ 車：三批併成一趟一起判＝750 秒 ≥ 600、收下 7.48 km → 7 點（ref＝trunc-a|乘車日|zz01）、不再截斷',
     q.verdicts(w.db, 'trunc-a', 'zz01') === 'ok' && s2.truncated === false && s2.trips === 1 &&
-      J(q.tripRows(w.db)) === J([{ actor: 'trunc-a', delta: 1, ref: `trunc-a|${D28}|zz01`, day: D28 }]),
+      J(q.tripRows(w.db)) === J([{ actor: 'trunc-a', delta: 7, ref: `trunc-a|${D28}|zz01`, day: D28 }]),
     J({ v: q.verdicts(w.db, 'trunc-a', 'zz01'), st: s2, ledger: q.tripRows(w.db) }));
 });
 await attempt('C9', async () => {
@@ -476,9 +480,9 @@ await attempt('C9', async () => {
   putBatches(w.db, { actor: 'c9', trainNo: 'X1', lnId: '山線', pts: leg({ sec: 700, t0: 30000 }), first: 0 });
   putBatches(w.db, { actor: 'c9', trainNo: 'X1', lnId: '山線', sys: 'thsr_sched', pts: leg({ sec: 4, t0: 30701 }), first: 100 });
   const st = await w.cron();
-  ok('C9 [F4] 同名 ln_id（山線）、不同 sys 的兩批各自成組：tra_sched 那組 ok（登記 7 段、籌碼 1）、thsr_sched 那組因題庫沒有這條線判 unusable（trips 2）',
+  ok('C9 [F4] 同名 ln_id（山線）、不同 sys 的兩批各自成組：tra_sched 那組 ok（登記 7 段、13 點）、thsr_sched 那組因題庫沒有這條線判 unusable（trips 2）',
     st.trips === 2 && st.ok === 1 && st.unusable === 1 && J(q.contribKeys(w.db, 'c9')) === J(keysOf('山線', S7)) &&
-      J(q.tripRows(w.db)) === J([{ actor: 'c9', delta: 1, ref: `c9|${D28}|X1`, day: D28 }]),
+      J(q.tripRows(w.db)) === J([{ actor: 'c9', delta: 13, ref: `c9|${D28}|X1`, day: D28 }]),
     J({ st, contrib: q.contribKeys(w.db, 'c9').length, ledger: q.tripRows(w.db) }));
 });
 await attempt('C8', async () => {
@@ -495,10 +499,10 @@ await attempt('C8', async () => {
   const first = snap();
   w.db.exec("UPDATE bounty_samples SET verdict='pending', verdict_at=NULL, segs=NULL");
   const st2 = await w.cron(NOW_MS + 3600e3);
-  ok('C8a [F4 冪等] 同一班車重判一次：帳本 1 列（delta 2）與內容、貢獻 14 列、每段人數完全不變，且重判確實發生（trips 2）、這次入帳 0',
-    J(JSON.parse(first).ledger.map(r => r.delta)) === '[2]' && JSON.parse(first).contrib.length === 14 && first === snap() && st2.trips === 2 && st2.chips === 0,
+  ok('C8a [F4 冪等] 同一班車重判一次：帳本 1 列（delta 41）與內容、貢獻 14 列、每段人數完全不變，且重判確實發生（trips 2）、這次入帳 0',
+    J(JSON.parse(first).ledger.map(r => r.delta)) === '[41]' && JSON.parse(first).contrib.length === 14 && first === snap() && st2.trips === 2 && st2.chips === 0,
     J({ nLedger: JSON.parse(first).ledger.length, nContrib: JSON.parse(first).contrib.length, same: first === snap(), st2 }));
-  // 中途壞掉：籌碼與貢獻都已經寫完、第一句「標記已判定」丟例外 → 樣本仍 pending；補好之後下一發整班重跑，不重複發、不重複 +1。
+  // 中途壞掉：點數與貢獻都已經寫完、第一句「標記已判定」丟例外 → 樣本仍 pending；補好之後下一發整班重跑，不重複發、不重複 +1。
   const w2 = cWorld();
   putBatches(w2.db, { actor: 'c8x', trainNo: 'F2', lnId: '屏東線', pts: leg({ sec: 700, t0: 30000 }), first: 0 });
   putBatches(w2.db, { actor: 'c8x', trainNo: 'F2', lnId: '南迴線', pts: leg({ sec: 700, t0: 30701 }), first: 100 });
@@ -517,12 +521,12 @@ await attempt('C8', async () => {
     strike: w2.db.prepare("SELECT COUNT(*) c FROM kv_blobs WHERE k LIKE 'bounty_verify_strike|c8x|%|F2'").get().c };
   crash = false;
   const st3 = await w2.cron(NOW_MS + 3600e3);
-  ok('C8b [F4 冪等] 標記那個 batch 壞掉：cron 接住、記下這一班（1 列）、不停手（errors 1、stopBy 不是 error、錯誤訊息 injected）、樣本全留 pending，但籌碼 1 列與貢獻 14 段已寫（在標記之前）',
+  ok('C8b [F4 冪等] 標記那個 batch 壞掉：cron 接住、記下這一班（1 列）、不停手（errors 1、stopBy 不是 error、錯誤訊息 injected）、樣本全留 pending，但帳本 1 列與貢獻 14 段已寫（在標記之前）',
     threw === '' && st1 && st1.errors === 1 && st1.stopBy === null && /injected/.test(st1.error) && mid.pending === 8 && mid.ledger === 1 && mid.contrib === 14 &&
       mid.d === 1 && mid.strike === 1,
     J({ threw, errors: st1 && st1.errors, stopBy: st1 && st1.stopBy, error: st1 && st1.error, mid }));
-  ok('C8c [F4 冪等] 補好之後下一發整班重跑：樣本全判成 ok、帳本仍只有 1 列（delta 2）、貢獻仍 14 段、每段人數仍 1（沒有重複入帳、重複 +1）；這次入帳 0；出錯記錄刪掉（0 列）',
-    q.nPending(w2.db) === 0 && q.verdicts(w2.db, 'c8x', 'F2') === 'ok' && J(q.tripRows(w2.db).map(r => r.delta)) === '[2]' &&
+  ok('C8c [F4 冪等] 補好之後下一發整班重跑：樣本全判成 ok、帳本仍只有 1 列（delta 41）、貢獻仍 14 段、每段人數仍 1（沒有重複入帳、重複 +1）；這次入帳 0；出錯記錄刪掉（0 列）',
+    q.nPending(w2.db) === 0 && q.verdicts(w2.db, 'c8x', 'F2') === 'ok' && J(q.tripRows(w2.db).map(r => r.delta)) === '[41]' &&
       q.nContrib(w2.db, 'c8x') === 14 && q.board(w2.db, KT('屏東線', 'S0|S1'))[0].distinct_ok_users === 1 &&
       q.board(w2.db, KT('南迴線', 'S6|S7'))[0].distinct_ok_users === 1 && st3.chips === 0 && nStrike() === 0,
     J({ pending: q.nPending(w2.db), ledger: q.tripRows(w2.db), contrib: q.nContrib(w2.db, 'c8x'), st3, strike: nStrike() }));
@@ -531,8 +535,9 @@ await attempt('C8', async () => {
 // ═══ D 組：身分在入帳當下重新解析、同一班車不重複發（F10／F11）════════════════════════
 const DEV = 'dev-cron-0001', UID = 'uid-cron-0001';
 await attempt('D1', async () => {
-  // 前半趟以裝置 token 判定入帳 1 顆 → 登入合併（帳本整批改名到 uid、ref 不變）→ 後半趟晚到、以 uid 上傳、隔天單獨判。
+  // 前半趟以裝置 token 判定入帳 7 點（750 秒 @10 m/s，收下 7.48 km）→ 登入合併（帳本整批改名到 uid、ref 不變）→ 後半趟晚到、以 uid 上傳、隔天單獨判。
   // 舊行為：後半趟的趟鍵是 uid|日|車，不撞前半趟的 dev|日|車 → 同一班車發兩次。
+  // 同一班車只入帳一次：判完之後才晚到的後半趟不補點（前半趟入帳時看得到的範圍就是這班車的點數）。
   const w = world({ seed: boardAll(['山線']) });
   putBatches(w.db, { actor: DEV, trainNo: '202', lnId: '山線', pts: leg({ sec: 750, speed: 10, t0: 30000, d0: 0 }) });
   const s1 = await w.cron();
@@ -541,12 +546,12 @@ await attempt('D1', async () => {
   const afterMerge = { uid: q.chips(w.db, UID), dev: q.nLedger(w.db, DEV) }, rowsAfterMerge = q.tripRows(w.db);
   putBatches(w.db, { actor: UID, trainNo: '202', lnId: '山線', pts: leg({ sec: 750, speed: 10, t0: 30751, d0: 7500 }), first: 100 });
   const s2 = await w.cron(NOW_MS + 3600e3);
-  ok('D1a [F11 前置] 前半趟：裝置入帳 1 顆；合併之後這一顆在 uid 名下（ref 仍是裝置 token 開頭）',
-    s1.chips === 1 && beforeMerge === 1 && mst === 200 && afterMerge.uid === 1 && afterMerge.dev === 0 &&
-      J(rowsAfterMerge) === J([{ actor: UID, delta: 1, ref: `${DEV}|${D28}|202`, day: D28 }]),
+  ok('D1a [F11 前置] 前半趟：裝置入帳 7 點；合併之後這一列在 uid 名下（ref 仍是裝置 token 開頭）',
+    s1.chips === 7 && beforeMerge === 7 && mst === 200 && afterMerge.uid === 7 && afterMerge.dev === 0 &&
+      J(rowsAfterMerge) === J([{ actor: UID, delta: 7, ref: `${DEV}|${D28}|202`, day: D28 }]),
     J({ s1: s1.chips, beforeMerge, mst, afterMerge, ledger: rowsAfterMerge }));
   ok('D1b [F11] 後半趟（uid 上傳、判 ok）不再入帳：同一班車 uid 名下已有這一天這個車次的 trip 列 → 這次入帳 0、帳本仍只有那 1 列',
-    q.verdicts(w.db, UID, '202') === 'ok' && s2.chips === 0 && q.chips(w.db, UID) === 1 && q.tripRows(w.db).length === 1,
+    q.verdicts(w.db, UID, '202') === 'ok' && s2.chips === 0 && q.chips(w.db, UID) === 7 && q.tripRows(w.db).length === 1,
     J({ v: q.verdicts(w.db, UID, '202'), st2: s2.chips, chips: q.chips(w.db, UID), rows: q.tripRows(w.db) }));
   ok('D1c [F11] 去重人數仍是一個人：兩半趟合起來覆蓋 S0|S1…S6|S7，每段人數都是 1（不是裝置與 uid 各算一次）',
     J(SEGS10.slice(0, 7).map(s => q.board(w.db, KT('山線', s))[0].distinct_ok_users)) === J([1, 1, 1, 1, 1, 1, 1]) && q.nContrib(w.db, UID) === 7,
@@ -558,8 +563,8 @@ await attempt('D2', async () => {
   putBatches(w.db, { actor: 'd2-actor', trainNo: '203', lnId: '山線', date: D27, pts: leg({ sec: 700 }) });
   putBatches(w.db, { actor: 'd2-actor', trainNo: '203', lnId: '山線', date: D28, pts: leg({ sec: 700 }) });
   await w.cron();
-  ok('D2 [F11 對照] 同一個 actor、同一個車次號 203、不同天（07-27、07-28）：各入帳 1 顆（兩列），不會被當成同一班車',
-    J(q.tripRows(w.db).map(r => `${r.ref}:${r.delta}`)) === J([`d2-actor|${D27}|203:1`, `d2-actor|${D28}|203:1`]), J(q.tripRows(w.db)));
+  ok('D2 [F11 對照] 同一個 actor、同一個車次號 203、不同天（07-27、07-28）：各入帳 13 點（兩列），不會被當成同一班車',
+    J(q.tripRows(w.db).map(r => `${r.ref}:${r.delta}`)) === J([`d2-actor|${D27}|203:13`, `d2-actor|${D28}|203:13`]), J(q.tripRows(w.db)));
 });
 await attempt('D3', async () => {
   // 比對的是「|乘車日|車次」的完整結尾：車次 20 不能被車次 120 的列擋掉（結尾比對前面必須是分隔符，不是子字串）。
@@ -567,8 +572,8 @@ await attempt('D3', async () => {
   putBatches(w.db, { actor: 'd3-actor', trainNo: '120', lnId: '山線', pts: leg({ sec: 700 }) });
   putBatches(w.db, { actor: 'd3-actor', trainNo: '20', lnId: '山線', pts: leg({ sec: 700 }) });
   await w.cron();
-  ok('D3 [F11 對照] 同一天車次 120 與車次 20：各入帳 1 顆（共 2 列），不會因為 "20" 是 "120" 的結尾就當成同一班',
-    J(q.tripRows(w.db).map(r => `${r.ref}:${r.delta}`)) === J([`d3-actor|${D28}|120:1`, `d3-actor|${D28}|20:1`]), J(q.tripRows(w.db)));
+  ok('D3 [F11 對照] 同一天車次 120 與車次 20：各入帳 13 點（共 2 列），不會因為 "20" 是 "120" 的結尾就當成同一班',
+    J(q.tripRows(w.db).map(r => `${r.ref}:${r.delta}`)) === J([`d3-actor|${D28}|120:13`, `d3-actor|${D28}|20:13`]), J(q.tripRows(w.db)));
 });
 await attempt('D6', async () => {
   // 前半趟 dev 已入帳（第一發 cron）；後半趟也是 dev 上傳、留在 pending（第二發 cron 讀到時 actor 還是 dev），
@@ -580,8 +585,8 @@ await attempt('D6', async () => {
   putBatches(w.db, { actor: DEV, trainNo: '303', lnId: '山線', pts: leg({ sec: 750, speed: 10, t0: 30751, d0: 7500 }), first: 100 });
   const hook = hookOnce(w.DELAY_DB, AFTER_READ_RE, async () => { await mergeInto(w, DEV, UID); });
   const s2 = await w.cron(NOW_MS + 3600e3);
-  ok('D6 [F10＋F11] 後半趟讀完之後才合併：這班車已在 uid 名下入過帳 → 不再入帳（帳本仍 1 列 delta 1、這次入帳 0）；後半趟樣本照判 ok',
-    s1.chips === 1 && hook.fired === 1 && s2.chips === 0 && q.tripRows(w.db).length === 1 && q.chips(w.db, UID) === 1 && q.verdicts(w.db, UID, '303') === 'ok',
+  ok('D6 [F10＋F11] 後半趟讀完之後才合併：這班車已在 uid 名下入過帳 → 不再入帳（帳本仍 1 列 delta 7、這次入帳 0）；後半趟樣本照判 ok',
+    s1.chips === 7 && hook.fired === 1 && s2.chips === 0 && q.tripRows(w.db).length === 1 && q.chips(w.db, UID) === 7 && q.verdicts(w.db, UID, '303') === 'ok',
     J({ s1: s1.chips, fired: hook.fired, s2: s2.chips, ledger: q.tripRows(w.db), v: q.verdicts(w.db, UID, '303') }));
 });
 await attempt('D4', async () => {
@@ -594,8 +599,8 @@ await attempt('D4', async () => {
   const hook = hookOnce(w.DELAY_DB, AFTER_READ_RE, async () => { mst = await mergeInto(w, DEV, UID); });
   const st = await w.cron();
   ok('D4a [F10 注入] 合併確實發生在 cron 讀樣本之後（注入點觸發 1 次、合併 200）', hook.fired === 1 && mst === 200, J({ fired: hook.fired, mst }));
-  ok('D4b [F10] 籌碼入在 uid 名下：帳本 1 列、actor＝uid、ref＝uid|乘車日|301、delta 1；裝置名下 0 列；stat.chips 1',
-    J(q.tripRows(w.db)) === J([{ actor: UID, delta: 1, ref: `${UID}|${D28}|301`, day: D28 }]) && q.nLedger(w.db, DEV) === 0 && st.chips === 1,
+  ok('D4b [F10] 點數入在 uid 名下：帳本 1 列、actor＝uid、ref＝uid|乘車日|301、delta 13；裝置名下 0 列；stat.chips 13',
+    J(q.tripRows(w.db)) === J([{ actor: UID, delta: 13, ref: `${UID}|${D28}|301`, day: D28 }]) && q.nLedger(w.db, DEV) === 0 && st.chips === 13,
     J({ ledger: q.tripRows(w.db), dev: q.nLedger(w.db, DEV), chips: st.chips }));
   ok('D4c [F10] 貢獻登記在 uid 名下（7 段）、裝置名下 0 段；uid 原本就交過的 S0|S1 人數不多算（仍 1），其餘 6 段各 1、沒經過的 S7|S8 為 0',
     q.nContrib(w.db, UID) === 7 && q.nContrib(w.db, DEV) === 0 &&
@@ -603,14 +608,14 @@ await attempt('D4', async () => {
     J({ uid: q.nContrib(w.db, UID), dev: q.nContrib(w.db, DEV), d: SEGS10.map(s => q.board(w.db, KT('山線', s))[0].distinct_ok_users) }));
 });
 await attempt('D5', async () => {
-  // 每日上限也要用「當下」的身分：uid 這一天已經拿滿 4 顆，裝置的這一趟在入帳前才併進 uid → 上限擋下、一顆都不入。
-  const seed = [1, 2, 3, 4].map(i => `INSERT INTO chip_ledger (id,actor,kind,delta,ref,day,created_at) VALUES ('seed-${i}','${UID}','trip',1,'seed${i}|${D28}|90${i}','${D28}',1);`).join('\n');
+  // 每日上限也要用「當下」的身分：uid 這一天已經拿滿 500 點，裝置的這一趟在入帳前才併進 uid → 上限擋下、一點都不入。
+  const seed = [1, 2, 3, 4].map(i => `INSERT INTO chip_ledger (id,actor,kind,delta,ref,day,created_at,unit) VALUES ('seed-${i}','${UID}','trip',125,'seed${i}|${D28}|90${i}','${D28}',1,'point');`).join('\n');
   const w = world({ seed: boardAll(['山線']) + '\n' + seed });
   putBatches(w.db, { actor: DEV, trainNo: '302', lnId: '山線', pts: leg({ sec: 700 }) });
   hookOnce(w.DELAY_DB, AFTER_READ_RE, async () => { await mergeInto(w, DEV, UID); });
   const st = await w.cron();
-  ok('D5 [F10] uid 當天已滿 4 顆、裝置的趟在入帳前併進 uid：不入帳（uid 仍 4、沒有 302 那列、裝置名下 0 列、這次入帳 0）；樣本照判 ok',
-    q.chips(w.db, UID, D28) === 4 && q.tripRows(w.db).length === 4 && !q.tripRows(w.db).some(r => r.ref.endsWith('|302')) &&
+  ok('D5 [F10] uid 當天已滿 500 點、裝置的趟在入帳前併進 uid：不入帳（uid 仍 500、沒有 302 那列、裝置名下 0 列、這次入帳 0）；樣本照判 ok',
+    q.chips(w.db, UID, D28) === 500 && q.tripRows(w.db).length === 4 && !q.tripRows(w.db).some(r => r.ref.endsWith('|302')) &&
       q.nLedger(w.db, DEV) === 0 && st.chips === 0 && q.verdicts(w.db, UID, '302') === 'ok',
     J({ uid: q.chips(w.db, UID, D28), rows: q.tripRows(w.db).length, dev: q.nLedger(w.db, DEV), chips: st.chips, v: q.verdicts(w.db, UID, '302') }));
 });
@@ -634,8 +639,8 @@ await attempt('E1', async () => {
     J({ ledger: q.nLedger(w.db, 'sim-e1'), contrib: q.nContrib(w.db, 'sim-e1'), points: q.nPoints(w.db, 'sim-e1'),
       claim: w.db.prepare("SELECT status FROM bounty_claims WHERE id='claim-sim'").get().status }));
   const b = q.board(w.db, KT('南迴線', 'S0|S1'))[0];
-  ok('E1c [F23 對照] 同樣的趟、simulator:false 的另一位：帳本 2 顆（南迴 ×2；0 不是因為整條路壞了）、貢獻 7 段、有點數列',
-    q.chips(w.db, 'real-e1') === 2 && q.nContrib(w.db, 'real-e1') === 7 && q.nPoints(w.db, 'real-e1') === 1,
+  ok('E1c [F23 對照] 同樣的趟、simulator:false 的另一位：帳本 27 點（南迴 13.96 km ×2；0 不是因為整條路壞了）、貢獻 7 段、有點數列',
+    q.chips(w.db, 'real-e1') === 27 && q.nContrib(w.db, 'real-e1') === 7 && q.nPoints(w.db, 'real-e1') === 1,
     J({ chips: q.chips(w.db, 'real-e1'), contrib: q.nContrib(w.db, 'real-e1'), points: q.nPoints(w.db, 'real-e1') }));
   ok('E1d [F23] 看板只算真機那一位：S0|S1 的 distinct_ok_users 1、sample_count 1（不是 2）、沒收滿',
     b.distinct_ok_users === 1 && b.sample_count === 1 && b.covered_at === null, J(b));

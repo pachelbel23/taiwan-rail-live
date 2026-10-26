@@ -135,7 +135,8 @@ const widths = [360, 375, 414, 768];
 // 10/24: Sanying/Circular headways and flexible Airport MRT express additions add one (518 -> 519).
 // 10/24: latest Airport MRT 15-minute plan and explicit Alishan list-title resumption scope.
 // K added two entries; this Danhai conflict warning adds one, preserving all history.
-const expectedHistoryCount = 523;
+// 10/26: calibration bounties switch from chips to points adds one (523 -> 524).
+const expectedHistoryCount = 524;
 
 try {
   for (const [engineName, engine] of Object.entries({ chromium, webkit })) {

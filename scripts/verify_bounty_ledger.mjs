@@ -1,14 +1,13 @@
-// 路段懸賞 v2 後端驗收：每段去重人數、籌碼入帳、每日上限、反作弊（送交端）。
+// 路段懸賞後端驗收：每段去重人數、點數入帳（v3：沿線 1 公里 1 點）、每日上限、反作弊（送交端）。
 // 離線：假 D1（scripts/d1_local.mjs，真 SQLite）＋ stub ASSETS ＋ BOUNTY_NOW 釘死，不起伺服器、不碰網路。
 // 跑法：node scripts/verify_bounty_ledger.mjs
 //
 // 期望值一律寫死在這裡，不呼叫實作去產生期望：
-//   ・產品規則：捷運不列入懸賞；車庫第 1 座 4 籌碼、之後每座 8。
-//   ・其餘數字（台鐵 50／高鐵 15 位不同的人、一趟至少 10 分鐘、每日上限 4 籌碼、南迴×2、一趟 1 籌碼）
-//     來自 data/bounty_rules.json，這裡照抄成字面。
+//   ・產品規則：捷運不列入懸賞；1 公里 1 點（各線里程加總後捨去）、南迴與臺東線 ×2、每日上限 500 點、v2 的 1 顆籌碼值 50 點。
+//   ・其餘數字（台鐵 50／高鐵 15 位不同的人、一趟至少 10 分鐘）來自 data/bounty_rules.json，這裡照抄成字面。
 // 每一條判準寫的時候都先答「哪一筆輸入能讓它變紅」——答不出來的判準等於沒有判準（見 verify_bounty_api 的 C5b）。
 //
-// 分組：D 每段去重人數／收滿  C 籌碼入帳與每日上限  S 送交端（app_only／requestId／client）
+// 分組：D 每段去重人數／收滿  C 點數入帳與每日上限  S 送交端（app_only／requestId／client）
 //       P 通行證沒有倍率  E 設定缺漏的邊界
 import { readFileSync } from 'node:fs';
 import { _bounty } from '../worker.js';
@@ -56,6 +55,9 @@ function tripPts(durationSec, speed = 20, t0 = 30000) {
   return pts;
 }
 const chunk = (a, n) => { const o = []; for (let i = 0; i < a.length; i += n) o.push(a.slice(i, i + n)); return o; };
+// 一趟的點數（v3：1 公里 1 點）：tripPts(700) 沿線 0–14,000 m，防偽閘不收開頭兩點 → 收下 40–14,000 m＝13.96 km
+// → 一般線 13 點、偏遠線 ×2＝27.92 → 27 點。600 秒的趟收下 40–12,000 m＝11.96 km → 11 點。
+const P_TRIP = 13, P_REMOTE = 27, P_600 = 11;
 
 // 一個獨立的世界：全新的 D1、規則與題庫替身、釘死的時鐘。
 function world(over = {}) {
@@ -122,10 +124,11 @@ const q = {
   contrib: (db, key) => db.prepare('SELECT COUNT(*) c FROM bounty_seg_contrib WHERE seg_key=?').get(key).c,
   contribAll: (db, actor) => db.prepare('SELECT COUNT(*) c FROM bounty_seg_contrib WHERE actor=?').get(actor).c,
   ledger: (db, actor) => db.prepare('SELECT * FROM chip_ledger WHERE actor=? ORDER BY created_at,id').all(actor),
-  // trip 籌碼合計；day 不給就是全部日子。這裡刻意自己寫 SQL、不呼叫實作的任何函式——期望值不能與被驗的實作同源。
+  // trip 點數合計；day 不給就是全部日子。v2 的籌碼列（unit='chip'）1 顆算 50 點（產品規則，寫成字面）。
+  // 這裡刻意自己寫 SQL、不呼叫實作的任何函式——期望值不能與被驗的實作同源。
   chips: (db, actor, day) => day == null
-    ? db.prepare("SELECT COALESCE(SUM(delta),0) n FROM chip_ledger WHERE actor=? AND kind='trip'").get(actor).n
-    : db.prepare("SELECT COALESCE(SUM(delta),0) n FROM chip_ledger WHERE actor=? AND kind='trip' AND day=?").get(actor, day).n,
+    ? db.prepare("SELECT COALESCE(SUM(CASE WHEN unit='chip' THEN delta*50 ELSE delta END),0) n FROM chip_ledger WHERE actor=? AND kind='trip'").get(actor).n
+    : db.prepare("SELECT COALESCE(SUM(CASE WHEN unit='chip' THEN delta*50 ELSE delta END),0) n FROM chip_ledger WHERE actor=? AND kind='trip' AND day=?").get(actor, day).n,
   verdicts: (db, actor) => db.prepare('SELECT DISTINCT verdict v FROM bounty_samples WHERE actor=?').all(actor).map(r => r.v).sort().join(),
 };
 const K = k => segKey('tra_sched', '南迴線', k);
@@ -231,8 +234,8 @@ await attempt('D5', async () => {
   ok('D5b-ok [對照] 同一次 cron 裡那位 ok 的登記了 7 段（前面兩個 0 不是因為登記整條壞了）', q.contribAll(w.db, 'device-ok') === 7,
     String(q.contribAll(w.db, 'device-ok')));
   ok('D5c 該段 distinct_ok_users 只有 1（那位 ok 的），不是 3', b.distinct_ok_users === 1, JSON.stringify(b));
-  ok('D5d unusable 與 suspect 的籌碼帳本 0 列；ok 那位 2 籌碼（南迴 ×2）',
-    q.ledger(w.db, 'device-un').length === 0 && q.ledger(w.db, 'device-sp').length === 0 && q.chips(w.db, 'device-ok') === 2,
+  ok('D5d unusable 與 suspect 的帳本 0 列；ok 那位 27 點（南迴 13.96 km ×2）',
+    q.ledger(w.db, 'device-un').length === 0 && q.ledger(w.db, 'device-sp').length === 0 && q.chips(w.db, 'device-ok') === P_REMOTE,
     JSON.stringify({ un: q.ledger(w.db, 'device-un').length, sp: q.ledger(w.db, 'device-sp').length, ok: q.chips(w.db, 'device-ok') }));
 });
 
@@ -308,19 +311,20 @@ await attempt('D8', async () => {
   ok('D8c 沒有任何貢獻者的段：新列是 0（不是任何一個固定常數）', b.length === 1 && b[0].distinct_ok_users === 0, JSON.stringify(b));
 });
 
-// ═══ C 組：籌碼入帳與每日上限 ═════════════════════════════════════════════
-// C1 一般線 ok 趟 → 帳本 +1；同時驗帳本列的形狀（ref＝趟鍵、day＝乘車日不是判定日、kind＝trip）
+// ═══ C 組：點數入帳與每日上限 ═════════════════════════════════════════════
+// C1 一般線 ok 趟 → 帳本 +13；同時驗帳本列的形狀（ref＝趟鍵、day＝乘車日不是判定日、kind＝trip、unit＝point）
 await attempt('C1', async () => {
   const w = world();
   addTrip(w.db, { actor: 'device-c1', trainNo: '101', lnId: '山線' });
   const st = await w.cron();
   const L = q.ledger(w.db, 'device-c1');
-  ok('C1a 一般線（山線）ok 趟 → 帳本 1 列、delta=+1', q.verdicts(w.db, 'device-c1') === 'ok' && L.length === 1 && L[0].delta === 1, JSON.stringify(L));
-  ok('C1b 帳本列形狀：kind=trip、ref＝趟鍵 actor|乘車日|車次、day＝乘車日（不是 cron 跑的那天 07-29）',
-    L[0].kind === 'trip' && L[0].ref === 'device-c1|2026-07-28|101' && L[0].day === '2026-07-28' && L[0].created_at === NOW_MS, JSON.stringify(L[0]));
-  ok('C1c cron 回報 stat.chips＝本次入帳的籌碼數（運維看得到今天發了多少）', st.chips === 1, JSON.stringify(st));
+  ok('C1a 一般線（山線）ok 趟 13.96 km → 帳本 1 列、delta=+13', q.verdicts(w.db, 'device-c1') === 'ok' && L.length === 1 && L[0].delta === P_TRIP, JSON.stringify(L));
+  ok("C1b 帳本列形狀：kind=trip、ref＝趟鍵 actor|乘車日|車次、day＝乘車日（不是 cron 跑的那天 07-29）、unit='point'",
+    L[0].kind === 'trip' && L[0].ref === 'device-c1|2026-07-28|101' && L[0].day === '2026-07-28' && L[0].created_at === NOW_MS && L[0].unit === 'point',
+    JSON.stringify(L[0]));
+  ok('C1c cron 回報 stat.chips＝本次入帳的點數（運維看得到今天發了多少）', st.chips === P_TRIP, JSON.stringify(st));
 });
-// C2 南迴 ok 趟 → +2；臺東線同樣 ×2；北迴線不算偏遠（設定檔的 remoteLines）
+// C2 南迴 ok 趟 → ×2；臺東線同樣 ×2；北迴線不算偏遠（設定檔的 remoteLines）
 await attempt('C2', async () => {
   UNITS.lines['tra_sched|臺東線'] = mkLine('tra_sched', '臺東線');
   UNITS.lines['tra_sched|北迴線'] = mkLine('tra_sched', '北迴線');
@@ -329,11 +333,11 @@ await attempt('C2', async () => {
   addTrip(w.db, { actor: 'device-c2b', trainNo: '102', lnId: '臺東線' });
   addTrip(w.db, { actor: 'device-c2c', trainNo: '103', lnId: '北迴線' });
   await w.cron();
-  ok('C2 南迴 ok 趟 +2、臺東線 +2、北迴線 +1',
-    q.chips(w.db, 'device-c2a') === 2 && q.chips(w.db, 'device-c2b') === 2 && q.chips(w.db, 'device-c2c') === 1,
+  ok('C2 同樣 13.96 km：南迴 +27、臺東線 +27、北迴線 +13',
+    q.chips(w.db, 'device-c2a') === P_REMOTE && q.chips(w.db, 'device-c2b') === P_REMOTE && q.chips(w.db, 'device-c2c') === P_TRIP,
     JSON.stringify({ nanhui: q.chips(w.db, 'device-c2a'), taitung: q.chips(w.db, 'device-c2b'), beihui: q.chips(w.db, 'device-c2c') }));
 });
-// C3 599 秒 ok 趟 → 0；剛好 600 秒 → 1（durationSec＝t 的 max−min，兩側邊界都要有）
+// C3 599 秒 ok 趟 → 0；剛好 600 秒 → 照里程給（durationSec＝t 的 max−min，兩側邊界都要有）
 await attempt('C3', async () => {
   const w = world();
   addTrip(w.db, { actor: 'device-c3a', trainNo: '101', lnId: '山線', durationSec: 599 });
@@ -341,13 +345,16 @@ await attempt('C3', async () => {
   await w.cron();
   ok('C3a 599 秒的 ok 趟：判定 ok、帳本 0（未滿 10 分鐘）', q.verdicts(w.db, 'device-c3a') === 'ok' && q.ledger(w.db, 'device-c3a').length === 0,
     JSON.stringify({ v: q.verdicts(w.db, 'device-c3a'), n: q.ledger(w.db, 'device-c3a').length }));
-  ok('C3b 剛好 600 秒的 ok 趟：帳本 +1（門檻是 ≥600，不是 >600）', q.verdicts(w.db, 'device-c3b') === 'ok' && q.chips(w.db, 'device-c3b') === 1,
+  ok('C3b 剛好 600 秒的 ok 趟（11.96 km）：帳本 +11（門檻是 ≥600，不是 >600）', q.verdicts(w.db, 'device-c3b') === 'ok' && q.chips(w.db, 'device-c3b') === P_600,
     JSON.stringify({ v: q.verdicts(w.db, 'device-c3b'), c: q.chips(w.db, 'device-c3b') }));
 });
-// C4 每日上限：同一天 5 趟一般 ok → 合計 4；再來一趟南迴 → 仍 4；隔天 → 重新可得
+// 預先在帳本放「這一天已經入帳的錄程點數」（一列，ref 與任何一班車的趟鍵都對不上）。unit 不給就是 point。
+const seedTrip = (a, n, day = TRIP_DATE, unit = 'point', tag = 'seed') =>
+  `INSERT INTO chip_ledger (id,actor,kind,delta,ref,day,created_at,unit) VALUES ('${tag}-${a}-${day}','${a}','trip',${n},'${tag}-${a}-${day}-ref','${day}',1,'${unit}');`;
+// C4 每日上限 500：當天已有 470 點，再 5 趟一般 ok → 累計到 500 就停；再來一趟南迴 → 仍 500；隔天 → 重新可得
 await attempt('C4', async () => {
-  const w = world();
   const a = 'device-c4a';
+  const w = world({ seed: seedTrip(a, 470) });
   const got = [];
   for (const n of ['101', '102', '103', '104', '105']) { addTrip(w.db, { actor: a, trainNo: n, lnId: '山線' }); await w.cron(); got.push(q.chips(w.db, a, TRIP_DATE)); }
   addTrip(w.db, { actor: a, trainNo: '106', lnId: '南迴線' }); await w.cron();
@@ -355,41 +362,51 @@ await attempt('C4', async () => {
   // 判定只挑「乘車日早於台北今天」的樣本。07-29 的趟在 07-29 當天的 cron 不會被判（趟可能還在車上）——
   // 所以隔天那一趟要等到 07-30 的 cron 才判。只把 cron 的時間往後推一天，斷言一個字沒動。
   addTrip(w.db, { actor: a, trainNo: '107', lnId: '山線', date: NEXT_DATE }); await w.cron(NOW_MS + 86400e3);
-  ok('C4a 同一天 5 趟一般 ok：累計 1、2、3、4、4（第 5 趟被上限擋下，帳本合計 4）', JSON.stringify(got) === '[1,2,3,4,4]', JSON.stringify(got));
-  ok('C4b 已滿 4 之後再來一趟南迴（×2）→ 仍是 4', afterRemote === 4, String(afterRemote));
-  ok('C4c 隔天（07-29）重新可得：+1；前一天的 4 不動', q.chips(w.db, a, NEXT_DATE) === 1 && q.chips(w.db, a, TRIP_DATE) === 4,
+  ok('C4a 當天已有 470 點，再 5 趟一般 ok（每趟 13）：累計 483、496、500、500、500（第 3 趟截掉 9 點，之後擋下）',
+    JSON.stringify(got) === '[483,496,500,500,500]', JSON.stringify(got));
+  ok('C4b 已滿 500 之後再來一趟南迴（×2）→ 仍是 500', afterRemote === 500, String(afterRemote));
+  ok('C4c 隔天（07-29）重新可得：+13；前一天的 500 不動', q.chips(w.db, a, NEXT_DATE) === P_TRIP && q.chips(w.db, a, TRIP_DATE) === 500,
     JSON.stringify({ next: q.chips(w.db, a, NEXT_DATE), prev: q.chips(w.db, a, TRIP_DATE) }));
   ok('C4d 第 5、6 趟都判成 ok（前提：0 是被上限擋下，不是判壞了）', q.verdicts(w.db, a) === 'ok');
 });
 await attempt('C4e', async () => {
-  const w = world();
   const a = 'device-c4e';
-  for (const n of ['101', '102', '103']) { addTrip(w.db, { actor: a, trainNo: n, lnId: '山線' }); await w.cron(); }
+  const w = world({ seed: seedTrip(a, 480) });
   const before = q.chips(w.db, a, TRIP_DATE);
   addTrip(w.db, { actor: a, trainNo: '104', lnId: '南迴線' }); const st = await w.cron();
   const L = q.ledger(w.db, a);
-  ok('C4e 已得 3 時來一趟南迴（原本 +2）→ 只入 1，合計 4', before === 3 && q.chips(w.db, a, TRIP_DATE) === 4 &&
-    L[L.length - 1].delta === 1 && st.chips === 1, JSON.stringify({ before, after: q.chips(w.db, a, TRIP_DATE), last: L[L.length - 1], st: st.chips }));
+  ok('C4e 已得 480 時來一趟南迴（原本 +27）→ 只入 20，合計 500', before === 480 && q.chips(w.db, a, TRIP_DATE) === 500 &&
+    L[L.length - 1].delta === 20 && st.chips === 20, JSON.stringify({ before, after: q.chips(w.db, a, TRIP_DATE), last: L[L.length - 1], st: st.chips }));
 });
 // C4f 每日上限只數 kind='trip'：同一天已有的雲端搭乘（cloud）、之前花掉的兌換（redeem，負數）都不占 trip 的額度
 await attempt('C4f', async () => {
   const a = 'device-c4f';
-  const w = world({ seed: `INSERT INTO chip_ledger (id,actor,kind,delta,ref,day,created_at) VALUES
-    ('seed-cloud','${a}','cloud',1,'seed-cloud-ref','${TRIP_DATE}',1),
-    ('seed-redeem','${a}','redeem',-4,'seed-redeem-ref','${TRIP_DATE}',1);` });
-  for (const n of ['101', '102', '103', '104', '105']) { addTrip(w.db, { actor: a, trainNo: n, lnId: '山線' }); await w.cron(); }
+  const w = world({ seed: seedTrip(a, 470) + `INSERT INTO chip_ledger (id,actor,kind,delta,ref,day,created_at,unit) VALUES
+    ('seed-cloud','${a}','cloud',20,'seed-cloud-ref','${TRIP_DATE}',1,'point'),
+    ('seed-redeem','${a}','redeem',-200,'seed-redeem-ref','${TRIP_DATE}',1,'point');` });
+  for (const n of ['101', '102', '103']) { addTrip(w.db, { actor: a, trainNo: n, lnId: '山線' }); await w.cron(); }
   const trip = q.chips(w.db, a, TRIP_DATE);
-  ok('C4f 同一天另有 cloud +1、redeem −4 時，trip 仍可拿滿 4（上限只數 kind=trip，不是整本帳）', trip === 4, String(trip));
+  ok('C4f 同一天另有 cloud +20、redeem −200 時，trip 照樣從 470 拿到剛好 500（上限只數 kind=trip，不是整本帳）', trip === 500, String(trip));
 });
-// C4g 每日上限是每個人各自的：另一位同一天已拿滿 4，這一位的第一趟仍是 +1（上限的 SUM 要綁 actor）
+// C4g 每日上限是每個人各自的：另一位同一天已拿滿 500，這一位的第一趟仍是 +13（上限的 SUM 要綁 actor）
 await attempt('C4g', async () => {
-  const w = world();
-  for (const n of ['101', '102', '103', '104']) addTrip(w.db, { actor: 'device-c4g-full', trainNo: n, lnId: '山線' });
+  const w = world({ seed: seedTrip('device-c4g-full', 500) });
+  addTrip(w.db, { actor: 'device-c4g-full', trainNo: '101', lnId: '山線' });
   addTrip(w.db, { actor: 'device-c4g-new', trainNo: '201', lnId: '山線' });
   await w.cron();
-  ok('C4g 別人同一天已拿滿 4 → 這一位的第一趟仍 +1（不是被別人的額度擋掉）；那位滿的維持 4',
-    q.chips(w.db, 'device-c4g-full', TRIP_DATE) === 4 && q.chips(w.db, 'device-c4g-new', TRIP_DATE) === 1,
+  ok('C4g 別人同一天已拿滿 500 → 這一位的第一趟仍 +13（不是被別人的額度擋掉）；那位滿的維持 500',
+    q.chips(w.db, 'device-c4g-full', TRIP_DATE) === 500 && q.chips(w.db, 'device-c4g-new', TRIP_DATE) === P_TRIP,
     JSON.stringify({ full: q.chips(w.db, 'device-c4g-full', TRIP_DATE), fresh: q.chips(w.db, 'device-c4g-new', TRIP_DATE) }));
+});
+// C4h 上線當天 v2 已經寫進來的籌碼列（unit='chip'）照 1 顆 50 點算進當日上限：當天有 9 顆籌碼（450 點）＋40 點，
+// 再一趟 13 點只入 10。只數 delta 的話會當成「當天才 49」而照入 13。
+await attempt('C4h', async () => {
+  const a = 'device-c4h';
+  const w = world({ seed: seedTrip(a, 9, TRIP_DATE, 'chip', 'v2') + seedTrip(a, 40) });
+  addTrip(w.db, { actor: a, trainNo: '101', lnId: '山線' }); await w.cron();
+  const L = q.ledger(w.db, a), last = L.find(r => r.ref === `${a}|${TRIP_DATE}|101`);
+  ok("C4h 當天已有 v2 籌碼 9 顆（＝450 點）＋40 點 → 一趟 13 點只入 10（unit='point'），當天合計 500",
+    !!last && last.delta === 10 && last.unit === 'point' && q.chips(w.db, a, TRIP_DATE) === 500, JSON.stringify({ last, total: q.chips(w.db, a, TRIP_DATE) }));
 });
 // C5 cron 重跑同一批 → 帳本不重複、去重人數不重複算。重跑的做法：把已判定的樣本改回 pending 再跑一次。
 await attempt('C5', async () => {
@@ -426,7 +443,7 @@ await attempt('C6', async () => {
     JSON.stringify({ statuses: rs.map(r => r.status), nSamples, stored }));
   ok('C6b 判定照跑＝ok；帳本 0 列', q.verdicts(w.db, 'device-sim1') === 'ok' && q.ledger(w.db, 'device-sim1').length === 0,
     JSON.stringify({ v: q.verdicts(w.db, 'device-sim1'), n: q.ledger(w.db, 'device-sim1').length }));
-  ok('C6c [對照] 同樣的趟、simulator:false 的另一位 → 帳本 2 籌碼（南迴 ×2；0 不是因為整條路壞了）', q.chips(w.db, 'device-real') === 2, String(q.chips(w.db, 'device-real')));
+  ok('C6c [對照] 同樣的趟、simulator:false 的另一位 → 帳本 27 點（南迴 ×2；0 不是因為整條路壞了）', q.chips(w.db, 'device-real') === P_REMOTE, String(q.chips(w.db, 'device-real')));
   const simBoard = q.board(w.db, K('S0|S1'))[0];
   const simPoints = w.db.prepare("SELECT COUNT(*) c FROM bounty_points WHERE actor='device-sim1'").get().c;
   ok('C6d simulator 的 ok 趟不登記 contrib（0 段；對照真機那位 7 段）、看板只算真機那一位（distinct_ok_users 1、sample_count 1，不是 2）、沒有點數列',
@@ -447,7 +464,7 @@ await attempt('C6f', async () => {
   const w = world();
   addTrip(w.db, { actor: 'device-old', trainNo: '101', lnId: '山線', client: null });
   await w.cron();
-  ok('C6f client 為 NULL 的舊列：不是模擬器，照常 +1', q.chips(w.db, 'device-old') === 1, String(q.chips(w.db, 'device-old')));
+  ok('C6f client 為 NULL 的舊列：不是模擬器，照常 +13', q.chips(w.db, 'device-old') === P_TRIP, String(q.chips(w.db, 'device-old')));
 });
 // C6g client 欄是壞掉的 JSON（寫入端只存 sanitizeClient 的結果，正常不會發生；直接動 D1 的人才做得出來）：
 // 不能讓整支 cron 掛掉——那會讓所有人的判定卡在 pending。視為「不是模擬器」，照常入帳。
@@ -456,11 +473,11 @@ await attempt('C6g', async () => {
   addTrip(w.db, { actor: 'device-bad', trainNo: '101', lnId: '山線', clientRaw: '{not json' });
   addTrip(w.db, { actor: 'device-fine', trainNo: '102', lnId: '山線' });
   await w.cron();
-  ok('C6g client 欄是壞掉的 JSON：cron 不掛、當「不是模擬器」處理（兩位各 +1）；正常那位不受影響',
-    q.chips(w.db, 'device-bad') === 1 && q.chips(w.db, 'device-fine') === 1 && q.verdicts(w.db, 'device-bad') === 'ok',
+  ok('C6g client 欄是壞掉的 JSON：cron 不掛、當「不是模擬器」處理（兩位各 +13）；正常那位不受影響',
+    q.chips(w.db, 'device-bad') === P_TRIP && q.chips(w.db, 'device-fine') === P_TRIP && q.verdicts(w.db, 'device-bad') === 'ok',
     JSON.stringify({ bad: q.chips(w.db, 'device-bad'), fine: q.chips(w.db, 'device-fine') }));
 });
-// C7 與看板有沒有這一段無關：板上完全沒有該段單位、或該段已收滿下架，ok 趟照樣 +1
+// C7 與看板有沒有這一段無關：板上完全沒有該段單位、或該段已收滿下架，ok 趟照樣給點
 await attempt('C7', async () => {
   const empty = world();                                                           // 板是空的
   addTrip(empty.db, { actor: 'device-c7a', trainNo: '101', lnId: '山線' });
@@ -469,9 +486,9 @@ await attempt('C7', async () => {
   addTrip(full.db, { actor: 'device-c7b', trainNo: '101', lnId: '山線' });
   await full.cron();
   const boardRows = empty.db.prepare('SELECT COUNT(*) c FROM bounty_board').get().c;
-  ok('C7a 板上完全沒有任何單位（bounty_board 0 列）：ok 趟照樣 +1 籌碼', boardRows === 0 && q.chips(empty.db, 'device-c7a') === 1,
+  ok('C7a 板上完全沒有任何單位（bounty_board 0 列）：ok 趟照樣 +13 點', boardRows === 0 && q.chips(empty.db, 'device-c7a') === P_TRIP,
     JSON.stringify({ boardRows, chips: q.chips(empty.db, 'device-c7a') }));
-  ok('C7b 該段已收滿下架（covered_at 有值）：ok 趟照樣 +1 籌碼', q.verdicts(full.db, 'device-c7b') === 'ok' && q.chips(full.db, 'device-c7b') === 1,
+  ok('C7b 該段已收滿下架（covered_at 有值）：ok 趟照樣 +13 點', q.verdicts(full.db, 'device-c7b') === 'ok' && q.chips(full.db, 'device-c7b') === P_TRIP,
     JSON.stringify({ v: q.verdicts(full.db, 'device-c7b'), chips: q.chips(full.db, 'device-c7b') }));
 });
 // C8 高鐵（一般 ×1）與跨日的 day 歸屬
@@ -479,7 +496,7 @@ await attempt('C8', async () => {
   const w = world();
   addTrip(w.db, { actor: 'device-c8', trainNo: '801', sys: 'thsr_sched', lnId: 'THSR' });
   await w.cron();
-  ok('C8 高鐵 ok 趟 +1（thsr_sched|THSR 不在 remoteLines）', q.chips(w.db, 'device-c8') === 1, String(q.chips(w.db, 'device-c8')));
+  ok('C8 高鐵 ok 趟 +13（thsr_sched|THSR 不在 remoteLines）', q.chips(w.db, 'device-c8') === P_TRIP, String(q.chips(w.db, 'device-c8')));
 });
 
 // ═══ S 組：送交端 ══════════════════════════════════════════════════════════
@@ -579,10 +596,10 @@ await attempt('P1', async () => {
   await w.cron();
   const shape = a => q.ledger(w.db, a).map(r => `${r.kind}:${r.delta}:${r.day}`).join('|');
   ok('P1a 帶 plus／plusActive 等旗標的請求都收下（旗標被無視，不是被擋）', withPlus.every(r => r.status === 200), JSON.stringify(withPlus.map(r => r.status)));
-  ok('P1b 帶旗標與不帶旗標的兩位：帳本逐列相同（一般線 +1、南迴 +2，合計 3，沒有任何倍率）',
-    shape('device-plus') === shape('device-free') && q.chips(w.db, 'device-plus') === 3 && q.chips(w.db, 'device-free') === 3,
+  ok('P1b 帶旗標與不帶旗標的兩位：帳本逐列相同（一般線 +13、南迴 +27，合計 40，沒有任何倍率）',
+    shape('device-plus') === shape('device-free') && q.chips(w.db, 'device-plus') === P_TRIP + P_REMOTE && q.chips(w.db, 'device-free') === P_TRIP + P_REMOTE,
     JSON.stringify({ plus: shape('device-plus'), free: shape('device-free') }));
-  ok('P1d 整條路徑（送交＋判定＋籌碼入帳）沒有任何對外連線：籌碼沒有去查 RevenueCat／Firebase 的通行證資格', outbound.length === 0, JSON.stringify(outbound));
+  ok('P1d 整條路徑（送交＋判定＋點數入帳）沒有任何對外連線：點數沒有去查 RevenueCat／Firebase 的通行證資格', outbound.length === 0, JSON.stringify(outbound));
   const stored = w.db.prepare("SELECT client FROM bounty_samples WHERE actor='device-plus' LIMIT 1").get().client;
   ok('P1c 通行證旗標不會被存進 D1（client 只有三個欄位）', !/plus/i.test(stored), stored);
 });
@@ -597,6 +614,19 @@ await attempt('E1', async () => {
   const pending = w.db.prepare("SELECT COUNT(*) c FROM bounty_samples WHERE verdict='pending'").get().c;
   ok('E1 設定檔沒有 chips → cron 整支中止（invalid bounty rule: chips），樣本仍是 pending，不會悄悄改用預設值判完', /invalid bounty rule: chips/.test(msg) && pending > 0,
     JSON.stringify({ msg, pending }));
+});
+// E1b 規則檔還是 v2（chips 沒有 unit:'point'、沒有 perKm）→ 同樣整支中止、樣本留在 pending。
+// 不擋的話每一趟都照「perKm 不存在」算成 0 點、樣本被標成已判定，之後換回正確的規則檔也補不回來。
+await attempt('E1b', async () => {
+  const v2chips = { ...RULES.chips, perTrip: 1, dailyChipCap: 4, prices: [4, 8], cloud: { minSec: 600, dailyMax: 1, perChip: 3 } };
+  for (const k of ['unit', 'perKm', 'chipToPoints']) delete v2chips[k];
+  const w = world({ rules: { ...RULES, v: 2, chips: v2chips } });
+  addTrip(w.db, { actor: 'device-e1b', trainNo: '101', lnId: '山線' });
+  let msg = '';
+  try { await w.cron(); } catch (e) { msg = String(e.message || e); }
+  const pending = w.db.prepare("SELECT COUNT(*) c FROM bounty_samples WHERE verdict='pending'").get().c;
+  ok('E1b 規則檔是 v2 的 chips（沒有 unit:point／perKm）→ cron 整支中止（invalid bounty rule: chips）、樣本仍是 pending、帳本 0 列',
+    /invalid bounty rule: chips/.test(msg) && pending > 0 && q.ledger(w.db, 'device-e1b').length === 0, JSON.stringify({ msg, pending }));
 });
 await attempt('E2', async () => {
   const { coverDistinct, ...legacy } = RULES; void coverDistinct;

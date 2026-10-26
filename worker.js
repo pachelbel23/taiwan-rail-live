@@ -30,7 +30,7 @@ import {
   parseDirectBulkUpdateTime, parseProviderConfig, providerForCity, resolveDirectBulkStop, resolveTdxStop,
 } from './scripts/bus_live_core.mjs';
 import { twDayStr, nextHolidaySpan, weekendBody } from './scripts/weekend_core.mjs';
-import { tripChips, priceOfNth, canRedeem, taipeiDay, cloudRideCounts, cloudChipsEarned } from './scripts/bounty_chips_core.mjs';
+import { tripPoints, priceOfNth, canRedeem, taipeiDay, cloudRideCounts } from './scripts/bounty_chips_core.mjs';
 
 // Cloudflare Worker 入口:靜態資產(assets binding)+ /api/tra-live 台鐵即時動態代理
 // + /api/tra-alert 台鐵營運通阻公告 + /api/thsr-alert 高鐵營運狀態公告(颱風停駛等)
@@ -7397,18 +7397,20 @@ async function bountyMerge(request, env) {
     }
 
     // ── 路段懸賞 v2 的四張表：全部同一個交易，搬到 uid 名下；撞主鍵的兩邊併成一份 ──
-    // 🔴 每日上限（trip 籌碼每人每日 dailyChipCap 顆、雲端搭乘每人每日 1 次）不回溯、不追討：
+    // 🔴 每日上限（trip 點數每人每日 dailyChipCap 點、雲端搭乘每人每日 1 次）不回溯、不追討：
     // 兩個裝置同一天各自領滿的，併進來就是各自領到的那些；之後的入帳才照併後的合計去限。
     // ⑥ 籌碼帳本：整批改名，ref 不動（UNIQUE(kind, ref) 照舊保證同一個來源只入帳一次）。
     add('ledger', db.prepare('UPDATE chip_ledger INDEXED BY idx_chip_ledger_actor_day SET actor=? WHERE actor=?' + G).bind(uid, dev, dev, uid));
     // ⑦ 車庫解鎖：兩邊解過同一座＝只留 created_at 較早的一份（平手留 uid 那份），較晚那份花掉的籌碼以一筆
     // kind='merge' 的正數入帳退回。順序有意義：先寫退款（要讀較晚那列的 cost）→ 刪 uid 較晚的 → 刪 dev 剩下的孿生
     // → 其餘改名 → 依 created_at 重排 nth。cost 保留：那是當時實際付的價，重排只動「第幾座」。
+    // 退款列的 unit 照那一座付款時的 unit（schema/0017）：v2 用籌碼付的退回籌碼，之後照樣換算成點數（BOUNTY_POINTS_BALANCE_SQL）。
     add('refund', db.prepare(
-      'INSERT OR IGNORE INTO chip_ledger (id,actor,kind,delta,ref,day,created_at)' +
+      'INSERT OR IGNORE INTO chip_ledger (id,actor,kind,delta,ref,day,created_at,unit)' +
       " SELECT 'merge|merge|' || d.actor || '|' || d.scene, ?, 'merge'," +
       ' CASE WHEN u.created_at > d.created_at THEN u.cost ELSE d.cost END,' +
-      " 'merge|' || d.actor || '|' || d.scene, NULL, ?" +
+      " 'merge|' || d.actor || '|' || d.scene, NULL, ?," +
+      ' CASE WHEN u.created_at > d.created_at THEN u.unit ELSE d.unit END' +
       // 兩邊都指名主鍵：只指名 d 時，表很小時算的統計會讓規劃器把 u 排成外層、整張表掃過（verify_bounty_hardening.mjs 的 PL 判準抓到）；兩邊都指名之後
       // 不論哪一邊在外層，都是「某個人的解鎖」逐列＋另一邊全鍵點查。
       ' FROM garage_unlocks d INDEXED BY sqlite_autoindex_garage_unlocks_1' +
@@ -7549,21 +7551,52 @@ async function bountyPurgeUid(env, uid, deviceActor) {
   };
 }
 
-// ── 路段懸賞 v2：籌碼餘額與車庫兌換端點─────────────────────────────────────────
+// ── 路段懸賞：點數餘額與車庫兌換端點（v3：點數；v2 留下的籌碼列照 chips.chipToPoints 換算）──────────────
 // 🔴 這一區（chipsMe、garageRedeem 與它們的輔助函式）完全不讀任何通行證欄位、不查通行證資格、回應裡也不帶：
-// 籌碼、價格、解鎖與通行證無關。請求裡就算帶了 plus 之類的欄位也只是被無視。
-// 籌碼規則讀 data/bounty_rules.json 的 chips 區塊（bountyRules，ASSETS 綁定，與客端讀的是同一份檔），不設 fallback：
-// 設定缺漏就 throw，由呼叫端回 503 not_ready——寧可讓客戶端等一下，也不拿猜的價格去扣人家的籌碼。
+// 點數、價格、解鎖與通行證無關。請求裡就算帶了 plus 之類的欄位也只是被無視。
+// 點數規則讀 data/bounty_rules.json 的 chips 區塊（bountyRules，ASSETS 綁定，與客端讀的是同一份檔），不設 fallback：
+// 設定缺漏就 throw，由呼叫端回 503 not_ready——寧可讓客戶端等一下，也不拿猜的價格去扣人家的點數。
+// v3 的欄位缺一個、或 unit 不是 'point'（規則檔被換回 v2）都算缺漏：v2 的價格是籌碼（4／8），拿來扣點數等於白送。
+// 判定 cron 入帳前用同一個檢查（bountyVerifyCron）。
+function bountyPointsRulesOk(c) {
+  return !!c && c.unit === 'point' && c.perKm > 0 && c.minTripSec > 0 && Number.isFinite(c.minTripMoveM) &&
+    c.dailyChipCap > 0 && c.remoteMultiplier > 0 && Array.isArray(c.remoteLines) &&
+    Array.isArray(c.prices) && c.prices.length > 0 && Array.isArray(c.scenes) &&
+    !!c.cloud && c.cloud.points > 0 && Number.isInteger(c.chipToPoints) && c.chipToPoints >= 1;
+}
 async function bountyChipsRules(env) {
   const c = (await bountyRules(env)).chips;
-  if (!c || !Array.isArray(c.prices) || !c.prices.length || !Array.isArray(c.scenes) ||
-    !(c.dailyChipCap > 0) || !c.cloud || !(c.cloud.perChip > 0)) throw new Error('invalid bounty rule: chips');
+  if (!bountyPointsRulesOk(c)) throw new Error('invalid bounty rule: chips');
   return c;
 }
-// 餘額與解鎖清單。餘額＝帳本全部 delta 加總，不另存一份餘額（避免兩份真相，見 0014）。解鎖清單依 nth 排序。
-async function chipStateOf(db, actor) {
+// 帳本一列值幾點（schema/0017 的 unit）：v2 的籌碼列（unit='chip'）1 顆值 chipToPoints 點，其餘本來就是點。綁定：chipToPoints。
+const BOUNTY_POINTS_OF_ROW = "(CASE WHEN unit='chip' THEN delta * CAST(? AS INTEGER) ELSE delta END)";
+// 點數餘額（一個子查詢，綁定：chipToPoints、actor）。v2 的籌碼換算有「還沒補換算列」「已補」兩種狀態，兩種都要算對：
+//   餘額＝Σ delta ＋ max(0, (chipToPoints − 1) × Σ籌碼列 − Σ換算列)
+// 換算列（kind='adjust'、ref 'v3points|…'，bountyPointsConvert）只是記錄：補進去之前，第二項就是它的數額；補進去之後第二項是 0。
+// 所以餘額與兌換的守衛都不靠換算列寫進去了沒，寫入總閘關著、或換算那一句失敗，餘額照樣是對的。
+const BOUNTY_POINTS_BALANCE_SQL =
+  '(SELECT COALESCE(SUM(delta),0) + MAX(0, (CAST(? AS INTEGER) - 1) * COALESCE(SUM(CASE WHEN unit=\'chip\' THEN delta END),0)' +
+  " - COALESCE(SUM(CASE WHEN kind='adjust' AND substr(ref,1,9)='v3points|' THEN delta END),0))" +
+  ' FROM chip_ledger INDEXED BY idx_chip_ledger_actor_day WHERE actor=?)';
+// 補換算列（冪等）：數額＝(chipToPoints − 1) × Σ籌碼列 − Σ已補的換算列，> 0 才寫，所以重跑算出 0 就不寫。
+// ref＝'v3points|<actor>|<這個人目前的籌碼列數>'：同一個狀態併發算兩次會寫出同一個 ref，UNIQUE(kind, ref) 擋掉第二筆；
+// 帳號合併搬進別人的籌碼列（列數變了）就再補一筆差額——對方補過的換算列跟著搬進來，差額只剩還沒換過的那些。
+// 🔴 v3 上線後才可以有換算列：v2 的 Worker 把 Σ delta 當籌碼餘額，看到換算列會以為每個人多了 49 倍的籌碼（schema/0017 檔頭）。
+function bountyPointsConvert(db, actor, rate, now) {
+  return db.prepare(
+    'INSERT OR IGNORE INTO chip_ledger (id,actor,kind,delta,ref,day,created_at,unit)' +
+    " SELECT 'adjust|' || r, ?, 'adjust', d, r, NULL, ?, 'point' FROM (" +
+    "SELECT 'v3points|' || ? || '|' || COALESCE(SUM(CASE WHEN unit='chip' THEN 1 END),0) AS r," +
+    " (CAST(? AS INTEGER) - 1) * COALESCE(SUM(CASE WHEN unit='chip' THEN delta END),0)" +
+    " - COALESCE(SUM(CASE WHEN kind='adjust' AND substr(ref,1,9)='v3points|' THEN delta END),0) AS d" +
+    ' FROM chip_ledger INDEXED BY idx_chip_ledger_actor_day WHERE actor=?) WHERE d > 0'
+  ).bind(actor, now, actor, rate, actor);
+}
+// 餘額（點數）與解鎖清單。餘額由帳本現算，不另存一份（避免兩份真相，見 0014）。解鎖清單依 nth 排序。
+async function chipStateOf(db, actor, chips) {
   const u = await db.prepare('SELECT scene, nth, cost, created_at FROM garage_unlocks INDEXED BY sqlite_autoindex_garage_unlocks_1 WHERE actor=? ORDER BY nth').bind(actor).all();
-  const b = await db.prepare('SELECT COALESCE(SUM(delta),0) AS n FROM chip_ledger INDEXED BY idx_chip_ledger_actor_day WHERE actor=?').bind(actor).first();
+  const b = await db.prepare('SELECT ' + BOUNTY_POINTS_BALANCE_SQL + ' AS n').bind(chips.chipToPoints, actor).first();
   return {
     balance: Number(b && b.n) || 0,
     unlocked: (u.results || []).map(r => ({ scene: String(r.scene), nth: Number(r.nth), cost: Number(r.cost), at: Number(r.created_at) })),
@@ -7572,14 +7605,16 @@ async function chipStateOf(db, actor) {
 // 對外只給 {scene, nth, at}；cost 是兌換當下的價格，只放在兌換成功的那一層。
 const chipUnlockedView = list => list.map(({ scene, nth, at }) => ({ scene, nth, at }));
 
-// GET /api/chips-me：籌碼餘額、已解鎖場景、下一座的價格、雲端搭乘進度、今天已得的錄程籌碼。
+// GET /api/chips-me：點數餘額、已解鎖場景、下一座的價格、雲端搭乘次數、今天已得的錄程點數（形狀見 docs/bounty/contract-v3.md）。
+// 頂層 unit:'point' 是 v3 的記號（新客端據此判斷數字是點數）；其餘欄位名沿用 v2，App 1.7.3 照樣解析得了。
 // 身分：Bearer Firebase idToken（走 AUTH_LIMITER），或 actor 查詢參數（走 BOUNTY_LIMITER，這條路徑以前完全不限流）。
 // 🔴 兩個都帶時 Bearer 贏、?actor= 被無視（不是「兩個都要對得上」）：驗過的 uid 就是最終身分，不再跟 merged_into——
 // 若還跟，別人把這個 uid 當來源合併走之後，本人帶自己的 Bearer 讀到的就是攻擊者的帳。
 // 🔴 ?actor= 路徑是錢包讀取，規則同 garage-redeem／cloud-ride（bountyIdentity 'wallet'）：匿名裝置憑 id 讀自己的帳；
 // actor 是帳號（uid）、或是併進帳號的裝置，就必須改帶那個帳號的 Bearer——不帶 401 auth_required。
 // （bounty-me 的 ?actor= 讀取現在也走同一條：行程史同樣不該讓拿著裝置 id 的任何人讀。）
-// 唯讀：寫入總閘 BOUNTY_WRITES=off 不擋這支（停機期間使用者仍看得到自己的餘額）。
+// 寫入總閘 BOUNTY_WRITES=off 不擋這支（停機期間使用者仍看得到自己的餘額）。總閘開著時順便補 v2 籌碼的換算列
+// （bountyPointsConvert，只是記錄、不改餘額）；關著時這支完全唯讀。
 async function chipsMe(request, env) {
   const url = new URL(request.url);
   let who = url.searchParams.get('actor') || '';
@@ -7602,18 +7637,25 @@ async function chipsMe(request, env) {
       if (idn.res) return idn.res;
       actor = idn.who;
     }
-    const st = await chipStateOf(env.DELAY_DB, actor);
-    // 雲端搭乘次數只數非模擬器的列（模擬器的搭乘照寫進表、但不算進換籌碼的次數，見 cloudRide）
+    const now = Number(env.BOUNTY_NOW) || Date.now();
+    if (!bountyWritesOff(env)) await bountyPointsConvert(env.DELAY_DB, actor, chips.chipToPoints, now).run();
+    const st = await chipStateOf(env.DELAY_DB, actor, chips);
+    // 雲端搭乘次數只數非模擬器的列（模擬器的搭乘照寫進表、但不算次數、不入帳，見 cloudRide）
     const nRides = await cloudRideCount(env.DELAY_DB, actor);
-    // 今天＝台北今天；帳本 trip 列的 day 是「乘車日」（不是判定日），所以這裡數的是乘車日為今天的錄程籌碼
-    const day = taipeiDay(Number(env.BOUNTY_NOW) || Date.now());
+    // 今天＝台北今天；帳本 trip 列的 day 是「乘車日」（不是判定日），所以這裡數的是乘車日為今天的錄程點數
+    // （上線當天 v2 寫的籌碼列照換算計入，與入帳時的每日上限同一個算法，見 bountyCreditTripChips）。
+    const day = taipeiDay(now);
     const got = await env.DELAY_DB.prepare(
-      "SELECT COALESCE(SUM(delta),0) AS n FROM chip_ledger INDEXED BY idx_chip_ledger_actor_day WHERE actor=? AND kind='trip' AND day=?").bind(actor, day).first();
+      "SELECT COALESCE(SUM(" + BOUNTY_POINTS_OF_ROW + "),0) AS n FROM chip_ledger INDEXED BY idx_chip_ledger_actor_day WHERE actor=? AND kind='trip' AND day=?")
+      .bind(chips.chipToPoints, actor, day).first();
     return jsonRes({
+      unit: 'point',
       balance: st.balance,
       unlocked: chipUnlockedView(st.unlocked),
       nextCost: priceOfNth(st.unlocked.length + 1, chips),
-      cloud: { rides: nRides, toNextChip: chips.cloud.perChip - (nRides % chips.cloud.perChip) },
+      // toNextChip 固定 1：v3 每一次雲端搭乘都入帳 cloud.points 點。這個欄位只留給 App 1.7.3（它要求 ≥ 1 的整數，
+      // 小於 1 會一直退避重查），新客端讀 points。
+      cloud: { rides: nRides, toNextChip: 1, points: chips.cloud.points },
       today: { chips: Number(got && got.n) || 0, cap: chips.dailyChipCap },
     }, 200, 'no-store');
   } catch (e) {
@@ -7621,9 +7663,9 @@ async function chipsMe(request, env) {
   }
 }
 
-// POST /api/garage-redeem {actor, scene, requestId}：用籌碼解鎖一座車庫場景（永久，不綁通行證）。
-// 🔴 「扣籌碼」與「寫解鎖」不能在 JS 端先讀、判斷、再寫：兩個同時抵達的兌換（同一場景，或不同場景）會各自讀到
-// 「還沒解鎖、餘額夠」，結果超扣，或兩個場景都拿到「第一座」的價格（第一座 4、之後每座 8，少收一筆 8−4）。
+// POST /api/garage-redeem {actor, scene, requestId}：用點數解鎖一座車庫場景（永久，不綁通行證）。
+// 🔴 「扣點數」與「寫解鎖」不能在 JS 端先讀、判斷、再寫：兩個同時抵達的兌換（同一場景，或不同場景）會各自讀到
+// 「還沒解鎖、餘額夠」，結果超扣，或兩個場景都拿到「第一座」的價格（第一座 200、之後每座 300，少收一筆 300−200）。
 // 所以判斷要在資料庫裡跟寫入同一筆交易做完：
 //   ① 一個 D1 batch（單一交易）兩句條件式寫入——
 //      (1) 帳本寫一筆負數的 redeem，條件：這座還沒解鎖 AND 目前解鎖數＝nth−1 AND 目前餘額≥價格；
@@ -7671,25 +7713,26 @@ async function garageRedeem(request, env) {
     // 重送時據此驗場景——舊版只看「這個 ref 有沒有扣過款」，同一個 requestId 拿去兌換另一座「剛好已經解鎖過」的場景，
     // 會被當成成功回。場景 id 不含 '|'（bounty_rules.json 的 chips.scenes），所以前後綴切得出來。
     const ledgerId = `redeem|${scene}|${ref}`;
-    const priorRedeem = async () => db.prepare("SELECT id, delta FROM chip_ledger WHERE kind='redeem' AND ref=?").bind(ref).first();
-    // 成功的回應（第一次成功與重送共用同一個出口）：cost 是「當初扣的」（帳本 delta 的相反數），nth 讀解鎖表現況
-    // （合併重排過的話會與第一次不同），餘額與清單也是現況。
+    const priorRedeem = async () => db.prepare("SELECT id, delta, unit FROM chip_ledger WHERE kind='redeem' AND ref=?").bind(ref).first();
+    // 成功的回應（第一次成功與重送共用同一個出口）：cost 是「當初扣的」（帳本 delta 的相反數；v2 用籌碼扣的換算成點數），
+    // nth 讀解鎖表現況（合併重排過的話會與第一次不同），餘額與清單也是現況。
     const done = async (led) => {
       const pre = 'redeem|', suf = '|' + ref, id = String(led.id);
       const firstScene = (id.startsWith(pre) && id.endsWith(suf) && id.length >= pre.length + suf.length)
         ? id.slice(pre.length, id.length - suf.length) : null;
       // 場景對不上（同一個 requestId 被拿去兌換別的場景，或舊格式的帳本列讀不出場景）：不當成功回。
       if (firstScene !== scene) return jsonRes({ error: 'conflict' }, 409, 'no-store');
-      const st = await chipStateOf(db, actor);
+      const st = await chipStateOf(db, actor, chips);
       const u = st.unlocked.find(x => x.scene === scene);
       // 這個 ref 已經扣過款，但這一座不在解鎖清單（例如帳本列在、解鎖列沒寫進去）：也不當成功回。
       if (!u) return jsonRes({ error: 'conflict' }, 409, 'no-store');
-      return jsonRes({ ok: true, scene, nth: u.nth, cost: -Number(led.delta), balance: st.balance, unlocked: chipUnlockedView(st.unlocked) }, 200, 'no-store');
+      const cost = -Number(led.delta) * (led.unit === 'chip' ? chips.chipToPoints : 1);
+      return jsonRes({ ok: true, scene, nth: u.nth, cost, balance: st.balance, unlocked: chipUnlockedView(st.unlocked) }, 200, 'no-store');
     };
     for (let attempt = 0; attempt < 2; attempt++) {
       let led = await priorRedeem();
       if (led) return await done(led);
-      const st = await chipStateOf(db, actor);
+      const st = await chipStateOf(db, actor, chips);
       const can = canRedeem(scene, st.unlocked.map(u => u.scene), st.balance, chips);
       if (!can.ok) {
         if (can.why === 'already') return jsonRes({ error: 'already' }, 409, 'no-store');
@@ -7697,17 +7740,19 @@ async function garageRedeem(request, env) {
         return jsonRes({ error: 'unknown_scene' }, 400, 'no-store');
       }
       const nth = st.unlocked.length + 1, cost = can.cost;
+      // 同一筆交易先補 v2 籌碼的換算列（第一次花點數時一定留下換算記錄；餘額守衛本身不靠它，見 BOUNTY_POINTS_BALANCE_SQL）。
       await db.batch([
+        bountyPointsConvert(db, actor, chips.chipToPoints, now),
         db.prepare(
-          'INSERT OR IGNORE INTO chip_ledger (id,actor,kind,delta,ref,day,created_at)' +
-          " SELECT ?,?,'redeem',?,?,NULL,?" +
+          'INSERT OR IGNORE INTO chip_ledger (id,actor,kind,delta,ref,day,created_at,unit)' +
+          " SELECT ?,?,'redeem',?,?,NULL,?,'point'" +
           ' WHERE NOT EXISTS (SELECT 1 FROM garage_unlocks WHERE actor=? AND scene=?)' +
           ' AND (SELECT COUNT(*) FROM garage_unlocks INDEXED BY sqlite_autoindex_garage_unlocks_1 WHERE actor=?) = ?' +
-          ' AND (SELECT COALESCE(SUM(delta),0) FROM chip_ledger INDEXED BY idx_chip_ledger_actor_day WHERE actor=?) >= ?'
-        ).bind(ledgerId, actor, -cost, ref, now, actor, scene, actor, nth - 1, actor, cost),
+          ' AND ' + BOUNTY_POINTS_BALANCE_SQL + ' >= ?'
+        ).bind(ledgerId, actor, -cost, ref, now, actor, scene, actor, nth - 1, chips.chipToPoints, actor, cost),
         db.prepare(
-          'INSERT OR IGNORE INTO garage_unlocks (actor,scene,nth,cost,created_at)' +
-          ' SELECT ?,?,?,?,?' +
+          'INSERT OR IGNORE INTO garage_unlocks (actor,scene,nth,cost,created_at,unit)' +
+          " SELECT ?,?,?,?,?,'point'" +
           " WHERE EXISTS (SELECT 1 FROM chip_ledger WHERE kind='redeem' AND ref=? AND actor=? AND delta=?)" +
           ' AND (SELECT COUNT(*) FROM garage_unlocks INDEXED BY sqlite_autoindex_garage_unlocks_1 WHERE actor=?) = ?'
         ).bind(actor, scene, nth, cost, now, ref, actor, -cost, actor, nth - 1),
@@ -7724,8 +7769,8 @@ async function garageRedeem(request, env) {
 
 // ── 路段懸賞 v2：雲端搭乘 POST /api/cloud-ride─────────────────────────────────────
 // 給海外或不能搭車的人的慢路：App 在前景跟同一班真實列車連續 chips.cloud.minSec 秒算 1 次、每個營運日最多 1 次、
-// 每 chips.cloud.perChip 次換 1 個籌碼。不需要定位權限，伺服器驗的是「這班車那天有沒有開、那個時間點它有沒有可能在跑」；
-// sec 由客戶端回報，控管靠的是價值上限（每天最多 1 次、3 次才換 1 個籌碼）
+// 每次入帳 chips.cloud.points 點（v3；v2 是 3 次換 1 個籌碼）。不需要定位權限，伺服器驗的是「這班車那天有沒有開、那個時間點它有沒有可能在跑」；
+// sec 由客戶端回報，控管靠的是價值上限（每天最多 1 次、一次 20 點，不到錄程一天上限的二十分之一）
 // 加上限流與寫入總閘。
 // 🔴 這一區同樣不讀任何通行證欄位：請求裡帶了也只是被無視。
 //
@@ -7824,47 +7869,31 @@ async function cloudRideTrainOk(env, trainKey, day, startedAt) {
     cloudRideInWindow(day, startedAt, t.stops[0].arrSec, t.stops[t.stops.length - 1].depSec));
 }
 
-// 這個 actor 算進換籌碼的雲端搭乘次數（模擬器不算）。chipsMe 與 cloudRide 共用這一句，兩邊才會永遠同一個數字。
+// 這個 actor 算次數的雲端搭乘（模擬器不算）。chipsMe 與 cloudRide 共用這一句，兩邊才會永遠同一個數字。
 async function cloudRideCount(db, actor) {
   const r = await db.prepare('SELECT COUNT(*) AS n FROM cloud_rides INDEXED BY sqlite_autoindex_cloud_rides_1 WHERE actor=? AND simulator=0').bind(actor).first();
   return Number(r && r.n) || 0;
 }
 
-// 依累計次數補齊雲端搭乘的籌碼：應得＝cloudChipsEarned(次數)，已得＝帳本 kind='cloud' 的 delta 加總，差額逐顆補。
-// 🔴 不用「剛好跨過 3 的倍數才發」：合併帳號會讓次數一次跳好幾格（兩邊各 2 次併成 4 次，中間沒有任何一次「剛好」是 3 的倍數），
-// 跨門檻判斷會永遠漏發；反過來兩邊各已領過的籌碼併進來之後，也不會多發。每顆的 ref＝`<actor>|cloud|<第幾顆>`，
-// UNIQUE(kind, ref)＋OR IGNORE 讓同時抵達的兩個請求算出同一段序號時只寫進一份。回傳這一次多寫了幾顆。
-// 差額用一句遞迴 CTE 一次補齊（不是 N 句 batch）：合併過的帳號可能一次差很多顆，D1 每個請求能下的查詢數有上限。
-// 序號一律 CAST 成 INTEGER 再串進 id／ref：綁定的 JS 數字在某些驅動（本機 node:sqlite）會變成 REAL，直接串會得到「…|cloud|1.0」，
-// 那樣 ref 就跟 cloud|1 對不上、UNIQUE 擋不住重複。
-async function cloudSettleChips(db, actor, chips, day, now) {
-  const total = await cloudRideCount(db, actor);
-  const ex = await db.prepare("SELECT COALESCE(SUM(delta),0) AS n FROM chip_ledger INDEXED BY idx_chip_ledger_actor_day WHERE actor=? AND kind='cloud'").bind(actor).first();
-  const existing = Number(ex && ex.n) || 0;
-  const deserved = cloudChipsEarned(total, chips);
-  if (!(deserved > existing)) return 0;
-  const r = await db.prepare(
-    'WITH RECURSIVE seq(i) AS (SELECT CAST(? AS INTEGER) UNION ALL SELECT i + 1 FROM seq WHERE i < ?)' +
-    ' INSERT OR IGNORE INTO chip_ledger (id,actor,kind,delta,ref,day,created_at)' +
-    " SELECT 'cloud|' || ? || '|cloud|' || i, ?, 'cloud', 1, ? || '|cloud|' || i, ?, ? FROM seq"
-  ).bind(existing + 1, deserved, actor, actor, actor, day, now).run();
-  return Number(r && r.meta && r.meta.changes) || 0;
-}
-
 // POST /api/cloud-ride {actor, day, trainKey, startedAt, sec, requestId, client}
 // day 是「台北今天」或「台北昨天」（營運日）；startedAt 是前景連續跟車開始的 epoch 毫秒；sec 是連續秒數。
-// 200 {ok:true, day, rides, toNextChip, chipAwarded}：rides＝這個人算進換籌碼的總次數（不含模擬器）、
-// toNextChip＝再幾次換下一顆（與 chips-me 同一個算法）、chipAwarded＝這一次有沒有讓帳本多出籌碼。
+// 200 {ok:true, day, rides, toNextChip, chipAwarded, points}：rides＝這個人算次數的總次數（不含模擬器）、
+// points＝這一次搭乘入帳幾點（模擬器 0）、chipAwarded＝points > 0、toNextChip 固定 1（只留給 App 1.7.3，見 chipsMe）。
+// v3 入帳：一次 chips.cloud.points 點。搭乘列與入帳列在同一個 batch（同一筆交易）寫，入帳那一句的條件是
+// 「(actor, day) 那一格是這個 requestId、而且不是模擬器」：兩個同時抵達的不同請求只有搶到那一格的那個入帳；
+// 入帳列的 ref＝`<解析前的 b.actor>.<requestId>`（理由同 garageRedeem），同一個 requestId 併發重送只入一次。
+// 🔴 v2 的「3 次換 1 顆」不延續：上線前已經搭了、還沒湊滿 3 次的零頭不補發（至多 2 次，見 docs/bounty/contract-v3.md）；
+// v2 搭乘寫進去、補籌碼之前失敗的那幾筆，重送也不再補（v3 搭乘與入帳同一筆交易，不會有這種半套的狀態）。
 // 錯誤碼：400 bad_json／bad_actor／coordinates_not_accepted／app_only／bad_request_id／bad_day／bad_time／bad_sec／too_short／unknown_train；
 // 401 unauthorized（Bearer 驗不過）／auth_required（這個 actor 是帳號或併進了帳號，卻沒帶 Bearer）；403 wrong_account（帶的是別人的 Bearer）；
 // 405 method；409 already_today（這個營運日已經有一筆）、conflict（同一個 requestId 拿去送了別的營運日）；
 // 429 rate_limited；503 bounty_paused／not_ready／cloud_ride_failed。
-// 身分：雲端搭乘會發籌碼（可以花），走 bountyIdentity 'wallet'，規則同 garage-redeem。
-// 冪等：requestId 存在 cloud_rides.request_id，同一個 actor 同一個 requestId 重送回與第一次相同形狀的成功回應（不重寫、不重發籌碼）。
-// 🔴 重送的判斷排在「營運日必須是台北今天或昨天」之前：兩天後才到的重送要能補回第一次沒結算完的籌碼；
+// 身分：雲端搭乘會發點數（可以花），走 bountyIdentity 'wallet'，規則同 garage-redeem。
+// 冪等：requestId 存在 cloud_rides.request_id，同一個 actor 同一個 requestId 重送回與第一次相同的成功回應（什麼都不再寫）：
+// points 由入帳列的 ref 找回。v2 的搭乘沒有這種入帳列（v2 湊滿 3 次另寫一列籌碼，不綁 requestId），重送回 points 0。
+// 🔴 重送的判斷排在「營運日必須是台北今天或昨天」之前：兩天後才到的重送（第一次的回應掉了）也要回 200；
 // 那個窗口只用來擋「新的」搭乘。
-// 🔴 重送也會再跑一次「補齊籌碼」：搭乘寫進去、補籌碼之前失敗時，客戶端用同一個 requestId 重送就補得回來（結算是冪等的）。
-// simulator:true 的搭乘照寫進 cloud_rides（測試流程要能跑完、也占掉當天那一格）但 simulator=1，不算進次數、不發籌碼。
+// simulator:true 的搭乘照寫進 cloud_rides（測試流程要能跑完、也占掉當天那一格）但 simulator=1，不算進次數、不入帳。
 async function cloudRide(request, env) {
   // API_POST_ALLOWED 的粒度是路徑，其他方法也進得來——收斂成只收 POST（比照 garageRedeem）
   if (request.method !== 'POST') return jsonRes({ error: 'method' }, 405, 'no-store');
@@ -7887,8 +7916,8 @@ async function cloudRide(request, env) {
   const now = Number(env.BOUNTY_NOW) || Date.now();
   const day = typeof b.day === 'string' ? b.day : '';
   // 這裡只擋「日期長得不對」。營運日是不是「台北今天或昨天」的窗口檢查移到下面、重送判斷之後：
-  // 同一個 requestId 的重送（第一次的回應掉了、補籌碼要重試）可能在兩天之後才到，那時原本那一天早就出窗了，
-  // 若窗口檢查排在前面，重送永遠 400 bad_day，而且第一次「寫進去了但補籌碼失敗」的那筆再也補不回來。
+  // 同一個 requestId 的重送（第一次的回應掉了）可能在兩天之後才到，那時原本那一天早就出窗了，
+  // 若窗口檢查排在前面，重送永遠 400 bad_day，客戶端就一直以為那一次沒送到。
   if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return jsonRes({ error: 'bad_day' }, 400, 'no-store');
   if (!Number.isSafeInteger(b.startedAt)) return jsonRes({ error: 'bad_time' }, 400, 'no-store');
   if (!Number.isSafeInteger(b.sec) || b.sec < 0 || b.sec > CLOUD_RIDE_MAX_SEC) return jsonRes({ error: 'bad_sec' }, 400, 'no-store');
@@ -7898,29 +7927,30 @@ async function cloudRide(request, env) {
   const trainKey = typeof b.trainKey === 'string' ? b.trainKey : '';
   try {
     const db = env.DELAY_DB;
-    // 身分（見 bountyIdentity 'wallet'）：雲端搭乘會發籌碼，而籌碼是可以花的——所以與兌換同一套規則：
+    // 身分（見 bountyIdentity 'wallet'）：雲端搭乘會發點數，而點數是可以花的——所以與兌換同一套規則：
     // 匿名裝置憑 installId；帳號、或併進帳號的裝置必須帶該帳號的 Bearer（沒帶 401 auth_required、是別人的 403 wrong_account）。
     // 擋在第一次讀寫 D1 之前；有帶 Bearer 時先跑 S0。
     const idn = await bountyIdentity(request, env, b.actor, 'wallet');
     if (idn.res) return idn.res;
     const actor = idn.who;
-    const respond = async (chipAwarded) => {
+    // 入帳列的 ref：用「解析前」的 b.actor（理由見 garageRedeem 的冪等說明）。重送靠它找回這一次入帳幾點；
+    // 帳號合併只改帳本列的 actor、ref 不動，所以用解析後的 actor 也找得到。
+    const ref = `${b.actor}.${b.requestId}`;
+    const respond = async (simulator) => {
       const rides = await cloudRideCount(db, actor);
-      return jsonRes({ ok: true, day, rides, toNextChip: chips.cloud.perChip - (rides % chips.cloud.perChip), chipAwarded }, 200, 'no-store');
+      let points = 0;
+      if (Number(simulator) !== 1) {
+        const p = await db.prepare("SELECT delta FROM chip_ledger WHERE kind='cloud' AND ref=? AND actor=?").bind(ref, actor).first();
+        points = Number(p && p.delta) || 0;
+      }
+      return jsonRes({ ok: true, day, rides, toNextChip: 1, chipAwarded: points > 0, points }, 200, 'no-store');
     };
     // 重送：同一個 actor（解析後——合併帳號之後列跟著改名成 uid，解析後才對得上）同一個 requestId 已經寫過
-    const prior = await db.prepare('SELECT day, simulator, created_at FROM cloud_rides INDEXED BY sqlite_autoindex_cloud_rides_1 WHERE actor=? AND request_id=?')
+    const prior = await db.prepare('SELECT day, simulator FROM cloud_rides INDEXED BY sqlite_autoindex_cloud_rides_1 WHERE actor=? AND request_id=?')
       .bind(actor, b.requestId).first();
     if (prior) {
       if (prior.day !== day) return jsonRes({ error: 'conflict' }, 409, 'no-store');
-      let awarded = false;
-      if (Number(prior.simulator) !== 1) {
-        awarded = (await cloudSettleChips(db, actor, chips, day, now)) > 0;
-        // 第一次的回應掉了：那一次結算寫的列 created_at 與這筆搭乘相同（同一個 now），據此還原第一次的 chipAwarded
-        if (!awarded) awarded = !!(await db.prepare("SELECT 1 AS x FROM chip_ledger INDEXED BY idx_chip_ledger_actor_day WHERE actor=? AND kind='cloud' AND created_at=?")
-          .bind(actor, Number(prior.created_at)).first());
-      }
-      return await respond(awarded);
+      return await respond(prior.simulator);
     }
     // 營運日窗口：只擋「新的」搭乘（重送已經在上面處理完）。合併把那筆搭乘丟掉的情況（兩邊同一天各有一筆，留了另一筆）
     // 也走到這裡：prior 找不到，照新搭乘的規則往下走——同一天已有一筆就 409 already_today。
@@ -7934,14 +7964,21 @@ async function cloudRide(request, env) {
     if (!cloudRideCounts({ sec: b.sec, day }, (mine.results || []).map(r => r.day), chips))
       return jsonRes({ error: 'already_today' }, 409, 'no-store');
     const sim = client.simulator ? 1 : 0;
-    await db.prepare(
-      'INSERT OR IGNORE INTO cloud_rides (actor,day,train_key,sec,request_id,created_at,simulator) VALUES (?,?,?,?,?,?,?)'
-    ).bind(actor, day, trainKey, b.sec, b.requestId, now, sim).run();
-    // 讀回：兩個同時抵達的請求都看不到對方時，由主鍵擋下第二筆；輸的那個在這裡發現那一格不是自己的
+    await db.batch([
+      db.prepare(
+        'INSERT OR IGNORE INTO cloud_rides (actor,day,train_key,sec,request_id,created_at,simulator) VALUES (?,?,?,?,?,?,?)'
+      ).bind(actor, day, trainKey, b.sec, b.requestId, now, sim),
+      db.prepare(
+        'INSERT OR IGNORE INTO chip_ledger (id,actor,kind,delta,ref,day,created_at,unit)' +
+        " SELECT 'cloud|' || ?, ?, 'cloud', ?, ?, ?, ?, 'point'" +
+        ' WHERE EXISTS (SELECT 1 FROM cloud_rides INDEXED BY sqlite_autoindex_cloud_rides_1 WHERE actor=? AND day=? AND request_id=? AND simulator=0)'
+      ).bind(ref, actor, chips.cloud.points, ref, day, now, actor, day, b.requestId),
+    ]);
+    // 讀回：兩個同時抵達的請求都看不到對方時，由主鍵擋下第二筆；輸的那個在這裡發現那一格不是自己的。
+    // 同一個 requestId 併發的兩個都是「自己的」，回應照 ref 找同一列入帳列，兩個回的一樣。
     const row = await db.prepare('SELECT request_id FROM cloud_rides WHERE actor=? AND day=?').bind(actor, day).first();
     if (!row || row.request_id !== b.requestId) return jsonRes({ error: 'already_today' }, 409, 'no-store');
-    const awarded = sim ? false : (await cloudSettleChips(db, actor, chips, day, now)) > 0;
-    return await respond(awarded);
+    return await respond(sim);
   } catch (e) {
     return jsonRes({ error: 'cloud_ride_failed' }, 503, 'no-store');
   }
@@ -8592,20 +8629,20 @@ function bountyDRange(lo, hi) {
   return Number.isFinite(a) && Number.isFinite(b) && b >= a ? [a, b] : null;
 }
 
-// 一班車（同一個 actor＋tripDate＋trainNo）＝一趟＝最多發一次錄程籌碼。回傳這一趟實際入帳的籌碼數（0＝沒入帳）。
+// 一班車（同一個 actor＋tripDate＋trainNo）＝一趟＝最多入帳一次錄程點數。回傳這一趟實際入帳的點數（0＝沒入帳）。
 // 直通車會跨線（高雄→臺東＝屏東線＋南迴線）：判定、覆蓋段、去重登記都一條線一組（見 bountyVerifyCron），
-// 籌碼則等整班車所有線組都判完，才在這裡整班算一次：
-//   ・判定：任何一條線 ok，這班車就算 ok；🔴 但任何一條線 suspect（防偽閘不過）整班就是 0 顆——
-//     單獨一條線的趟被判 suspect 本來就是 0 顆，整班車不能因為另一條線 ok 就照發（suspect 那段的時間也不該被算進長度）。
-//   ・lineKeys（偏遠 ×2 看的）：只取 ok 線組覆蓋段的線，任何一段落在偏遠線就 ×2；ok 但沒有覆蓋段的線組退回它自己的 sys|ln_id。
+// 點數則等整班車所有線組都判完，才在這裡整班算一次（v3：沿線 1 公里 1 點，見 scripts/bounty_chips_core.mjs 的 tripPoints）：
+//   ・判定：任何一條線 ok，這班車就算 ok；🔴 但任何一條線 suspect（防偽閘不過）整班就是 0 點——
+//     單獨一條線的趟被判 suspect 本來就是 0 點，整班車不能因為另一條線 ok 就照發（suspect 那段的時間也不該被算進長度）。
+//   ・里程：每條 ok 線各自的收下範圍（見下面 span），各線套自己的偏遠倍率（remoteLines）與活動倍率，再加總。
 //   ・長度：整班車所有批次（不分線）樣本 t（台北當日秒，跨午夜的加一天）的 max−min——兩條線各自不到 minTripSec、合起來夠長也算。
 // 🔴 遲傳：groups 是「這一發 cron 才讀到的（pending）線組」，prior 是「這一班車先前已判定過的線組」（前次線組，見 bountyPriorGroups）。
 // 車上沒訊號、隔天早上才開 App 的話，一班車前半段已在前一發判完（當時不到 minTripSec → 0 顆），後半段這一發才到；
-// 只看這一發的批次，整班車一顆都拿不到。籌碼判斷（任一 ok、suspect 否決、偏遠 ×2、整班長度）一律把兩邊合起來看；
-// 前次線組只參與這個判斷——不重新登記去重、不重新標記、不給點數（那些在它自己那一發已經做過）。
+// 只看這一發的批次，整班車一點都拿不到。點數判斷（任一 ok、suspect 否決、各線里程、整班長度）一律把兩邊合起來看；
+// 前次線組只參與這個判斷——不重新登記去重、不重新標記、不給 v1 的貢獻點數（那些在它自己那一發已經做過）。
 // 前半段當時若已入帳，下面寫帳本那一句的「這班車入過帳沒」條件照舊擋住，後半段不會再發。
-// 🔴 與看板有沒有這一段無關：板上沒有任何單位、或那一段已收滿下架，合格趟照發（滿板仍發籌碼）。
-// 🔴 不讀任何 plus／通行證欄位：通行證沒有籌碼倍率。
+// 🔴 與看板有沒有這一段無關：板上沒有任何單位、或那一段已收滿下架，合格趟照發（滿板仍發點數）。
+// 🔴 不讀任何 plus／通行證欄位：通行證沒有點數倍率。
 // 模擬器整班車不入帳的判斷在呼叫端（bountyVerifyCron，連去重登記與看板一併跳過），不在這裡。
 // groups 是這一班車每一條線的 { trip, v, cov }：trip 是 assembleTrip 的結果、v 是這條線的判定、cov 是這條線 ok 的覆蓋段。
 // who：這班車記在誰名下（bountyVerifyTrain 解析的，寫入那一句會再當場解析一跳）；fence：租約與「樣本還在」的綁定值（見 bountyVerifyTrain）。
@@ -8615,58 +8652,51 @@ async function bountyCreditTripChips(env, rules, groups, prior, now, who, fence)
   if (all.some(g => g.v.verdict === 'suspect')) return 0;
   const oks = all.filter(g => g.v.verdict === 'ok');
   if (!oks.length) return 0;
-  const lineKeys = new Set();
-  for (const g of oks) {
-    const ks = g.cov.map(c => String(c.key).split('|').slice(0, 2).join('|'));
-    if (ks.length) for (const k of ks) lineKeys.add(k);
-    else lineKeys.add(`${g.trip.sys}|${g.trip.lnId}`);
-  }
   // 跨午夜：各組各自已經加過一天（assembleTrip／前次查詢的 u0、u1），但「前半段在午夜前判完、後半段午夜後才到」的兩組各自都沒跨，
-  // 合起來才跨——所以合併之後再認一次（同一條 bountyUnwrapMidnight）；不然整班長度會是二十幾小時，不到 minTripSec 的短趟也發籌碼。
+  // 合起來才跨——所以合併之後再認一次（同一條 bountyUnwrapMidnight）；不然整班長度會是二十幾小時，不到 minTripSec 的短趟也發點數。
   const ts = bountyUnwrapMidnight(all.flatMap(g => g.trip.pts.map(p => ({ t: Number(p.t) }))));
   let lo = Infinity, hi = -Infinity;
   for (const { t } of ts) { if (t < lo) lo = t; if (t > hi) hi = t; }
   const durationSec = hi >= lo ? hi - lo : 0;
-  // 整趟停在一站不給籌碼（chips.minTripMoveM，見 tripChips）：移動距離＝同一條線（sys|ln_id）所有 ok 線組（這一發與前次）
-  // 收下的點的里程範圍取聯集之後的跨距，各線再取最大值。
+  // 各線里程：同一條線（sys|ln_id）所有 ok 線組（這一發與前次）收下的點的里程範圍取聯集之後的跨距。
   //   ・只看 ok 的組、只看防偽閘收下的點：只看 ok 發次的收下點，同一條線各發的 ok 範圍合起來算（分幾次上傳本身不影響；單獨判成不採用的一發不計入）——前次組用判定當下寫下的
   //     kept_d0／kept_d1（見 bountyPriorGroups），與這一發的收下點同一個基準。
   //   ・同一條線前後兩發合起來看（前半 600 m、後半 600 m 合起來 1200 m），不是各組跨距取最大。
-  //   ・不同線不相加：各線的里程基準不同，兩條線的數字放在一起沒有意義。
+  //   ・不同線先各自取跨距再相加：各線的里程基準不同，不能拿兩條線的里程相減。整趟停在一站不給（chips.minTripMoveM）看的也是加總。
+  //   ・偏遠倍率看這條線自己的 sys|ln_id（與 remoteLines 同一種鍵；覆蓋段一定落在那一組自己的線上，見 bountyPriorGroups）。
   const span = new Map();
   for (const g of oks) {
     if (!g.dr) continue;
     const k = `${g.trip.sys}|${g.trip.lnId}`, cur = span.get(k);
     span.set(k, cur ? [Math.min(cur[0], g.dr[0]), Math.max(cur[1], g.dr[1])] : g.dr);
   }
-  let moveM = 0;
-  for (const [lo, hi] of span.values()) if (hi - lo > moveM) moveM = hi - lo;
+  const lines = [...span].map(([key, [a, b]]) => ({ key, m: b - a }));
   const { tripDate, trainNo } = groups[0].trip;
-  const raw = tripChips({ verdict: 'ok', lineKeys: [...lineKeys], durationSec, moveM, day: tripDate }, chips);
+  const raw = tripPoints({ verdict: 'ok', durationSec, day: tripDate, lines }, chips);
   if (!(raw > 0)) return 0;
-  // 入帳只有一句：身分、這班車入過帳沒、當日已領幾顆、租約、樣本還在不在，全部在寫入的那一句裡當場看，查與寫之間沒有空隙。
+  // 入帳只有一句：身分、這班車入過帳沒、當日已領幾點、租約、樣本還在不在，全部在寫入的那一句裡當場看，查與寫之間沒有空隙。
   //   ・身分 w：從 who 再解析一跳（BOUNTY_WHO_SQL）。cron 讀完樣本之後、走到這裡之前，這個 token 可能剛好被併進 uid——
-  //     帳本列、查重、每日上限一律用「此刻的」身分，不然籌碼會掛在已併掉的 token 名下（chips-me 看不到）。
+  //     帳本列、查重、每日上限一律用「此刻的」身分，不然點數會掛在已併掉的 token 名下（chips-me 看不到）。
   //     🔴 三件事要用同一個身分、在同一句裡看：舊版查重與日額綁 JS 先解析的舊值、寫入卻在 SQL 裡解析，合併落在兩者之間時，
-  //     查重查的是裝置（它的帳本列剛被搬到帳號、查不到）、寫入的 ref 卻是帳號前綴，UNIQUE 擋不住 → 同一班車兩顆；
+  //     查重查的是裝置（它的帳本列剛被搬到帳號、查不到）、寫入的 ref 卻是帳號前綴，UNIQUE 擋不住 → 同一班車入帳兩次；
   //     同一個窗讓日額查到 0、當天多發一班。
   //   ・這班車入過帳沒：比對 ref 的尾巴（|乘車日|車次），不是完整 ref——併帳號時帳本列整批改名但 ref 不動，前半趟以舊 token 入的那一筆
   //     ref 前綴還是舊 token，後半趟（合併後上傳、存在 uid 名下）的完整 ref 對不上它，只看 UNIQUE(kind, ref) 會同一班車發兩次。
   //     比對結尾用 substr 不用 LIKE（LIKE 的 _ 與 % 是萬用字元、樣式還有長度上限）。
-  //   ・每日上限：這個身分同一天（trip_date）已入帳的 trip 籌碼加總，不信客戶端；份量＝min(這一趟, 上限−已領)，不到 1 顆就不寫
-  //     （與 scripts/bounty_chips_core.mjs 的 applyDailyChipCap 同一條）。
-  //   ・租約圍欄（BOUNTY_VERIFY_HELD）：這一發若已被下一發接手，一顆都不寫——兩發各自讀到「今天還沒領」再各自寫，當天就超過上限。
+  //   ・每日上限：這個身分同一天（trip_date）已入帳的 trip 點數加總，不信客戶端；份量＝min(這一趟, 上限−已領)，不到 1 點就不寫
+  //     （與 scripts/bounty_chips_core.mjs 的 applyDailyChipCap 同一條）。上線當天 v2 寫的籌碼列照換算計入（BOUNTY_POINTS_OF_ROW）。
+  //   ・租約圍欄（BOUNTY_VERIFY_HELD）：這一發若已被下一發接手，一點都不寫——兩發各自讀到「今天還沒領」再各自寫，當天就超過上限。
   //   ・樣本還在（BOUNTY_VERIFY_PENDING）：判定途中帳號被刪（樣本已刪）就不寫，刪掉的帳號不會再長出一筆帳。
   // ref＝趟鍵（身分|乘車日|車次），UNIQUE(kind, ref) ＋ OR IGNORE 是最後一道：同一趟不會重複入帳。RETURNING 回實際寫進去的份量（判定那一行 log 用）。
   const tail = `|${tripDate}|${trainNo}`;
   const got = await env.DELAY_DB.prepare(
-    "INSERT OR IGNORE INTO chip_ledger (id,actor,kind,delta,ref,day,created_at)" +
-    " SELECT 'trip|' || w || ?, w, 'trip', g, w || ?, ?, ? FROM (" +
-    "SELECT w, MIN(?, ? - (SELECT COALESCE(SUM(delta), 0) FROM chip_ledger INDEXED BY idx_chip_ledger_actor_day WHERE actor=w AND kind='trip' AND day=?)) AS g" +
+    "INSERT OR IGNORE INTO chip_ledger (id,actor,kind,delta,ref,day,created_at,unit)" +
+    " SELECT 'trip|' || w || ?, w, 'trip', g, w || ?, ?, ?, 'point' FROM (" +
+    "SELECT w, MIN(?, ? - (SELECT COALESCE(SUM(" + BOUNTY_POINTS_OF_ROW + "), 0) FROM chip_ledger INDEXED BY idx_chip_ledger_actor_day WHERE actor=w AND kind='trip' AND day=?)) AS g" +
     ' FROM (SELECT ' + BOUNTY_WHO_SQL + ' AS w))' +
     " WHERE g > 0 AND NOT EXISTS (SELECT 1 FROM chip_ledger INDEXED BY idx_chip_ledger_actor_day WHERE actor=w AND kind='trip' AND day=? AND substr(ref, -length(?)) = ?)" +
     BOUNTY_VERIFY_HELD + BOUNTY_VERIFY_PENDING + ' RETURNING delta'
-  ).bind(tail, tail, tripDate, now, raw, chips.dailyChipCap, tripDate, who, who, tripDate, tail, tail,
+  ).bind(tail, tail, tripDate, now, raw, chips.dailyChipCap, chips.chipToPoints, tripDate, who, who, tripDate, tail, tail,
     BOUNTY_VERIFY_LEASE_KEY, fence.lease, fence.ids, fence.n).first();
   return Number(got && got.delta) || 0;
 }
@@ -8831,7 +8861,7 @@ function* bountyVerifyOrder(list, room, stat) {
 // 驗證那一行 log（BOUNTY_CRON 與舊的 15 4 分支共用）：營運上看這一行就知道這一發做了多少、有沒有被預算、錯誤或截斷擋下來。
 const bountyVerifyLine = q => q.locked
   ? '[cron bounty 驗證] 跳過：另一發判定還在進行（租約未到期），這一發沒有動任何樣本'
-  : `[cron bounty 驗證] ${q.trains} 班／${q.trips} 線組 → 採用 ${q.ok}／可惜 ${q.unusable}／可疑 ${q.suspect}／入帳籌碼 ${q.chips}` +
+  : `[cron bounty 驗證] ${q.trains} 班／${q.trips} 線組 → 採用 ${q.ok}／可惜 ${q.unusable}／可疑 ${q.suspect}／入帳點數 ${q.chips}` +
   `／經過 ${Math.round((Number(q.elapsedMs) || 0) / 1000)} 秒／讀取 ${((Number(q.bytes) || 0) / 1048576).toFixed(1)} MB（${Number(q.rows) || 0} 列）／子請求 ${q.subreq}` +
   (q.budgetStop ? `（⚠️ ${{ wall: '牆鐘', bytes: '讀取量' }[q.stopBy] || '子請求'}預算用盡：剩下的班車留 pending，下一發接著判）` : '') +
   (q.errors ? `（⚠️ ${q.errors} 班判定出錯` + (q.stopBy === 'error'
@@ -8855,12 +8885,10 @@ async function bountyVerifyCron(env0) {
   const rules = await bountyRules(env);
   const M = await bountyUnits(env);
   const now = Number(env.BOUNTY_NOW) || Date.now();
-  // 籌碼設定缺漏就整支中止（樣本留在 pending，明天再判）：與 coverageOf 的 quality.dwell、估值 cron 的
+  // 點數設定缺漏（或規則檔被換回 v2）就整支中止（樣本留在 pending，明天再判）：與 coverageOf 的 quality.dwell、估值 cron 的
   // dwellReward 同一個慣例，不偷偷退回預設值——樣本一旦被標成「已判定」就補不回來，
-  // 退回預設的代價是悄悄少發或多發籌碼，而且沒有任何錯誤訊息。
-  const CH = rules.chips;
-  if (!CH || !(CH.perTrip > 0) || !(CH.minTripSec > 0) || !(CH.dailyChipCap > 0) ||
-    !(CH.remoteMultiplier > 0) || !Array.isArray(CH.remoteLines)) throw new Error('invalid bounty rule: chips');
+  // 退回預設的代價是悄悄少發或多發點數，而且沒有任何錯誤訊息。檢查與錢包端點同一個（bountyPointsRulesOk）。
+  if (!bountyPointsRulesOk(rules.chips)) throw new Error('invalid bounty rule: chips');
   const stat = { trips: 0, trains: 0, ok: 0, unusable: 0, suspect: 0, truncated: false, chips: 0, subreq: 0, bytes: 0, rows: 0,
     budgetStop: false, stopBy: null, elapsedMs: 0, oversize: 0, locked: false, error: null, errors: 0, headDeferred: 0 };
   // 租約（見 BOUNTY_VERIFY_LEASE_MS）：拿不到＝另一發還在判，這一發什麼都不動就回。用真時鐘（不是 BOUNTY_NOW）：租約管的是

@@ -5648,7 +5648,7 @@
 
   <footer class="site-foot">
     <details class="foot-box">
-      <summary><span>更新紀錄</span><span class="foot-sub">最後更新：2026/10/24</span></summary>
+      <summary><span>更新紀錄</span><span class="foot-sub">最後更新：2026/10/26</span></summary>
       <!-- 第一層是「最近更新」的檢視,不是正本:每一條都用 data-cl-of 指向第二層某條的 data-cl。
            要把一條擠出第一層之前,它的正本必須已經在第二層存在——2026-08-03 就踩過一次:8/1 的
            衛星計費那條只活在第一層(第二層只有一句夾在 7/25 條目裡、日期對不上的附帶說明),
@@ -5656,6 +5656,7 @@
            內容 li 上限 8 條(li.grp 是標題不算)。 -->
       <ul class="foot-list foot-recent">
         <li class="grp">最近更新</li>
+        <li data-cl-of="bountypoints"><span class="d">10/26</span><span>校正懸賞改用點數：合格的一趟照實際錄到的沿線里程給點，1 公里 1 點，南迴、臺東線加倍，每天最多 500 點；原有籌碼 1 顆換 50 點，已解鎖的車庫場景照舊</span></li>
         <li data-cl-of="weatherdanhai1024"><span class="d">10/24</span><span>颱風公告補列淡海官網15至30分鐘班距與停駛資訊不一致，提醒先確認實際開行</span></li>
         <li data-cl-of="horizonclip1024"><span class="d">10/24</span><span>傾斜視角：地平線後的站名與列車不再畫進天空、遠方線條不再擠成橫帶；起伏地形的示意線改由立體層繪製，遠近粗細一致</span></li>
         <li data-cl-of="auto3d1024"><span class="d">10/24</span><span>立體列車跑不順時自動切回平面列車並提示，可在觀看設定重新開啟；視角與 3D 建築不受影響</span></li>
@@ -5663,7 +5664,6 @@
         <li data-cl-of="weathernttymc1024"><span class="d">10/24</span><span>桃捷普通車依假日時刻、13時起彈性增開直達；環狀與三鶯約15分鐘、安坑約30分鐘，淡海仍停駛。</span></li>
         <li data-cl-of="weathertrtcnoon1024"><span class="d">10/24</span><span>北捷公告五線逐步加密至 8 分至 9 分 30 秒，三段重疊區間約 4 分 30 秒；保留台鐵東部搶修、改班與停駛例外</span></li>
         <li data-cl-of="weathertraeast1024"><span class="d">10/24</span><span>台鐵更新北迴、宜蘭線搶修與東部班次，5216 次改停駛，432、273 次列出新時刻；請留意截短、停駛與支線待巡查資訊</span></li>
-        <li data-cl-of="weathertramidday1024"><span class="d">10/24</span><span>台鐵公布今日中午後分批恢復方案，補上仍停駛、截短與支線待巡查資訊；成追線 2608 次另按成功 11:39 開車，出發前請核對官方班次</span></li>
       </ul>
       <!-- 第二層:完整歷史。刻意不掛 .foot-box 類名——placeFootBoxes() 用
            `.site-foot .foot-box` 搬移面板,巢狀同名會被當成另一個盒子一起搬走。 -->
@@ -6006,6 +6006,7 @@
         <li><span class="d">7/13</span><span>新增「附近火車」：地圖上落一根釘，查周邊 60 分鐘內會通過的車次</span></li>
         <li><span class="d">7/12</span><span>新增平交道功能：點一下查接下來會通過的列車（7/13 補上貨運線 21 處）</span></li>
         <li class="grp">收藏、護照與成就</li>
+        <li data-cl="bountypoints"><span class="d">10/26</span><span>校正懸賞改用點數：合格的一趟照實際錄到的沿線里程給點，1 公里 1 點，南迴、臺東線加倍，每天最多 500 點；原有籌碼 1 顆換 50 點，已解鎖的車庫場景照舊</span></li>
         <li data-cl="ridekbfocus0925"><span class="d">9/25</span><span>修正旅程護照用鍵盤往回移動（Shift+Tab）時，被選到的成就章、收集章與按鈕會停在最上方的標題列底下看不到；現在會停在標題下方，字級調大也一樣</span></li>
         <li data-cl="achvhelp"><span class="d">9/25</span><span>護照成就章新增說明卡，顯示達成條件、建議與目前進度；明星列車、車種圖鑑與支線收集章也能查看內容。9/25 修正滑鼠停在章上時，說明卡旁邊還會多跳出瀏覽器的小提示框，並讓鍵盤也能打開說明卡；英日文版收集章的文字改成滑鼠、觸控都適用的說法</span></li>
         <li data-cl="checkinsync0923"><span class="d">9/23</span><span>打卡車站與搭乘路段次數加入帳號雲端同步：手機上累積的「通勤的證明」「老通勤族」進度與車站收集，登入同一帳號的電腦或另一台手機也看得到；以前這兩項只留在搭乘的那台裝置上，電腦登入會顯示 0（謝謝網友回報）</span></li>
@@ -24861,7 +24862,7 @@ function bountyDemoBoard() {
   };
   const lines = [...lineNetwork()].filter(([, rec]) => rec.segs && rec.segs.length >= 6);
   const cards = lines.slice(0, 4).map(([mapKey, rec], i) => trackCard(mapKey, rec, i));
-  // 偏遠線的卡要有一張：不然示範板上永遠看不到「籌碼 ×N」標記，備援站就沒辦法確認那個設計。
+  // 偏遠線的卡要有一張：不然示範板上永遠看不到「點數 ×N」標記，備援站就沒辦法確認那個設計。
   // 偏遠線名單與倍率讀規則檔（openBountyBoard 在示範模式會先等規則檔，等的時間有上限），挑卡用的是畫標記的同一個 bountyRemoteMult()，
   // 標記照真看板的畫法畫，不在假資料裡另外寫。規則檔讀不到或逾時、或名單上的線都不在路網裡，就不加，板子維持原樣。
   if (!cards.some(c => bountyRemoteMult(c))) {
@@ -25045,7 +25046,7 @@ async function openBountyBoard() {
   m.hidden = false;
   const seq = ++bountyBoardSeq;
   document.getElementById('bountyList').innerHTML = `<div class="bt-empty">${escHtml(t('載入中…'))}</div>`;
-  // 卡片上的籌碼倍率標記要讀規則檔：跟看板請求一起讀，上限之內讀到了，畫第一次就帶得到。讀不到只是不標倍率，不擋看板。
+  // 卡片上的點數倍率標記要讀規則檔：跟看板請求一起讀，上限之內讀到了，畫第一次就帶得到。讀不到只是不標倍率，不擋看板。
   const rulesP = bountyRules().catch(() => null);
   // 示範板要先讀到規則檔，才挑得出偏遠線的卡（見 bountyDemoBoard）；真看板照舊跟請求並行。
   // 等不到（上限見 bountyRulesWithin）就照原本的 5 張畫，之後規則檔到了也不再重挑。
@@ -25061,7 +25062,7 @@ async function openBountyBoard() {
   renderBountyBoard();
   if (!inTime) rulesP.then(r => { if (r && seq === bountyBoardSeq && !m.hidden) renderBountyBoard(); });
 }
-// 這張卡所在的線在規則檔的偏遠線名單裡，就回該線的籌碼倍率；不在、或規則檔還沒讀到就回 0。
+// 這張卡所在的線在規則檔的偏遠線名單裡，就回該線的點數倍率；不在、或規則檔還沒讀到就回 0。
 // 名單與倍率只讀規則檔（chips.remoteLines／remoteMultiplier），不在這裡另存一份；讀不到寧可不標，也不標錯。
 function bountyRemoteMult(card) {
   const ch = bountyRulesMem && bountyRulesMem.chips;
@@ -25069,23 +25070,23 @@ function bountyRemoteMult(card) {
   const mult = ch.remoteLines.includes(card.sys + '|' + card.lnId) ? bountyNum(ch.remoteMultiplier) : 0;
   return mult > 1 ? mult : 0;
 }
-// 說明卡的獎勵句：合格的一趟得幾顆、這條線是否加倍、每天最多幾顆。三個數字全讀規則檔
-// （chips.perTrip／remoteMultiplier／dailyChipCap），伺服器入帳讀的是同一份。
-// 規則檔沒讀到就整段不寫：不憑記憶補數字，也不寫伺服器不一定會給的東西。
+// 說明卡的獎勵句：合格的一趟照沿線里程 1 公里得幾點、這條線是否加倍、每天最多幾點。三個數字全讀規則檔
+// （chips.perKm／remoteMultiplier／dailyChipCap），伺服器入帳讀的是同一份。
+// 規則檔沒讀到、或不是點數制（chips.unit 不是 'point'）就整段不寫：不憑記憶補數字，也不寫伺服器不一定會給的東西。
 // 樣板裡的 <b> 是字典值的固定標記；插進去的只有 bountyNum() 收斂過的整數。
 function bountyRewardText(card) {
   const ch = bountyRulesMem && bountyRulesMem.chips;
-  if (!ch) return '';
-  const perTrip = bountyNum(ch.perTrip), cap = bountyNum(ch.dailyChipCap), mult = bountyRemoteMult(card);
+  if (!ch || ch.unit !== 'point') return '';
+  const perKm = bountyNum(ch.perKm), cap = bountyNum(ch.dailyChipCap), mult = bountyRemoteMult(card);
   return i18nJoin(
-    perTrip > 0 ? t('合格的一趟得 <b>{n}</b> 顆籌碼。', { n: perTrip }) : '',
-    mult ? t('這條線的籌碼 ×<b>{n}</b>。', { n: mult }) : '',
-    cap > 0 ? t('每天最多 <b>{n}</b> 顆。', { n: cap }) : '');
+    perKm > 0 ? t('合格的一趟照沿線里程給點，1 公里 <b>{n}</b> 點。', { n: perKm }) : '',
+    mult ? t('這條線的點數 ×<b>{n}</b>。', { n: mult }) : '',
+    cap > 0 ? t('每天最多 <b>{n}</b> 點。', { n: cap }) : '');
 }
 // 說明卡「先講清楚」裡講合格的兩句：什麼叫合格的一趟、沒達到會怎樣。門檻讀規則檔（chips.minTripSec／minTripMoveM），
 // 伺服器入帳讀的是同一份。🔴 取整只准往上（Math.ceil）：畫面上的門檻永遠不比伺服器的低，不然乘客達到畫面上的數字卻拿不到。
 // 分鐘照秒數進位；距離不到 1 公里寫公尺，到了就寫公里（進位到 0.1 公里）。
-// 規則檔沒讀到、或門檻不是正數，整段不寫（同 bountyRewardText）：不憑記憶補數字，也不寫伺服器不一定會給的東西。
+// 規則檔沒讀到、不是點數制、或門檻不是正數，整段不寫（同 bountyRewardText）：不憑記憶補數字，也不寫伺服器不一定會給的東西。
 // 樣板裡的 <b> 是字典值的固定標記；插進去的只有進位後的數字（單位字樣沿用站內既有的「{n} 分鐘／公里／公尺」）。
 function bountyUpTo(x, max = 1e7) {
   const n = Math.ceil(Number(x));
@@ -25094,7 +25095,7 @@ function bountyUpTo(x, max = 1e7) {
 // 兩個門檻數字（寫成給人看的字）。「合格」兩句與停站卡的錄法說明都讀它，數字不會各算各的；讀不到回 null。
 function bountyQualifyParts() {
   const ch = bountyRulesMem && bountyRulesMem.chips;
-  if (!ch || !(bountyNum(ch.perTrip) > 0)) return null;
+  if (!ch || ch.unit !== 'point' || !(bountyNum(ch.perKm) > 0)) return null;
   const mins = bountyUpTo(Number(ch.minTripSec) / 60), m = bountyUpTo(ch.minTripMoveM);
   if (!mins || !m) return null;
   const time = t('{n} 分鐘', { n: i18nNumber(mins) });
@@ -25106,8 +25107,8 @@ function bountyQualifyItems() {
   const q = bountyQualifyParts();
   if (!q) return [];
   return [
-    t('合格的一趟要同時做到：同一班車從頭錄到尾至少 <b>{time}</b>、在同一條線上至少移動 <b>{dist}</b>、資料能用。一班車最多算一趟。', q),
-    t('沒達到門檻，能用的資料照樣拿來校正，只是沒有籌碼。')];
+    t('合格的一趟要同時做到：同一班車從頭錄到尾至少 <b>{time}</b>、沿線至少移動 <b>{dist}</b>、資料能用。一班車最多算一趟。', q),
+    t('沒達到門檻，能用的資料照樣拿來校正，只是沒有點數。')];
 }
 function closeBountyBoard() { document.getElementById('bountyModal').hidden = true; }
 function renderBountyBoard() {
@@ -25118,7 +25119,7 @@ function renderBountyBoard() {
     BOUNTY_APP_NEEDS_UPDATE
       ? t('這些項目還沒有實測資料。這一版還不能接，要更新到最新版的軌島 App 才能接下來錄——現在可以先看看有哪些。')
       : PHYSICAL_COLLECT_ENABLED
-        ? t('接一張、搭那班車時開錄，把沿途的速度剖面測出來。全部免費，合格的一趟可以得到籌碼，每天有上限。')
+        ? t('接一張、搭那班車時開錄，把沿途的速度剖面測出來。全部免費，合格的一趟照沿線里程得到點數，每天有上限。')
         : t('這些項目還沒有實測資料。用 App 才能接下來錄——網頁可以先看看有哪些。'));
   if (!b.cards.length) { el.innerHTML = `<div class="bt-empty">${escHtml(t('目前沒有待校正的項目——全部收滿了。'))}</div>`; return; }
   const claims = loadBounty().claims || {};
@@ -25139,13 +25140,13 @@ function renderBountyBoard() {
     // 現行 App 殼：這一版不能接，已接下的卡也一樣（比照網頁，不分接下與否）
     const label = BOUNTY_APP_NEEDS_UPDATE ? t('要更新 App 才能接') : !PHYSICAL_COLLECT_ENABLED ? t('要用 App 才能接') : live ? t('已接下・看說明') :
       (nm.isDwell ? t('接下停站') : t('接下這段'));
-    // 偏遠線的卡標籌碼倍率，其他線不標。一趟給幾顆看的是那一趟，跟這張卡接下了沒有、收滿了沒有都無關，所以每種卡一視同仁。
+    // 偏遠線的卡標點數倍率，其他線不標。一趟給幾點看的是那一趟，跟這張卡接下了沒有、收滿了沒有都無關，所以每種卡一視同仁。
     const mult = bountyRemoteMult(c);
-    const tag = mult ? `<div class="bt-pt bt-chip">${escHtml(t('籌碼 ×{n}', { n: mult }))}</div>` : '';
-    // covered:true＝這張卡的單位都收滿了（只有常青線的卡會留在板上）：認領會回 404，所以不給接單鈕，只講收滿了、錄程仍然有籌碼。
+    const tag = mult ? `<div class="bt-pt bt-chip">${escHtml(t('點數 ×{n}', { n: mult }))}</div>` : '';
+    // covered:true＝這張卡的單位都收滿了（只有常青線的卡會留在板上）：認領會回 404，所以不給接單鈕，只講收滿了、錄程仍然有點數。
     // 現行 App 殼這一版錄不了程，不能再叫人去錄：同一張卡改講收滿了、要更新 App（判定與按鈕字同一個）。
     if (c.covered === true) {
-      const coveredTxt = BOUNTY_APP_NEEDS_UPDATE ? t('已收滿。這一版的軌島 App 還不能錄程，要更新到最新版才行。') : t('已收滿，照樣可以錄程拿籌碼');
+      const coveredTxt = BOUNTY_APP_NEEDS_UPDATE ? t('已收滿。這一版的軌島 App 還不能錄程，要更新到最新版才行。') : t('已收滿，照樣可以錄程拿點數');
       return `<div class="bt-card" data-card="${escHtml(c.id)}">` +
         `<div class="bt-r">${escHtml(nm.title)}</div>` +
         `<div class="bt-meta">${escHtml(meta)}</div>` +
@@ -25278,7 +25279,7 @@ function startBountyRecording(card) {
     // 錄程真的開始時，下面的 closeBountyBoard() 本來就會收起看板；這裡沒開始，一樣先收起來，提示才看得到（兩個平台都一樣）。
     closeBountyBoard();
     if (BOUNTY_APP_NEEDS_UPDATE) showToast(t('要錄程，請先把軌島 App 更新到最新版'));
-    else showToast(t('錄程要用軌島 App。網頁可以看懸賞板與自己的籌碼'));
+    else showToast(t('錄程要用軌島 App。網頁可以看懸賞板與自己的點數'));
     return;
   }
   if (!PHYSICAL_COLLECT_ENABLED) { showToast(t('GPS 校正旅程需要用 App')); return; }
@@ -25867,8 +25868,8 @@ async function bountyRules() {
   bountyRulesMem = await res.json();
   return bountyRulesMem;
 }
-// 看板、示範板、護照籌碼三處等規則檔，最多等這麼久（毫秒）。檔案不到三千位元組，正式站實測一次不到十分之一秒
-// （連帶 ETag 重驗的 304 也是）；它決定的只是「籌碼 ×N」標記與護照「下一座」那一格有沒有，不值得讓整個看板或護照停在載入中。
+// 看板、示範板、護照點數列三處等規則檔，最多等這麼久（毫秒）。檔案不到三千位元組，正式站實測一次不到十分之一秒
+// （連帶 ETag 重驗的 304 也是）；它決定的只是「點數 ×N」標記與護照「下一座」那一格有沒有，不值得讓整個看板或護照停在載入中。
 // 手機在隧道裡，一個請求可以好幾分鐘既不回也不報錯；等到這麼久還沒回來，就照「讀不到」處理。
 const BOUNTY_RULES_WAIT_MS = 2000;
 // 參數是 bountyRules() 發出去的那個承諾（呼叫端先發請求，從這裡才開始計時，所以請求能跟別的請求並行）。
@@ -26023,14 +26024,14 @@ function showBountyBrief(card) {
   const taskTxt = nm.isDwell
     ? t('錄 {title}（{line}・{slot}・{unit}）。', { title: escHtml(nm.title), line: escHtml(nm.lineName), slot: escHtml(bountySlotName(card.slot)), unit: unitTxt })
     : t('錄 {title}（{line}，{unit}{dur}）。', { title: escHtml(nm.title), line: escHtml(nm.lineName), unit: unitTxt, dur: durTxt });
-  // 停站卡：籌碼不分卡別，一律要整趟滿門檻（同一班車錄滿幾分鐘、同一條線上移動多遠），所以要從前一站或更早就開始錄，
-  // 只在站上錄一小段，停站的資料照樣能用，但湊不滿門檻、沒有籌碼。門檻數字與下面「合格」那句讀同一個函式；
+  // 停站卡：點數不分卡別，一律要整趟滿門檻（同一班車錄滿幾分鐘、沿線移動多遠），所以要從前一站或更早就開始錄，
+  // 只在站上錄一小段，停站的資料照樣能用，但湊不滿門檻、沒有點數。門檻數字與下面「合格」那句讀同一個函式；
   // 前一站到目標站常常不夠門檻的時間，所以帶數字那一版多提醒「前一站離得近就要再早一點上車」。
-  // 規則檔沒讀到就只講怎麼錄、不寫數字也不提籌碼（同獎勵句：不寫伺服器不一定會給的東西），
+  // 規則檔沒讀到就只講怎麼錄、不寫數字也不提點數（同獎勵句：不寫伺服器不一定會給的東西），
   // 那一版連這個提醒也不帶：沒有門檻可對照，提醒會變成沒有理由的一句話。
   const dq = nm.isDwell ? bountyQualifyParts() : null;
   const timingTxt = nm.isDwell
-    ? (dq ? t('從前一站或更早上車就開始錄，一直錄到離開要錄的站。整趟要錄滿 <b>{time}</b>、在同一條線上移動 <b>{dist}</b> 才有籌碼，前一站離得近就要再早一點上車；只通過、不停靠不算停站樣本。', dq)
+    ? (dq ? t('從前一站或更早上車就開始錄，一直錄到離開要錄的站。整趟要錄滿 <b>{time}</b>、沿線移動 <b>{dist}</b> 才有點數，前一站離得近就要再早一點上車；只通過、不停靠不算停站樣本。', dq)
           : t('從前一站或更早上車就開始錄，一直錄到離開要錄的站；只通過、不停靠不算停站樣本。'))
     : t('搭上那班車之後開始錄，到站就結束。');
   // 原生設定頁的橋接：Capacitor Geolocation 沒有這個 API。比照 RAIL_NATIVE_LOCALNOTIFY.openSettings
@@ -26051,7 +26052,7 @@ function showBountyBrief(card) {
     `<div class="bb-sec"><b>${escHtml(t('先講清楚'))}</b><ul>` +
       (ug ? `<li>${escHtml(ug)}</li>` : '') +
       `<li>${t('錄到一半中斷沒關係，<b>錄到的部分照樣算</b>。')}</li>` +
-      // 合格的門檻緊接在「中斷也算」後面：兩句放在一起，才不會被讀成「錄到多少都有籌碼」。規則檔沒到就整段不寫。
+      // 合格的門檻緊接在「中斷也算」後面：兩句放在一起，才不會被讀成「錄到多少都有點數」。規則檔沒到就整段不寫。
       bountyQualifyItems().map(x => `<li>${x}</li>`).join('') +
       // 🔴 這一句是三態判定的直接承諾（規格 §7、§8），不可以只寫在規格裡不寫在 UI 上
       `<li>${t('<b>即使這次的資料不能用，只要錄得夠完整，校正者章還是你的。</b>我會告訴你是什麼原因、下次怎麼改善。')}</li>` +
@@ -26346,7 +26347,7 @@ function buildCorrectSection() {
     const first = (me.firsts || []).length
       ? `<div class="corr-first">${t('首位校正者：<b>你</b>（{n} 段）', { n: (me.firsts || []).length })}</div>` : '';
     // 樣板裡的 <b>／<span class="corr-sub"> 是字典值的固定標記;插進去的只有 bountyNum() 收斂過的整數。
-    // 舊的「{n} 點」那一格不再顯示：獎勵換成籌碼，餘額在標題列上方的籌碼列(buildChipsRow)。校正段數、採用段數與章照舊。
+    // 舊的「{n} 點」（貢獻點數）那一格不再顯示：錢包的點數餘額在標題列上方的點數列(buildChipsRow)。校正段數、採用段數與章照舊。
     // 只有停站記錄、沒有路段（n 是 0）：逐線的段數都是 0，不畫；數字那一行改寫停站站數。原因說明與首位校正者照舊。
     body =
       `<div class="corr-nums">${n
@@ -26362,36 +26363,36 @@ function buildCorrectSection() {
   // 會讓「有校正記錄」的人這節自動展開,在車站牆龐大的重度使用者身上把護照總高度推過一個視窗高
   // (verify_checkin.mjs L10 的既有門檻,批次無關不可調);-1 是刻意選的哨兵值,讓 n <= autoCloseOver
   // 對任何非負 n 恆不成立、預設收合,使用者手動展開過仍會被記住。
-  // 籌碼列長在標題列上方、自己獨立一塊：這節預設收合，餘額不該跟著藏起來。
+  // 點數列長在標題列上方、自己獨立一塊：這節預設收合，餘額不該跟著藏起來。
   return buildChipsRow() + phSec('correct', n, -1, inner) + `<div class="ph-correct">${body}</div>`;
 }
-// 護照的籌碼列：餘額、下一座要幾顆、雲端搭乘進度、每日上限。
-// 資料只來自 /api/chips-me 的回應（chipsMeMem，見 fetchChipsMe），與通行證無關：籌碼列的內容不看任何通行證狀態，不論有沒有通行證都一樣。
+// 護照的點數列：餘額、下一座要幾點、雲端搭乘次數與每次幾點、每日上限。
+// 資料只來自 /api/chips-me 的回應（chipsMeMem，見 fetchChipsMe），與通行證無關：點數列的內容不看任何通行證狀態，不論有沒有通行證都一樣。
 // 數字一律過 bountyNum()：伺服器回的字串走 innerHTML 就是可執行的 HTML（理由見 bountyNum() 定義處的註解）；樣板裡的 <b> 是字典值的固定標記。
-//   · 沒登入：不顯示餘額，只有一句提示——籌碼屬於帳號，沒登入就沒有東西可讀（見 fetchChipsMe）。
+//   · 沒登入：不顯示餘額，只有一句提示——點數屬於帳號，沒登入就沒有東西可讀（見 fetchChipsMe）。
 //   · 已登入但還沒讀到（開機中、網路不通）：餘額格放破折號，不假裝是 0。
-//   · 「下一座」只在還有場景沒解鎖時才有意義。契約：全部解鎖之後 nextCost 仍停在最後一格的顆數，所以要比
-//     unlocked 的數量與規則檔 chips.scenes 的數量；規則檔還沒讀到就不顯示——寧可少一格，也不要對全解鎖的人寫「下一座要 8 顆」。
-//   · 每日上限顯示 today.cap 本身。today.chips 是判定入帳後才有的數字，白天幾乎都是 0，不能拿來算「今天還能賺幾顆」。
+//   · 「下一座」只在還有場景沒解鎖時才有意義。契約：全部解鎖之後 nextCost 仍停在最後一格的點數，所以要比
+//     unlocked 的數量與規則檔 chips.scenes 的數量；規則檔還沒讀到就不顯示——寧可少一格，也不要對全解鎖的人寫「下一座要 300 點」。
+//   · 雲端搭乘：每天第一次搭滿就入帳 cloud.points 點（規則檔 chips.cloud.dailyMax 是 1，句子因此寫「每天一次」；
+//     改 dailyMax 要一起改這句）。cloud.toNextChip 是留給 App 1.7.3 的相容欄位，這裡不讀；沒有 points（不是點數制的回應）就不畫這一格。
+//   · 每日上限顯示 today.cap 本身。today.chips 是判定入帳後才有的數字，白天幾乎都是 0，不能拿來算「今天還能賺幾點」。
 function buildChipsRow() {
-  if (!(state.account && state.account.user)) return `<div class="ph-chips off">${escHtml(t('登入後看得到籌碼'))}</div>`;
+  if (!(state.account && state.account.user)) return `<div class="ph-chips off">${escHtml(t('登入後看得到點數'))}</div>`;
   const c = chipsMeMem;
   const cell = (k, html) => `<span class="pc-i" data-k="${k}">${html}</span>`;
-  const label = `<span class="pc-l">${escHtml(t('籌碼'))}</span> `;
+  const label = `<span class="pc-l">${escHtml(t('點數'))}</span> `;
   if (!c) return `<div class="ph-chips">${cell('balance', label + '<b>—</b>')}</div>`;
   const parts = [cell('balance', label + `<b>${bountyNum(c.balance)}</b>`)];
   const sceneN = ((bountyRulesMem && bountyRulesMem.chips && bountyRulesMem.chips.scenes) || []).length;
   if (sceneN > 0 && (c.unlocked || []).length < sceneN) {
     const n = bountyNum(c.nextCost);
-    parts.push(cell('next', t('下一座場景要 <b>{n}</b> 顆', { n }, n)));
+    parts.push(cell('next', t('下一座場景要 <b>{n}</b> 點', { n }, n)));
   }
-  if (c.cloud && typeof c.cloud === 'object') {
-    parts.push(cell('cloud', t('雲端搭乘 <b>{rides}</b> 次・再 <b>{left}</b> 次拿 1 顆',
-      { rides: bountyNum(c.cloud.rides), left: bountyNum(c.cloud.toNextChip) })));
-  }
+  const cloudPts = c.cloud && typeof c.cloud === 'object' ? bountyNum(c.cloud.points) : 0;
+  if (cloudPts > 0) parts.push(cell('cloud', t('雲端搭乘 <b>{rides}</b> 次・每天一次 <b>{n}</b> 點', { rides: bountyNum(c.cloud.rides), n: cloudPts })));
   if (c.today && typeof c.today === 'object') {
     const cap = bountyNum(c.today.cap);
-    parts.push(cell('cap', t('錄程每天最多 <b>{n}</b> 顆', { n: cap }, cap)));
+    parts.push(cell('cap', t('錄程每天最多 <b>{n}</b> 點', { n: cap }, cap)));
   }
   return `<div class="ph-chips">${parts.join(' ')}</div>`;
 }

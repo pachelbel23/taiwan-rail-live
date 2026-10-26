@@ -1,11 +1,11 @@
-// 路段懸賞 v2 後端驗收：雲端搭乘 POST /api/cloud-ride。
+// 路段懸賞後端驗收：雲端搭乘 POST /api/cloud-ride（v3：每一次入帳點數）。
 // 離線：假 D1（scripts/d1_local.mjs，真 SQLite）＋ stub ASSETS（班表檔讀 data/、或換成合成的）＋ BOUNTY_NOW 釘死；不起伺服器、不碰網路。
 // 跑法：node scripts/verify_bounty_cloud.mjs
 //
 // 期望值全部寫死在這裡，不呼叫實作（連 scripts/bounty_chips_core.mjs 都不呼叫）去產生期望：
-//   ・產品規則：捷運不列入懸賞；每日上限 4 籌碼、一趟至少 10 分鐘。
-//   ・其餘數字（雲端搭乘連續 600 秒算 1 次、每日最多 1 次、3 次換 1 個籌碼）來自 data/bounty_rules.json 的 chips.cloud，
-//     這裡照抄成字面。
+//   ・產品規則（v3 點數）：捷運不列入懸賞；一趟至少 10 分鐘；雲端搭乘每一次（模擬器除外）入帳 20 點；錄程每日上限 500 點（雲端不占）。
+//   ・其餘數字（雲端搭乘連續 600 秒算 1 次、每日最多 1 次）來自 data/bounty_rules.json 的 chips.cloud，這裡照抄成字面。
+//   ・v2 是「3 次換 1 顆籌碼」：上線前搭了、還沒湊滿的零頭不補，v2 留下的半套搭乘（搭乘列在、籌碼沒發）重送也不補（S2、S4）。
 // 每一條判準寫的時候都先答「哪一筆輸入能讓它變紅」——答不出來的判準等於沒有判準。
 //
 // ⚠️ 假 D1 的保真度：scripts/d1_local.mjs 的 batch() 是排隊序列化的，但 batch 之外的單句寫入
@@ -13,12 +13,12 @@
 //    各種交錯」是安全的，證明不了真 D1 的行為。上線後要對正式庫做一次唯讀抽查（同一營運日兩列、
 //    重複的雲端籌碼 ref）。
 //
-// 身分與授權收緊之後：雲端搭乘會發籌碼、籌碼可以花，所以已併進帳號的裝置、或帳號（uid）本身送搭乘，
+// 身分與授權收緊之後：雲端搭乘會發點數、點數可以花，所以已併進帳號的裝置、或帳號（uid）本身送搭乘，
 // 都必須帶該帳號的 Bearer（G4）。P1a 原本拿 `Authorization: Bearer plus-token` 當「通行證標頭」的替身，
 // 現在 Bearer 是真的身分憑證（會被驗），所以替身換成 x-plus-token 系列標頭——被驗的東西不變（通行證與結果無關）。
 // 身分規則本身的驗收在 scripts/verify_bounty_auth.mjs。
 //
-// 分組：C 基本規則與冪等　S 籌碼結算（模擬器、補齊、併發）　T 車次驗證與時間窗（合成班表，逐邊界）
+// 分組：C 基本規則與冪等　S 點數入帳（模擬器、v2 留下的狀態、併發、合併後重送）　T 車次驗證與時間窗（合成班表，逐邊界）
 //       X 四種系統各一個成功案例（讀真班表檔）　G 閘門與路由　P 通行證欄位不影響結果　D 白名單與 SYS_DEFS 對得上
 import { readFileSync, existsSync } from 'node:fs';
 import { createHash } from 'node:crypto';
@@ -128,27 +128,33 @@ const mb = (day, o = {}) => ({ actor: 'dev-cloud-0001', day, trainKey: 'mrt|BR|v
 const q = {
   rides: (w, a) => w.db.prepare('SELECT actor,day,train_key,sec,request_id,created_at,simulator FROM cloud_rides WHERE actor=? ORDER BY day').all(a).map(r => ({ ...r })),
   nRides: (w, a) => w.db.prepare('SELECT COUNT(*) c FROM cloud_rides WHERE actor=?').get(a).c,
-  cloudLedger: (w, a) => w.db.prepare("SELECT id,actor,kind,delta,ref,day,created_at FROM chip_ledger WHERE actor=? AND kind='cloud' ORDER BY ref").all(a).map(r => ({ ...r })),
+  cloudLedger: (w, a) => w.db.prepare("SELECT id,actor,kind,delta,ref,day,created_at,unit FROM chip_ledger WHERE actor=? AND kind='cloud' ORDER BY ref").all(a).map(r => ({ ...r })),
   nLedger: (w, a) => w.db.prepare('SELECT COUNT(*) c FROM chip_ledger WHERE actor=?').get(a).c,
   bal: (w, a) => w.db.prepare('SELECT COALESCE(SUM(delta),0) n FROM chip_ledger WHERE actor=?').get(a).n,
 };
+// v2 發的雲端籌碼列（unit='chip'，ref 是 v2 的 <actor>|cloud|N）
+const seedV2Chip = (w, actor, n, day) => w.db.prepare("INSERT INTO chip_ledger (id,actor,kind,delta,ref,day,created_at,unit) VALUES (?,?,'cloud',1,?,?,?,'chip')")
+  .run(`cloud|${actor}|cloud|${n}`, actor, `${actor}|cloud|${n}`, day, NOW_MS - 9000);
+// 一筆 v3 入帳列應有的樣子（期望值自己組，不讀實作）
+const payRow = (actor, requestId, day, at) => ({ id: `cloud|${actor}.${requestId}`, actor, kind: 'cloud', delta: 20, ref: `${actor}.${requestId}`, day, created_at: at, unit: 'point' });
 const seedRide = (w, actor, day, o = {}) => w.db.prepare('INSERT INTO cloud_rides (actor,day,train_key,sec,request_id,created_at,simulator) VALUES (?,?,?,?,?,?,?)')
   .run(actor, day, o.trainKey || 'mrt|BR|seed', o.sec || 700, o.requestId === undefined ? null : o.requestId, o.at ?? NOW_MS - 1000, o.simulator ? 1 : 0);
 
 // ═══ C 組：基本規則與冪等（合成台鐵班表）═══════════════════════════════════════
-// C1 600 秒剛好夠：200、rides 1、再 2 次換下一顆、這一次沒有籌碼；庫裡一列，欄位逐一核對
+// C1 600 秒剛好夠：200、rides 1、這一次入帳 20 點；庫裡一列，欄位逐一核對
 await attempt('C1', async () => {
   const A = 'dev-c1aaaa01';
   const w = world({ files: { 'tra_widget_schedule.json': TRA_FIX } });
   const b = rb({ actor: A });
   const r = await ride(w, b);
-  ok('C1a 600 秒（正好門檻）→ 200，回應五個欄位一個不多：{ok, day, rides:1, toNextChip:2, chipAwarded:false}',
-    r.status === 200 && same(r.json, { ok: true, day: TODAY, rides: 1, toNextChip: 2, chipAwarded: false }), r.text);
+  ok('C1a 600 秒（正好門檻）→ 200，回應六個欄位一個不多：{ok, day, rides:1, toNextChip:1, chipAwarded:true, points:20}',
+    r.status === 200 && same(r.json, { ok: true, day: TODAY, rides: 1, toNextChip: 1, chipAwarded: true, points: 20 }), r.text);
   const rows = q.rides(w, A);
   ok('C1b 庫裡恰好一列，欄位逐一對：actor／day／trainKey／sec／requestId／created_at＝時鐘／simulator 0',
     rows.length === 1 && same(rows[0], { actor: A, day: TODAY, train_key: 'tra_sched|101', sec: 600, request_id: b.requestId, created_at: NOW_MS, simulator: 0 }),
     JSON.stringify(rows));
-  ok('C1c 只有 1 次不發籌碼：帳本 0 列、餘額 0', q.nLedger(w, A) === 0 && q.bal(w, A) === 0);
+  ok('C1c 第 1 次就入帳：帳本恰一列 cloud（delta 20、unit point、ref＝<actor>.<requestId>、id＝cloud|<ref>、day＝營運日、created_at＝時鐘），餘額 20',
+    same(q.cloudLedger(w, A), [payRow(A, b.requestId, TODAY, NOW_MS)]) && q.nLedger(w, A) === 1 && q.bal(w, A) === 20, JSON.stringify(q.cloudLedger(w, A)));
 });
 
 // C2 599 秒差一秒 → 400 too_short，且零寫入（600 通過與 599 被擋是一對，缺一邊「一律 400」也會過）
@@ -182,8 +188,9 @@ await attempt('C4', async () => {
   const w = world({ files: { 'tra_widget_schedule.json': TRA_FIX } });
   const b = rb({ actor: A });
   const r1 = await ride(w, b), r2 = await ride(w, b);
-  ok('C4 同一個 requestId 重送 → 兩次都 200 且回應完全一樣、庫裡仍一列、帳本沒動',
-    r1.status === 200 && r2.status === 200 && same(r1.json, r2.json) && q.nRides(w, A) === 1 && q.nLedger(w, A) === 0, r1.text + ' / ' + r2.text);
+  ok('C4 同一個 requestId 重送 → 兩次都 200 且回應完全一樣（points 20）、庫裡仍一列、帳本仍一列 20',
+    r1.status === 200 && r2.status === 200 && same(r1.json, r2.json) && r2.json.points === 20 && q.nRides(w, A) === 1 && q.nLedger(w, A) === 1 && q.bal(w, A) === 20,
+    r1.text + ' / ' + r2.text);
   // 同一個 requestId 拿去送另一個營運日 → 409 conflict（重送必須是「一模一樣的那一筆」）
   const rc = await ride(w, { ...b, day: YESTERDAY, trainKey: 'tra_sched|102', startedAt: at(YESTERDAY, 25, 5) });
   ok('C4b 同一個 requestId 送了別的營運日 → 409 conflict 且沒有多寫', rc.status === 409 && rc.json.error === 'conflict' && q.nRides(w, A) === 1, rc.text);
@@ -201,11 +208,15 @@ await attempt('C5', async () => {
   const [a1, a2] = await Promise.all([ride(w, bA), ride(w, bA)]);
   ok('C5a 同一個 requestId 併發兩發 → 都 200、回應相同、只有一列', a1.status === 200 && a2.status === 200 && same(a1.json, a2.json) && q.nRides(w, A) === 1,
     a1.text + ' / ' + a2.text);
-  const [b1, b2] = await Promise.all([ride(w, rb({ actor: B })), ride(w, rb({ actor: B }))]);
+  const bB1 = rb({ actor: B }), bB2 = rb({ actor: B });
+  const [b1, b2] = await Promise.all([ride(w, bB1), ride(w, bB2)]);
   const st = [b1.status, b2.status].sort();
-  ok('C5b 不同 requestId 併發兩發 → 恰好一個 200 一個 409 already_today、庫裡只有一列（主鍵＋讀回擋下輸的那個）',
-    st[0] === 200 && st[1] === 409 && [b1, b2].filter(x => x.status === 409)[0].json.error === 'already_today' && q.nRides(w, B) === 1,
-    b1.text + ' / ' + b2.text);
+  const winId = b1.status === 200 ? bB1.requestId : bB2.requestId;
+  ok('C5b 不同 requestId 併發兩發 → 恰好一個 200 一個 409 already_today、庫裡只有一列（主鍵＋讀回擋下輸的那個）；'
+    + '帳本恰 1 列 20 點、ref 是贏的那一筆（輸的那個不入帳）',
+    st[0] === 200 && st[1] === 409 && [b1, b2].filter(x => x.status === 409)[0].json.error === 'already_today' && q.nRides(w, B) === 1 &&
+      same(q.cloudLedger(w, B).map(x => x.ref), [`${B}.${winId}`]) && q.bal(w, B) === 20,
+    b1.text + ' / ' + b2.text + ' ' + JSON.stringify(q.cloudLedger(w, B)));
 });
 
 // C6 拒收的形狀：座標、沒帶 client、網頁 client、日期、時間、秒數、requestId、actor、壞 JSON——每一種都零寫入
@@ -252,176 +263,146 @@ await attempt('C7', async () => {
   ok('C7b 一個小時後才開始的搭乘 → 400 bad_time', rFuture.status === 400 && rFuture.json.error === 'bad_time', rFuture.text);
 });
 
-// ═══ S 組：籌碼結算 ═══════════════════════════════════════════════════════════
-// 三個營運日各一次（時鐘撥到各日 16:00），用捷運的窗（不依賴班表）。期望值：第 3 次才發第 1 顆。
-// S1 三天各 1 次：rides 依序 1、2、3；toNextChip 依序 2、1、3；chipAwarded 只有第 3 次為真；帳本恰一列 cloud
+// ═══ S 組：點數入帳 ═══════════════════════════════════════════════════════════
+// 多個營運日各一次（時鐘撥到各日 16:00），用捷運的窗（不依賴班表）。期望值：每一次（模擬器除外）都入帳 20 點。
+// S1 三天各 1 次：rides 依序 1、2、3；每一次都 points 20；帳本三列各自的 ref；chips-me 餘額 60
 await attempt('S1', async () => {
   const A = 'dev-s1aaaa01';
   const w = world({});
-  const outs = [];
-  for (const day of [DAY_BEFORE, YESTERDAY, TODAY]) { w.at(at(day, 16)); outs.push(await ride(w, mb(day, { actor: A }))); }
-  ok('S1a 三天各一次：rides 1→2→3、toNextChip 2→1→3、chipAwarded 假→假→真',
+  const outs = [], bs = [];
+  for (const day of [DAY_BEFORE, YESTERDAY, TODAY]) { w.at(at(day, 16)); const b = mb(day, { actor: A }); bs.push(b); outs.push(await ride(w, b)); }
+  ok('S1a 三天各一次：rides 1→2→3、toNextChip 一律 1、chipAwarded 一律真、points 一律 20',
     outs.every(o => o.status === 200) &&
-    same(outs.map(o => [o.json.rides, o.json.toNextChip, o.json.chipAwarded]), [[1, 2, false], [2, 1, false], [3, 3, true]]), outs.map(o => o.text).join(' | '));
+    same(outs.map(o => [o.json.rides, o.json.toNextChip, o.json.chipAwarded, o.json.points]), [[1, 1, true, 20], [2, 1, true, 20], [3, 1, true, 20]]), outs.map(o => o.text).join(' | '));
   const led = q.cloudLedger(w, A);
-  ok('S1b 帳本恰好一列 kind=cloud：delta 1、ref＝<actor>|cloud|1、day＝第三次的營運日、created_at＝第三次的時鐘',
-    led.length === 1 && led[0].delta === 1 && led[0].ref === `${A}|cloud|1` && led[0].day === TODAY && led[0].created_at === at(TODAY, 16) &&
-    led[0].actor === A, JSON.stringify(led));
+  const want = [DAY_BEFORE, YESTERDAY, TODAY].map((d, i) => payRow(A, bs[i].requestId, d, at(d, 16))).sort((x, y) => (x.ref < y.ref ? -1 : 1));
+  ok('S1b 帳本三列 kind=cloud：各 20 點、unit point、ref＝<actor>.<各自的 requestId>、day＝各自的營運日、created_at＝各自的時鐘',
+    same(led, want), JSON.stringify(led));
   const m = await me(w, A);
-  ok('S1c chips-me：balance 1、cloud.rides 3、cloud.toNextChip 3；雲端籌碼不占錄程每日上限（today.chips 仍 0）',
-    m.status === 200 && m.json.balance === 1 && same(m.json.cloud, { rides: 3, toNextChip: 3 }) && same(m.json.today, { chips: 0, cap: 4 }), m.text);
+  ok('S1c chips-me：balance 60、cloud {rides 3, toNextChip 1, points 20}；雲端點數不占錄程每日上限（today.chips 仍 0）',
+    m.status === 200 && m.json.balance === 60 && same(m.json.cloud, { rides: 3, toNextChip: 1, points: 20 }) && same(m.json.today, { chips: 0, cap: 500 }), m.text);
 });
 
-// S2 再三天 → 第 6 次發第 2 顆（ref 依序 …|1、…|2），餘額 2
+// S2 v2 留下的狀態：還沒湊滿 3 次的零頭不補；已經發過的 v2 雲端籌碼不影響 v3 這一次入帳
 await attempt('S2', async () => {
   const A = 'dev-s2aaaa01';
   const w = world({});
-  // 前三次直接種進庫（省時間），帳本也種一顆——這樣只測「第 4、5、6 次」；第 6 次才多一顆
-  for (const d of ['2026-07-20', '2026-07-21', '2026-07-22']) seedRide(w, A, d);
-  w.db.prepare("INSERT INTO chip_ledger (id,actor,kind,delta,ref,day,created_at) VALUES (?,?,?,?,?,?,?)").run(`cloud|${A}|cloud|1`, A, 'cloud', 1, `${A}|cloud|1`, '2026-07-22', NOW_MS - 5000);
-  const outs = [];
-  for (const day of [DAY_BEFORE, YESTERDAY, TODAY]) { w.at(at(day, 16)); outs.push(await ride(w, mb(day, { actor: A }))); }
-  ok('S2a 第 4、5、6 次：chipAwarded 假→假→真；第 6 次 rides 6、toNextChip 3',
-    same(outs.map(o => o.json.chipAwarded), [false, false, true]) && outs[2].json.rides === 6 && outs[2].json.toNextChip === 3, outs.map(o => o.text).join(' | '));
-  ok('S2b 帳本兩列：ref 是 …|cloud|1 與 …|cloud|2（第二顆接在第一顆後面，沒有重號、沒有漏號），餘額 2',
-    same(q.cloudLedger(w, A).map(x => x.ref), [`${A}|cloud|1`, `${A}|cloud|2`]) && q.bal(w, A) === 2, JSON.stringify(q.cloudLedger(w, A)));
+  seedRide(w, A, '2026-07-20'); seedRide(w, A, '2026-07-21');               // v2：2 次、還沒換到籌碼
+  const r = await ride(w, mb(TODAY, { actor: A }));
+  ok('S2a 庫裡 2 筆 v2 搭乘（零頭）＋v3 的這一次 → rides 3、points 20；帳本只有這一次的 1 列（不補 v2 的「3 次換 1 顆」）、餘額 20',
+    r.status === 200 && r.json.rides === 3 && r.json.points === 20 && q.cloudLedger(w, A).length === 1 && q.bal(w, A) === 20, r.text + ' ' + JSON.stringify(q.cloudLedger(w, A)));
+  const B = 'dev-s2bbbb01', w2 = world({});
+  for (const d of ['2026-07-20', '2026-07-21', '2026-07-22']) seedRide(w2, B, d);
+  seedV2Chip(w2, B, 1, '2026-07-22');                                         // v2：3 次換到的 1 顆
+  const r2 = await ride(w2, mb(TODAY, { actor: B }));
+  const m2 = await me(w2, B);
+  ok('S2b 已有 v2 的 3 次＋1 顆雲端籌碼 → v3 第 4 次照入 20 點（不看「已得」）；chips-me 餘額 70（1 顆×50＋20）',
+    r2.status === 200 && r2.json.rides === 4 && r2.json.points === 20 && q.cloudLedger(w2, B).length === 2 && m2.json.balance === 70, r2.text + ' ' + m2.text);
 });
 
-// S3 模擬器：照寫、不算、不發。三次模擬器搭乘後：庫裡 3 列（simulator=1）、帳本 0 列、chips-me cloud.rides 0
+// S3 模擬器：照寫、不算、不入帳。三次模擬器搭乘後：庫裡 3 列（simulator=1）、帳本 0 列、chips-me cloud.rides 0
 await attempt('S3', async () => {
   const A = 'dev-s3aaaa01';
   const w = world({});
   const outs = [];
   for (const day of [DAY_BEFORE, YESTERDAY, TODAY]) { w.at(at(day, 16)); outs.push(await ride(w, mb(day, { actor: A, client: SIM }))); }
-  ok('S3a 模擬器三次：都 200，回應的 rides 一直是 0、toNextChip 3、chipAwarded 假（連第 3 次都不發）',
-    outs.every(o => o.status === 200 && same(o.json, { ok: true, day: o.json.day, rides: 0, toNextChip: 3, chipAwarded: false })), outs.map(o => o.text).join(' | '));
+  ok('S3a 模擬器三次：都 200，回應的 rides 一直是 0、toNextChip 1、chipAwarded 假、points 0',
+    outs.every(o => o.status === 200 && same(o.json, { ok: true, day: o.json.day, rides: 0, toNextChip: 1, chipAwarded: false, points: 0 })), outs.map(o => o.text).join(' | '));
   const rows = q.rides(w, A);
   ok('S3b 庫裡照寫 3 列且都 simulator=1；帳本 0 列、餘額 0', rows.length === 3 && rows.every(r => r.simulator === 1) && q.nLedger(w, A) === 0 && q.bal(w, A) === 0, JSON.stringify(rows));
   const m = await me(w, A);
-  ok('S3c chips-me 的 cloud.rides 排除模擬器（0）、toNextChip 3、balance 0', m.json.balance === 0 && same(m.json.cloud, { rides: 0, toNextChip: 3 }), m.text);
+  ok('S3c chips-me 的 cloud.rides 排除模擬器（0）、toNextChip 1、balance 0', m.json.balance === 0 && same(m.json.cloud, { rides: 0, toNextChip: 1, points: 20 }), m.text);
   // 模擬器那天已經占掉那一格：同一天真機再送 → 409（PK (actor, day)）
   const r = await ride(w, mb(TODAY, { actor: A, client: APP }));
   ok('S3d 模擬器的搭乘占掉當天那一格：同一天真機再送 → 409 already_today', r.status === 409 && r.json.error === 'already_today', r.text);
-  // 混合：模擬器 1 次＋真機 3 次 → 真機的第 3 次才發（模擬器那次不算進 3）
+  // 混合：模擬器 1 次＋真機 2 次在庫裡，再送 1 次真機 → rides 3（模擬器那次不算進次數）、入帳 20
   const B = 'dev-s3bbbb01', w2 = world({});
-  const days = ['2026-07-25', '2026-07-26', DAY_BEFORE, YESTERDAY];   // 只有今天、昨天能送；前面的直接種
-  seedRide(w2, B, days[0], { simulator: true }); seedRide(w2, B, days[1]); seedRide(w2, B, days[2]);
+  seedRide(w2, B, '2026-07-25', { simulator: true }); seedRide(w2, B, '2026-07-26'); seedRide(w2, B, DAY_BEFORE);
   w2.at(at(YESTERDAY, 16));
   const m1 = await ride(w2, mb(YESTERDAY, { actor: B }));
-  ok('S3e 混合：1 筆模擬器＋2 筆真機在庫裡，再送 1 筆真機 → 真機第 3 次：rides 3、chipAwarded 真（模擬器那筆不算進次數）',
-    m1.status === 200 && m1.json.rides === 3 && m1.json.chipAwarded === true && q.cloudLedger(w2, B).length === 1, m1.text);
+  ok('S3e 混合：1 筆模擬器＋2 筆真機在庫裡，再送 1 筆真機 → rides 3、points 20（模擬器那筆不算進次數）',
+    m1.status === 200 && m1.json.rides === 3 && m1.json.points === 20 && q.cloudLedger(w2, B).length === 1, m1.text);
 });
 
-// S4 補齊：搭乘寫進去、結算前失敗（庫裡 3 次、帳本空）→ 用同一個 requestId 重送要補得回來，而且只補一顆
+// S4 v2 留下的半套搭乘（搭乘列寫進去、結算前失敗）：v3 的重送回 200 但不補入帳（v3 的搭乘與入帳同一筆交易，不會再有半套）
 await attempt('S4', async () => {
   const A = 'dev-s4aaaa01';
   const w = world({});
   seedRide(w, A, '2026-07-20'); seedRide(w, A, '2026-07-21');
   seedRide(w, A, TODAY, { requestId: 'req-heal001', at: NOW_MS });
   const b = mb(TODAY, { actor: A, requestId: 'req-heal001' });
-  const r1 = await ride(w, b);
-  ok('S4a 重送把漏掉的籌碼補上：200、rides 3、chipAwarded 真、帳本 1 列、餘額 1',
-    r1.status === 200 && r1.json.rides === 3 && r1.json.chipAwarded === true && q.cloudLedger(w, A).length === 1 && q.bal(w, A) === 1, r1.text);
-  const r2 = await ride(w, b);
-  ok('S4b 再重送一次不會多發（仍 1 列、餘額 1）', r2.status === 200 && q.cloudLedger(w, A).length === 1 && q.bal(w, A) === 1, r2.text);
+  const r1 = await ride(w, b), r2 = await ride(w, b);
+  ok('S4 v2 半套的那一筆重送兩次：都 200、rides 3、chipAwarded 假、points 0；帳本 0 列（不補）',
+    [r1, r2].every(r => r.status === 200 && r.json.rides === 3 && r.json.chipAwarded === false && r.json.points === 0) && q.nLedger(w, A) === 0, r1.text + ' / ' + r2.text);
 });
 
-// S5 正常送出後重送：chipAwarded 要與第一次相同（第一次的回應掉了，客戶端重送要拿到同樣的答案）
+// S5 正常送出後重送：回應要與第一次相同（第一次的回應掉了，客戶端重送要拿到同樣的答案）
 await attempt('S5', async () => {
   const A = 'dev-s5aaaa01';
   const w = world({});
-  seedRide(w, A, '2026-07-20'); seedRide(w, A, '2026-07-21');
   const b = mb(TODAY, { actor: A });
   const first = await ride(w, b), again = await ride(w, b);
-  ok('S5a 第 3 次（發籌碼的那一次）重送：兩次回應相同（chipAwarded 真、rides 3），帳本仍 1 列',
-    first.json.chipAwarded === true && same(first.json, again.json) && q.cloudLedger(w, A).length === 1, first.text + ' / ' + again.text);
-  // 沒發籌碼的那次重送：仍是假（不會因為「帳本裡有 cloud 列」就誤報真）
-  const B = 'dev-s5bbbb01', w2 = world({});
-  const bb = mb(TODAY, { actor: B });
-  const f1 = await ride(w2, bb), f2 = await ride(w2, bb);
-  ok('S5b 第 1 次（沒發）重送 → 仍 chipAwarded 假', f1.json.chipAwarded === false && same(f1.json, f2.json), f1.text + ' / ' + f2.text);
-  // 更早的一次（沒發）在後來發了籌碼之後重送：還是假
+  ok('S5a 重送：兩次回應相同（points 20、rides 1），帳本仍 1 列', first.json.points === 20 && same(first.json, again.json) && q.cloudLedger(w, A).length === 1, first.text + ' / ' + again.text);
+  // 更早的一次在後來又搭了兩次之後重送：回的是它自己那一次的 20 點，不是加總、也不是 0
   const w3 = world({});
   const C = 'dev-s5cccc01';
   const o1 = mb(DAY_BEFORE, { actor: C }), o2 = mb(YESTERDAY, { actor: C }), o3 = mb(TODAY, { actor: C });
   w3.at(at(DAY_BEFORE, 16)); await ride(w3, o1); w3.at(at(YESTERDAY, 16)); await ride(w3, o2); w3.at(at(TODAY, 16)); await ride(w3, o3);
   w3.at(at(TODAY, 17));
-  const late1 = await ride(w3, o1);      // 第 1 次的請求重送，但那個營運日（DAY_BEFORE）現在已經是「前天」——bad_day
-  const late2 = await ride(w3, o2);      // 第 2 次的請求重送（昨天，仍在窗內）→ 200，且沒有籌碼
-  ok('S5c 後來發了籌碼之後，更早那筆（沒發的）重送：仍是 chipAwarded 假、帳本仍 1 列（不因為「別筆發過」而誤報）',
-    late2.status === 200 && late2.json.chipAwarded === false && late2.json.rides === 3 && q.cloudLedger(w3, C).length === 1, late2.text + ' | 前天那筆：' + late1.text);
+  const late2 = await ride(w3, o2);      // 第 2 次的請求重送（昨天）
+  ok('S5b 後來又搭了一次之後，昨天那筆重送：200、points 20（它自己那一次）、rides 3；帳本仍 3 列',
+    late2.status === 200 && late2.json.points === 20 && late2.json.rides === 3 && q.cloudLedger(w3, C).length === 3, late2.text);
 });
 
-// S6 併發結算：昨天與今天兩筆同時抵達、庫裡已有 1 筆舊的（湊成 3 次）——不論交錯順序，帳本恰好一顆、至少一邊回報 chipAwarded
+// S6 併發：昨天與今天兩筆同時抵達（同一個時鐘、同一毫秒）——兩邊各入帳 20，各自的回應只算自己那一筆
 await attempt('S6', async () => {
   const A = 'dev-s6aaaa01';
   const w = world({});
   seedRide(w, A, '2026-07-20');
   const [r1, r2] = await Promise.all([ride(w, mb(YESTERDAY, { actor: A })), ride(w, mb(TODAY, { actor: A }))]);
-  ok('S6 兩筆併發湊成第 3 次：都 200、rides 都是（2 或 3）、帳本恰好 1 顆（不是 0、不是 2）、恰有一邊回報 chipAwarded 真',
-    r1.status === 200 && r2.status === 200 && q.cloudLedger(w, A).length === 1 && q.bal(w, A) === 1 &&
-    [r1.json.chipAwarded, r2.json.chipAwarded].filter(Boolean).length === 1, r1.text + ' / ' + r2.text);
+  ok('S6 兩筆併發：都 200、都 points 20（不是 40——同一毫秒的兩筆入帳不能互相算進對方的回應）、帳本恰 2 列、餘額 40',
+    r1.status === 200 && r2.status === 200 && r1.json.points === 20 && r2.json.points === 20 && q.cloudLedger(w, A).length === 2 && q.bal(w, A) === 40,
+    r1.text + ' / ' + r2.text);
 });
 
-// S7 「已得」看帳本裡 kind=cloud 的加總，不看 ref、不看搭乘次數：帳本已有 1 顆（來源是別的 ref，例如併帳號搬來的），
-// 湊到第 3 次時應得 1 顆、已得 1 顆 → 不發；不能因為 3 是 3 的倍數就再發一顆
+// S7 同一個 requestId 併發重送：搭乘一列、入帳一列，兩個回應相同
 await attempt('S7', async () => {
   const A = 'dev-s7aaaa01';
   const w = world({});
-  seedRide(w, A, '2026-07-20'); seedRide(w, A, '2026-07-21');
-  w.db.prepare("INSERT INTO chip_ledger (id,actor,kind,delta,ref,day,created_at) VALUES ('cloud|other-dev|cloud|1',?,'cloud',1,'other-dev|cloud|1','2026-07-18',?)").run(A, NOW_MS - 9000);
-  const r = await ride(w, mb(TODAY, { actor: A }));
-  ok('S7 帳本已有 1 顆雲端籌碼（別的 ref），第 3 次搭乘不再多發：chipAwarded 假、帳本仍 1 列、餘額 1（應得 1－已得 1＝0）',
-    r.status === 200 && r.json.rides === 3 && r.json.chipAwarded === false && q.cloudLedger(w, A).length === 1 && q.bal(w, A) === 1, r.text);
+  const b = mb(TODAY, { actor: A });
+  const [r1, r2] = await Promise.all([ride(w, b), ride(w, b)]);
+  ok('S7 同一個 requestId 同時送兩次 → 都 200、回應相同（points 20）；搭乘 1 列、帳本 1 列、餘額 20',
+    r1.status === 200 && r2.status === 200 && same(r1.json, r2.json) && r1.json.points === 20 && q.nRides(w, A) === 1 && q.cloudLedger(w, A).length === 1 && q.bal(w, A) === 20,
+    r1.text + ' / ' + r2.text);
 });
 
-// S8 一次補多顆：庫裡已有 8 筆舊搭乘、帳本空（例如兩個帳號合併後次數一次跳很多），第 9 次一進來要一次補 3 顆。
-// 🔴 這一組專抓「差額用一句 SQL 迭代補」的兩類錯：序號串進 ref 時變成「1.0」（驅動把 JS 數字綁成浮點）、
-//    差額算錯（少補／多補／重號）。單顆的 S1–S7 迭代只跑一輪，抓不到。
+// S8 合併之後的重送：搭乘列與入帳列都搬到帳號（只改 actor，ref 不動），舊裝置帶帳號的 Bearer 重送同一個 requestId
 await attempt('S8', async () => {
-  const A = 'dev-s8aaaa01';
-  const w = world({});
-  for (let d = 10; d < 18; d++) seedRide(w, A, `2026-07-${d}`);
-  const r = await ride(w, mb(TODAY, { actor: A }));
-  const led = q.cloudLedger(w, A);
-  ok('S8a 庫裡 8 筆、送第 9 次：一次補 3 顆——ref 恰為 …|cloud|1、|2、|3（整數字面，不是 1.0）、id 對應、delta 各 1、餘額 3、chipAwarded 真',
-    r.status === 200 && r.json.rides === 9 && r.json.chipAwarded === true &&
-    same(led.map(x => x.ref), [`${A}|cloud|1`, `${A}|cloud|2`, `${A}|cloud|3`]) &&
-    same(led.map(x => x.id), [`cloud|${A}|cloud|1`, `cloud|${A}|cloud|2`, `cloud|${A}|cloud|3`]) &&
-    led.every(x => x.delta === 1 && x.day === TODAY && x.created_at === NOW_MS) && q.bal(w, A) === 3, r.text + ' ' + JSON.stringify(led));
-  // 已得＝帳本 kind=cloud 加總（不看 ref）：搬來 1 顆別的 ref、7 筆舊搭乘＋這次＝8 次 → 應得 2、已得 1 → 只補 1 顆，序號接在已得後面
-  const B = 'dev-s8bbbb01', w2 = world({});
-  for (let d = 10; d < 17; d++) seedRide(w2, B, `2026-07-${d}`);
-  w2.db.prepare("INSERT INTO chip_ledger (id,actor,kind,delta,ref,day,created_at) VALUES ('cloud|other-dev|cloud|1',?,'cloud',1,'other-dev|cloud|1','2026-07-18',?)").run(B, NOW_MS - 9000);
-  const r2 = await ride(w2, mb(TODAY, { actor: B }));
-  // 讀庫是 ORDER BY ref（位元組序），所以預期值也要排序。
-  ok('S8b 已有 1 顆（別的 ref）、7 筆舊搭乘＋這次＝8 次 → 應得 2、已得 1：只補 1 顆，ref＝<B>|cloud|2；餘額 2、chipAwarded 真',
-    r2.status === 200 && r2.json.rides === 8 && r2.json.chipAwarded === true &&
-    same(q.cloudLedger(w2, B).map(x => x.ref), [`${B}|cloud|2`, 'other-dev|cloud|1'].sort()) && q.bal(w2, B) === 2, r2.text + ' ' + JSON.stringify(q.cloudLedger(w2, B)));
-  // 併發：庫裡 7 筆舊搭乘，昨天與今天兩筆同時抵達，兩邊算出的區間不同（8 次→1..2、9 次→1..3）——帳本仍恰好 3 顆各一份
-  const C = 'dev-s8cccc01', w3 = world({});
-  for (let d = 10; d < 17; d++) seedRide(w3, C, `2026-07-${d}`);
-  const [c1, c2] = await Promise.all([ride(w3, mb(YESTERDAY, { actor: C })), ride(w3, mb(TODAY, { actor: C }))]);
-  ok('S8c 兩筆併發、區間重疊（1..2 與 1..3）：都 200、帳本恰好 3 顆且 ref 各一份（1、2、3）、餘額 3',
-    c1.status === 200 && c2.status === 200 && same(q.cloudLedger(w3, C).map(x => x.ref), [`${C}|cloud|1`, `${C}|cloud|2`, `${C}|cloud|3`]) && q.bal(w3, C) === 3,
-    c1.text + ' / ' + c2.text + ' ' + JSON.stringify(q.cloudLedger(w3, C)));
-  // 再送一次同一個 requestId：不會再多發（補齊已完成）
-  const again = await ride(w, mb(TODAY, { actor: A, requestId: 'req-s8-none' }));
-  ok('S8d 補完後同一天再送另一個 requestId → 409 already_today，帳本仍 3 顆', again.status === 409 && again.json.error === 'already_today' && q.cloudLedger(w, A).length === 3, again.text);
+  const D = 'dev-s8aaaa01', U = 'uid-s8acct0001';
+  const w = world({ env: { FIREBASE_WEB_API_KEY: 'k' } });
+  const b = mb(TODAY, { actor: D });
+  const first = await ride(w, b);
+  w.db.prepare('UPDATE cloud_rides SET actor=? WHERE actor=?').run(U, D);
+  w.db.prepare('UPDATE chip_ledger SET actor=? WHERE actor=?').run(U, D);
+  w.db.prepare('INSERT INTO bounty_points (actor,uid,points,merged_into,updated_at) VALUES (?,NULL,0,?,1)').run(D, U);
+  w.db.prepare('INSERT INTO bounty_points (actor,uid,points,merged_into,updated_at) VALUES (?,?,0,NULL,1)').run(U, U);
+  const again = (await withFirebase(U, () => ride(w, b, { Authorization: 'Bearer tok-s8' }))).out;
+  ok('S8 合併前送出、合併後帶帳號的 Bearer 重送 → 200、與第一次同一份（points 20、rides 1）；帳號名下帳本仍 1 列、舊裝置名下 0 列',
+    first.status === 200 && again.status === 200 && same(again.json, first.json) && first.json.points === 20 &&
+      q.cloudLedger(w, U).length === 1 && q.nLedger(w, D) === 0, first.text + ' / ' + again.text);
 });
 
-// S9 跨人隔離：同一個世界裡有別人的搭乘與雲端籌碼，不能影響我的次數、我的「已得」
+// S9 跨人隔離：同一個世界裡有別人的搭乘與雲端點數，不能影響我的次數與入帳
 await attempt('S9', async () => {
   const X = 'dev-s9xxxx01', Y = 'dev-s9yyyy01', w = world({});
-  seedRide(w, X, '2026-07-20'); seedRide(w, X, '2026-07-21');
-  w.db.prepare("INSERT INTO chip_ledger (id,actor,kind,delta,ref,day,created_at) VALUES ('cloud|s9x|cloud|1',?,'cloud',1,?,'2026-07-18',?)").run(X, `${X}|cloud|1`, NOW_MS - 9000);
+  seedRide(w, X, '2026-07-20'); seedRide(w, X, '2026-07-21'); seedV2Chip(w, X, 1, '2026-07-18');
   seedRide(w, Y, '2026-07-20'); seedRide(w, Y, '2026-07-21');
   const y = await ride(w, mb(TODAY, { actor: Y }));
-  ok('S9a Y 的第 3 次：rides 是 Y 自己的 3（不是全站的 5）、Y 拿到自己的第 1 顆（X 已有的那顆不算 Y 的「已得」）；X 的帳仍恰好 1 列',
-    y.status === 200 && y.json.rides === 3 && y.json.chipAwarded === true && same(q.cloudLedger(w, Y).map(r => r.ref), [`${Y}|cloud|1`]) && q.cloudLedger(w, X).length === 1, y.text);
+  ok('S9a Y 的第 3 次：rides 是 Y 自己的 3（不是全站的 5）、points 20；Y 帳本 1 列、X 的帳仍恰好 1 列',
+    y.status === 200 && y.json.rides === 3 && y.json.points === 20 && q.cloudLedger(w, Y).length === 1 && q.cloudLedger(w, X).length === 1, y.text);
   const x = await ride(w, mb(YESTERDAY, { actor: X }));
-  ok('S9b X 的第 3 次：rides 3、應得 1－已得 1＝0 → 不再發（Y 剛拿到的那顆不會讓 X 多拿）；X 的帳仍 1 列、Y 的帳仍 1 列',
-    x.status === 200 && x.json.rides === 3 && x.json.chipAwarded === false && q.cloudLedger(w, X).length === 1 && q.cloudLedger(w, Y).length === 1, x.text);
+  ok('S9b X 的第 3 次：rides 3、points 20；X 的帳 2 列（v2 那顆＋這次）、Y 的帳仍 1 列',
+    x.status === 200 && x.json.rides === 3 && x.json.points === 20 && q.cloudLedger(w, X).length === 2 && q.cloudLedger(w, Y).length === 1, x.text);
 });
 
 // ═══ T 組：車次驗證與時間窗（合成班表，逐邊界）═══════════════════════════════════
@@ -636,7 +617,7 @@ await attempt('G3', async () => {
 });
 await attempt('G4', async () => {
   // 合併過的匿名 token：搭乘寫在 uid 名下（resolveActor 轉向）。
-  // 改寫：必須帶 uid 的 Bearer（舊版不帶任何憑證就能替別人的帳發搭乘、發籌碼）；種子也補上正式合併會留下的 uid 帳號列
+  // 改寫：必須帶 uid 的 Bearer（舊版不帶任何憑證就能替別人的帳發搭乘、發點數）；種子也補上正式合併會留下的 uid 帳號列
   const w = world({ env: { FIREBASE_WEB_API_KEY: 'k' } });
   w.db.prepare("INSERT INTO bounty_points (actor,uid,points,merged_into,updated_at) VALUES ('dev-g4tomb01',NULL,0,'uid-g4real0001',1)").run();
   w.db.prepare("INSERT INTO bounty_points (actor,uid,points,merged_into,updated_at) VALUES ('uid-g4real0001','uid-g4real0001',0,NULL,1)").run();
@@ -645,7 +626,7 @@ await attempt('G4', async () => {
     r.status === 200 && q.nRides(w, 'uid-g4real0001') === 1 && q.nRides(w, 'dev-g4tomb01') === 0 && calls.length === 1, r.text);
 });
 
-// ═══ P 組：通行證欄位不影響結果（籌碼與通行證無關）═══════════════════════════
+// ═══ P 組：通行證欄位不影響結果（點數與通行證無關）═══════════════════════════
 await attempt('P1', async () => {
   const run = async (extra, hdr) => {
     const w = world({});
