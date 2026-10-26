@@ -174,6 +174,13 @@
   chips-me 回應沒有 `cloud.points`（不是 v3 伺服器）就不畫雲端那一格（CH1i）。「每天一次」對應規則檔 `cloud.dailyMax` 1，
   改 dailyMax 時 CH1h 會紅，要一起改那句。
 - 程式註解：講畫面字的跟著改；講本機快取機制的（`trainmap-chips-me-v1` 那幾段）沒動，快取鍵名也沒變。
+- 錢包點數定名「島民點數」（10-27 定案，單位仍是「點」），照 N1 交接檔裁示 31 同一套規則：把點數當名詞的 10 句改成「島民點數」
+  （看板副標、卡片倍率標記「島民點數 ×2」、說明卡的倍率句與「只是沒有島民點數」、停站卡錄法「才有島民點數」、護照點數列的標題與登出提示、
+  收滿的卡、網頁殼提示、更新紀錄那一條），英文 Islander Points、日文島民ポイント。「1 公里 1 點」「每天最多 500 點」「下一座場景要 200 點」
+  這類單位、「給點」、伺服器的 `unit:"point"`、護照校正貢獻的舊句都沒動。`verify_bounty_chips_web.mjs` 的期望值一起改，
+  看板副標的判準收緊成要看到新名字本身。
+  - 裁示：卡片倍率標記、收滿的卡、網頁殼提示不在主線列的四處裡，照同一條規則一起改，同一塊看板上不會一半舊名一半新名。
+    錯了的代價：多改三句；退回只要改回字典鍵、英日文與判準。
 - 更新紀錄：最近更新與完整歷史「收藏、護照與成就」各加一條（`data-cl="bountypoints"`），日期先寫 10/26、`最後更新：2026/10/26`；
   最近更新拿掉最舊那條（完整歷史裡還有一份）。`verify_changelog_browser` 的 `expectedHistoryCount` 523 → 524。上線日不是 10/26 要改日期（部署清單 P2 第 2 步）。
 - 法務文字裡沒有「籌碼」，這條線沒改。給主線判斷的兩處：
@@ -190,6 +197,8 @@
   雲端格不看 `points` → CH1i；獎勵句不看 `unit` → CH17g；合格句不看 `unit` 與 `perKm` → CH17g。
 - 其他閘門：`verify_changelog_copy`（最近 8 條、最長 81 字；完整歷史 524 條）、`check_i18n`（2989 個 key）、
   `verify_data_manifest`（41 檔；`data/data_manifest.json` 只有 `bounty_rules.json` 那一行變）、`verify_changelog_browser`（Chromium＋WebKit 無視窗、360／375／414／768 寬，完整歷史 524 條）。
+- 10-27 補：65fca323 只重產了 `data/data_manifest.json`，`data/data_provenance.json` 裡 `bounty_rules.json` 的 checksum 還是舊的，
+  `npm run check-manifest`（manifest 與 provenance 兩支）會紅。跑 `npm run build-manifest` 重產，只有那一行變，之後 check-manifest 綠。
 - App 1.7.3 實測（native `13a622760`＝1.7.3 更新說明那一顆）：
   - railcore 原始碼原封不動（`json/`、`m4/BountyRules.kt`、`m4/wallet/` 兩檔、`m4/cloudwire/` 兩檔、`BountyInstallId.kt`、`CloudRide.kt`），
     用 Kotlin 2.2.20 編在 JVM 上；Android 平台層的兩段（雲端規則 port、cloud-ride 回應轉 receipt）照

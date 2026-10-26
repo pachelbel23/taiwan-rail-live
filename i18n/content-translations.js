@@ -4105,8 +4105,8 @@ Object.assign(window.RAIL_I18N_MESSAGES.ja, {
 });
 // 路段懸賞網頁端：護照點數列、收滿的懸賞卡、錄程只在 App（v3 起籌碼改為點數）。
 Object.assign(window.RAIL_I18N_MESSAGES.en, {
-  '點數': 'Points',
-  '登入後看得到點數': 'Sign in to see your points',
+  '島民點數': 'Islander Points',
+  '登入後看得到島民點數': 'Sign in to see your Islander Points',
   '下一座場景要 <b>{n}</b> 點': {
     one: 'Next scene costs <b>{n}</b> point',
     other: 'Next scene costs <b>{n}</b> points',
@@ -4119,23 +4119,23 @@ Object.assign(window.RAIL_I18N_MESSAGES.en, {
     one: 'Recording earns up to <b>{n}</b> point a day',
     other: 'Recording earns up to <b>{n}</b> points a day',
   },
-  '已收滿，照樣可以錄程拿點數': 'Fully covered — you can still record a trip and earn points',
-  '錄程要用軌島 App。網頁可以看懸賞板與自己的點數': 'Recording a trip needs the Rail Island app. The website lets you view the bounty board and your own points.',
+  '已收滿，照樣可以錄程拿島民點數': 'Fully covered — you can still record a trip and earn Islander Points',
+  '錄程要用軌島 App。網頁可以看懸賞板與自己的島民點數': 'Recording a trip needs the Rail Island app. The website lets you view the bounty board and your own Islander Points.',
 });
 Object.assign(window.RAIL_I18N_MESSAGES.ja, {
-  '點數': 'ポイント',
-  '登入後看得到點數': 'ログインするとポイントが表示されます',
+  '島民點數': '島民ポイント',
+  '登入後看得到島民點數': 'ログインすると島民ポイントが表示されます',
   '下一座場景要 <b>{n}</b> 點': '次の情景の解放に <b>{n}</b> ポイント',
   '雲端搭乘 <b>{rides}</b> 次・每天一次 <b>{n}</b> 點': 'クラウド乗車 <b>{rides}</b> 回・1日1回 <b>{n}</b> ポイント',
   '錄程每天最多 <b>{n}</b> 點': '記録で獲得できるのは 1 日最大 <b>{n}</b> ポイント',
-  '已收滿，照樣可以錄程拿點數': '収集済みですが、旅程を記録すればポイントがもらえます',
-  '錄程要用軌島 App。網頁可以看懸賞板與自己的點數': '旅程の記録には軌島アプリが必要です。ウェブサイトでは懸賞板とご自身のポイントを確認できます。',
+  '已收滿，照樣可以錄程拿島民點數': '収集済みですが、旅程を記録すれば島民ポイントがもらえます',
+  '錄程要用軌島 App。網頁可以看懸賞板與自己的島民點數': '旅程の記録には軌島アプリが必要です。ウェブサイトでは懸賞板とご自身の島民ポイントを確認できます。',
 });
 // 路段懸賞網頁端：獎勵的說法（v3 起是點數）。看板卡片標記、出發前說明、錄程列、接下時的提示與三處承諾句。
 Object.assign(window.RAIL_I18N_MESSAGES.en, {
-  '點數 ×{n}': 'Points ×{n}',
+  '島民點數 ×{n}': 'Islander Points ×{n}',
   '示範資料，僅供確認設計：這裡的路段都是假的，接下來也不會真的錄。': 'Demo data, for design review only: the segments here are fake, and nothing will actually be recorded.',
-  '接一張、搭那班車時開錄，把沿途的速度剖面測出來。全部免費，合格的一趟照沿線里程得到點數，每天有上限。': 'Claim one, and record while riding that train to capture the speed profile along the way. It’s completely free, and a qualifying trip earns points by the distance recorded, up to a daily limit.',
+  '接一張、搭那班車時開錄，把沿途的速度剖面測出來。全部免費，合格的一趟照沿線里程得到島民點數，每天有上限。': 'Claim one, and record while riding that train to capture the speed profile along the way. It’s completely free, and a qualifying trip earns Islander Points by the distance recorded, up to a daily limit.',
   '這段你已經接下了，還沒過期': 'You’ve already claimed this segment, and it hasn’t expired yet',
   '（示範）接下了・24 小時內有效': '(Demo) Claimed · valid for 24 hours',
   '已在伺服器接下，但這台裝置存不下來（可能是儲存空間滿了或無痕模式）——重新整理後認領不會留著': 'Claimed on the server, but this device couldn’t save it (storage may be full, or you’re in private browsing) — the claim won’t persist after you refresh',
@@ -4146,7 +4146,7 @@ Object.assign(window.RAIL_I18N_MESSAGES.en, {
     one: 'A qualifying trip earns points by distance: <b>{n}</b> point per km.',
     other: 'A qualifying trip earns points by distance: <b>{n}</b> points per km.',
   },
-  '這條線的點數 ×<b>{n}</b>。': 'Points are ×<b>{n}</b> on this line.',
+  '這條線的島民點數 ×<b>{n}</b>。': 'Islander Points are ×<b>{n}</b> on this line.',
   '每天最多 <b>{n}</b> 點。': {
     one: 'Up to <b>{n}</b> point a day.',
     other: 'Up to <b>{n}</b> points a day.',
@@ -4159,20 +4159,20 @@ Object.assign(window.RAIL_I18N_MESSAGES.en, {
   '{segs} <span id="recUnitWord">站</span>已覆蓋': '<span id="recUnitWord">Stations</span> covered: {segs}',
   '要錄程，請先把軌島 App 更新到最新版': 'To record a trip, please update the Rail Island app to the latest version.',
   '合格的一趟要同時做到：同一班車從頭錄到尾至少 <b>{time}</b>、沿線至少移動 <b>{dist}</b>、資料能用。一班車最多算一趟。': 'A qualifying trip needs all of these: you record the same train for at least <b>{time}</b> from start to finish, you travel at least <b>{dist}</b> along the line, and the data is usable. One train counts as one trip at most.',
-  '沒達到門檻，能用的資料照樣拿來校正，只是沒有點數。': 'If a trip falls short, its usable data still goes into calibration; it just earns no points.',
+  '沒達到門檻，能用的資料照樣拿來校正，只是沒有島民點數。': 'If a trip falls short, its usable data still goes into calibration; it just earns no Islander Points.',
   '這些項目還沒有實測資料。這一版還不能接，要更新到最新版的軌島 App 才能接下來錄——現在可以先看看有哪些。': 'These items don’t have real measurement data yet. This version can’t claim them — update the Rail Island app to the latest version to claim and record. For now, you can browse what’s available.',
   '要更新 App 才能接': 'Update the app to claim',
   '這一版的軌島 App 還不能錄程，要更新到最新版才行。': 'This version of the Rail Island app can’t record trips yet — update to the latest version to record.',
   '已收滿。這一版的軌島 App 還不能錄程，要更新到最新版才行。': 'Fully covered. This version of the Rail Island app can’t record trips yet — update to the latest version to record.',
   '兩個數字不一樣是正常的：前面是你校正的段數，括號裡是資料夠好、真的被採用的段數。訊號不好的那幾趟資料用不上，所以採用的會少一些。': "It’s normal for the two numbers to differ: the first is the number of segments you calibrated, and the one in parentheses is how many had good enough data to be adopted. Data from trips with a poor signal can’t be used, so fewer get adopted.",
   '這一版的軌島 App 還不能接下來錄，要更新到最新版才行；懸賞板現在可以先看。': 'This version of the Rail Island app can’t claim and record yet — update to the latest version to do that. You can still browse the bounty board.',
-  '從前一站或更早上車就開始錄，一直錄到離開要錄的站。整趟要錄滿 <b>{time}</b>、沿線移動 <b>{dist}</b> 才有點數，前一站離得近就要再早一點上車；只通過、不停靠不算停站樣本。': 'Start recording when you board at the previous station or earlier, and keep recording until you leave the station you’re recording. The whole trip needs at least <b>{time}</b> of recording and at least <b>{dist}</b> of travel along the line to earn points, so if the previous station is close by, board even earlier; passing through without stopping doesn’t count as a dwell sample.',
+  '從前一站或更早上車就開始錄，一直錄到離開要錄的站。整趟要錄滿 <b>{time}</b>、沿線移動 <b>{dist}</b> 才有島民點數，前一站離得近就要再早一點上車；只通過、不停靠不算停站樣本。': 'Start recording when you board at the previous station or earlier, and keep recording until you leave the station you’re recording. The whole trip needs at least <b>{time}</b> of recording and at least <b>{dist}</b> of travel along the line to earn Islander Points, so if the previous station is close by, board even earlier; passing through without stopping doesn’t count as a dwell sample.',
   '從前一站或更早上車就開始錄，一直錄到離開要錄的站；只通過、不停靠不算停站樣本。': 'Start recording when you board at the previous station or earlier, and keep recording until you leave the station you’re recording; passing through without stopping doesn’t count as a dwell sample.',
 });
 Object.assign(window.RAIL_I18N_MESSAGES.ja, {
-  '點數 ×{n}': 'ポイント ×{n}',
+  '島民點數 ×{n}': '島民ポイント ×{n}',
   '示範資料，僅供確認設計：這裡的路段都是假的，接下來也不會真的錄。': 'デモデータです（デザイン確認専用）：ここに表示される区間はすべて仮のもので、受け取っても実際には記録されません。',
-  '接一張、搭那班車時開錄，把沿途的速度剖面測出來。全部免費，合格的一趟照沿線里程得到點數，每天有上限。': '1件受け取り、その列車に乗ったら記録を開始して、沿線の速度プロファイルを計測します。すべて無料で、条件を満たした乗車では記録した距離に応じてポイントがもらえます（1日の上限あり）。',
+  '接一張、搭那班車時開錄，把沿途的速度剖面測出來。全部免費，合格的一趟照沿線里程得到島民點數，每天有上限。': '1件受け取り、その列車に乗ったら記録を開始して、沿線の速度プロファイルを計測します。すべて無料で、条件を満たした乗車では記録した距離に応じて島民ポイントがもらえます（1日の上限あり）。',
   '這段你已經接下了，還沒過期': 'この区間はすでに受け取り済みで、まだ有効期限内です',
   '（示範）接下了・24 小時內有效': '（デモ）受け取りました・24時間有効',
   '已在伺服器接下，但這台裝置存不下來（可能是儲存空間滿了或無痕模式）——重新整理後認領不會留著': 'サーバー側では受領済みですが、この端末には保存できませんでした（ストレージ不足またはプライベートブラウジングの可能性）。更新すると受領記録は残りません',
@@ -4180,7 +4180,7 @@ Object.assign(window.RAIL_I18N_MESSAGES.ja, {
   '錄 {title}（{line}・{slot}・{unit}）。': '{title}を記録します（{line}・{slot}・{unit}）。',
   '錄 {title}（{line}，{unit}{dur}）。': '{title}を記録します（{line}、{unit}{dur}）。',
   '合格的一趟照沿線里程給點，1 公里 <b>{n}</b> 點。': '条件を満たした乗車には、沿線の距離 1 km あたり <b>{n}</b> ポイントが付きます。',
-  '這條線的點數 ×<b>{n}</b>。': 'この路線ではポイントが <b>{n}</b> 倍になります。',
+  '這條線的島民點數 ×<b>{n}</b>。': 'この路線では島民ポイントが <b>{n}</b> 倍になります。',
   '每天最多 <b>{n}</b> 點。': '1日に獲得できるのは最大 <b>{n}</b> ポイントです。',
   '接下的卡 <b>24 小時內有效</b>。': '受け取ったカードは<b>24時間有効</b>です。',
   '<b>即使這次的資料不能用，只要錄得夠完整，校正者章還是你的。</b>我會告訴你是什麼原因、下次怎麼改善。': '<b>今回のデータが使えなくても、十分に記録できていれば、校正者スタンプはあなたのものです。</b>理由と次回の改善点をお伝えします。',
@@ -4190,20 +4190,20 @@ Object.assign(window.RAIL_I18N_MESSAGES.ja, {
   '{segs} <span id="recUnitWord">站</span>已覆蓋': '{segs}<span id="recUnitWord">駅</span>を記録済み',
   '要錄程，請先把軌島 App 更新到最新版': '旅程を記録するには、軌島アプリを最新版に更新してください。',
   '合格的一趟要同時做到：同一班車從頭錄到尾至少 <b>{time}</b>、沿線至少移動 <b>{dist}</b>、資料能用。一班車最多算一趟。': '条件を満たした1回の乗車とは、次のすべてを満たすものです。同じ列車を最初から最後まで <b>{time}</b> 以上記録すること、沿線を <b>{dist}</b> 以上移動すること、使えるデータであること。1本の列車につき、数えるのは1回までです。',
-  '沒達到門檻，能用的資料照樣拿來校正，只是沒有點數。': '条件に届かなくても、使えるデータは校正に使われます。ただしポイントはもらえません。',
+  '沒達到門檻，能用的資料照樣拿來校正，只是沒有島民點數。': '条件に届かなくても、使えるデータは校正に使われます。ただし島民ポイントはもらえません。',
   '這些項目還沒有實測資料。這一版還不能接，要更新到最新版的軌島 App 才能接下來錄——現在可以先看看有哪些。': 'これらの項目にはまだ実測データがありません。このバージョンでは受け取れません。軌島アプリを最新版に更新すると、受け取って記録できます。今は内容を確認できます。',
   '要更新 App 才能接': '受け取るにはアプリの更新が必要です',
   '這一版的軌島 App 還不能錄程，要更新到最新版才行。': 'この版の軌島アプリではまだ記録できません。最新版に更新してください。',
   '已收滿。這一版的軌島 App 還不能錄程，要更新到最新版才行。': '収集済みです。この版の軌島アプリではまだ記録できません。最新版に更新してください。',
   '兩個數字不一樣是正常的：前面是你校正的段數，括號裡是資料夠好、真的被採用的段數。訊號不好的那幾趟資料用不上，所以採用的會少一些。': '2つの数字が違うのは正常です。最初の数字は校正した区間の数、かっこ内はデータが十分に良く採用された区間の数です。電波の悪かった記録は使えないため、採用される区間は少なくなります。',
   '這一版的軌島 App 還不能接下來錄，要更新到最新版才行；懸賞板現在可以先看。': 'この版の軌島アプリではまだ受け取って記録できません。最新版に更新してください。懸賞板は今も見られます。',
-  '從前一站或更早上車就開始錄，一直錄到離開要錄的站。整趟要錄滿 <b>{time}</b>、沿線移動 <b>{dist}</b> 才有點數，前一站離得近就要再早一點上車；只通過、不停靠不算停站樣本。': '前の駅か、それより前で乗車したときから記録を始め、記録したい駅を出るまで続けてください。ポイントをもらうには、1回の乗車全体で <b>{time}</b> 以上記録し、沿線を <b>{dist}</b> 以上移動する必要があります。前の駅が近い場合は、もっと早い駅から乗ってください。通過するだけで停車しない場合は、停車サンプルになりません。',
+  '從前一站或更早上車就開始錄，一直錄到離開要錄的站。整趟要錄滿 <b>{time}</b>、沿線移動 <b>{dist}</b> 才有島民點數，前一站離得近就要再早一點上車；只通過、不停靠不算停站樣本。': '前の駅か、それより前で乗車したときから記録を始め、記録したい駅を出るまで続けてください。島民ポイントをもらうには、1回の乗車全体で <b>{time}</b> 以上記録し、沿線を <b>{dist}</b> 以上移動する必要があります。前の駅が近い場合は、もっと早い駅から乗ってください。通過するだけで停車しない場合は、停車サンプルになりません。',
   '從前一站或更早上車就開始錄，一直錄到離開要錄的站；只通過、不停靠不算停站樣本。': '前の駅か、それより前で乗車したときから記録を始め、記録したい駅を出るまで続けてください。通過するだけで停車しない場合は、停車サンプルになりません。',
 });
 // 路段懸賞 v3：更新紀錄的那一條。
 Object.assign(window.RAIL_I18N_MESSAGES.en, {
-  '校正懸賞改用點數：合格的一趟照實際錄到的沿線里程給點，1 公里 1 點，南迴、臺東線加倍，每天最多 500 點；原有籌碼 1 顆換 50 點，已解鎖的車庫場景照舊': 'Calibration bounties now pay points: a qualifying trip earns 1 point per km actually recorded along the line, doubled on the South-Link and Taitung lines, up to 500 a day; existing chips convert at 50 points each, and scenes already unlocked in My garage stay unlocked',
+  '校正懸賞改用島民點數：合格的一趟照實際錄到的沿線里程給點，1 公里 1 點，南迴、臺東線加倍，每天最多 500 點；原有籌碼 1 顆換 50 點，已解鎖的車庫場景照舊': 'Calibration bounties now pay Islander Points: a qualifying trip earns 1 point per km actually recorded along the line, doubled on the South-Link and Taitung lines, up to 500 a day; existing chips convert at 50 points each, and scenes already unlocked in My garage stay unlocked',
 });
 Object.assign(window.RAIL_I18N_MESSAGES.ja, {
-  '校正懸賞改用點數：合格的一趟照實際錄到的沿線里程給點，1 公里 1 點，南迴、臺東線加倍，每天最多 500 點；原有籌碼 1 顆換 50 點，已解鎖的車庫場景照舊': '校正懸賞はポイント制になりました。条件を満たした乗車では、実際に記録した沿線距離 1 km につき 1 ポイント（南廻線・台東線は2倍、1日最大500ポイント）。お持ちのチップは1枚50ポイントに換算され、マイ車庫で解放済みのシーンはそのままです',
+  '校正懸賞改用島民點數：合格的一趟照實際錄到的沿線里程給點，1 公里 1 點，南迴、臺東線加倍，每天最多 500 點；原有籌碼 1 顆換 50 點，已解鎖的車庫場景照舊': '校正懸賞は島民ポイント制になりました。条件を満たした乗車では、実際に記録した沿線距離 1 km につき 1 ポイント（南廻線・台東線は2倍、1日最大500ポイント）。お持ちのチップは1枚50ポイントに換算され、マイ車庫で解放済みのシーンはそのままです',
 });

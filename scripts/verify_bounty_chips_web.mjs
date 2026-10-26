@@ -20,17 +20,17 @@
 //   CH12 快取與 actor 的邊界（401 清、503 留、存不下、第一次沿用裝置 id、英文介面沒有漏翻）
 //   CH13 開機時序：登入結果比開機那一發 bounty-me 晚出來；401 晚到、200 晚到兩種先後，最後護照都要有登入者的段數
 //   CH14 冷開機時 session 已經不見（磁碟上還記著已併的帳號）：已併的 actor 換新、裝置 id 不變、籌碼快取清掉
-//   CH15 看板卡片：偏遠線的卡標「點數 ×N」、其他線沒有標記；名單與 N 讀規則檔（換一份規則檔，兩個方向都跟著翻）
+//   CH15 看板卡片：偏遠線的卡標「島民點數 ×N」、其他線沒有標記；名單與 N 讀規則檔（換一份規則檔，兩個方向都跟著翻）
 //   CH16 旗標開時，看板／說明卡／錄程列／接下時的提示的獎勵單位只有點數：沒有舊的「籌碼／顆」（英日文沒有 chip／チップ）、沒有 v1 的鎖價；卡片資料與認領回應裡的點數不印出來；英日文介面同樣乾淨
 //   CH17 說明卡的獎勵句：1 公里幾點、偏遠線倍率、每天上限，與伺服器入帳用的純函式算出來的一致（真規則檔與另一份規則檔）；規則檔不是點數制就不寫獎勵句與合格那兩句
 //   CH18 旗標關：看不到任何一句獎勵說法（新舊都沒有）、不讀規則檔、不打認領請求；對照：旗標開同一頁看得到
 //   CH19 手機版：360／375／414／768 × Chromium／WebKit，看板（有 ×N 標記）、說明卡、提示；兩兩相交掃描、沒有水平捲動、App 殼真觸控點「接下」只提示更新（說明卡改由認領入口直接開出來量）、App 殼按「開始錄製」的更新提示在最上層、網頁點「接下」的提示在最上層
-//   CH20 ?demo=bounty 的示範看板：有一張偏遠線的卡、「點數 ×N」標記看得到（中英日、手機不用捲）；名單與倍率讀規則檔、換一份規則檔跟著翻；規則檔讀不到時維持原本 5 張卡；規則檔還沒回來就開板，板子先顯示載入中、規則檔一到第一次畫出來的卡就有標記；其他卡不變
+//   CH20 ?demo=bounty 的示範看板：有一張偏遠線的卡、「島民點數 ×N」標記看得到（中英日、手機不用捲）；名單與倍率讀規則檔、換一份規則檔跟著翻；規則檔讀不到時維持原本 5 張卡；規則檔還沒回來就開板，板子先顯示載入中、規則檔一到第一次畫出來的卡就有標記；其他卡不變
 //   CH21 旗標開時的懸賞文案（看板、說明卡、護照校正貢獻、說明中心三節、接下的提示）第一人稱用單數，沒有「我們／We／私たち」；規則檔 qualityText 的中文也沒有，而且每一句在英日字典都有同一句當鍵、譯文也沒有複數；掃描規則自己咬得住
 //   CH22 規則檔一直不回來時：示範看板、真看板、護照點數列都在「上限＋餘裕」之內畫出來（看板沒有標記、護照沒有「下一座」）；規則檔在上限之內到了，第一次畫就帶標記；之後才到，看板補上標記、不丟錯、不重複，關掉的看板不被畫、重開的看板不被舊的補畫蓋住
 //   CH24 現行 App 殼在看板上就請人更新：副標說這一版還不能接、卡上按鈕字是「要更新 App 才能接」（已接下的卡也一樣）、按下去收起看板＋吐司是開始錄製同一句、不送認領、不寫本機認領紀錄、不開說明卡；網頁、?demo=bounty（含 App 殼裡）、旗標關的副標、按鈕字、點擊結果一個字不變；手機 360／375／414／768 × Chromium／WebKit 真觸控
 //   CH23 說明卡講清楚「合格」是什麼：「先講清楚」那一節緊接在「錄到一半中斷沒關係」後面有兩句（合格的一趟要同時做到什麼、沒達到會怎樣）；門檻數字讀規則檔，換一份規則檔跟著變，進位只往上（換算回去不低於伺服器的門檻、多出的不到一個進位單位，達到畫面門檻的那一趟過得了伺服器的門檻）；規則檔讀不到或門檻不能用時整段不寫；中英日、?demo=bounty 的停站卡也有
-//   CH25 停站卡的說明卡講清楚怎麼錄才會達到點數門檻：請人從前一站或更早就開始錄、一直錄到離開要錄的站；整趟要錄滿門檻才有點數，兩個數字與同一張卡上「合格」那句同一份，並提醒前一站離得近就要再早一點上車；規則檔缺或門檻不是正數就只講怎麼錄、不寫數字、不帶那句提醒；英日文；手機四寬度兩引擎
+//   CH25 停站卡的說明卡講清楚怎麼錄才會達到點數門檻：請人從前一站或更早就開始錄、一直錄到離開要錄的站；整趟要錄滿門檻才有島民點數，兩個數字與同一張卡上「合格」那句同一份，並提醒前一站離得近就要再早一點上車；規則檔缺或門檻不是正數就只講怎麼錄、不寫數字、不帶那句提醒；英日文；手機四寬度兩引擎
 //   CH26 護照的校正貢獻：只錄過停站卡的人也有校正者章（bounty-me 回應新增 dwellStops）；只有停站時寫「校正停站 N 站」、原因說明照給；有路段的人畫面完全不變；舊版回應沒有欄位時與以前一樣；亂值；英日文；手機四寬度兩引擎
 //   CH27 現行 App 殼剩下四處還在教人錄程或承諾章：說明中心「懸賞板」「錄一趟校正旅程」「護照裡的校正貢獻」三節、護照校正貢獻的空狀態、開機接回錄製，都讀看板同一個判定；網頁、?demo=bounty、旗標關完全不變；手機四寬度兩引擎
 //   CH28 現行 App 殼看板上已收滿的卡也請人更新：那一句改成收滿了、這一版錄不了程、要更新到最新版；網頁、?demo=bounty（含在 App 殼裡）、旗標關仍是原句；中英日；手機四寬度兩引擎，那一句不被截、不溢出、不與別的元素重疊、沒有水平捲動
@@ -341,8 +341,8 @@ try {
         !!r && !r.off && !!r.cells.balance && r.cells.balance.nums.length === 1 && r.cells.balance.nums[0] === String(bal), JSON.stringify(r));
       ok(`CH1c-${bal} 下一座＝7（讀回應的 nextCost，不是客戶端自己算）、雲端搭乘＝4 次、每次 11 點（讀回應的 cloud.points，不是規則檔的 ${RULES.chips.cloud.points}）、每日上限＝6（讀 today.cap）`,
         !!r && !!r.cells.next && r.cells.next.nums.join() === '7' && !!r.cells.cloud && r.cells.cloud.nums.join() === '4,11' && !!r.cells.cap && r.cells.cap.nums.join() === '6' && RULES.chips.cloud.points !== 11, JSON.stringify(r && r.cells));
-      ok(`CH1h-${bal} 整列的字是點數：「點數 ${bal} 下一座場景要 7 點 雲端搭乘 4 次・每天一次 11 點 錄程每天最多 6 點」，沒有「籌碼」「顆」；「每天一次」對得上規則檔的 cloud.dailyMax（1）`,
-        !!r && r.text === `點數 ${bal} 下一座場景要 7 點 雲端搭乘 4 次・每天一次 11 點 錄程每天最多 6 點` && !/籌碼|顆/.test(r.text) && RULES.chips.cloud.dailyMax === 1, r && r.text);
+      ok(`CH1h-${bal} 整列的字是點數：「島民點數 ${bal} 下一座場景要 7 點 雲端搭乘 4 次・每天一次 11 點 錄程每天最多 6 點」，沒有「籌碼」「顆」；「每天一次」對得上規則檔的 cloud.dailyMax（1）`,
+        !!r && r.text === `島民點數 ${bal} 下一座場景要 7 點 雲端搭乘 4 次・每天一次 11 點 錄程每天最多 6 點` && !/籌碼|顆/.test(r.text) && RULES.chips.cloud.dailyMax === 1, r && r.text);
       ok(`CH1f-${bal} [fixture] 回應裡 today.chips＝3（不是 0）、cap＝6：cap−chips（3）與 chips（3）都不等於 cap，分得出上限格顯示的是哪一個`,
         (await s.page.evaluate(() => chipsMeMem.today.chips === 3 && chipsMeMem.today.cap === 6 && chipsMeMem.today.cap - chipsMeMem.today.chips !== chipsMeMem.today.cap)) === true);
       ok(`CH1g-${bal} 上限格裡只有一個數字、恰好是 today.cap（6）：不是 cap−chips、也不是 today.chips`,
@@ -411,8 +411,8 @@ try {
     const rl = await rowInfo(lo.page);
     ok('CH4a [fixture] 懸賞旗標開、auth 已解出「沒有登入」', (await lo.page.evaluate(() => BOUNTY_ENABLED && state.account.user === null)) === true);
     ok('CH4b 沒登入：chips-me 請求 0 次（數的是瀏覽器真的發出的請求）', lo.chips.length === 0, JSON.stringify(lo.chips));
-    ok('CH4c 沒登入：護照只有「登入後看得到點數」那句提示、沒有餘額格；上次登入留下的快取（餘額 77）被清掉、也沒有畫出來',
-      !!rl && rl.off && !rl.cells.balance && /登入後看得到點數/.test(rl.text) && !/77/.test(rl.text) && (await lsGet(lo.page, KEY_CHIPS)) === null, JSON.stringify(rl));
+    ok('CH4c 沒登入：護照只有「登入後看得到島民點數」那句提示、沒有餘額格；上次登入留下的快取（餘額 77）被清掉、也沒有畫出來',
+      !!rl && rl.off && !rl.cells.balance && /登入後看得到島民點數/.test(rl.text) && !/77/.test(rl.text) && (await lsGet(lo.page, KEY_CHIPS)) === null, JSON.stringify(rl));
     const direct = await lo.page.evaluate(async () => { try { return { r: await fetchChipsMe(), threw: '' }; } catch (e) { return { r: 'x', threw: String((e && e.message) || e) }; } });
     await sleep(500);
     ok('CH4f 沒登入時直接呼叫 fetchChipsMe()：回 null、不丟例外、請求仍是 0 次（擋的是函式自己的登入檢查，不是「剛好沒有人呼叫它」）',
@@ -524,7 +524,7 @@ try {
         ok(`CH6d-${tag} 籌碼快取 trainmap-chips-me-v1 不在；記憶體裡的彙總與籌碼都清成 null`,
           (await lsGet(s.page, KEY_CHIPS)) === null && (await s.page.evaluate(() => bountyMeMem === null && chipsMeMem === null)) === true);
         const row = await rowInfo(s.page);
-        ok(`CH6e-${tag} 護照改回「登入後看得到點數」、沒有餘額格`, !!row && row.off && !row.cells.balance, JSON.stringify(row));
+        ok(`CH6e-${tag} 護照改回「登入後看得到島民點數」、沒有餘額格`, !!row && row.off && !row.cells.balance, JSON.stringify(row));
         await s.ctx.close();
       });
     }
@@ -727,7 +727,7 @@ try {
       id: c.dataset.card, text: c.textContent.replace(/\s+/g, ' ').trim(), take: c.querySelectorAll('.bt-take').length })));
     const open = cards.find(c => c.id === CARD_OPEN.id), cov = cards.find(c => c.id === CARD_COVERED.id);
     ok('CH9a [fixture] 看板收到 2 張卡：一般卡有接單鈕（對照）', cards.length === 2 && !!open && open.take === 1, JSON.stringify(cards));
-    ok('CH9b covered:true 的卡有「已收滿，照樣可以錄程拿點數」整句', !!cov && cov.text.includes('已收滿，照樣可以錄程拿點數'), cov && cov.text);
+    ok('CH9b covered:true 的卡有「已收滿，照樣可以錄程拿島民點數」整句', !!cov && cov.text.includes('已收滿，照樣可以錄程拿島民點數'), cov && cov.text);
     ok('CH9c covered:true 的卡沒有接單鈕（認領會 404，不提供）', !!cov && cov.take === 0);
     ok('CH9d 一般卡沒有「已收滿」那句', !!open && !open.text.includes('已收滿'));
     await s.ctx.close();
@@ -739,9 +739,9 @@ try {
   // 平台訊號有兩個，IS_NATIVE_APP 是它們的聯集：RAIL_ONLINE_BASEMAPS_AVAILABLE 這個鍵在不在、Capacitor.isNativePlatform() 回不回 true；
   // 兩個各自單獨成立都要認得（只讀其中一個的寫法，另一個訊號的 App 殼就會拿到網頁那一句）。
   if (want('CH10')) {
-    const WEB_PROMPT = { 'zh-TW': '錄程要用軌島 App。網頁可以看懸賞板與自己的點數',
-      en: 'Recording a trip needs the Rail Island app. The website lets you view the bounty board and your own points.',
-      ja: '旅程の記録には軌島アプリが必要です。ウェブサイトでは懸賞板とご自身のポイントを確認できます。' };
+    const WEB_PROMPT = { 'zh-TW': '錄程要用軌島 App。網頁可以看懸賞板與自己的島民點數',
+      en: 'Recording a trip needs the Rail Island app. The website lets you view the bounty board and your own Islander Points.',
+      ja: '旅程の記録には軌島アプリが必要です。ウェブサイトでは懸賞板とご自身の島民ポイントを確認できます。' };
     const APP_PROMPT = { 'zh-TW': '要錄程，請先把軌島 App 更新到最新版',
       en: 'To record a trip, please update the Rail Island app to the latest version.',
       ja: '旅程を記録するには、軌島アプリを最新版に更新してください。' };
@@ -781,7 +781,7 @@ try {
       ok('CH10d 另一個平台訊號單獨成立也算 App 殼：沒有啟動取樣、沒有進入錄製、提示整句是要先更新軌島 App 的那一句',
         cap.sampling === 0 && cap.recording === false && cap.toast === APP_PROMPT[L], JSON.stringify(cap));
       const web = await probe('&bounty=1', {});
-      ok('CH10e 網頁、旗標開：沒有啟動取樣、沒有進入錄製、提示整句照舊是「錄程要用軌島 App。網頁可以看懸賞板與自己的點數」（不是更新那一句）',
+      ok('CH10e 網頁、旗標開：沒有啟動取樣、沒有進入錄製、提示整句照舊是「錄程要用軌島 App。網頁可以看懸賞板與自己的島民點數」（不是更新那一句）',
         web.flag === true && web.native === false && web.demo === false && web.sampling === 0 && web.recording === false &&
           web.toast === WEB_PROMPT[L] && web.toast !== APP_PROMPT[L], JSON.stringify(web));
       const off = await probe('', { app: true });
@@ -894,7 +894,7 @@ try {
         ok(`CH11c-${tag} 不跟護照裡既有的控件重疊（掃了 ${m.controls} 個可見控件）`, m.controls > 0 && m.overlaps.length === 0, JSON.stringify(m.overlaps));
         ok(`CH11d-${tag} 沒有水平捲動（頁面、護照面板、點數列自己都不超寬）`, m.hscroll.doc <= 1 && m.hscroll.panel <= 1 && m.hscroll.row <= 1, JSON.stringify(m.hscroll));
         ok(`CH11e-${tag} 內容對：${loggedOut ? '只有登入提示、沒有餘額' : '餘額 5、下一座 7、雲端搭乘'}`,
-          loggedOut ? (m.off && /登入後看得到點數/.test(m.text)) : (!m.off && /5/.test(m.text) && /7/.test(m.text) && /雲端搭乘/.test(m.text)), m.text);
+          loggedOut ? (m.off && /登入後看得到島民點數/.test(m.text)) : (!m.off && /5/.test(m.text) && /7/.test(m.text) && /雲端搭乘/.test(m.text)), m.text);
         if (SHOT_DIR) await s.page.screenshot({ path: path.join(SHOT_DIR, `chips-${tag}.png`) });
         await s.ctx.close();
       });
@@ -1128,12 +1128,12 @@ try {
   const claimDirect = (page, id) => page.evaluate(i => { bountyClaim(i); }, id);
   // 說明卡獎勵句的字面（字典的譯文）；數字與單複數由期望值決定
   const REWARD = {
-    'zh-TW': e => ({ per: `合格的一趟照沿線里程給點，1 公里 ${e.perKm} 點。`, mult: `這條線的點數 ×${e.mult}。`, cap: `每天最多 ${e.cap} 點。` }),
-    en: e => ({ per: `A qualifying trip earns points by distance: ${e.perKm} point${e.perKm === 1 ? '' : 's'} per km.`, mult: `Points are ×${e.mult} on this line.`, cap: `Up to ${e.cap} point${e.cap === 1 ? '' : 's'} a day.` }),
-    ja: e => ({ per: `条件を満たした乗車には、沿線の距離 1 km あたり ${e.perKm} ポイントが付きます。`, mult: `この路線ではポイントが ${e.mult} 倍になります。`, cap: `1日に獲得できるのは最大 ${e.cap} ポイントです。` }),
+    'zh-TW': e => ({ per: `合格的一趟照沿線里程給點，1 公里 ${e.perKm} 點。`, mult: `這條線的島民點數 ×${e.mult}。`, cap: `每天最多 ${e.cap} 點。` }),
+    en: e => ({ per: `A qualifying trip earns points by distance: ${e.perKm} point${e.perKm === 1 ? '' : 's'} per km.`, mult: `Islander Points are ×${e.mult} on this line.`, cap: `Up to ${e.cap} point${e.cap === 1 ? '' : 's'} a day.` }),
+    ja: e => ({ per: `条件を満たした乗車には、沿線の距離 1 km あたり ${e.perKm} ポイントが付きます。`, mult: `この路線では島民ポイントが ${e.mult} 倍になります。`, cap: `1日に獲得できるのは最大 ${e.cap} ポイントです。` }),
   };
 
-  // ═══ CH15：看板卡片的點數標記——偏遠線的卡標「點數 ×N」、其他線沒有；名單與 N 讀規則檔 ═══════════════════════════════════
+  // ═══ CH15：看板卡片的點數標記——偏遠線的卡標「島民點數 ×N」、其他線沒有；名單與 N 讀規則檔 ═══════════════════════════════════
   if (want('CH15')) {
     const cardOf = (b, id) => b.cards.find(x => x.id === id) || { tags: null, text: '', take: -1 };
     await attempt('CH15-real', async () => {
@@ -1143,12 +1143,12 @@ try {
       ok('CH15a [fixture] 看板收到 3 張卡（南迴線一般卡、屏東線一般卡、南迴線收滿卡）；真規則檔裡南迴線是偏遠線、屏東線不是，伺服器入帳函式對這兩條線給的倍率也不同（有對照）',
         b.cards.length === 3 && RULES.chips.remoteLines.includes(KEY_NAN) && !RULES.chips.remoteLines.includes(KEY_PT) && eR.remote && eR.mult > 1 && !eP.remote && eP.mult === 1,
         JSON.stringify({ n: b.cards.length, eR, eP }));
-      ok(`CH15b 偏遠線的一般卡有且只有一個標記，寫成「點數 ×${eR.mult}」（倍率是伺服器入帳函式算的那個）`,
-        JSON.stringify(cardOf(b, CARD_R.id).tags) === JSON.stringify([`點數 ×${eR.mult}`]), JSON.stringify(cardOf(b, CARD_R.id)));
+      ok(`CH15b 偏遠線的一般卡有且只有一個標記，寫成「島民點數 ×${eR.mult}」（倍率是伺服器入帳函式算的那個）`,
+        JSON.stringify(cardOf(b, CARD_R.id).tags) === JSON.stringify([`島民點數 ×${eR.mult}`]), JSON.stringify(cardOf(b, CARD_R.id)));
       ok('CH15c 非偏遠線的卡沒有任何標記，卡面也沒有「×」或「點數」字樣（有標記的與沒標記的在同一塊板上）',
         JSON.stringify(cardOf(b, CARD_P.id).tags) === '[]' && !/×|點數/.test(cardOf(b, CARD_P.id).text), JSON.stringify(cardOf(b, CARD_P.id)));
-      ok(`CH15d 偏遠線的收滿卡也標「點數 ×${eR.mult}」，而且照樣沒有接單鈕`,
-        JSON.stringify(cardOf(b, CARD_RC.id).tags) === JSON.stringify([`點數 ×${eR.mult}`]) && cardOf(b, CARD_RC.id).take === 0, JSON.stringify(cardOf(b, CARD_RC.id)));
+      ok(`CH15d 偏遠線的收滿卡也標「島民點數 ×${eR.mult}」，而且照樣沒有接單鈕`,
+        JSON.stringify(cardOf(b, CARD_RC.id).tags) === JSON.stringify([`島民點數 ×${eR.mult}`]) && cardOf(b, CARD_RC.id).take === 0, JSON.stringify(cardOf(b, CARD_RC.id)));
       ok('CH15e 頁面沒有未捕捉的例外', s.errors.length === 0, JSON.stringify(s.errors));
       await s.ctx.close();
     });
@@ -1159,8 +1159,8 @@ try {
       const aP = expectOf(RULES_ALT, KEY_PT), aR = expectOf(RULES_ALT, KEY_NAN);
       ok('CH15f [fixture] 換成另一份規則檔：頁面讀到的就是它（倍率 5、偏遠線只剩屏東線）；伺服器入帳函式對它：屏東線 ×5、南迴線不加倍',
         probe.mult === 5 && JSON.stringify(probe.lines) === JSON.stringify([KEY_PT]) && s.rulesReq >= 1 && aP.mult === 5 && !aR.remote, JSON.stringify({ probe, rulesReq: s.rulesReq, aP, aR }));
-      ok('CH15g 名單與倍率跟著規則檔走（不是寫死）：屏東線的卡標「點數 ×5」，南迴線的卡（一般與收滿）都沒有標記',
-        JSON.stringify(cardOf(b, CARD_P.id).tags) === JSON.stringify([`點數 ×${aP.mult}`]) && JSON.stringify(cardOf(b, CARD_R.id).tags) === '[]' && JSON.stringify(cardOf(b, CARD_RC.id).tags) === '[]',
+      ok('CH15g 名單與倍率跟著規則檔走（不是寫死）：屏東線的卡標「島民點數 ×5」，南迴線的卡（一般與收滿）都沒有標記',
+        JSON.stringify(cardOf(b, CARD_P.id).tags) === JSON.stringify([`島民點數 ×${aP.mult}`]) && JSON.stringify(cardOf(b, CARD_R.id).tags) === '[]' && JSON.stringify(cardOf(b, CARD_RC.id).tags) === '[]',
         JSON.stringify(b.cards.map(c => [c.id, c.tags])));
       await s.ctx.close();
     });
@@ -1179,19 +1179,19 @@ try {
   // 出發前說明卡、錄程列、護照空狀態那句承諾、說明中心那一則。中文、英文、日文各跑一遍。
   if (want('CH16')) {
     const TX = {
-      'zh-TW': { re: OLD_UNIT_RE, sub: [/點數/, /里程/, /上限/], subNo: /榮譽/, subDemo: [/示範資料/, /都是假的/], tag: '點數 ×2',
+      'zh-TW': { re: OLD_UNIT_RE, sub: [/島民點數/, /里程/, /上限/], subNo: /榮譽/, subDemo: [/示範資料/, /都是假的/], tag: '島民點數 ×2',
         claimed: '接下了・24 小時內有效', demoClaimed: '（示範）接下了・24 小時內有效',
         saveFail: '已在伺服器接下，但這台裝置存不下來（可能是儲存空間滿了或無痕模式）——重新整理後認領不會留著',
         again: '這段你已經接下了，還沒過期', expiry: '接下的卡 24 小時內有效。', promise: '即使這次的資料不能用，只要錄得夠完整，校正者章還是你的。',
         passport: '還不能錄程，要更新到最新版才行', tip: '前面是你校正的段數', tipGone: '校正者章還是你的', rowTrack: '0 段已覆蓋', rowDwell: '0 站已覆蓋',
         subShell: '這些項目還沒有實測資料。這一版還不能接，要更新到最新版的軌島 App 才能接下來錄——現在可以先看看有哪些。' },
-      en: { re: OLD_UNIT_RE_I18N, sub: [/points/, /distance/, /daily limit/], subNo: /honou?r/i, subDemo: [/Demo data/, /fake/], tag: 'Points ×2',
+      en: { re: OLD_UNIT_RE_I18N, sub: [/Islander Points/, /distance/, /daily limit/], subNo: /honou?r/i, subDemo: [/Demo data/, /fake/], tag: 'Islander Points ×2',
         claimed: 'Claimed · valid for 24 hours', demoClaimed: '(Demo) Claimed · valid for 24 hours',
         saveFail: 'Claimed on the server, but this device couldn’t save it (storage may be full, or you’re in private browsing) — the claim won’t persist after you refresh',
         again: 'You’ve already claimed this segment, and it hasn’t expired yet', expiry: 'A claimed card is valid for 24 hours.', promise: 'Even if this data can’t be used, the calibrator stamp is still yours as long as you recorded enough of it.',
         passport: 'update to the latest version to record', tip: 'the first is the number of segments you calibrated', tipGone: 'you keep the calibrator stamp', rowTrack: 'Segments covered: 0', rowDwell: 'Stations covered: 0',
         subShell: 'These items don’t have real measurement data yet. This version can’t claim them — update the Rail Island app to the latest version to claim and record. For now, you can browse what’s available.' },
-      ja: { re: OLD_UNIT_RE_I18N, sub: [/ポイント/, /距離/, /上限/], subNo: /名誉/, subDemo: [/デモデータ/, /仮/], tag: 'ポイント ×2',
+      ja: { re: OLD_UNIT_RE_I18N, sub: [/島民ポイント/, /距離/, /上限/], subNo: /名誉/, subDemo: [/デモデータ/, /仮/], tag: '島民ポイント ×2',
         claimed: '受け取りました・24時間有効', demoClaimed: '（デモ）受け取りました・24時間有効',
         saveFail: 'サーバー側では受領済みですが、この端末には保存できませんでした（ストレージ不足またはプライベートブラウジングの可能性）。更新すると受領記録は残りません',
         again: 'この区間はすでに受け取り済みで、まだ有効期限内です', expiry: '受け取ったカードは24時間有効です。', promise: '今回のデータが使えなくても、十分に記録できていれば、校正者スタンプはあなたのものです。',
@@ -1262,7 +1262,7 @@ try {
           pts: bountyBoardMem.cards.map(c => c.points), demo: DEMO_AS_APP && BOUNTY_ENABLED && !IS_NATIVE_APP }));
         ok(`CH16n-${lang} [fixture] 示範看板：假資料的卡帶著點數（${ids.pts.join('、')}）、有停站卡與路段卡；是示範流程、不是 App 殼`,
           ids.demo === true && ids.pts.length >= 5 && ids.pts.every(Number.isFinite) && !!ids.dwell && !!ids.track, JSON.stringify(ids));
-        ok(`CH16o-${lang} 示範副標有「示範、假的」與照里程得到點數那句、不再說「路段與點數都是假的」（v1 的寫法）；副標與每張卡沒有舊的獎勵單位`,
+        ok(`CH16o-${lang} 示範副標有「示範、假的」與照里程得到島民點數那句、不再說「路段與點數都是假的」（v1 的寫法）；副標與每張卡沒有舊的獎勵單位`,
           X.subDemo.every(r => r.test(b.sub)) && X.sub.every(r => r.test(b.sub)) && !/路段與點數都是假的|segments and points here are fake|区間とポイント/.test(b.sub) && [b.sub, ...b.cards.map(c => c.text)].every(x => !X.re.test(x)), JSON.stringify(b));
         await s.page.evaluate(() => { document.getElementById('toasts').innerHTML = ''; });
         await s.page.click(takeSel(ids.dwell));
@@ -1309,8 +1309,8 @@ try {
       ok(`CH17a-${tag} [fixture] 頁面讀到的規則就是這一輪該有的那份（點數制、1 公里 ${rules.chips.perKm} 點、倍率 ${rules.chips.remoteMultiplier}、上限 ${rules.chips.dailyChipCap}）；伺服器入帳函式對這條線：${e.remote ? `偏遠線、里程 ×${e.mult}` : '不是偏遠線、不加倍'}`,
         !!loaded && loaded.unit === 'point' && loaded.perKm === rules.chips.perKm && loaded.mult === rules.chips.remoteMultiplier && loaded.cap === rules.chips.dailyChipCap && e.perKm === rules.chips.perKm, JSON.stringify({ loaded, e }));
       ok(`CH17b-${tag} 說明卡有「${w.per}」與「${w.cap}」（1 公里幾點與每天上限，數字＝伺服器入帳用的純函式算出來的）`, br.text.includes(w.per) && br.text.includes(w.cap), br.text);
-      ok(`CH17c-${tag} ${e.remote ? `偏遠線：有「${w.mult}」，位置在 1 公里那句與每天上限那句之間` : '不是偏遠線：沒有倍率那句（整段沒有「×」也沒有「這條線的點數」）'}`,
-        e.remote ? (br.text.includes(w.mult) && br.text.indexOf(w.per) < br.text.indexOf(w.mult) && br.text.indexOf(w.mult) < br.text.indexOf(w.cap)) : !/×|這條線的點數/.test(br.text), br.text);
+      ok(`CH17c-${tag} ${e.remote ? `偏遠線：有「${w.mult}」，位置在 1 公里那句與每天上限那句之間` : '不是偏遠線：沒有倍率那句（整段沒有「×」也沒有「這條線的島民點數」）'}`,
+        e.remote ? (br.text.includes(w.mult) && br.text.indexOf(w.per) < br.text.indexOf(w.mult) && br.text.indexOf(w.mult) < br.text.indexOf(w.cap)) : !/×|這條線的島民點數/.test(br.text), br.text);
       await s.ctx.close();
     });
     await attempt('CH17-404', async () => {
@@ -1319,7 +1319,7 @@ try {
       await briefOpen(s.page);
       const br = await readBrief(s.page);
       ok('CH17d 規則檔讀不到：說明卡照樣開、沒有任何獎勵句（寧可不寫，也不憑記憶補數字，或寫伺服器不一定會給的東西）；期限那句與承諾那句照在',
-        !/1 公里|每天最多|×|這條線的點數|籌碼/.test(br.text) && br.text.includes('接下的卡 24 小時內有效。') && br.text.includes('即使這次的資料不能用，只要錄得夠完整，校正者章還是你的。'), br.text);
+        !/1 公里|每天最多|×|這條線的島民點數|籌碼/.test(br.text) && br.text.includes('接下的卡 24 小時內有效。') && br.text.includes('即使這次的資料不能用，只要錄得夠完整，校正者章還是你的。'), br.text);
       ok('CH17e 規則檔讀不到：頁面沒有未捕捉的例外', s.errors.length === 0, JSON.stringify(s.errors));
       await s.ctx.close();
     });
@@ -1332,8 +1332,8 @@ try {
       await briefOpen(s.page);
       const br = await readBrief(s.page);
       const st = await s.page.evaluate(() => ({ unit: bountyRulesMem && bountyRulesMem.chips.unit, perTrip: bountyRulesMem && bountyRulesMem.chips.perTrip }));
-      ok('CH17g 規則檔不是點數制（沒有 unit、每趟 1 顆）：說明卡沒有獎勵句、沒有合格那兩句（沒有「1 公里」「每天最多」「這條線的點數」「合格的一趟」「籌碼」）；期限、承諾那兩句照在；頁面沒有未捕捉的例外',
-        st.unit === undefined && st.perTrip === 1 && !/1 公里|每天最多|這條線的點數|合格的一趟|沒達到門檻|籌碼/.test(br.text) &&
+      ok('CH17g 規則檔不是點數制（沒有 unit、每趟 1 顆）：說明卡沒有獎勵句、沒有合格那兩句（沒有「1 公里」「每天最多」「這條線的島民點數」「合格的一趟」「籌碼」）；期限、承諾那兩句照在；頁面沒有未捕捉的例外',
+        st.unit === undefined && st.perTrip === 1 && !/1 公里|每天最多|這條線的島民點數|合格的一趟|沒達到門檻|籌碼/.test(br.text) &&
           br.text.includes('接下的卡 24 小時內有效。') && br.text.includes('即使這次的資料不能用') && s.errors.length === 0, JSON.stringify({ st, text: br.text }));
       await s.ctx.close();
     });
@@ -1353,7 +1353,7 @@ try {
 
   // ═══ CH18：旗標關——看不到任何一句獎勵說法、不讀規則檔、不打看板與認領；對照：同一個 App 殼旗標開就看得到 ═══════════════════
   if (want('CH18')) {
-    const SAYS = /合格的一趟|1 公里|這條線的點數|每天最多|每天有上限|校正者章|懸賞板|點數 ×|籌碼/;
+    const SAYS = /合格的一趟|1 公里|這條線的島民點數|每天最多|每天有上限|校正者章|懸賞板|島民點數 ×|籌碼/;
     const look = async (s) => {
       const st = await s.page.evaluate(() => ({ flag: BOUNTY_ENABLED, native: PHYSICAL_COLLECT_ENABLED, entry: !!document.querySelector('[data-act="bountyboard"]'),
         text: document.body.innerText,
@@ -1371,7 +1371,7 @@ try {
       await sleep(1000);
       const { st, help } = await look(s);
       ok('CH18a [fixture] 旗標關、App 殼（有登入）：不是示範流程', st.flag === false && st.native === true, JSON.stringify({ flag: st.flag, native: st.native }));
-      ok('CH18b 旗標關：沒有懸賞板入口、整頁看得到的字裡沒有任何一句獎勵說法（1 公里幾點、倍率、每天上限、校正者章、懸賞板、點數 ×N，也沒有舊的籌碼）、三個懸賞浮層都藏著',
+      ok('CH18b 旗標關：沒有懸賞板入口、整頁看得到的字裡沒有任何一句獎勵說法（1 公里幾點、倍率、每天上限、校正者章、懸賞板、島民點數 ×N，也沒有舊的籌碼）、三個懸賞浮層都藏著',
         st.entry === false && !SAYS.test(st.text) && st.boxes.every(Boolean), JSON.stringify({ entry: st.entry, boxes: st.boxes, hit: (st.text.match(SAYS) || [null])[0] }));
       ok('CH18c 旗標關：說明中心沒有懸賞那幾節（bounty 開頭的節 0 個）、說明中心的字裡也沒有獎勵說法', help.secs === 0 && !SAYS.test(help.text), JSON.stringify({ secs: help.secs, hit: (help.text.match(SAYS) || [null])[0] }));
       ok('CH18d 旗標關：不讀規則檔（0 次、記憶體裡沒有）、不打看板、認領、籌碼、彙總（各 0 次）',
@@ -1471,8 +1471,8 @@ try {
         }));
         const eR = expectOf(RULES, KEY_NAN);
         const tagsOf = id => (bd.cards.find(c => c.id === id) || { tags: null }).tags;
-        ok(`CH19a-${tag} 看板 3 張卡、偏遠線的兩張（一般卡、收滿卡）各有一個「點數 ×${eR.mult}」、另一張沒有標記`,
-          bd.cards.length === 3 && JSON.stringify(tagsOf(CARD_R.id)) === JSON.stringify([`點數 ×${eR.mult}`]) && JSON.stringify(tagsOf(CARD_RC.id)) === JSON.stringify([`點數 ×${eR.mult}`]) && JSON.stringify(tagsOf(CARD_P.id)) === '[]', JSON.stringify(bd.cards.map(c => [c.id, c.tags])));
+        ok(`CH19a-${tag} 看板 3 張卡、偏遠線的兩張（一般卡、收滿卡）各有一個「島民點數 ×${eR.mult}」、另一張沒有標記`,
+          bd.cards.length === 3 && JSON.stringify(tagsOf(CARD_R.id)) === JSON.stringify([`島民點數 ×${eR.mult}`]) && JSON.stringify(tagsOf(CARD_RC.id)) === JSON.stringify([`島民點數 ×${eR.mult}`]) && JSON.stringify(tagsOf(CARD_P.id)) === '[]', JSON.stringify(bd.cards.map(c => [c.id, c.tags])));
         ok(`CH19b-${tag} 看板兩兩相交掃描：掃了 ${bm.n} 個可見元素、沒有任何兩個互相蓋住（標題、×、副標、每張卡的名稱／說明／點數標記／接單鈕／已收滿說明）；兩個點數標記都在自己那張卡的範圍內`,
           bm.n >= 12 && bm.pairs.length === 0 && inCard.length === 2 && inCard.every(x => x.ok), JSON.stringify({ pairs: bm.pairs, inCard }));
         ok(`CH19c-${tag} 看板沒有水平捲動（頁面、懸賞板框、卡片列表都不超寬）、沒有元素超出視窗左右邊`,
@@ -1556,11 +1556,11 @@ try {
     });
   }
 
-  // ═══ CH20：?demo=bounty 的示範看板——有一張偏遠線的卡，「點數 ×N」標記看得到 ═══════════════════════════════════════════
+  // ═══ CH20：?demo=bounty 的示範看板——有一張偏遠線的卡，「島民點數 ×N」標記看得到 ═══════════════════════════════════════════
   // 備援站沒有 /api/*，示範看板由頁面自己合成。偏遠線名單與倍率讀規則檔；挑卡與畫標記都走真看板那一套（bountyRemoteMult／renderBountyBoard），
   // 假資料裡沒有另外寫標記。規則檔讀不到時，板子維持原本的 5 張卡、沒有標記；其他卡（內容、順序）不因為多了這一張而變。
   if (want('CH20')) {
-    const TAG20 = { 'zh-TW': n => `點數 ×${n}`, en: n => `Points ×${n}`, ja: n => `ポイント ×${n}` };
+    const TAG20 = { 'zh-TW': n => `島民點數 ×${n}`, en: n => `Islander Points ×${n}`, ja: n => `島民ポイント ×${n}` };
     const lineKeyOf = id => id.split('|').slice(0, 2).join('|');            // 示範卡的 id 是「系統|線名|…」，前兩段就是規則檔名單裡的寫法
     const demoSession = async (lang, rules, ctxOpts = {}) => {
       const locale = lang === 'en' ? 'en-US' : lang === 'ja' ? 'ja-JP' : 'zh-TW';
@@ -1772,13 +1772,13 @@ try {
     });
   }
   // ═══ CH22：規則檔一直不回來時，看板與護照不被它卡住 ═══════════════════════════════════════════════════════════════
-  // 規則檔只決定卡片上的「點數 ×N」標記與護照的「下一座」那一格；手機在隧道裡，一個請求可以好幾分鐘既不回也不報錯。
+  // 規則檔只決定卡片上的「島民點數 ×N」標記與護照的「下一座」那一格；手機在隧道裡，一個請求可以好幾分鐘既不回也不報錯。
   // 規則檔（與其中一組的看板資料）的回應由測試扣住（hold）、之後才放開，誰先誰後由測試持有的閘決定，不靠睡眠秒數。
   // 「上限」讀頁面自己的常數（BOUNTY_RULES_WAIT_MS），畫出來的最長時間＝上限＋一點餘裕；另外釘一個絕對的地板與天花板，
   // 因為只跟著頁面的常數走的話，上限被改得很長，判準也跟著放寬、照樣全綠；被改到接近 0，正常網路下標記就趕不上第一次畫。
   if (want('CH22')) {
     const CAP_FLOOR_MS = 1000, CAP_CEIL_MS = 5000, SLACK_MS = 2500;
-    const eR = expectOf(RULES, KEY_NAN), MARK = `點數 ×${eR.mult}`;
+    const eR = expectOf(RULES, KEY_NAN), MARK = `島民點數 ×${eR.mult}`;
     const capOf = page => page.evaluate(() => BOUNTY_RULES_WAIT_MS);
     const limitOf = cap => Math.min(cap, CAP_CEIL_MS) + SLACK_MS;
     const rulesInMem = page => page.evaluate(() => bountyRulesMem !== null);
@@ -1962,13 +1962,13 @@ try {
   //      不到 1 公里的一趟就算過了門檻也可能是 0 點；所以量門檻時把 perKm 放大到 1 公寸就有 1 點，會讓它變 0 的只剩門檻本身。
   if (want('CH23')) {
     const SENT23 = {
-      'zh-TW': { head: '合格的一趟要同時做到：', tail: '一班車最多算一趟。', short: '沒達到門檻，能用的資料照樣拿來校正，只是沒有點數。',
+      'zh-TW': { head: '合格的一趟要同時做到：', tail: '一班車最多算一趟。', short: '沒達到門檻，能用的資料照樣拿來校正，只是沒有島民點數。',
         full: (time, dist) => `合格的一趟要同時做到：同一班車從頭錄到尾至少 ${time}、沿線至少移動 ${dist}、資料能用。一班車最多算一趟。`,
         unit: { min: n => `${n} 分鐘`, km: n => `${n} 公里`, m: n => `${n} 公尺` } },
-      en: { head: 'A qualifying trip needs all of these:', tail: 'One train counts as one trip at most.', short: 'If a trip falls short, its usable data still goes into calibration; it just earns no points.',
+      en: { head: 'A qualifying trip needs all of these:', tail: 'One train counts as one trip at most.', short: 'If a trip falls short, its usable data still goes into calibration; it just earns no Islander Points.',
         full: (time, dist) => `A qualifying trip needs all of these: you record the same train for at least ${time} from start to finish, you travel at least ${dist} along the line, and the data is usable. One train counts as one trip at most.`,
         unit: { min: n => `${n} min`, km: n => `${n} km`, m: n => `${n} m` } },
-      ja: { head: '条件を満たした1回の乗車とは、', tail: '1本の列車につき、数えるのは1回までです。', short: '条件に届かなくても、使えるデータは校正に使われます。ただしポイントはもらえません。',
+      ja: { head: '条件を満たした1回の乗車とは、', tail: '1本の列車につき、数えるのは1回までです。', short: '条件に届かなくても、使えるデータは校正に使われます。ただし島民ポイントはもらえません。',
         full: (time, dist) => `条件を満たした1回の乗車とは、次のすべてを満たすものです。同じ列車を最初から最後まで ${time} 以上記録すること、沿線を ${dist} 以上移動すること、使えるデータであること。1本の列車につき、数えるのは1回までです。`,
         unit: { min: n => `${n}分`, km: n => `${n}km`, m: n => `${n}m` } },
     };
@@ -2020,7 +2020,7 @@ try {
           tripPoints(tripAt(sh.sec, sh.m, 'suspect'), gateOf(RULES)) === 0 &&
           tripPoints(tripAt(sh.sec, sh.m, 'unusable'), gateOf(RULES)) === 0, JSON.stringify(sh));
       const pos = ['錄到一半中斷沒關係', L.head, L.short, '即使這次的資料不能用'].map(x => br.text.indexOf(x));
-      ok('CH23e 位置與語氣：緊接在「錄到一半中斷沒關係」之後、在「即使這次的資料不能用」之前（中斷那句、合格那句、沒達到那句、承諾那句依序）；「沒達到門檻，能用的資料照樣拿來校正，只是沒有點數。」在；整段沒有工程術語',
+      ok('CH23e 位置與語氣：緊接在「錄到一半中斷沒關係」之後、在「即使這次的資料不能用」之前（中斷那句、合格那句、沒達到那句、承諾那句依序）；「沒達到門檻，能用的資料照樣拿來校正，只是沒有島民點數。」在；整段沒有工程術語',
         pos.every(x => x >= 0) && pos.every((x, i) => i === 0 || x > pos[i - 1]) && !ENGINEERING.test(br.text), JSON.stringify({ pos, hit: (br.text.match(ENGINEERING) || [null])[0] }));
       const dom = await s.page.evaluate(() => [...document.querySelectorAll('#bountyBriefBody .bb-sec')].map(sec => ({ head: sec.querySelector('b').textContent.trim(), text: sec.textContent.replace(/\s+/g, ' ').trim(), lis: [...sec.querySelectorAll('li')].map(l => l.textContent.replace(/\s+/g, ' ').trim()) })));
       const clean = dom.find(x => x.head === '先講清楚');
@@ -2124,7 +2124,7 @@ try {
       'zh-TW': {
         subShell: '這些項目還沒有實測資料。這一版還不能接，要更新到最新版的軌島 App 才能接下來錄——現在可以先看看有哪些。',
         subWeb: '這些項目還沒有實測資料。用 App 才能接下來錄——網頁可以先看看有哪些。',
-        subApp: '接一張、搭那班車時開錄，把沿途的速度剖面測出來。全部免費，合格的一趟照沿線里程得到點數，每天有上限。',
+        subApp: '接一張、搭那班車時開錄，把沿途的速度剖面測出來。全部免費，合格的一趟照沿線里程得到島民點數，每天有上限。',
         subDemo: '示範資料，僅供確認設計：這裡的路段都是假的，接下來也不會真的錄。',
         btnShell: '要更新 App 才能接', btnWeb: '要用 App 才能接', btnTrack: '接下這段', btnDwell: '接下停站', btnLive: '已接下・看說明',
         update: '要錄程，請先把軌島 App 更新到最新版', webTake: 'GPS 校正旅程需要用 App。網頁可以看懸賞板與自己的成果',
@@ -2361,13 +2361,13 @@ try {
     const BOARD_D = { ...BOARD, cards: [CARD_D, CARD_R] };
     const U25 = {
       'zh-TW': { hint: '前一站離得近就要再早一點上車',
-        withNum: (t, d) => `從前一站或更早上車就開始錄，一直錄到離開要錄的站。整趟要錄滿 ${t}、沿線移動 ${d} 才有點數，前一站離得近就要再早一點上車；只通過、不停靠不算停站樣本。`,
+        withNum: (t, d) => `從前一站或更早上車就開始錄，一直錄到離開要錄的站。整趟要錄滿 ${t}、沿線移動 ${d} 才有島民點數，前一站離得近就要再早一點上車；只通過、不停靠不算停站樣本。`,
         bare: '從前一站或更早上車就開始錄，一直錄到離開要錄的站；只通過、不停靠不算停站樣本。' },
       en: { hint: 'if the previous station is close by, board even earlier',
-        withNum: (t, d) => `Start recording when you board at the previous station or earlier, and keep recording until you leave the station you’re recording. The whole trip needs at least ${t} of recording and at least ${d} of travel along the line to earn points, so if the previous station is close by, board even earlier; passing through without stopping doesn’t count as a dwell sample.`,
+        withNum: (t, d) => `Start recording when you board at the previous station or earlier, and keep recording until you leave the station you’re recording. The whole trip needs at least ${t} of recording and at least ${d} of travel along the line to earn Islander Points, so if the previous station is close by, board even earlier; passing through without stopping doesn’t count as a dwell sample.`,
         bare: 'Start recording when you board at the previous station or earlier, and keep recording until you leave the station you’re recording; passing through without stopping doesn’t count as a dwell sample.' },
       ja: { hint: '前の駅が近い場合は、もっと早い駅から乗ってください',
-        withNum: (t, d) => `前の駅か、それより前で乗車したときから記録を始め、記録したい駅を出るまで続けてください。ポイントをもらうには、1回の乗車全体で ${t} 以上記録し、沿線を ${d} 以上移動する必要があります。前の駅が近い場合は、もっと早い駅から乗ってください。通過するだけで停車しない場合は、停車サンプルになりません。`,
+        withNum: (t, d) => `前の駅か、それより前で乗車したときから記録を始め、記録したい駅を出るまで続けてください。島民ポイントをもらうには、1回の乗車全体で ${t} 以上記録し、沿線を ${d} 以上移動する必要があります。前の駅が近い場合は、もっと早い駅から乗ってください。通過するだけで停車しない場合は、停車サンプルになりません。`,
         bare: '前の駅か、それより前で乗車したときから記録を始め、記録したい駅を出るまで続けてください。通過するだけで停車しない場合は、停車サンプルになりません。' },
     };
     const T25 = [   // 規則檔的秒數與公尺數 → 畫面上該出現的字（手算；進位只往上）
@@ -2384,7 +2384,7 @@ try {
       ['1 公里 0 點', { set: { perKm: 0 } }], ['不是點數制（沒有 unit）', { drop: 'unit' }], ['沒有 chips 區塊', { whole: true }],
     ];
     const dwellNums = text => {
-      const m = text.match(/整趟要錄滿 ([\d.]+) 分鐘、沿線移動 ([\d.]+) (公里|公尺) 才有點數/);
+      const m = text.match(/整趟要錄滿 ([\d.]+) 分鐘、沿線移動 ([\d.]+) (公里|公尺) 才有島民點數/);
       if (!m) return null;
       const km = m[3] === '公里';
       return { sec: Math.round(Number(m[1]) * 60), m: km ? Math.round(Number(m[2]) * 10) * 100 : Math.round(Number(m[2])), km };
@@ -2421,7 +2421,7 @@ try {
       const dn = dwellNums(r.first), qn = qualNums(r.all);
       ok(`CH25a [fixture] 讀到的規則檔就是真的那份（${RULES.chips.minTripSec} 秒、${RULES.chips.minTripMoveM} 公尺）；開出來的是停站卡（第一節有「只通過、不停靠不算停站樣本」、有「平日尖峰・1 站」）`,
         (await rulesIs(s.page, RULES)) && r.first.includes('只通過、不停靠不算停站樣本') && r.first.includes('平日尖峰・1 站'), r.first);
-      ok('CH25b 停站卡的說明卡有「從前一站或更早上車就開始錄，一直錄到離開要錄的站。整趟要錄滿 N 分鐘、沿線移動 M 才有點數，前一站離得近就要再早一點上車；只通過、不停靠不算停站樣本。」整句（含提醒前一站很近要提早上車那半句）；' +
+      ok('CH25b 停站卡的說明卡有「從前一站或更早上車就開始錄，一直錄到離開要錄的站。整趟要錄滿 N 分鐘、沿線移動 M 才有島民點數，前一站離得近就要再早一點上車；只通過、不停靠不算停站樣本。」整句（含提醒前一站很近要提早上車那半句）；' +
         '數字換回秒與公尺後不低於規則檔、多出的不到一個進位單位，達到它的那一趟過得了伺服器的門檻',
         !!sentenceOf(r.first, 'zh-TW') && sentenceOf(r.first, 'zh-TW').includes(U25['zh-TW'].hint) && !!dn && rangeOk25(dn, RULES.chips.minTripSec, RULES.chips.minTripMoveM) && gets25(dn, RULES) > 0, JSON.stringify({ sentence: sentenceOf(r.first, 'zh-TW'), dn }));
       ok('CH25c 同一張卡上，停站那句的兩個數字與「合格的一趟」那句的兩個數字一樣（同一份、不各算各的）；「錄到一半中斷沒關係」「合格的一趟要同時做到」「沒達到門檻」「即使這次的資料不能用」四句照在、依序出現在停站那句之後',
@@ -2451,7 +2451,7 @@ try {
       for (const [label, o] of BAD25) {
         const r = await show25(s.page, CARD_D.id, o.whole ? { whole: true } : { chips: chipsOf(o) });
         const sen = sentenceOf(r.first, 'zh-TW');
-        outs.push([label, sen === U25['zh-TW'].bare && !r.all.includes('整趟要錄滿') && !r.all.includes('才有點數') && !r.all.includes(U25['zh-TW'].hint) && !r.all.includes('合格的一趟要同時做到') && r.all.includes('錄到一半中斷沒關係') && r.all.includes('即使這次的資料不能用')]);
+        outs.push([label, sen === U25['zh-TW'].bare && !r.all.includes('整趟要錄滿') && !r.all.includes('才有島民點數') && !r.all.includes(U25['zh-TW'].hint) && !r.all.includes('合格的一趟要同時做到') && r.all.includes('錄到一半中斷沒關係') && r.all.includes('即使這次的資料不能用')]);
       }
       ok('CH25h 規則檔讀到了但門檻缺、是 0、是負數、不是數字、1 公里 0 點、不是點數制、或連 chips 區塊都沒有：停站那句只剩「從前一站或更早上車就開始錄，一直錄到離開要錄的站；只通過、不停靠不算停站樣本。」，沒有數字、沒有「點數」、沒有「再早一點上車」的提醒；「合格」那兩句不在，中斷與承諾那兩句照在',
         outs.length === 9 && outs.every(x => x[1]), JSON.stringify(outs));
@@ -2477,7 +2477,7 @@ try {
       const b = await show25(s.page, CARD_D.id, { whole: true });
       const senBare = sentenceOf(b.first, lang);
       ok(`CH25k-${lang} ${lang} 介面：規則檔 ${row.sec} 秒、${row.m} 公尺 → 整句是「${U.withNum(row[lang][0], row[lang][1]).slice(0, 60)}…」，含提醒前一站很近要提早上車的那半句；整句裡沒有中文原句` + (lang === 'en' ? '、沒有任何中文字' : ''),
-        sen === U.withNum(row[lang][0], row[lang][1]) && sen.includes(U.hint) && !sen.includes('從前一站') && !sen.includes('才有點數') && (lang !== 'en' || !/[㐀-鿿]/.test(sen)), JSON.stringify({ sen }));
+        sen === U.withNum(row[lang][0], row[lang][1]) && sen.includes(U.hint) && !sen.includes('從前一站') && !sen.includes('才有島民點數') && (lang !== 'en' || !/[㐀-鿿]/.test(sen)), JSON.stringify({ sen }));
       ok(`CH25l-${lang} ${lang} 介面：規則檔缺時整句是不帶數字、不提點數的那一句；頁面沒有未捕捉的例外`,
         senBare === U.bare && !senBare.includes(U.hint) && !/chip|チップ|point|ポイント|\d/i.test(senBare) && s.errors.length === 0, JSON.stringify({ senBare, errors: s.errors }));
       await s.ctx.close();
@@ -2522,7 +2522,7 @@ try {
             inView: r.left >= -0.5 && r.right <= innerWidth + 0.5, wOver: p.scrollWidth > p.clientWidth + 1, doc: document.documentElement.scrollWidth - innerWidth };
         });
         ok(`CH25n-${tag} ?demo=bounty（手機 ${width} 寬）真觸控點「接下」：停站那一句整句在說明卡的捲動區之內、沒溢出、沒被截、頁面沒有水平捲動；頁面沒有未捕捉的例外`,
-          !!m && /整趟要錄滿 [\d.]+ 分鐘、沿線移動 [\d.]+ (公里|公尺) 才有點數，前一站離得近就要再早一點上車；只通過、不停靠不算停站樣本。/.test(m.text) && m.inBox && m.inView && !m.wOver && m.doc <= 1 && s.errors.length === 0, JSON.stringify({ m, errors: s.errors }));
+          !!m && /整趟要錄滿 [\d.]+ 分鐘、沿線移動 [\d.]+ (公里|公尺) 才有島民點數，前一站離得近就要再早一點上車；只通過、不停靠不算停站樣本。/.test(m.text) && m.inBox && m.inView && !m.wOver && m.doc <= 1 && s.errors.length === 0, JSON.stringify({ m, errors: s.errors }));
         if (SHOT_DIR) await s.page.screenshot({ path: path.join(SHOT_DIR, `bounty-dwell-brief-${tag}.png`) });
         await s.ctx.close();
       });
@@ -2881,9 +2881,9 @@ try {
   //   ・中英日；手機 360／375／414／768 × Chromium／WebKit：那一句完整看得到、不溢出、不與別的元素重疊、沒有水平捲動
   if (want('CH28')) {
     const U28 = {
-      'zh-TW': { shell: '已收滿。這一版的軌島 App 還不能錄程，要更新到最新版才行。', web: '已收滿，照樣可以錄程拿點數', stale: '照樣可以錄程拿點數' },
-      en: { shell: 'Fully covered. This version of the Rail Island app can’t record trips yet — update to the latest version to record.', web: 'Fully covered — you can still record a trip and earn points', stale: 'you can still record a trip and earn points' },
-      ja: { shell: '収集済みです。この版の軌島アプリではまだ記録できません。最新版に更新してください。', web: '収集済みですが、旅程を記録すればポイントがもらえます', stale: '旅程を記録すればポイントがもらえます' },
+      'zh-TW': { shell: '已收滿。這一版的軌島 App 還不能錄程，要更新到最新版才行。', web: '已收滿，照樣可以錄程拿島民點數', stale: '照樣可以錄程拿島民點數' },
+      en: { shell: 'Fully covered. This version of the Rail Island app can’t record trips yet — update to the latest version to record.', web: 'Fully covered — you can still record a trip and earn Islander Points', stale: 'you can still record a trip and earn Islander Points' },
+      ja: { shell: '収集済みです。この版の軌島アプリではまだ記録できません。最新版に更新してください。', web: '収集済みですが、旅程を記録すれば島民ポイントがもらえます', stale: '旅程を記録すれば島民ポイントがもらえます' },
     };
     const CJK28 = /[㐀-鿿]/;
     const locale28 = lang => lang === 'en' ? 'en-US' : lang === 'ja' ? 'ja-JP' : 'zh-TW';
