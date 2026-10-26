@@ -51,8 +51,10 @@ curl -sS -X POST -H 'content-type: application/json' -d '{}' -w ' HTTP %{http_co
 ## 2. P1 套 0017
 
 時段同 v2 交接檔 5.5：台北 01:30–03:00 之類的低流量時段，避開 03:30（判定 cron `30 19`）與 09:15（每日 ingest `15 1`）。
+ALTER 是毫秒級，真正要避的是 03:30 那一發判定（它會寫 `chip_ledger`）：台北 03:20 前送完，過了就改隔天。
 
-兩句 `ALTER` 用 `--command` 一句一句送，不用 `--file`（`--file` 走 import，套用期間整個正式庫停服務）。內容與 `schema/0017_bounty_points.sql` 一字不差，送之前 `grep -c '^ALTER' schema/0017_bounty_points.sql` 要是 2：
+兩句 `ALTER` 用 `--command` 一句一句送，不用 `--file`（`--file` 走 import，套用期間整個正式庫停服務）；01 的 `verify_remote_schema` 印出的 `--file=schema/0017…` 補法也不要照做。
+`--command` 不會跳確認，按下去就執行，送之前先核對。內容與 `schema/0017_bounty_points.sql:18-19` 一字不差，送之前 `grep -c '^ALTER' schema/0017_bounty_points.sql` 要是 2：
 
 ```bash
 q "ALTER TABLE chip_ledger ADD COLUMN unit TEXT NOT NULL DEFAULT 'chip'"
@@ -65,9 +67,11 @@ q "ALTER TABLE garage_unlocks ADD COLUMN unit TEXT NOT NULL DEFAULT 'chip'"
 node scripts/verify_remote_schema.mjs 2>&1 | tee tmp/v3deploy/11_schema_after.txt
 q "SELECT unit, COUNT(*) AS n FROM chip_ledger GROUP BY unit" | tee tmp/v3deploy/12_ledger_units.json
 q "SELECT unit, COUNT(*) AS n FROM garage_unlocks GROUP BY unit" | tee tmp/v3deploy/13_unlock_units.json
+q "SELECT name, sql FROM sqlite_master WHERE type='table' AND name IN ('chip_ledger','garage_unlocks')" | tee tmp/v3deploy/14_ddl.json
 ```
 
-11 全綠；12、13 只有 `chip` 一列，筆數等於 P0 的 05、07。重送任一句會報 `duplicate column name`，無害，代表已經套過。
+11 全綠；12、13 只有 `chip` 一列，筆數等於 P0 的 05、07；14 兩張表的 DDL 文字都含 `unit TEXT NOT NULL DEFAULT 'chip'`（D1 不准 `pragma_table_info`，只能看 DDL）。
+重送任一句會報 `duplicate column name: unit`，無害，代表已經套過；第一句成功、第二句失敗時，只重送第二句。
 
 ## 3. P2 出貨前本機準備
 
@@ -133,6 +137,7 @@ npm run ship-web
 ```
 
 - ship-web 跑完全部閘門（含 2.4 正式庫 schema、懸賞總閘門），去註解、上傳、`versions deploy <這次上傳的 id>@100% --yes`、對正式站逐 byte 收貨。這一步就是「`versions deploy`」。
+  一次切 100%，不要分流：v2、v3 同時在線，v2 會把 v3 寫的點數列當籌碼。
 - 避開台北 03:20–04:00（判定 cron `30 19` 在跑）。
 - 上線後 App 1.7.3 會照新的回應顯示數字，只是單位字眼還是舊的（`docs/bounty/contract-v3.md` 第 7 節），這是要不要先上伺服器的取捨，由使用者決定。
 

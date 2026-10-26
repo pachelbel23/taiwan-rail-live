@@ -2,7 +2,7 @@
 --
 -- unit：'chip'＝v2 的籌碼（1 顆值 data/bounty_rules.json 的 chips.chipToPoints 點）；'point'＝v3 的點數。
 --   預設是 'chip'：這個檔先套、v3 的 Worker 後出，中間這段時間還在跑的 v2 Worker 寫進來的列（它不知道這一欄）也一定是籌碼。
---   v3 的 Worker 每一句 INSERT 都明寫 'point'。
+--   v3 的 Worker 新寫的列都明寫 'point'；帳號合併的退款列例外，照被退那一座的 unit 寫（見下面 garage_unlocks.unit）。
 -- 換算不在這個檔裡做，由 v3 的 Worker 在每個人第一次讀餘額或兌換時做（worker.js 的 bountyPointsConvert）：
 --   帳本補一筆 kind='adjust'、ref 以 'v3points|' 開頭的列，數額＝(chipToPoints − 1) × 這個人 unit='chip' 列的加總 − 已經補過的換算；
 --   重跑算出來是 0 就不寫，不會重算。
