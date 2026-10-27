@@ -1,6 +1,6 @@
 # 校正懸賞 v3（點數制）部署清單
 
-> 本線**一步都沒有執行**。每一個 `--remote`、`ship-web`、`secret put`、對正式站的請求（連唯讀查詢也算）都是對外動作，逐步等 go。
+> **P0、P1 已在 10-27 執行**（經使用者 go，結果寫在第 1、2 節末；0017 已套上正式庫）。P2 之後一步都還沒執行。每一個 `--remote`、`ship-web`、`secret put`、對正式站的請求（連唯讀查詢也算）都是對外動作，逐步等 go。
 > 規格：`docs/bounty/contract-v3.md`（第 8 節是上線順序的理由）。共用的工具與機制沿用 `docs/bounty-v2-merge-handoff.md` 第 5 節，這裡不重抄，只寫 v3 不一樣的地方。
 
 ## 0. 一眼看完
@@ -48,6 +48,18 @@ curl -sS -X POST -H 'content-type: application/json' -d '{}' -w ' HTTP %{http_co
 | 05、07 | 換算規模：`trip`／`cloud`／`redeem` 的籌碼總數 × 50 就是上線後會出現的點數量級 |
 | 06 | 要是 0。不是 0：有人在 v2 線上時寫過換算列（例如預覽時寫的），先停手查 |
 
+#### 10-27 實跑結果（08:03 台北，經使用者 go；原始輸出在本線樹的 `tmp/v3deploy/`，被忽略）
+
+| 輸出 | 結果 |
+|---|---|
+| 00 | `wrangler whoami`：這台登入的 Cloudflare 帳號，OAuth，有 D1 與 Workers 的寫入權限 |
+| 01 | rc=1，只缺 `chip_ledger.unit`、`garage_unlocks.unit` |
+| 02 | **V0＝`db880f91-8987-4e4b-a4ea-02986d142a94`**（100%，10-25 21:57 台北上線） |
+| 03 | 最新上傳的版本就是 V0，沒有別條線的預覽版 |
+| 04、08 | 有 `BOUNTY_WRITES`；08 回 `503 bounty_paused`，寫入總閘關著 |
+| 05、07 | 兩張表都是 0 列，換算規模是 0 |
+| 06 | 0 |
+
 ## 2. P1 套 0017
 
 時段同 v2 交接檔 5.5：台北 01:30–03:00 之類的低流量時段，避開 03:30（判定 cron `30 19`）與 09:15（每日 ingest `15 1`）。
@@ -72,6 +84,16 @@ q "SELECT name, sql FROM sqlite_master WHERE type='table' AND name IN ('chip_led
 
 11 全綠；12、13 只有 `chip` 一列，筆數等於 P0 的 05、07；14 兩張表的 DDL 文字都含 `unit TEXT NOT NULL DEFAULT 'chip'`（D1 不准 `pragma_table_info`，只能看 DDL）。
 重送任一句會報 `duplicate column name: unit`，無害，代表已經套過；第一句成功、第二句失敗時，只重送第二句。
+
+#### 10-27 實跑結果（08:10 台北，經使用者 go 在早上送，不在上面的夜間時段，離 03:30 判定與 09:15 ingest 都遠；原始輸出同上）
+
+| 步 | 結果 |
+|---|---|
+| 送前 | 要送的字跟 `0017` 第 18、19 行一字不差；`verify_remote_schema` rc=1、只缺這兩欄；兩張表 0 列、換算列 0。Time Travel 送前書籤 `000008d2-00000ac6-00005111-0650c0cb985f3981feb81c4cbef427a7` |
+| 送 | 兩句各用 `--command` 送一次（08:10:45），都是 rc=0、`success: true` |
+| 送後 | 11 rc=0：20 支 migration、24 張表、223 欄、12 個 `INDEXED BY` 索引都在；12、13 是空集合（兩張表本來就是 0 列，筆數照舊）；14 兩張表的 DDL 都在 `created_at` 後面接上 `unit TEXT NOT NULL DEFAULT 'chip'` |
+
+書籤只是留底：0017 不用退（第 7 節），Time Travel 還原會把那一刻之後整個庫的寫入一起丟掉。
 
 ## 3. P2 出貨前本機準備
 
@@ -195,6 +217,7 @@ VER='填 P0 記下的 V0'
 w versions deploy "$VER@100%" --yes
 ```
 
+V0 記在第 1 節末（10-27）。P4 之前若又出過別的版本，回滾目標要換成 P4 前一刻在跑的那一版（P4 前重跑一次 02），不然連那幾版一起退掉。
 退完照 v2 交接檔 5.7 的 R3 確認（`const BUILD` 回到舊的）。0017 不用退，v2 不讀那一欄。
 
 **n＞0**：**不要退程式**。v2 會把點數當籌碼：換算列讓讀過錢包的人多出 49 倍籌碼、點數制的入帳與退款列也被當成籌碼，v2 的價格是 4／8，整個車庫一下就換光。改成：

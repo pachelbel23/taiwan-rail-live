@@ -22,7 +22,7 @@
 | `0015_bounty_retired.sql` | ✅ **權威** | 路段懸賞：替 `bounty_board` 補 `retired`（最新一份單位清單已經沒有這個單位＝退場；每日估值 cron 寫，看板、認領、入帳價、重算都只看 `retired=0`）。只有這一句 `ALTER`，刻意不接在 0014 檔尾（見 0014 檔頭）。**所有環境都要跑，新環境＝`0002` + `0014` + `0015` + `0016` + `0017`。** 🔴 先套 schema、再出會用到它的 Worker。 |
 | `0015_rail_ai_status.sql` | 權威 | AI 營運整理（`/api/rail-status`、`rail-status.html`）的五張 `rail_ai_*` 表：偵測狀態、變化事件、官方原文存證、每一版整理、手動鎖定。跟人工彙整完全分開。**部署新版 Worker 前先套用**；沒套時 cron 的整理任務自己吞錯，`/api/rail-status` 回 503，其他功能不受影響。 |
 | `0016_bounty_kept_range.sql` | ✅ **權威** | 路段懸賞：替 `bounty_samples` 補 `kept_d0`／`kept_d1`（判定當下防偽閘收下點的最小與最大里程，籌碼的移動距離由此算，同一份資料不論分幾次上傳結果相同）。只有這兩句 `ALTER`，自成一檔（0014、0015 已套進正式庫）。**所有環境都要跑，新環境＝`0002` + `0014` + `0015` + `0016` + `0017`。** 🔴 先套 schema、再出會用到它的 Worker；正式庫套用順序 0014 → 0015 → 0016。 |
-| `0017_bounty_points.sql` | ✅ **權威** | 路段懸賞 v3（籌碼改點數）：替 `chip_ledger`、`garage_unlocks` 補 `unit`（這一列的數字是 v2 籌碼 `chip` 還是 v3 點數 `point`，預設 `chip`）。換算不在這支做，由 v3 的 Worker 在每個人讀錢包或兌換時補一筆換算列（見檔頭）。只有兩句 `ALTER`，自成一檔。**所有環境都要跑，新環境＝`0002` + `0014` + `0015` + `0016` + `0017`。** 🔴 先套 schema、再出 v3 的 Worker。 |
+| `0017_bounty_points.sql` | ✅ **權威** | 路段懸賞 v3（籌碼改點數）：替 `chip_ledger`、`garage_unlocks` 補 `unit`（這一列的數字是 v2 籌碼 `chip` 還是 v3 點數 `point`，預設 `chip`）。換算不在這支做，由 v3 的 Worker 在每個人讀錢包或兌換時補一筆換算列（見檔頭）。只有兩句 `ALTER`，自成一檔。**所有環境都要跑，新環境＝`0002` + `0014` + `0015` + `0016` + `0017`。** 🔴 先套 schema、再出 v3 的 Worker。**2026-10-27 已套到正式庫**（兩句 `ALTER` 用 `--command` 逐句送）。 |
 | `0016_rail_push.sql` | 權威 | AI 營運整理的推播（`scripts/rail_push.mjs`）：`rail_push_devices`（App 的 APNs token、關掉的系統、開著卡片的系統、管理者／測試機旗標）、`rail_push_requests`（每則草稿、核可與送出進度、AI 檢查結論）、`rail_push_recipients`（一般等級推給了誰）。**部署新版 Worker 前先套用**；沒套時 `/api/push/register` 回 503，cron 的推播任務自己吞錯，其他功能不受影響。 |
 
 0014–0016 各有兩支同號的檔（路段懸賞 v2 與軌道邊卡片／AI 營運整理在兩條分支上同時開號）。兩組碰的表互不重疊，

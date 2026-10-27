@@ -235,7 +235,7 @@
 
 ## 7. 部署
 
-`docs/bounty/lanes/bounty-v3-points-deploy.md`。這條線沒有執行其中任何一步。
+`docs/bounty/lanes/bounty-v3-points-deploy.md`。P0、P1 已在 10-27 經使用者 go 執行，0017 已套上正式庫（結果寫在部署清單第 1、2 節末，V0 也在那裡）；P2 之後沒有執行。
 
 - 兩個資料檔會當靜態資產發出去：`.assetsignore` 沒擋到 `data/bounty_rules.json`、`data/bounty_sections.json`（部署清單 P2 第 5 步的指令，含要被擋的對照組）；
   ship-web 只上傳出貨那顆 commit 裡的檔，路段檔是新檔，要確認在 commit 裡。
@@ -246,8 +246,9 @@
 
 ## 8. 沒驗到的
 
-- 正式 D1：一次都沒讀寫。0017 套在 v2 還在線上的庫無害，根據是 v2 寫帳本與解鎖的 INSERT 全部明列欄位（部署清單第 0 節），沒有在正式庫實測。
-- 正式站：只做了第 7 節那幾個靜態檔的唯讀標頭查詢，沒打任何 API。
+- 正式 D1：10-27 只做了 P0 唯讀盤點與 P1 兩句 `ALTER`。0017 套上之後對還在線上的 v2 無害，根據是讀程式碼：v2 寫這兩張表的 INSERT 全部明列欄位（部署清單第 0 節），讀取也都點名欄位、沒有 `SELECT *`（base `worker.js` 實查）。
+  沒打正式站 API 確認；寫入總閘關著、兩張表都是空的，v2 在有 `unit` 欄的庫上寫入的情況還沒實際發生過。
+- 正式站：第 7 節那幾個靜態檔的唯讀標頭查詢，加上 P0 的 08（對 `bounty-claim` 送 `{}`，回 503）；沒打別的 API。
 - 1.7.3 真機：A54、iPhone 10-27 都看過（1.5 節最後一段）；iPhone 護照裡的錢包列沒截到，同一個元件在看板那張有。
   10-26 夜在自己開的 emulator 試過：Mac 負載太高，App 啟動逾時被系統結束（`start timeout`），沒拿到畫面。
 - 預覽網址在 Cloudflare Access 後面，只有使用者本人開得起來。
