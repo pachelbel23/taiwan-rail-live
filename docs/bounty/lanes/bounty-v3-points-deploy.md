@@ -9,10 +9,10 @@
 |---|---|---|---|
 | P0 | 唯讀盤點：schema、現行版本＝**V0**、寫入總閘、帳本規模 | 只讀 | — |
 | P1 | 正式 D1 套 `0017`（兩句 `ALTER`，只加欄） | 是 | 只加不刪；v2 照常運作 |
-| P2 | 出貨前本機準備：日期、BUILD、重產單位／路段檔、全部閘門、併 main | 本機＋公開 repo | — |
-| P3 | `ship-web --preview` 上傳預覽，使用者本人在瀏覽器看 | 上傳一個不上線的版本 | 不升版就沒事 |
+| P2 | 出貨前本機準備：日期、BUILD、重產單位／路段檔、全部閘門、併 main（隱私權政策入口句在同一顆裡） | 本機＋公開 repo | — |
+| P3 | `ship-web --preview` 上傳預覽，使用者本人在瀏覽器看（含隱私權政策中英日） | 上傳一個不上線的版本 | 不升版就沒事 |
 | P4 | `ship-web` 上線 | 是 | 第 7 節 |
-| P5 | 上線後檢查（唯讀） | 只讀 | 第 7 節 |
+| P5 | 上線後檢查（唯讀，含隱私權政策中英日） | 只讀 | 第 7 節 |
 | P6 | 開寫入總閘（P4、P5 都過了才做），開閘後看帳本 | 是（`secret put` 產生新版本並立刻上線） | 第 7 節第 1 步凍結寫入 |
 
 順序的硬條件：
@@ -22,6 +22,10 @@
 - **換算列只能由 v3 寫**：v2 把 Σdelta 當籌碼餘額，看到換算列（`kind='adjust'`、ref `v3points|…`）會以為那個人多了 49 倍籌碼。所以換算不在 migration 裡做，P3 預覽時也要避開（第 4 節）。
 - 規則檔（`data/bounty_rules.json`）、路段檔與 Worker 在同一個版本裡一起上，沒有「新程式配舊規則」的中間狀態。
 - **P6 開寫入總閘排在 P4、P5 都過了之後**：總閘從 10-25 v2 上線時（v2 交接檔 5.6 E0）就關著，P0–P5 都沒有開它的步驟，v3 上線後還是關著。開閘之前 v3 收不到錄程與兌換，出事退回 V0 還安全；開閘之後一有 `unit='point'` 的列就退不回 v2（第 7 節）。
+- **隱私權政策入口句跟 v3 同一次上傳**（10-27 加進來）：`privacy.html:58` 粗體那句與英日翻譯（`i18n/legal-translations.js:84`、`:166`；這個檔拿整句中文當鍵，三處要一起改）從 v2 的「護照 →「校正貢獻」→ 懸賞板 → 挑一段路段」改成 App 1.7.3 的流程：護照 →「校正懸賞」→「找任務」→ 選起站和訖站 →「接下這班」→「開始錄製」。按鈕字照 native `8e6b399ff` 的 `ios/RailBoardWidget/Localizable.xcstrings`（中英日），Android 畫面用的是同一組中文字。
+  - 跟 v3 同一次上傳：這只是靜態頁與翻譯字典的字，沒有執行期效果，不增加 P4 的風險，也省掉多出一次 BUILD 與全套閘門。
+  - 生效日維持 10-25：什麼時候取位置、上傳什麼都沒變，換的只是按「開始錄製」之前的步驟；本頁自己寫的是資料處理方式有重大改變才更新生效日（`privacy.html:139`）。這句後面的實質內容、第 122 行刪帳號的範圍都沒動。
+  - 要分開只有一種情況：1.7.3 要在 v3 上線之前送審，又不想讓審查看到舊入口。那就先從 main 單獨出這顆（一樣等使用者 go），正式站在 V0 之後多一版，第 7 節的回滾目標改成那一版；P2–P5 照舊（這顆已經在 main 裡）。
 
 ## 1. P0 唯讀盤點
 
@@ -124,8 +128,13 @@ node scripts/verify_bounty_all.mjs
 npm run check-copy
 npm run check-copy-browser
 npm run check-i18n
+npm run check-i18n-browser
 npm run check-manifest
+node tmp/v3deploy/privacy_check.mjs .
 ```
+
+   - 最後一句是隱私權政策那句（第 0 節）：中英日三個語言實際打開 `privacy.html`，新句各 1 處、舊字 0 處、英文頁 `main` 沒有中文、沒有 pageerror，三行都要 `ok`。腳本在本線樹的 `tmp/v3deploy/`（被忽略），從這棵樹供檔、不起 server；`check-i18n` 管的是三處的鍵對得上。
+   - 本線 10-27 在這條分支跑過：`check-i18n`、`check-i18n-browser` 綠，`privacy_check` 三行 `ok`；同一支對 base `7c8924be` 的三個檔跑是三行 `BAD`（新句 0、舊字 1），證明它分得出新舊。
 
 7. 併進 main 由主線做（這條線不 push main）。
 
@@ -153,6 +162,7 @@ npm run ship-web -- --ref <要出的那顆 sha> --preview
 | 護照（登入） | 點數列：「島民點數」與餘額、「下一座場景要 200 點」、「雲端搭乘 N 次・每天一次 20 點」、「錄程每天最多 500 點」 |
 | 更新紀錄 | 最上面一條是點數制那一條，日期是當天 |
 | 英文、日文介面 | 同上各句的翻譯（島民點數是 Islander Points／島民ポイント），沒有 chip／チップ |
+| 隱私權政策 `/privacy.html`、`?lang=en`、`?lang=ja` | 「定位資料」清單最後一條（校正旅程）的粗體句：中文「護照」→「校正懸賞」按「找任務」、選好起站和訖站並按「接下這班」，再按「開始錄製」；英文 Passport → Calibration bounties… “Find a task”… “Take this train”…；日文「パスポート」→「校正懸賞」で「任務を探す」…「この列車にする」…。生效日還是 2026 年 10 月 25 日 |
 
 ## 5. P4 上線
 
@@ -178,6 +188,9 @@ curl -sS -o /dev/null -w 'board HTTP %{http_code} %{size_download} bytes\n' http
 A="v3check-$(node -e 'console.log(require("crypto").randomUUID())')"
 curl -sS "https://railisland.tw/api/chips-me?actor=$A" -w ' HTTP %{http_code}\n'
 for p in garage-redeem cloud-ride; do printf '%s ' "$p"; curl -sS -X POST -H 'content-type: application/json' -d '{}' -w ' HTTP %{http_code}\n' "https://railisland.tw/api/$p"; done
+curl -sSL "https://railisland.tw/privacy.html?cb=$(date +%s)" | grep -o -e '「校正懸賞」按「找任務」' -e '校正貢獻」打開' | sort | uniq -c
+curl -sSL "https://railisland.tw/i18n/legal-translations.js?cb=$(date +%s)" | grep -o -e 'Calibration bounties in the app' -e '「校正懸賞」で「任務を探す」' -e 'Calibration contributions in the app' | sort | uniq -c
+node tmp/v3deploy/privacy_check.mjs https://railisland.tw
 ```
 
 | 指令 | 應該看到 |
@@ -189,6 +202,9 @@ for p in garage-redeem cloud-ride; do printf '%s ' "$p"; curl -sS -X POST -H 'co
 | 看板 | 200 |
 | chips-me（全新的裝置 id） | 200，`{"unit":"point","balance":0,"unlocked":[],"nextCost":200,"cloud":{"rides":0,"toNextChip":1,"points":20},"today":{"chips":0,"cap":500}}`。全新 id 沒有籌碼列，換算那句算出 0 不寫，所以這一發不寫庫（`v3check-` 加 UUID 共 44 字，符合 `isActorId` 的 `^[A-Za-z0-9_-]{8,64}$`） |
 | 兩個寫入端點（body `{}`） | 寫入總閘開著：`400 bad_actor`；關著：`503 bounty_paused`。兩種都在碰 D1 之前就回 |
+| 隱私權政策（中文頁） | 只有一行 `1 「校正懸賞」按「找任務」`；出現 `校正貢獻」打開`＝還是舊頁 |
+| 法務翻譯字典 | `1 Calibration bounties in the app` 與 `1 「校正懸賞」で「任務を探す」` 兩行；出現 `Calibration contributions in the app`＝還是舊字典。出貨去註解不動字串（`scripts/strip_ship_comments.mjs` 檔頭），所以搜得到原字 |
+| `privacy_check`（正式站） | 中英日三行都 `ok`、`rc=0`：真的打開三個語言的頁面看到那一句 |
 
 快取設定不用改：`_headers:47-48` 對 `/data/*` 只加 CORS，沒給 Cache-Control，所以走靜態資產的預設 `public, max-age=0, must-revalidate`，每次讀都拿 ETag 回來驗，沒變就回 304。這兩個檔要跟 Worker 同時換（第 0 節），新 App 又會線上讀規則檔、內建一份當備援（N1 那條線）；只要給了 `max-age`，已經讀過的人到期前都拿著 v2 規則對 v3 伺服器。所以不要在 `_headers` 替這兩個檔加長快取。CORS `*` 是給 App 殼與網頁跨來源讀的（理由在 `_headers:40-46`），原生 HTTP 不看 CORS。
 
@@ -257,6 +273,7 @@ w versions deploy "$VER@100%" --yes
 
 V0 記在第 1 節末（10-27）。P4 之前若又出過別的版本，回滾目標要換成 P4 前一刻在跑的那一版（P4 前重跑一次 02），不然連那幾版一起退掉。
 退完照 v2 交接檔 5.7 的 R3 確認（`const BUILD` 回到舊的）。0017 不用退，v2 不讀那一欄。
+隱私權政策那句會跟著退回舊入口（V0 是舊字）。1.7.3 已經送審或上架的話，退完再單獨出一次這句（V0 出貨的那顆加上它，一樣等使用者 go），不然隱私權頁寫的入口跟 App 對不上。
 
 **n＞0**：**不要退程式**。v2 會把點數當籌碼：換算列讓讀過錢包的人多出 49 倍籌碼、點數制的入帳與退款列也被當成籌碼，v2 的價格是 4／8，整個車庫一下就換光。改成：
 
