@@ -321,6 +321,18 @@ q "SELECT COUNT(*) AS n FROM kv_blobs WHERE k >= 'bounty_verify_strike|' AND k <
   - 其他 actor 有入帳算正常使用，照原本的上限檢查（每人每天 `trip` 點數 ≤ 500）。
   - 分類由 `tmp/v3deploy/p6_classify.mjs` 做（`p6_check.sh` 最後會呼叫它），輸出把 actor 遮成 owner-demo、actor-N。
 
+#### 判定 cron 跑完之後的帳本（10-28 04:07 台北，唯讀；`tmp/v3deploy/p6_check.sh b`，輸出在 `b_` 開頭的檔，被忽略）
+
+結論：全部在預期內，分類 ABNORMAL 0（NOTE 只有「n＞0」那條提醒）。
+
+- 登入：`wrangler whoami` 是 OAuth，帳號 ID 跟 P0 的相同。
+- **判定 cron 03:30 確實跑過**：owner-demo 那 2 筆樣本的 `verdict_at` 都是 10-28 03:30:42，從 `pending` 變成 `unusable`，原因碼 `too_short`（在家錄 1～2 分鐘，不合格）。沒有 `trip` 列、沒有 strike、沒有給點。這是判定 cron 在正式庫上跑過的第一個證據；「合格的錄程被判 `ok` 並入帳」還沒有樣本可看。
+- 21：`adjust`＋`point` 1 列 +1100（owner-demo 那筆，沒有 `v3points|` 換算列）、`redeem`＋`point` 3 列 −800；沒有 `trip`＋`point`。22：空集合。23：n＝0（開閘基準 0；22:13、23:04 也是 0）。第 7 節那句 n＝7（`chip_ledger` 的 `point` 列 4＋`garage_unlocks` 3）。
+- 兌換：22:58:28 人工加點；23:00:34 south-coast（第 1 座，200）、23:11:13 alishan（第 2 座，300）、23:26:42 viaduct（第 3 座，300）。owner-demo 餘額 300，剛好夠第 4 座（300）。
+- `w deployments list`：最後一筆仍是 `4da39d7f-6aec-44fa-bc4b-bb7e531b129d`（100%），開閘之後沒有新版本。
+- 判讀（照上一節的判準）：owner-demo 只有那 1 筆 adjust、redeem 3 列合計 −800（≤ 1100）、`garage_unlocks` 3 列（≤ 4）、餘額 300（≥ 0）、沒有 `trip` 列、樣本沒有 `ok`；帳本裡沒有別的 actor；沒有 `trip` 列，所以每人每天 `trip` 點數 ≤ 500 的檢查沒有東西可超。
+- 還沒看到：判定 cron 給點數的實際入帳、換算、雲端搭乘、其他 actor 的使用。
+
 ## 7. 回滾
 
 先跑這一句（唯讀）決定走哪一條：
