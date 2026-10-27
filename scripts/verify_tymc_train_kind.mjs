@@ -12,7 +12,7 @@ import http from 'http';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { chromium } from '/Users/xuxiang/Code/捷運小動畫/node_modules/playwright/index.mjs';
+import { chromium } from 'playwright';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = process.env.ROOT || path.resolve(HERE, '..');
