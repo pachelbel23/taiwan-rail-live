@@ -304,6 +304,8 @@ q "SELECT COUNT(*) AS n FROM kv_blobs WHERE k >= 'bounty_verify_strike|' AND k <
 - 21:58 另外照 App 的抓法讀正式站（純網址、`Cache-Control: no-cache`、不帶 cb；只有 GET，沒有寫入）：
   規則檔、區段檔都是 200，內容跟 repo 位元組相同（sha256 前 16 碼 `3f173964209bf5ff`、`5b5e4092bee3ccdb`），標頭是 `public, max-age=0, must-revalidate`；規則檔 `v` 3、`unit` `point`、`perKm` 1、`dailyChipCap` 500；看板 200（203753 bytes）；全新裝置 id 的 chips-me 跟 P5 那串一字不差。
   native `09a9d9e12`（App 222／121 的建包基準）打包的 `shared/bounty/bounty_rules.json` 也跟 `data/bounty_rules.json` 位元組相同。
+- 22:1x iOS 222（TestFlight）真機：使用者看過護照頂端卡與「找任務」畫面，都對（Android 121 沒有人看過）。護照的點數餘額讀自 chips-me，畫面對＝讀到了 v3 形狀的回應。
+  22:13 再留一份快照（`a2_` 開頭檔）：21、22 空集合，23 n＝0，第 7 節那句 n＝0，正在跑的仍是 `4da39d7f`——護照讀過錢包之後帳本還是 0 列。
 
 ## 7. 回滾
 
