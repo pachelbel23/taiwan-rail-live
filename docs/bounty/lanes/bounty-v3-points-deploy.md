@@ -292,6 +292,19 @@ q "SELECT COUNT(*) AS n FROM kv_blobs WHERE k >= 'bounty_verify_strike|' AND k <
 - 開閘當下（21:19）先讀一次當基準：帳本 0 列、`trip` 點數 0 列、`garage_unlocks` 0 列、42 那句仍是 0。
 - 還沒做：上面 21–23 那兩次（開閘後第一次有人讀錢包之後、10-28 03:30 判定跑完之後）。在那之前第 7 節那句 n 仍是 0；一有點數列寫進來就只能走 n＞0 那條，凍結寫入的前提（最新上傳＝正在跑的版本）現在是 `4da39d7f`。
 
+#### 開閘後的帳本快照（10-27 21:54 台北，判定 cron 之前，唯讀；原始輸出在本樹 `tmp/v3deploy/` 的 `a_`、`app_` 開頭檔，被忽略）
+
+上面「還沒做」的兩次之前，先在判定 cron 之前留一份快照；這時還沒有真人讀過錢包（21:58 那發 chips-me 用全新 id，不寫庫）。原定那次（10-28 04:00 之後、03:30 的判定跑完）的結果接在這一節後面。
+腳本 `tmp/v3deploy/p6_check.sh`：`a` 是快照，`b` 是原定那次，`b` 在台北 10-28 04:00 之前、以及 03:20–04:00 都會自己拒絕執行。這棵樹沒有 `node_modules`，`w` 改用主 checkout 的 wrangler，在本樹目錄下跑、讀本樹的 `wrangler.jsonc`。
+
+- 登入：`wrangler whoami` 是 OAuth，帳號 ID 跟 P0 的相同（帳號名稱含 email，不寫進公開 repo）。
+- 21：空集合（帳本 0 列：沒有 `trip`＋`point`，也沒有 `adjust`＋`point`）。22：空集合。23：n＝0，跟開閘當下的基準 0 相同。第 7 節那句：n＝0。
+- `w deployments list`：最後一筆是 `4da39d7f-6aec-44fa-bc4b-bb7e531b129d`（Secret Change，21:18:46，100%），前一筆 `15ae640a`（21:12:44），再前是 V0 `db880f91`（10-25）。正在跑的仍是開閘版。
+- 判讀：開閘後 36 分鐘沒有任何點數列寫進來（1.7.3 還沒上架、網頁懸賞要帶 `?bounty=1`），第 7 節走「n＝0」那條的前提沒變。
+- 21:58 另外照 App 的抓法讀正式站（純網址、`Cache-Control: no-cache`、不帶 cb；只有 GET，沒有寫入）：
+  規則檔、區段檔都是 200，內容跟 repo 位元組相同（sha256 前 16 碼 `3f173964209bf5ff`、`5b5e4092bee3ccdb`），標頭是 `public, max-age=0, must-revalidate`；規則檔 `v` 3、`unit` `point`、`perKm` 1、`dailyChipCap` 500；看板 200（203753 bytes）；全新裝置 id 的 chips-me 跟 P5 那串一字不差。
+  native `09a9d9e12`（App 222／121 的建包基準）打包的 `shared/bounty/bounty_rules.json` 也跟 `data/bounty_rules.json` 位元組相同。
+
 ## 7. 回滾
 
 先跑這一句（唯讀）決定走哪一條：
