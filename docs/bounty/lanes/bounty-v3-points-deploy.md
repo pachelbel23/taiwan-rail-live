@@ -12,7 +12,8 @@
 | P2 | 出貨前本機準備：日期、BUILD、重產單位／路段檔、全部閘門、併 main | 本機＋公開 repo | — |
 | P3 | `ship-web --preview` 上傳預覽，使用者本人在瀏覽器看 | 上傳一個不上線的版本 | 不升版就沒事 |
 | P4 | `ship-web` 上線 | 是 | 第 7 節 |
-| P5 | 上線後檢查（唯讀）＋第一發判定 cron 之後再看一次 | 只讀 | 第 7 節 |
+| P5 | 上線後檢查（唯讀） | 只讀 | 第 7 節 |
+| P6 | 開寫入總閘（P4、P5 都過了才做），開閘後看帳本 | 是（`secret put` 產生新版本並立刻上線） | 第 7 節第 1 步凍結寫入 |
 
 順序的硬條件：
 
@@ -20,6 +21,7 @@
 - **P1 對還在線上的 v2 無害**：v2 寫帳本與解鎖的 INSERT 全部明列欄位（base `7c8924be` 的 `worker.js:7408 7702 7709 7848 8663`），新欄位吃預設值 `'chip'`，正好是 v2 寫的單位。
 - **換算列只能由 v3 寫**：v2 把 Σdelta 當籌碼餘額，看到換算列（`kind='adjust'`、ref `v3points|…`）會以為那個人多了 49 倍籌碼。所以換算不在 migration 裡做，P3 預覽時也要避開（第 4 節）。
 - 規則檔（`data/bounty_rules.json`）、路段檔與 Worker 在同一個版本裡一起上，沒有「新程式配舊規則」的中間狀態。
+- **P6 開寫入總閘排在 P4、P5 都過了之後**：總閘從 10-25 v2 上線時（v2 交接檔 5.6 E0）就關著，P0–P5 都沒有開它的步驟，v3 上線後還是關著。開閘之前 v3 收不到錄程與兌換，出事退回 V0 還安全；開閘之後一有 `unit='point'` 的列就退不回 v2（第 7 節）。
 
 ## 1. P0 唯讀盤點
 
@@ -139,7 +141,7 @@ npm run ship-web -- --ref <要出的那顆 sha> --preview
   - 用沒有 v2 籌碼的帳號登入（新帳號最安全），或先確認 P0 的 08 是 `503`；
   - 不按兌換、不從預覽觸發雲端搭乘；
   - 預覽之後決定不上線，回頭用第 1 節的 06 那句確認沒有換算列。
-- 上傳之後「最新上傳的版本」就不是 V0 了，這段期間的 `secret put` 會被拒（10215）。要動寫入總閘，在 P3 之前做。
+- 上傳之後「最新上傳的版本」就不是 V0 了，P3 到 P4 之間的 `secret put` 會被拒（10215），這段期間不要動寫入總閘。P4 把新上傳的版本切上線之後就恢復，開閘在 P6。
 
 使用者在預覽看的東西：
 
@@ -161,9 +163,9 @@ npm run ship-web
 - ship-web 跑完全部閘門（含 2.4 正式庫 schema、懸賞總閘門），去註解、上傳、`versions deploy <這次上傳的 id>@100% --yes`、對正式站逐 byte 收貨。這一步就是「`versions deploy`」。
   一次切 100%，不要分流：v2、v3 同時在線，v2 會把 v3 寫的點數列當籌碼。
 - 避開台北 03:20–04:00（判定 cron `30 19` 在跑）。
-- 上線後 App 1.7.3 會照新的回應顯示數字，只是單位字眼還是舊的（`docs/bounty/contract-v3.md` 第 7 節），這是要不要先上伺服器的取捨，由使用者決定。
+- 上線後 App 1.7.3 會照新的回應顯示數字，只是單位字眼還是舊的（`docs/bounty/contract-v3.md` 第 7 節）。P6 開閘之後 1.7.3 也照這樣入帳，不等新 App。
 
-## 6. P5 上線後檢查
+## 6. P5 上線後檢查、P6 開寫入總閘
 
 唯讀，上線後馬上跑：
 
@@ -190,7 +192,41 @@ for p in garage-redeem cloud-ride; do printf '%s ' "$p"; curl -sS -X POST -H 'co
 
 快取設定不用改：`_headers:47-48` 對 `/data/*` 只加 CORS，沒給 Cache-Control，所以走靜態資產的預設 `public, max-age=0, must-revalidate`，每次讀都拿 ETag 回來驗，沒變就回 304。這兩個檔要跟 Worker 同時換（第 0 節），新 App 又會線上讀規則檔、內建一份當備援（N1 那條線）；只要給了 `max-age`，已經讀過的人到期前都拿著 v2 規則對 v3 伺服器。所以不要在 `_headers` 替這兩個檔加長快取。CORS `*` 是給 App 殼與網頁跨來源讀的（理由在 `_headers:40-46`），原生 HTTP 不看 CORS。
 
-上線後第一次有人讀錢包、以及第一發判定 cron（台北 03:30）之後，各看一次帳本（唯讀）：
+### P6 開寫入總閘
+
+P4、P5 都過了才做；做的當下要使用者在本線明確授權（`secret put` 會產生新版本並立刻上線，是對外寫入）。時段同 P4，避開台北 03:20–04:00。
+`worker.js:7079` 只認 `off`（不分大小寫），設成其他值或沒設都算開；這裡寫 `on` 只是讓人看得懂。
+
+先看（唯讀）：
+
+```bash
+w deployments list 2>&1 | tee tmp/v3deploy/40_deployments.txt
+w versions list 2>&1 | tee tmp/v3deploy/41_versions.txt
+q "SELECT COUNT(*) AS n FROM kv_blobs WHERE k >= 'bounty_verify_strike|' AND k < 'bounty_verify_strike}'" | tee tmp/v3deploy/42_strikes_before.json
+```
+
+- 40 正在跑的是 P4 上線的那一版（v3＋`off`），41 最新上傳的版本也是它。不是的話，代表有別條線上傳過預覽，`secret put` 會被拒（10215）：停手問，不要改用 `versions secret put`（同第 7 節第 1 步的前提）。
+- 42 是下面 23 的基準。
+
+開：
+
+```bash
+printf on | w secret put BOUNTY_WRITES
+```
+
+開完（唯讀）：
+
+```bash
+curl -sS -X POST -H 'content-type: application/json' -d '{}' -w ' HTTP %{http_code}\n' https://railisland.tw/api/bounty-claim | tee tmp/v3deploy/43_writes_gate_open.txt
+w deployments list 2>&1 | tee tmp/v3deploy/44_deployments_after.txt
+```
+
+- 43 要是 `400 bad_actor`（跟 P0 的 08 同一句，`{}` 在碰 D1 之前就回）。還是 `503 bounty_paused`：看 44，新版本有沒有切上去。
+- 44 最後一筆就是這一步產生的版本，id 記下來＝開閘版（v3＋`on`）。從這裡開始退不回 v2（第 7 節）。要停寫入走第 7 節第 1 步，它會再產生一版 v3＋`off`。
+- 這一步只動 `BOUNTY_WRITES`。另外兩個開關不在這一步，要不要動另外決定：`BOUNTY_CLAIMABLE_FROM`（估值 L2 的起算點，沒設＝L2 恆為 1，不擋入帳，`worker.js:8122-8124`），以及網頁 `BOUNTY_ENABLED` 的預設（現在只認 `?bounty=1`，`index.html:15428`）。
+  v2 交接檔 5.11 另外列了開放前要先有的東西：App 連正式站的那一版（native `7e310353a`，1.7.3 已經包含），以及計畫書 §12.1 第 5 項（本線沒查現況）。
+
+開閘之後第一次有人讀錢包、以及開閘後的第一發判定 cron（台北 03:30）跑完，各看一次帳本（唯讀）。總閘關著的時候沒有新的錄程、兌換、雲端搭乘進來，所以要等開閘之後才看：
 
 ```bash
 q "SELECT unit, kind, COUNT(*) AS n, SUM(delta) AS s FROM chip_ledger GROUP BY 1, 2" | tee tmp/v3deploy/21_ledger_after.json
@@ -198,9 +234,9 @@ q "SELECT actor, day, SUM(delta) AS s FROM chip_ledger WHERE kind='trip' AND uni
 q "SELECT COUNT(*) AS n FROM kv_blobs WHERE k >= 'bounty_verify_strike|' AND k < 'bounty_verify_strike}'" | tee tmp/v3deploy/23_strikes.json
 ```
 
-- 21：`adjust`＋`point` 的總和＝已讀過錢包（或兌換過）那些人的 49 ×（各自 `unit='chip'` 列的加總）；`trip`＋`point` 開始出現。
+- 21：會開始出現 `trip`＋`point`。換算列（`adjust`＋`point`）只有在有 `unit='chip'` 的列時才會出現，總和＝讀過錢包或兌換過的那些人的 49 ×（各自 `chip` 列的加總）；P0 時帳本是空的。
 - 22：每人每天的 `trip` 點數不超過 500（入帳時已經算進同一天換算前的籌碼列）。
-- 23：跟 P0 時比沒有暴增。判定出錯會寫在這裡、樣本留 pending 下一發重判。
+- 23：跟 42 比沒有暴增。判定出錯會記在這裡，樣本留在 pending 等下一發重判。
 
 ## 7. 回滾
 
@@ -209,6 +245,8 @@ q "SELECT COUNT(*) AS n FROM kv_blobs WHERE k >= 'bounty_verify_strike|' AND k <
 ```bash
 q "SELECT (SELECT COUNT(*) FROM chip_ledger WHERE unit='point') + (SELECT COUNT(*) FROM garage_unlocks WHERE unit='point') AS n" | tee tmp/v3deploy/31_point_rows.json
 ```
+
+P6 開閘之後，只要有人入帳、兌換或雲端搭乘過，n 就大於 0，從那之後退回 v2 就不安全了。出事先走下面 n＞0 的第 1 步凍結寫入，不要退程式。
 
 **n＝0（v3 還沒寫過任何一列）**：可以退回 V0。
 
