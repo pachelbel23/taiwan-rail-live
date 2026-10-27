@@ -138,6 +138,14 @@ node tmp/v3deploy/privacy_check.mjs .
 
 7. 併進 main 由主線做（這條線不 push main）。
 
+#### 10-27 實跑結果（18:5x 台北，經使用者 go；原始輸出在本線樹的 `tmp/v3deploy/` 5x 開頭的檔，被忽略）
+
+- 第 1 步：origin/main 還是 base `7c8924be`，不用併。正式站仍是 V0（`db880f91`，也是最新上傳）；沒有別發 ship-web 在跑、沒有鎖檔。
+- 第 2、3 步：更新紀錄兩處與「最後更新」改成 10/27；BUILD `v1025a` → `v1027a`（正式站是 `v1025a`）。
+- 第 4 步：班表日 2026-10-25，21 條線 83 段、8–30 km 以外 14 段，跟交接檔第 4 節相同；兩個檔跟 commit 裡的比只差 `generatedAt`，照規則不 commit。
+- 第 5 步：`.assetsignore` 沒擋兩個資料檔、`privacy.html`、`i18n/legal-translations.js`（`rc=1`）；對照組 `data/place_index.json`、`schema/`、`docs/` 有被擋（`rc=0`）。
+- 第 6 步：全綠。`verify_bounty_all` 18 支 1903 條、`check-copy`（最近 8 條、完整歷史 524 條）、`check-copy-browser`、`check-i18n`、`check-i18n-browser`（36 個情境）、`check-manifest`（41 個資料檔）、`privacy_check` 三語 `ok`。
+
 ## 4. P3 預覽
 
 ```bash

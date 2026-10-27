@@ -5648,7 +5648,7 @@
 
   <footer class="site-foot">
     <details class="foot-box">
-      <summary><span>更新紀錄</span><span class="foot-sub">最後更新：2026/10/26</span></summary>
+      <summary><span>更新紀錄</span><span class="foot-sub">最後更新：2026/10/27</span></summary>
       <!-- 第一層是「最近更新」的檢視,不是正本:每一條都用 data-cl-of 指向第二層某條的 data-cl。
            要把一條擠出第一層之前,它的正本必須已經在第二層存在——2026-08-03 就踩過一次:8/1 的
            衛星計費那條只活在第一層(第二層只有一句夾在 7/25 條目裡、日期對不上的附帶說明),
@@ -5656,7 +5656,7 @@
            內容 li 上限 8 條(li.grp 是標題不算)。 -->
       <ul class="foot-list foot-recent">
         <li class="grp">最近更新</li>
-        <li data-cl-of="bountypoints"><span class="d">10/26</span><span>校正懸賞改用島民點數：合格的一趟照實際錄到的沿線里程給點，1 公里 1 點，南迴、臺東線加倍，每天最多 500 點；原有籌碼 1 顆換 50 點，已解鎖的車庫場景照舊</span></li>
+        <li data-cl-of="bountypoints"><span class="d">10/27</span><span>校正懸賞改用島民點數：合格的一趟照實際錄到的沿線里程給點，1 公里 1 點，南迴、臺東線加倍，每天最多 500 點；原有籌碼 1 顆換 50 點，已解鎖的車庫場景照舊</span></li>
         <li data-cl-of="weatherdanhai1024"><span class="d">10/24</span><span>颱風公告補列淡海官網15至30分鐘班距與停駛資訊不一致，提醒先確認實際開行</span></li>
         <li data-cl-of="horizonclip1024"><span class="d">10/24</span><span>傾斜視角：地平線後的站名與列車不再畫進天空、遠方線條不再擠成橫帶；起伏地形的示意線改由立體層繪製，遠近粗細一致</span></li>
         <li data-cl-of="auto3d1024"><span class="d">10/24</span><span>立體列車跑不順時自動切回平面列車並提示，可在觀看設定重新開啟；視角與 3D 建築不受影響</span></li>
@@ -6006,7 +6006,7 @@
         <li><span class="d">7/13</span><span>新增「附近火車」：地圖上落一根釘，查周邊 60 分鐘內會通過的車次</span></li>
         <li><span class="d">7/12</span><span>新增平交道功能：點一下查接下來會通過的列車（7/13 補上貨運線 21 處）</span></li>
         <li class="grp">收藏、護照與成就</li>
-        <li data-cl="bountypoints"><span class="d">10/26</span><span>校正懸賞改用島民點數：合格的一趟照實際錄到的沿線里程給點，1 公里 1 點，南迴、臺東線加倍，每天最多 500 點；原有籌碼 1 顆換 50 點，已解鎖的車庫場景照舊</span></li>
+        <li data-cl="bountypoints"><span class="d">10/27</span><span>校正懸賞改用島民點數：合格的一趟照實際錄到的沿線里程給點，1 公里 1 點，南迴、臺東線加倍，每天最多 500 點；原有籌碼 1 顆換 50 點，已解鎖的車庫場景照舊</span></li>
         <li data-cl="ridekbfocus0925"><span class="d">9/25</span><span>修正旅程護照用鍵盤往回移動（Shift+Tab）時，被選到的成就章、收集章與按鈕會停在最上方的標題列底下看不到；現在會停在標題下方，字級調大也一樣</span></li>
         <li data-cl="achvhelp"><span class="d">9/25</span><span>護照成就章新增說明卡，顯示達成條件、建議與目前進度；明星列車、車種圖鑑與支線收集章也能查看內容。9/25 修正滑鼠停在章上時，說明卡旁邊還會多跳出瀏覽器的小提示框，並讓鍵盤也能打開說明卡；英日文版收集章的文字改成滑鼠、觸控都適用的說法</span></li>
         <li data-cl="checkinsync0923"><span class="d">9/23</span><span>打卡車站與搭乘路段次數加入帳號雲端同步：手機上累積的「通勤的證明」「老通勤族」進度與車站收集，登入同一帳號的電腦或另一台手機也看得到；以前這兩項只留在搭乘的那台裝置上，電腦登入會顯示 0（謝謝網友回報）</span></li>
@@ -7074,7 +7074,7 @@ const RAIL_3D_BOOT_PARAMS = new URLSearchParams(location.search);
 // v1019b：台鐵同鍵、中途停靠型態不同的班往下借路徑、不退回示意線形，且把自己那份計畫留在模板候選裡（3bde26de、1a781914）；另併入待避窗口逐日掃描報告（28c906cd、7232d41e，不進網站產物）；更新紀錄加一條。
 // v1020a：併入通行證專屬的自製列車；更新紀錄改成這次上線的一條。
 // v1020b：自製列車表單的起訖站點了就列出站名清單（常用大站＋依路線），選完起站自動攤開訖站、可對調、打完整站名即選定；更新紀錄加一條。
-const BUILD = 'v1025a';
+const BUILD = 'v1027a';
 const LANDSCAPE_REQUESTED = new URLSearchParams(location.search).get('map') === 'landscape';
 const GARAGE_QUERY = new URLSearchParams(location.search).get('garage');
 // 輕量多語 runtime：繁中原文同時是安全 fallback，外語字典只存差異字串。
