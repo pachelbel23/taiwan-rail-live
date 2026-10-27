@@ -307,6 +307,20 @@ q "SELECT COUNT(*) AS n FROM kv_blobs WHERE k >= 'bounty_verify_strike|' AND k <
 - 22:1x iOS 222（TestFlight）真機：使用者看過護照頂端卡與「找任務」畫面，都對（Android 121 沒有人看過）。護照的點數餘額讀自 chips-me，畫面對＝讀到了 v3 形狀的回應。
   22:13 再留一份快照（`a2_` 開頭檔）：21、22 空集合，23 n＝0，第 7 節那句 n＝0，正在跑的仍是 `4da39d7f`——護照讀過錢包之後帳本還是 0 列。
 
+#### 22:58 起 n＞0（10-27 23:04 台北，唯讀；來源是主線的通知加本樹實查）
+
+- 主線（通知說經使用者 go）在 22:58 寫了一筆人工加點進正式帳本：`kind='adjust'`、ref 開頭 `owner-demo`、+1100 點，讓使用者用自己的 iPhone 正式包（1.7.3／222）實際兌換四座車庫（200＋300×3）。樣本與加點是同一個 actor（那台 iPhone 的 installId）；id 與 ref 全文不寫進公開 repo。
+- 23:04 本樹唯讀實查（`tmp/v3deploy/p6_check.sh c`，輸出在 `c_` 開頭檔，被忽略），跟主線的通知一致：
+  `chip_ledger` 兩列 `point`——`adjust` 1 列 +1100、`redeem` 1 列 −200；`garage_unlocks` 1 列（south-coast，第 1 座，200 點）；`bounty_samples` 該 actor 2 列 `pending`（thsr_sched 4037，乘車日 10-27，22:57 上傳，主線說明是在家錄的 1～2 分鐘）。該 actor 餘額 900。
+  23：n＝0；22：空集合；正在跑的仍是 `4da39d7f`。**第 7 節那句 n＝3。**
+- 兌換在正式庫上走通過一次（23:00，一座，從人工加點的餘額扣）；入帳（判定 cron 給的點數）、換算、雲端搭乘還沒看到。
+- **從這裡起退不回 V0**：第 7 節走「n＞0」那條，出事只能凍結寫入（`printf off | w secret put BOUNTY_WRITES`），前提是最新上傳的版本＝正在跑的 `4da39d7f`（否則被拒 10215，停手問，不要改用 `versions secret put`）。
+- 10-28 04:07 那次的判準（主線轉知）：
+  - 預期、不算異常：owner-demo 那筆 adjust；redeem 最多 4 列、合計 −1100；garage_unlocks 最多 4 列；餘額 ≥ 0（四座換完是 0）。
+  - 異常：這個 actor 出現任何 `trip` 列（那 2 筆樣本 03:30 應判不合格、不給點，verdict 不該是 `ok`）；出現第二筆 adjust；redeem 合計超過 1100；餘額 < 0。
+  - 其他 actor 有入帳算正常使用，照原本的上限檢查（每人每天 `trip` 點數 ≤ 500）。
+  - 分類由 `tmp/v3deploy/p6_classify.mjs` 做（`p6_check.sh` 最後會呼叫它），輸出把 actor 遮成 owner-demo、actor-N。
+
 ## 7. 回滾
 
 先跑這一句（唯讀）決定走哪一條：
