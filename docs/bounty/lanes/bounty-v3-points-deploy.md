@@ -160,7 +160,7 @@ npm run ship-web -- --ref <要出的那顆 sha> --preview
   - 預覽之後決定不上線，回頭用第 1 節的 06 那句確認沒有換算列。
 - 上傳之後「最新上傳的版本」就不是 V0 了，P3 到 P4 之間的 `secret put` 會被拒（10215），這段期間不要動寫入總閘。P4 把新上傳的版本切上線之後就恢復，開閘在 P6。
 
-使用者在預覽看的東西：
+使用者在預覽看的東西（網頁的懸賞介面要網址帶 `?bounty=1` 才出現，英日文再加 `&lang=en`／`&lang=ja`；`BOUNTY_ENABLED` 只認它與 `?demo=bounty`，`index.html:15428`。隱私權政策不用帶）：
 
 | 位置 | 應該看到 |
 |---|---|
@@ -172,6 +172,15 @@ npm run ship-web -- --ref <要出的那顆 sha> --preview
 | 英文、日文介面 | 同上各句的翻譯（島民點數是 Islander Points／島民ポイント），沒有 chip／チップ |
 | 隱私權政策 `/privacy.html`、`?lang=en`、`?lang=ja` | 「定位資料」清單最後一條（校正旅程）的粗體句：中文「護照」→「校正懸賞」按「找任務」、選好起站和訖站並按「接下這班」，再按「開始錄製」；英文 Passport → Calibration bounties… “Find a task”… “Take this train”…；日文「パスポート」→「校正懸賞」で「任務を探す」…「この列車にする」…。生效日還是 2026 年 10 月 25 日 |
 
+#### 10-27 實跑結果（台北，經使用者 go；原始輸出在本線樹的 `tmp/v3deploy/` 60–67 開頭的檔，被忽略）
+
+- 第一次（19:0x，`--ref f70adb41`）停在機捷車種閘門，沒有上傳：`scripts/verify_tymc_train_kind.mjs` 寫死主 checkout 的 node_modules 路徑，主 checkout 10-27 00:48 重裝成 playwright 1.48.2，它要的 chromium-1140 不在瀏覽器快取裡。
+  改成從自己這棵樹載入 `playwright`，commit `9f38ba42`，兩支 14 PASS。其他把 node_modules 連到主 checkout 的樹，跑同一支閘門也會遇到。
+- 第二次（19:18–20:03，`--ref 9f38ba42`）停在通行證閘門，沒有上傳：`verify_plus_subscription` 432/436，LT6 兩個引擎各收到一筆 console.error（某個資源回 503），Z0 那頁又一筆（所以 Z0b 摘除前後 2 → 3、K 也紅）。
+  閘門自己的本機伺服器 `/api/*` 一律回 200；照同一個伺服器載入首頁，對外只連 OpenFreeMap 圖磚與捷運 Core 的 Worker（`tmp/v3deploy/probe_503.mjs` 實測，都是 200），503 是其中一個當下回的，事後分不出是誰。同一棵樹單獨重跑 436/436。
+- 第三次（20:0x–20:39，`--ref 9f38ba42`）全部閘門過、上傳：版本 `f917938b-e237-4317-81e4-8a3b5dd6f29d`（20:39），BUILD `v1027a`，去註解後 md5 `7277a572094d2ead206e87dd37a854cc`。正式站仍是 V0，寫入總閘 `503 bounty_paused`。
+- 使用者看過預覽六頁（中英日網頁帶 `?bounty=1`、隱私權政策中英日）後 go。
+
 ## 5. P4 上線
 
 ```bash
@@ -182,6 +191,14 @@ npm run ship-web
   一次切 100%，不要分流：v2、v3 同時在線，v2 會把 v3 寫的點數列當籌碼。
 - 避開台北 03:20–04:00（判定 cron `30 19` 在跑）。
 - 上線後 App 1.7.3 會照新的回應顯示數字，只是單位字眼還是舊的（`docs/bounty/contract-v3.md` 第 7 節）。P6 開閘之後 1.7.3 也照這樣入帳，不等新 App。
+
+#### 10-27 實跑結果（21:07–21:12 台北，經使用者 go；原始輸出在本線樹的 `tmp/v3deploy/` 68、69、90 開頭的檔，被忽略）
+
+- 上線前一刻重查：origin/main 仍是 `7c8924be`、是 `9f38ba42` 的祖先；正式站仍是 V0，最新上傳是 P3 的預覽版；沒有鎖檔、沒有別發 ship-web 在跑。
+- main 快進 `7c8924be..9f38ba42`：這次由本線推（使用者在本線 go；第 3 節第 7 步原本寫主線做），推送閘門（追蹤檔基線、資料清單、更新紀錄文案）都過。
+- `npm run ship-web`：上傳前、升版前兩次認正式站都是 `7c8924be`；新版本 **`15ae640a-509b-4af0-98d9-4e0d2d0a7323`**（21:12:44）一次切 100%。
+  收貨：正式站逐 byte＝stripped(`9f38ba42`)、1907220 bytes、BUILD `v1027a`、API 200；去註解後 md5 跟 P3 預覽一樣是 `7277a572…`。
+- 回滾目標仍是 V0 `db880f91`：P4 前一刻在跑的就是它。
 
 ## 6. P5 上線後檢查、P6 開寫入總閘
 
@@ -213,6 +230,11 @@ node tmp/v3deploy/privacy_check.mjs https://railisland.tw
 | 隱私權政策（中文頁） | 只有一行 `1 「校正懸賞」按「找任務」`；出現 `校正貢獻」打開`＝還是舊頁 |
 | 法務翻譯字典 | `1 Calibration bounties in the app` 與 `1 「校正懸賞」で「任務を探す」` 兩行；出現 `Calibration contributions in the app`＝還是舊字典。出貨去註解不動字串（`scripts/strip_ship_comments.mjs` 檔頭），所以搜得到原字 |
 | `privacy_check`（正式站） | 中英日三行都 `ok`、`rc=0`：真的打開三個語言的頁面看到那一句 |
+
+#### 10-27 實跑結果（21:13 台北；`tmp/v3deploy/p5.sh`，輸出在同一處 70–81 開頭的檔與 `p5_summary.txt`，被忽略）
+
+全部跟上表一樣：現行版本 `15ae640a`、BUILD `v1027a`；規則檔那串一字不差；路段檔 21 條線 83 段；兩個資料檔的標頭五項都對，帶 ETag 再讀 `304`、0 bytes；看板 200；
+全新裝置 id 的 chips-me 跟上表那串一字不差；兩個寫入端點 `503 bounty_paused`（總閘照計畫關著）；隱私權中文頁與法務翻譯字典都只有新句；`privacy_check` 正式站三語 `ok`、`rc=0`。
 
 快取設定不用改：`_headers:47-48` 對 `/data/*` 只加 CORS，沒給 Cache-Control，所以走靜態資產的預設 `public, max-age=0, must-revalidate`，每次讀都拿 ETag 回來驗，沒變就回 304。這兩個檔要跟 Worker 同時換（第 0 節），新 App 又會線上讀規則檔、內建一份當備援（N1 那條線）；只要給了 `max-age`，已經讀過的人到期前都拿著 v2 規則對 v3 伺服器。所以不要在 `_headers` 替這兩個檔加長快取。CORS `*` 是給 App 殼與網頁跨來源讀的（理由在 `_headers:40-46`），原生 HTTP 不看 CORS。
 
