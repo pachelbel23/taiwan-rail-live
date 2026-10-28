@@ -2,8 +2,9 @@
  "_source": "臺灣鐵路公司官網時刻查詢頁 availableTags（同一頁面切三種 lang 參數）",
  "_url": "https://www.railway.gov.tw/tra-tip-web/tip/tip001/tip112/gobytime?lang={ZH_TW|EN_US|JA_JP}",
  "_method": "先 GET /tra-tip-web/tip?lang=<L> 建立 session（語言存在 session），同一 cookie jar 再 GET 查詢頁，取內嵌的 availableTags 陣列（格式 \"站碼-站名\"）",
- "_fetched": "2026-08-23",
- "_count": 240,
+ "_generator": "scripts/fetch_tra_station_names.mjs",
+ "_fetched": "2026-10-28",
+ "_count": 241,
  "_caveats": [
   "TDX 的 TRA Station 完全沒有 Ja 欄位（v2/v3 皆然，不是空值），所以日文只能從這裡來。",
   "TDX 有 245 站，本表 240 站。缺：1998 樹林調車場／5170 枋野／5998 南方小站／5999 潮州基地（皆非客運）＋7140 新馬（招呼站，唯一真缺口）。",
@@ -106,6 +107,13 @@
    "ja": "中壢",
    "tdx_zh": "中壢",
    "tdx_en": "Zhongli_Taoyuan"
+  },
+  "1105": {
+   "zh": "平鎮",
+   "en": "Pingzhen",
+   "ja": "平鎮",
+   "tdx_zh": "平鎮",
+   "tdx_en": "Pingzhen"
   },
   "1110": {
    "zh": "埔心",

@@ -318,8 +318,9 @@ function probeTraWindow() {
 //
 // 判準刻意不只認站碼:1105 是媒體與維基的說法,**不是官方發布值**,只認它的話台鐵改配
 // 別的碼就靜默失明。三條任一成立即回報:命中站碼、命中站名、整份清單指紋變了。
-const TRA_WATCH_CODES = ['1105'];           // 待上架新站:平鎮(預定 2026-10 通車)
-const TRA_WATCH_NAMES = ['平鎮'];
+// 2026-10-28:平鎮(1105)已上架並正式整合,移出監看。
+const TRA_WATCH_CODES = [];
+const TRA_WATCH_NAMES = [];
 const TRA_CONTROL_CODES = ['1100', '1110']; // 正向對照:平鎮的兩個鄰站(中壢/埔心)
 const TRA_MIN_STATIONS = 200;
 // 🔴 正向對照存在的理由:「1105 還沒出現」是恆假的反向判準,探針壞掉跟「還沒上架」長得

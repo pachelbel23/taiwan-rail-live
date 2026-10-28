@@ -95,7 +95,7 @@ const EXPECT_LANGS = 3;
 const EXPECT_FIRST_BATCH = 23;   // 第一批：23 站（含只有捷運的美麗島）
 // 具名覆蓋率常數（B2_PLAN 閘門 11）：--all 時各語言的站頁數必須剛好是這三個數字；
 // 資料出現新站（例如 2026-10 通車的平鎮臨時站）時，推導出的站數會跟這裡對不上，那時要人工確認再改常數。
-const EXPECT_ZH_STATIONS = 244, EXPECT_EN_STATIONS = 30, EXPECT_JA_STATIONS = 30;
+const EXPECT_ZH_STATIONS = 245, EXPECT_EN_STATIONS = 30, EXPECT_JA_STATIONS = 30;
 const EXPECT_STATIONS = { zh: EXPECT_ZH_STATIONS, en: EXPECT_EN_STATIONS, ja: EXPECT_JA_STATIONS };
 const NAMED = ['taipei', 'zuoying', 'taichung-hsr'];          // 預設模式指名：第一批
 const NAMED2 = ['zuoying-tra', 'ruifang', 'xinshi'];           // 預設模式指名：第二批（左營撞名／多路線＋英日文／臺南市新市區的正向對照）

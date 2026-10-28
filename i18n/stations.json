@@ -1,5 +1,5 @@
 {
-  "generated": "2026-09-12",
+  "generated": "2026-10-28",
   "systems": {
     "thsr_sched": {
       "台中": {
@@ -1471,6 +1471,10 @@
       "平溪": {
         "en": "Pingxi",
         "ja": "平渓"
+      },
+      "平鎮": {
+        "en": "Pingzhen",
+        "ja": "平鎮"
       },
       "正義": {
         "en": "Zhengyi",

@@ -24,7 +24,7 @@ const stationPagesByLang = { en: pages.filter(file => langOf(file) === 'en' && i
 // 09-30 B2：中文 23 → 244（第二批加 221 個台鐵站），en／ja 23 → 30（加瑞芳、十分、菁桐、礁溪、福隆、集集、知本）。
 // 這兩個是具名常數：站數變動（例如 2026-10 平鎮臨時站通車、班表多一個站）時要跟著改，
 // 改之前先確認新頁的網址（英文站名）、縣市與鄉鎮市區、轉乘句都對。
-const ZH_STATIONS = 244, ENJA_STATIONS = 30;
+const ZH_STATIONS = 245, ENJA_STATIONS = 30;
 const EXPECTED_PAGES = 3 + (1 + ZH_STATIONS) + 2 * (1 + ENJA_STATIONS);
 if (pages.length !== EXPECTED_PAGES) fail(`AEO HTML 應為 ${EXPECTED_PAGES} 頁（3 個說明頁 + 三語各 1 個車站索引 + 中文 ${ZH_STATIONS} 車站 + en／ja 各 ${ENJA_STATIONS} 車站），實際 ${pages.length}`);
 if (stationPages.length !== ZH_STATIONS) fail(`中文車站資料頁應為 ${ZH_STATIONS} 頁，實際 ${stationPages.length}`);

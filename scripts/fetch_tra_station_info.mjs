@@ -62,9 +62,8 @@ for (const s of list) {
 // 蓋章判定半徑實測 260 m，三處都蓋得到，離中壢 1,494 m 也不會互吃。
 // 地址：台鐵新聞稿（中央社 2026-09-29 轉述）只寫「位於桃園市平鎮區」，就填到這裡為止，郵遞區號與門牌不編造。
 // 公車轉乘索引與小工具的縣市分組都從地址取縣市，空字串會讓那幾支產生器直接丟錯。
-const PROVISIONAL = {
-  '平鎮': { name: '平鎮', id: '1105', address: '桃園市平鎮區', lat: 24.9440379, lon: 121.2154434, feature: '', provisional: true },
-};
+// 2026-10-28：TDX 已上架平鎮 1105（官方地址與座標），先行紀錄刪除。
+const PROVISIONAL = {};
 for (const [k, v] of Object.entries(PROVISIONAL)) {
   if (out[k] || Object.values(out).some(o => o.id === v.id)) {
     console.log(`先行站「${k}」(${v.id}) 已在 TDX 上架，改用官方紀錄；PROVISIONAL 這一筆可以刪了`);

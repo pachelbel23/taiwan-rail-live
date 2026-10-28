@@ -98,11 +98,11 @@
       "stationClassFile": "data/tra_station_class.json",
       "lineFile": null,
       "routeNameSource": "scripts/build_station_transfers.mjs#TRA_LINE_NAMES",
-      "stationInfoRecords": 246,
+      "stationInfoRecords": 245,
       "stationClassRecords": 210,
-      "stationRecords": 242,
+      "stationRecords": 243,
       "stationOfLines": 12,
-      "routeMemberships": 256
+      "routeMemberships": 257
     },
     {
       "system": "TRTC",
@@ -3316,6 +3316,21 @@
       ],
       "transferId": null
     },
+    "TRA:1105": {
+      "system": "TRA",
+      "stationId": "1105",
+      "name": "平鎮",
+      "normalizedName": "平鎮",
+      "transferName": "平鎮",
+      "position": [
+        24.94301,
+        121.21481
+      ],
+      "routes": [
+        "TRA:WL"
+      ],
+      "transferId": null
+    },
     "TRA:1110": {
       "system": "TRA",
       "stationId": "1110",
@@ -5614,7 +5629,7 @@
       "transferName": "關山",
       "position": [
         23.04566,
-        121.1643
+        121.16431
       ],
       "routes": [
         "TRA:EL"
@@ -9894,8 +9909,8 @@
   ],
   "stats": {
     "sourceSystems": 12,
-    "stationRecords": 563,
-    "routeMemberships": 580,
+    "stationRecords": 564,
+    "routeMemberships": 581,
     "matchedStationPairs": 63,
     "transferStations": 58,
     "transferStationRecords": 109,

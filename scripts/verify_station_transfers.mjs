@@ -61,22 +61,11 @@ const source = loadSourceData();
 // ── 待通車新站：把「站進來時每個計數會變成多少」事先寫成預測 ──────────────────
 // 為什麼不乾脆把這批數字改成從來源推導：那會變成同源自洽，「相等」是零資訊
 // （judgment 七-1），而這批具名斷言存在的理由正是擋住分母無聲縮水（只把 N/M 印在
-// detail 等於沒 gate）。所以這裡**不放寬判準**，只做一件事：把位移綁在一個具名的站上。
-//   · 平鎮沒進來 → 全部維持原本的絕對值，一個數字都不准動。
-//   · 平鎮進來了 → 只有下列計數各 +1，其餘照舊；對不上就紅。
-// 也就是紅或綠取決於**現實是否等於預測**，不是「先把數字改大免得紅」。
-//
-// 每一項怎麼推出來的（2026-09-12）：
-//   stationInfoRecords  +1  官方站基本資料多一筆
-//   stationClassRecords +1  站等表多一筆。它來自另一支腳本、可能比站基本資料晚到，
-//                           所以三個來源各自獨立判斷，不共用一個旗標
-//   stationRecords      +1  進了 station_of_line 才算線網站
-//   routeMemberships    +1  鄰站中壢與埔心都只屬 WL 一條線，平鎮同段軌道 ⇒ 只會有一組 (站,線)
-//   stationOfLines      ±0  插站不是新線
-//   轉乘那四項          ±0  平鎮距最近的他系統站（桃捷老街溪）1781 公尺，遠超過 450 公尺
-//                           共站門檻（2026-09-12 實測，不是估的）
-// 站真的上線、數字確認過之後，把 base 直接加上去、整段連同 PENDING_NAMES 刪掉即可。
-const PENDING_NAMES = ['平鎮'];
+// detail 等於沒 gate）。有站在等上架時，把它列進 PENDING_NAMES，並在這裡寫下它進來時
+// 哪幾個計數各該 +1；站上線、數字確認過之後把 base 直接加上去、名單清空。
+// 2026-10-28 平鎮（1105）正式整合：線網站／路線會員各 +1、站等表沒有它（±0）；
+// 同一版 TDX 站基本資料拿掉非客運的樹林調車場（1998），所以站基本資料筆數 +1−1 維持 245。
+const PENDING_NAMES = [];
 const readJson = rel => JSON.parse(readFileSync(path.join(ROOT, rel), 'utf8'));
 const presence = name => ({
   info: Object.hasOwn(readJson('data/tra_station_info.json'), name),
@@ -109,11 +98,11 @@ check('待通車站清單與 fetch_tra.py 同步', () => {
 });
 
 check('產物與目前來源及配對規則完全一致', () => assert.deepEqual(product, expected));
-check(`涵蓋率具名斷言：12 系統／全網 ${563 + dLine} 站／${580 + dLine} 路線會員（待通車 ${pendingNote}）`, () => {
+check(`涵蓋率具名斷言：12 系統／全網 ${564 + dLine} 站／${581 + dLine} 路線會員（待通車 ${pendingNote}）`, () => {
   assert.equal(product.stats.sourceSystems, 12);
-  assert.equal(product.stats.stationRecords, 563 + dLine);
-  assert.equal(product.stats.routeMemberships, 580 + dLine);
-  assert.equal(Object.keys(product.stations).length, 563 + dLine);
+  assert.equal(product.stats.stationRecords, 564 + dLine);
+  assert.equal(product.stats.routeMemberships, 581 + dLine);
+  assert.equal(Object.keys(product.stations).length, 564 + dLine);
 });
 check('轉乘涵蓋具名斷言：58 轉乘站／涵蓋 109 站記錄／126 路線會員', () => {
   assert.equal(product.stats.transferStations, 58);
@@ -156,16 +145,16 @@ check(`重複來源去重：${Object.keys(DUPLICATE_ROUTE_SOURCES).join('、')} 
 log(`DEDUP ${Object.entries(DUPLICATE_ROUTE_SOURCES).map(([k, v]) => `${k}→留 ${v.keptRoute}（${v.label}）`).join('、')}`);
 
 const traSource = product.sourceSystems.find(system => system.system === 'TRA');
-check(`台鐵來源具名斷言：三檔接線／${242 + dLine} 線網站／12 線／${256 + dLine} 路線會員`, () => {
+check(`台鐵來源具名斷言：三檔接線／${243 + dLine} 線網站／12 線／${257 + dLine} 路線會員`, () => {
   assert(traSource, '產物沒有 TRA sourceSystem');
   assert.equal(traSource.stationFile, 'data/tra_station_info.json');
   assert.equal(traSource.stationOfLineFile, 'data/tra_station_of_line.json');
   assert.equal(traSource.stationClassFile, 'data/tra_station_class.json');
   assert.equal(traSource.stationInfoRecords, 245 + dInfo);
   assert.equal(traSource.stationClassRecords, 210 + dClass);
-  assert.equal(traSource.stationRecords, 242 + dLine);
+  assert.equal(traSource.stationRecords, 243 + dLine);
   assert.equal(traSource.stationOfLines, 12);
-  assert.equal(traSource.routeMemberships, 256 + dLine);
+  assert.equal(traSource.routeMemberships, 257 + dLine);
 });
 check('台鐵專屬重建與產物一致', () => {
   const expectedTra = expected.sourceSystems.find(system => system.system === 'TRA');
